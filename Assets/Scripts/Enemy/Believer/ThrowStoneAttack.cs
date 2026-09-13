@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class ThrowStoneAttack : EnemyAttack
@@ -82,29 +83,19 @@ public class ThrowStoneAttack : EnemyAttack
         if (dangerIndicatorPrefab == null)
             return;
 
-        Vector2 origin =
-            GetSpawnPosition();
-
-        Vector2 center =
-            origin +
-            lockedDirection *
-            (attackRange * 0.5f);
-
-        float angle =
-            Mathf.Atan2(
-                lockedDirection.y,
-                lockedDirection.x
-            ) *
-            Mathf.Rad2Deg;
+        Transform followTransform =
+            projectileSpawnPoint != null
+                ? projectileSpawnPoint
+                : transform;
 
         DangerIndicator indicator =
             Instantiate(
                 dangerIndicatorPrefab
             );
 
-        indicator.Setup(
-            center,
-            angle,
+        indicator.SetupFollowing(
+            followTransform,
+            lockedDirection,
             new Vector2(
                 attackRange,
                 indicatorWidth
@@ -113,7 +104,7 @@ public class ThrowStoneAttack : EnemyAttack
         );
     }
 
-    protected override void ExecuteAttack()
+    protected override IEnumerator ExecuteAttackRoutine()
     {
         if (projectilePrefab == null)
         {
@@ -121,7 +112,7 @@ public class ThrowStoneAttack : EnemyAttack
                 $"{name}: StoneProjectile Prefab이 지정되지 않았습니다."
             );
 
-            return;
+            yield break;
         }
 
         Vector2 spawnPosition =
@@ -151,6 +142,8 @@ public class ThrowStoneAttack : EnemyAttack
             damage,
             attackRange
         );
+
+        yield break;
     }
 
     private Vector2 GetSpawnPosition()

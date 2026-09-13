@@ -5,17 +5,13 @@ public abstract class EnemyAttack : MonoBehaviour
 {
     [Header("Attack")]
     [SerializeField] protected float damage = 10f;
-
     [SerializeField] protected float cooldown = 2.5f;
-
     [SerializeField] protected float windupTime = 0.8f;
-
     [SerializeField] protected float recoveryTime = 0.5f;
 
     protected EnemyUnit owner;
 
     private bool isAttacking;
-
     private float nextAttackTime;
 
     private Coroutine attackRoutine;
@@ -60,9 +56,7 @@ public abstract class EnemyAttack : MonoBehaviour
         return true;
     }
 
-    private IEnumerator AttackRoutine(
-        Transform target
-    )
+    private IEnumerator AttackRoutine(Transform target)
     {
         isAttacking = true;
 
@@ -84,7 +78,6 @@ public abstract class EnemyAttack : MonoBehaviour
         if (owner == null || owner.IsDead)
         {
             isAttacking = false;
-
             yield break;
         }
 
@@ -92,10 +85,26 @@ public abstract class EnemyAttack : MonoBehaviour
             EnemyState.Attack
         );
 
-        ExecuteAttack();
+        /*
+         * 공격별 실제 실행.
+         *
+         * 신자:
+         * 돌을 생성하고 즉시 종료.
+         *
+         * 개:
+         * 돌진이 끝날 때까지 대기.
+         */
+        yield return ExecuteAttackRoutine();
 
-        // 실제 공격이 발생한 시점부터
-        // 쿨타임을 계산한다.
+        if (owner == null || owner.IsDead)
+        {
+            isAttacking = false;
+            yield break;
+        }
+
+        /*
+         * 실제 공격 종료 시점부터 쿨타임 시작.
+         */
         nextAttackTime =
             Time.time + cooldown;
 
@@ -135,7 +144,7 @@ public abstract class EnemyAttack : MonoBehaviour
     {
     }
 
-    protected abstract void ExecuteAttack();
+    protected abstract IEnumerator ExecuteAttackRoutine();
 
     protected virtual void OnDisable()
     {
