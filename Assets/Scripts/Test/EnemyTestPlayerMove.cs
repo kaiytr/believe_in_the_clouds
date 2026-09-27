@@ -2,7 +2,8 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class EnemyTestPlayerMove :
-    MonoBehaviour
+    MonoBehaviour,
+    ISlowable
 {
     [Header("Move")]
     [SerializeField]
@@ -25,8 +26,10 @@ public class EnemyTestPlayerMove :
     private Rigidbody2D rb;
 
     private float moveInput;
-
     private bool isGrounded;
+
+    private float speedMultiplier = 1f;
+    private float slowEndTime;
 
     private void Awake()
     {
@@ -35,23 +38,14 @@ public class EnemyTestPlayerMove :
 
     private void Update()
     {
+        UpdateSlow();
+
         moveInput =
-            Input.GetAxisRaw(
-                "Horizontal"
-            );
+            Input.GetAxisRaw("Horizontal");
 
-        if (groundCheck != null)
-        {
-            isGrounded =
-                Physics2D.OverlapCircle(
-                    groundCheck.position,
-                    groundCheckRadius,
-                    groundLayer
-                );
-        }
+        CheckGround();
 
-        if (Input.GetKeyDown(
-                KeyCode.Space) &&
+        if (Input.GetKeyDown(KeyCode.Space) &&
             isGrounded)
         {
             rb.linearVelocity =
@@ -66,8 +60,84 @@ public class EnemyTestPlayerMove :
     {
         rb.linearVelocity =
             new Vector2(
-                moveInput * moveSpeed,
+                moveInput *
+                moveSpeed *
+                speedMultiplier,
+
                 rb.linearVelocity.y
             );
+    }
+
+    private void CheckGround()
+    {
+        if (groundCheck == null)
+        {
+            isGrounded = false;
+            return;
+        }
+
+        isGrounded =
+            Physics2D.OverlapCircle(
+                groundCheck.position,
+                groundCheckRadius,
+                groundLayer
+            );
+    }
+
+    public void ApplySlow(
+        float newSpeedMultiplier,
+        float duration
+    )
+    {
+        newSpeedMultiplier =
+            Mathf.Clamp01(
+                newSpeedMultiplier
+            );
+
+        /*
+         * 기존 둔화보다 강한 효과가 들어오면
+         * 강한 쪽을 사용.
+         */
+        speedMultiplier =
+            Mathf.Min(
+                speedMultiplier,
+                newSpeedMultiplier
+            );
+
+        slowEndTime =
+            Mathf.Max(
+                slowEndTime,
+                Time.time + duration
+            );
+
+        Debug.Log(
+            $"[Test Player] Slow 적용: {speedMultiplier * 100f}% / {duration}초"
+        );
+    }
+
+    private void UpdateSlow()
+    {
+        if (speedMultiplier >= 1f)
+            return;
+
+        if (Time.time < slowEndTime)
+            return;
+
+        speedMultiplier = 1f;
+
+        Debug.Log(
+            "[Test Player] Slow 종료"
+        );
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck == null)
+            return;
+
+        Gizmos.DrawWireSphere(
+            groundCheck.position,
+            groundCheckRadius
+        );
     }
 }
