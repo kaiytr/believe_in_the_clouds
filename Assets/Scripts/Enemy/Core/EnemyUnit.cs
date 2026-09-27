@@ -102,6 +102,10 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
         target = player.transform;
 
+        IgnorePhysicalCollisionWithPlayer(
+            target
+        );
+
         return true;
     }
 
@@ -274,5 +278,38 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         }
 
         Destroy(gameObject, destroyDelay);
+    }
+    private void IgnorePhysicalCollisionWithPlayer(
+    Transform playerRoot
+)
+    {
+        if (playerRoot == null)
+            return;
+
+        Collider2D[] enemyColliders =
+            GetComponentsInChildren<Collider2D>(true);
+
+        Collider2D[] playerColliders =
+            playerRoot
+                .GetComponentsInChildren<Collider2D>(true);
+
+        foreach (Collider2D enemyCollider in enemyColliders)
+        {
+            /*
+             * Trigger는 피해 판정 등에 사용하므로
+             * 충돌을 무시하면 안 된다.
+             */
+            if (enemyCollider.isTrigger)
+                continue;
+
+            foreach (Collider2D playerCollider in playerColliders)
+            {
+                Physics2D.IgnoreCollision(
+                    enemyCollider,
+                    playerCollider,
+                    true
+                );
+            }
+        }
     }
 }
