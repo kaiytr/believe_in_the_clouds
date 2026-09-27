@@ -138,6 +138,7 @@ public class DogChargeAttack : EnemyAttack
         if (rb == null)
             yield break;
 
+        MarkAttackAsLaunched();
         isCharging = true;
         chargeInterrupted = false;
 
@@ -292,6 +293,8 @@ public class DogChargeAttack : EnemyAttack
         );
 
         hasDamagedPlayer = true;
+
+        NotifyPlayerHit();
 
         return true;
     }

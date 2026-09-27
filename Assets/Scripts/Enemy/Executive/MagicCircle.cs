@@ -4,16 +4,19 @@ using UnityEngine;
 public class MagicCircle : MonoBehaviour
 {
     private float radius;
+    private EnemyAttack sourceAttack;
 
     public void Activate(
         float radius,
         float damage,
         float slowMultiplier,
         float slowDuration,
-        float visualDuration
+        float visualDuration,
+        EnemyAttack sourceAttack = null
     )
     {
         this.radius = radius;
+        this.sourceAttack = sourceAttack;
 
         float diameter =
             radius * 2f;
@@ -86,6 +89,8 @@ public class MagicCircle : MonoBehaviour
                 damageable.TakeDamage(
                     damage
                 );
+
+                sourceAttack?.NotifyProjectilePlayerHit();
             }
 
             ISlowable slowable =

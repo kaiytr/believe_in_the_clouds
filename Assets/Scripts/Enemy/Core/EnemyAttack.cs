@@ -15,8 +15,20 @@ public abstract class EnemyAttack : MonoBehaviour
     private float nextAttackTime;
 
     private Coroutine attackRoutine;
+    private bool damagedPlayerDuringAttack;
+    private bool dodgeNotified;
+    private bool attackWasLaunched;
+    private int pendingHitResults;
+
+    public event System.Action<EnemyAttack> OnAttackStarted;
+    public event System.Action<EnemyAttack> OnAttackExecuted;
+    public event System.Action<EnemyAttack> OnPlayerHit;
+    public event System.Action<EnemyAttack> OnPlayerDodged;
+    public event System.Action<EnemyAttack, bool> OnAttackFinished;
 
     public bool IsAttacking => isAttacking;
+    public bool DamagedPlayerDuringAttack =>
+        damagedPlayerDuringAttack;
 
     public bool IsReady =>
         !isAttacking &&
@@ -59,6 +71,10 @@ public abstract class EnemyAttack : MonoBehaviour
     private IEnumerator AttackRoutine(Transform target)
     {
         isAttacking = true;
+        damagedPlayerDuringAttack = false;
+        dodgeNotified = false;
+        attackWasLaunched = false;
+        pendingHitResults = 0;
 
         owner.LockMovement();
         owner.FaceTarget();
@@ -69,6 +85,8 @@ public abstract class EnemyAttack : MonoBehaviour
 
         PrepareAttack(target);
 
+        OnAttackStarted?.Invoke(this);
+
         ShowDangerIndicator();
 
         yield return new WaitForSeconds(
@@ -77,13 +95,15 @@ public abstract class EnemyAttack : MonoBehaviour
 
         if (owner == null || owner.IsDead)
         {
-            isAttacking = false;
+            FinishAttack(true);
             yield break;
         }
 
         owner.ChangeState(
             EnemyState.Attack
         );
+
+        OnAttackExecuted?.Invoke(this);
 
         /*
          * 공격별 실제 실행.
@@ -96,9 +116,16 @@ public abstract class EnemyAttack : MonoBehaviour
          */
         yield return ExecuteAttackRoutine();
 
+        while (pendingHitResults > 0 &&
+               owner != null &&
+               !owner.IsDead)
+        {
+            yield return null;
+        }
+
         if (owner == null || owner.IsDead)
         {
-            isAttacking = false;
+            FinishAttack(true);
             yield break;
         }
 
@@ -111,6 +138,12 @@ public abstract class EnemyAttack : MonoBehaviour
         owner.ChangeState(
             EnemyState.Recovery
         );
+
+        if (attackWasLaunched && !damagedPlayerDuringAttack && !dodgeNotified)
+        {
+            dodgeNotified = true;
+            OnPlayerDodged?.Invoke(this);
+        }
 
         yield return new WaitForSeconds(
             recoveryTime
@@ -126,8 +159,7 @@ public abstract class EnemyAttack : MonoBehaviour
             );
         }
 
-        isAttacking = false;
-        attackRoutine = null;
+        FinishAttack(true);
     }
 
     protected abstract bool CanAttack(
@@ -146,6 +178,58 @@ public abstract class EnemyAttack : MonoBehaviour
 
     protected abstract IEnumerator ExecuteAttackRoutine();
 
+    private void FinishAttack(bool notify)
+    {
+        if (!isAttacking && attackRoutine == null)
+            return;
+
+        isAttacking = false;
+        attackRoutine = null;
+
+        if (notify)
+        {
+            OnAttackFinished?.Invoke(
+                this,
+                damagedPlayerDuringAttack
+            );
+        }
+    }
+
+    protected void NotifyPlayerHit()
+    {
+        if (damagedPlayerDuringAttack)
+            return;
+
+        damagedPlayerDuringAttack = true;
+        dodgeNotified = true;
+
+        OnPlayerHit?.Invoke(this);
+    }
+
+    protected void MarkAttackAsLaunched()
+    {
+        attackWasLaunched = true;
+    }
+
+    protected void TrackPendingHitResult()
+    {
+        pendingHitResults++;
+    }
+
+    public void ResolvePendingHitResult(bool playerHit)
+    {
+        if (pendingHitResults <= 0)
+            return;
+        pendingHitResults--;
+        if (playerHit)
+            NotifyPlayerHit();
+    }
+
+    public void NotifyProjectilePlayerHit()
+    {
+        NotifyPlayerHit();
+    }
+
     protected virtual void OnDisable()
     {
         if (attackRoutine != null)
@@ -155,7 +239,12 @@ public abstract class EnemyAttack : MonoBehaviour
             attackRoutine = null;
         }
 
-        isAttacking = false;
+        FinishAttack(false);
+
+        damagedPlayerDuringAttack = false;
+        dodgeNotified = false;
+        attackWasLaunched = false;
+        pendingHitResults = 0;
 
         if (owner != null &&
             !owner.IsDead)

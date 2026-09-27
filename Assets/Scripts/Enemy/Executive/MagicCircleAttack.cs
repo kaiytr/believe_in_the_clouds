@@ -105,6 +105,7 @@ public class MagicCircleAttack : EnemyAttack
             yield break;
         }
 
+        MarkAttackAsLaunched();
         MagicCircle circle =
             Instantiate(
                 magicCirclePrefab,
@@ -117,7 +118,8 @@ public class MagicCircleAttack : EnemyAttack
             damage,
             slowMultiplier,
             slowDuration,
-            circleVisualDuration
+            circleVisualDuration,
+            this
         );
 
         yield break;

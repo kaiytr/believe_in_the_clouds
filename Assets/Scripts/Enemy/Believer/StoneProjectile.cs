@@ -13,8 +13,10 @@ public class StoneProjectile : MonoBehaviour
 
     private float damage;
     private float maxDistance;
+    private EnemyAttack sourceAttack;
 
     private bool initialized;
+    private bool attackResultResolved;
 
     private void Awake()
     {
@@ -25,16 +27,26 @@ public class StoneProjectile : MonoBehaviour
         Vector2 direction,
         float speed,
         float damage,
-        float maxDistance
+        float maxDistance,
+        EnemyAttack sourceAttack = null
     )
     {
         this.damage = damage;
         this.maxDistance = maxDistance;
+        this.sourceAttack = sourceAttack;
 
         spawnPosition = rb.position;
 
         Vector2 normalizedDirection =
             direction.normalized;
+
+        if (speed <= 0f || maxDistance <= 0f || normalizedDirection.sqrMagnitude <= 0.0001f)
+        {
+            initialized = true;
+            ResolveAttackResult(false);
+            Destroy(gameObject);
+            return;
+        }
 
         rb.linearVelocity =
             normalizedDirection * speed;
@@ -65,6 +77,7 @@ public class StoneProjectile : MonoBehaviour
 
         if (traveledDistance >= maxDistance)
         {
+            ResolveAttackResult(false);
             Destroy(gameObject);
         }
     }
@@ -92,6 +105,8 @@ public class StoneProjectile : MonoBehaviour
                 damageable.TakeDamage(
                     damage
                 );
+
+                ResolveAttackResult(true);
             }
 
             Destroy(gameObject);
@@ -102,8 +117,24 @@ public class StoneProjectile : MonoBehaviour
         if (IsObstacle(
             other.gameObject.layer))
         {
+            ResolveAttackResult(false);
             Destroy(gameObject);
         }
+    }
+
+    private void ResolveAttackResult(bool playerHit)
+    {
+        if (attackResultResolved)
+            return;
+        attackResultResolved = true;
+        if (sourceAttack != null)
+            sourceAttack.ResolvePendingHitResult(playerHit);
+    }
+
+    private void OnDestroy()
+    {
+        if (initialized && !attackResultResolved)
+            ResolveAttackResult(false);
     }
 
     private bool TryGetPlayer(

@@ -66,6 +66,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         StartInvulnerability();
     }
 
+    public void ResetHealth()
+    {
+        if (invulnerabilityRoutine != null)
+        {
+            StopCoroutine(invulnerabilityRoutine);
+            invulnerabilityRoutine = null;
+        }
+        currentHp = maxHp;
+        isInvulnerable = false;
+        RestoreRenderers();
+    }
+
     private void StartInvulnerability()
     {
         // 같은 프레임에 여러 공격이 들어오는 것도 방지하기 위해

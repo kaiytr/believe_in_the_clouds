@@ -115,6 +115,13 @@ public class ThrowStoneAttack : EnemyAttack
             yield break;
         }
 
+        if (projectileSpeed <= 0f || attackRange <= 0f)
+        {
+            Debug.LogError($"{name}: Projectile speed and attack range must be positive.", this);
+            yield break;
+        }
+
+        MarkAttackAsLaunched();
         Vector2 spawnPosition =
             GetSpawnPosition();
 
@@ -136,11 +143,14 @@ public class ThrowStoneAttack : EnemyAttack
                 )
             );
 
+        TrackPendingHitResult();
+
         projectile.Initialize(
             lockedDirection,
             projectileSpeed,
             damage,
-            attackRange
+            attackRange,
+            this
         );
 
         yield break;

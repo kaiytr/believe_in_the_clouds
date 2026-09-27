@@ -20,6 +20,8 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     protected float currentHp;
     protected EnemyState currentState = EnemyState.Idle;
 
+    private BeliefController beliefController;
+
     private float moveInput;
     private bool movementLocked;
 
@@ -37,6 +39,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
+        beliefController = GetComponent<BeliefController>();
 
         currentHp = maxHp;
     }
@@ -251,7 +254,31 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (IsDead)
             return;
 
-        currentHp -= damage;
+        if (damage <= 0f)
+            return;
+
+        Vector2 hitDirection = target != null
+            ? (Vector2)target.position - (Vector2)transform.position
+            : Vector2.zero;
+        foreach (SequentialFlankAttackBeliefCondition condition in
+                 GetComponents<SequentialFlankAttackBeliefCondition>())
+        {
+            condition.RegisterPlayerHit(hitDirection);
+        }
+
+        float finalDamage = damage;
+
+        if (beliefController != null)
+        {
+            finalDamage =
+                beliefController
+                    .ApplyIncomingDamageModifier(damage);
+        }
+
+        if (finalDamage <= 0f)
+            return;
+
+        currentHp -= finalDamage;
 
         if (currentHp <= 0f)
         {
@@ -263,6 +290,11 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     protected virtual void Die()
     {
+        if (beliefController != null)
+        {
+            beliefController.StopBeliefSystem();
+        }
+
         currentState = EnemyState.Dead;
 
         movementLocked = true;
