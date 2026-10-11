@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class PlayerHealth : MonoBehaviour, IDamageable
+public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 {
     [Header("Health")]
     [SerializeField] private float maxHp = 100f;
@@ -10,9 +10,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float invulnerabilityDuration = 1f;
     [SerializeField] private float blinkInterval = 0.1f;
 
+    [Header("Doctrine Link")]
+    [Tooltip("LowHealth event fires when HP falls to this ratio or below.")]
+    [SerializeField] [Range(0f, 0.95f)] private float lowHealthRatio = 0.3f;
+
     private float currentHp;
 
     private bool isInvulnerable;
+    private bool lowHealthNotified;
     private Coroutine invulnerabilityRoutine;
 
     private SpriteRenderer[] spriteRenderers;
@@ -21,6 +26,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
     public bool IsInvulnerable => isInvulnerable;
+
+    // IHealth (Doctrine contract). Existing CurrentHp/MaxHp kept untouched.
+    public float CurrentHealth => currentHp;
+    public float MaxHealth => maxHp;
+    public bool IsDead => currentHp <= 0f;
+    private bool IsLowHealth => !IsDead && currentHp <= maxHp * lowHealthRatio;
 
     private void Awake()
     {
@@ -41,6 +52,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage)
     {
+        ApplyDamage(damage, null);
+    }
+
+    // IHealth. Source is only used for Doctrine event attribution.
+    public void TakeDamage(float damage, GameObject source)
+    {
+        ApplyDamage(damage, source);
+    }
+
+    private void ApplyDamage(float damage, GameObject source)
+    {
         if (damage <= 0f)
             return;
 
@@ -57,13 +79,41 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             $"[Player] Damage: {damage} / HP: {currentHp}/{maxHp}"
         );
 
+        if (DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(ConditionType.OnHit, gameObject, source);
+        }
+
+        if (!lowHealthNotified && IsLowHealth)
+        {
+            lowHealthNotified = true;
+            if (DoctrineEventBus.HasListeners)
+            {
+                DoctrineEventBus.Raise(ConditionType.LowHealth, gameObject, source);
+            }
+        }
+
         if (currentHp <= 0f)
         {
-            Die();
+            Die(source);
             return;
         }
 
         StartInvulnerability();
+    }
+
+    // IHealth. No healing while dead (same rule as before).
+    public void Heal(float amount)
+    {
+        if (currentHp <= 0f || amount <= 0f)
+            return;
+
+        currentHp = Mathf.Min(maxHp, currentHp + amount);
+
+        if (!IsLowHealth)
+        {
+            lowHealthNotified = false;
+        }
     }
 
     public void ResetHealth()
@@ -75,13 +125,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         currentHp = maxHp;
         isInvulnerable = false;
+        lowHealthNotified = false;
         RestoreRenderers();
     }
 
     private void StartInvulnerability()
     {
-        // °°Àº ÇÁ·¹ÀÓ¿¡ ¿©·¯ °ø°ÝÀÌ µé¾î¿À´Â °Íµµ ¹æÁöÇÏ±â À§ÇØ
-        // Coroutine ½ÃÀÛ Àü¿¡ Áï½Ã true Ã³¸®.
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Íµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // Coroutine ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ true Ã³ï¿½ï¿½.
         isInvulnerable = true;
 
         if (invulnerabilityRoutine != null)
@@ -139,7 +190,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
-    private void Die()
+    private void Die(GameObject source = null)
     {
         isInvulnerable = true;
 
@@ -147,7 +198,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         Debug.Log("[Player] Dead");
 
-        // ½ÇÁ¦ Player »ç¸Á ·ÎÁ÷Àº ³ªÁß¿¡ ¿¬°á
+        if (DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
+        }
+
+        // ï¿½ï¿½ï¿½ï¿½ Player ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½ï¿½ï¿½ï¿½
     }
 
     private void OnDisable()
