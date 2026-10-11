@@ -49,7 +49,7 @@ public class DoctrineManualTester : MonoBehaviour
         {
             GameObject player = CreateCombatant("TestPlayer", SubjectType.Player, 100f);
             GameObject enemy = CreateCombatant("TestEnemy", SubjectType.Enemy, 100f);
-            Health health = player.GetComponent<Health>();
+            TestHealth health = player.GetComponent<TestHealth>();
             health.ForceHealth(50f);
             manager.TryActivate(
                 new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f),
@@ -66,7 +66,7 @@ public class DoctrineManualTester : MonoBehaviour
         {
             GameObject player = CreateCombatant("TestPlayer", SubjectType.Player, 100f);
             GameObject enemy = CreateCombatant("TestEnemy", SubjectType.Enemy, 100f);
-            Health health = player.GetComponent<Health>();
+            TestHealth health = player.GetComponent<TestHealth>();
             health.ForceHealth(50f);
             manager.TryActivate(
                 new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.Heal, 30f),
@@ -83,7 +83,7 @@ public class DoctrineManualTester : MonoBehaviour
         {
             GameObject player = CreateCombatant("TestPlayer", SubjectType.Player, 100f);
             GameObject enemy = CreateCombatant("TestEnemy", SubjectType.Enemy, 100f);
-            Health health = player.GetComponent<Health>();
+            TestHealth health = player.GetComponent<TestHealth>();
             DoctrineStats stats = player.GetComponent<DoctrineStats>();
             health.ForceHealth(50f);
             float attackBefore = stats.EffectiveAttack;
@@ -115,7 +115,7 @@ public class DoctrineManualTester : MonoBehaviour
         {
             GameObject player = CreateCombatant("TestPlayer", SubjectType.Player, 100f);
             GameObject enemy = CreateCombatant("TestEnemy", SubjectType.Enemy, 100f);
-            Health health = player.GetComponent<Health>();
+            TestHealth health = player.GetComponent<TestHealth>();
             Doctrine doctrine = new Doctrine(
                 SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f);
             manager.TryActivate(doctrine, player, out string _);
@@ -154,7 +154,7 @@ public class DoctrineManualTester : MonoBehaviour
         GameObject go = new GameObject(name);
         DoctrineSubject subject = go.AddComponent<DoctrineSubject>();
         subject.Identity = identity;
-        go.AddComponent<Health>().SetMaxHealth(maxHp);
+        go.AddComponent<TestHealth>().SetMaxHealth(maxHp);
         go.AddComponent<DoctrineStats>();
         return go;
     }

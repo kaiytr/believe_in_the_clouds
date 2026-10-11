@@ -8,7 +8,7 @@ public static class DoctrineEffectExecutor
 {
     public static bool VerboseLogs = false;
 
-    private static readonly HashSet<Health> OverlapSeen = new HashSet<Health>();
+    private static readonly HashSet<IHealth> OverlapSeen = new HashSet<IHealth>();
     public const float DefaultHealAmount = 20f;
     public const float DefaultDamageAmount = 10f;
     public const float DefaultExplodeDamage = 30f;
@@ -89,10 +89,10 @@ public static class DoctrineEffectExecutor
             return false;
         }
 
-        Health health = target.GetComponent<Health>();
+        IHealth health = target.GetComponent<IHealth>();
         if (health == null)
         {
-            Debug.LogWarning($"[Doctrine] Heal 실패: {target.name}에 Health가 없습니다.");
+            Debug.LogWarning($"[Doctrine] Heal 실패: {target.name}에 IHealth가 없습니다.");
             return false;
         }
 
@@ -107,10 +107,10 @@ public static class DoctrineEffectExecutor
             return false;
         }
 
-        Health health = target.GetComponent<Health>();
+        IHealth health = target.GetComponent<IHealth>();
         if (health == null)
         {
-            Debug.LogWarning($"[Doctrine] TakeDamage 실패: {target.name}에 Health가 없습니다.");
+            Debug.LogWarning($"[Doctrine] TakeDamage 실패: {target.name}에 IHealth가 없습니다.");
             return false;
         }
 
@@ -161,14 +161,14 @@ public static class DoctrineEffectExecutor
             return false;
         }
 
-        List<Health> targets = FindTargetsInRadius(center, radius);
-        Health self = center.GetComponent<Health>();
+        List<IHealth> targets = FindTargetsInRadius(center, radius);
+        IHealth self = center.GetComponent<IHealth>();
         return ApplyExplodeDamage(targets, damage, source, self);
     }
 
-    public static List<Health> FindTargetsInRadius(GameObject center, float radius)
+    public static List<IHealth> FindTargetsInRadius(GameObject center, float radius)
     {
-        List<Health> result = new List<Health>();
+        List<IHealth> result = new List<IHealth>();
         if (center == null || radius <= 0f)
         {
             return result;
@@ -186,7 +186,8 @@ public static class DoctrineEffectExecutor
                 continue;
             }
 
-            if (!hit.TryGetComponent(out Health health) || health == null)
+            IHealth health = hit.GetComponent<IHealth>();
+            if (health == null)
             {
                 continue;
             }
@@ -202,10 +203,10 @@ public static class DoctrineEffectExecutor
 
     // 물리 쿼리와 분리된 순수 피해 적용부. 테스트에서 직접 호출 가능하다.
     public static bool ApplyExplodeDamage(
-        List<Health> targets,
+        List<IHealth> targets,
         float damage,
         GameObject source,
-        Health exclude)
+        IHealth exclude)
     {
         if (targets == null)
         {
@@ -213,7 +214,7 @@ public static class DoctrineEffectExecutor
         }
 
         int hitCount = 0;
-        foreach (Health health in targets)
+        foreach (IHealth health in targets)
         {
             if (health == null || health == exclude)
             {

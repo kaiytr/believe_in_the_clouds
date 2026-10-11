@@ -28,7 +28,7 @@ public struct DoctrineEventData
 }
 
 // 이벤트 감지와 교리 판정을 분리하는 정적 버스.
-// 감지 측(Health, Emitter)은 Raise만 호출하고,
+// 감지 측(체력, Emitter)은 Raise만 호출하고,
 // 판정 측(DoctrineManager)이 구독한다.
 public static class DoctrineEventBus
 {

@@ -97,9 +97,9 @@ public static class DoctrineValidator
             {
                 case ResultType.Heal:
                 case ResultType.TakeDamage:
-                    if (target.GetComponent<Health>() == null)
+                    if (target.GetComponent<IHealth>() == null)
                     {
-                        reason = $"Result({doctrine.Result}) 실행에 Health가 필요하지만 " +
+                        reason = $"Result({doctrine.Result}) 실행에 IHealth가 필요하지만 " +
                                  $"대상({target.name})에 없습니다.";
                         return false;
                     }

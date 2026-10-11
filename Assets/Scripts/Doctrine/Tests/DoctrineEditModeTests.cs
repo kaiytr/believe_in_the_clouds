@@ -47,7 +47,7 @@ public class DoctrineEditModeTests
         GameObject go = new GameObject(name);
         DoctrineSubject subject = go.AddComponent<DoctrineSubject>();
         subject.Identity = identity;
-        Health health = go.AddComponent<Health>();
+        TestHealth health = go.AddComponent<TestHealth>();
         health.SetMaxHealth(maxHp);
         go.AddComponent<DoctrineStats>();
         spawned.Add(go);
@@ -71,7 +71,7 @@ public class DoctrineEditModeTests
     public void PlayerHit_TriggersOnHitHeal()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
-        Health health = player.GetComponent<Health>();
+        TestHealth health = player.GetComponent<TestHealth>();
         health.ForceHealth(50f);
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
 
@@ -89,7 +89,7 @@ public class DoctrineEditModeTests
     public void ConditionMismatch_DoesNotTrigger()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
-        Health health = player.GetComponent<Health>();
+        TestHealth health = player.GetComponent<TestHealth>();
         health.ForceHealth(50f);
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
 
@@ -107,7 +107,7 @@ public class DoctrineEditModeTests
     public void TwoMatchingDoctrines_BothTrigger()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
-        Health health = player.GetComponent<Health>();
+        TestHealth health = player.GetComponent<TestHealth>();
         DoctrineStats stats = player.GetComponent<DoctrineStats>();
         health.ForceHealth(50f);
         float attackBefore = stats.EffectiveAttack;
@@ -160,7 +160,7 @@ public class DoctrineEditModeTests
     public void DeactivatedDoctrine_NoLongerTriggers()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
-        Health health = player.GetComponent<Health>();
+        TestHealth health = player.GetComponent<TestHealth>();
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
         Doctrine doctrine = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f);
 
@@ -209,10 +209,10 @@ public class DoctrineEditModeTests
     {
         GameObject self = CreateCombatant("Self", SubjectType.Player, 100f);
         GameObject other = CreateCombatant("Other", SubjectType.Enemy, 100f);
-        Health selfHealth = self.GetComponent<Health>();
-        Health otherHealth = other.GetComponent<Health>();
+        TestHealth selfHealth = self.GetComponent<TestHealth>();
+        TestHealth otherHealth = other.GetComponent<TestHealth>();
 
-        List<Health> targets = new List<Health> { selfHealth, otherHealth };
+        List<IHealth> targets = new List<IHealth> { selfHealth, otherHealth };
 
         bool ok = DoctrineEffectExecutor.ApplyExplodeDamage(targets, 25f, null, selfHealth);
 
@@ -226,7 +226,7 @@ public class DoctrineEditModeTests
     public void LowHealth_EventRaisedOnThresholdCross()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
-        Health health = player.GetComponent<Health>();
+        TestHealth health = player.GetComponent<TestHealth>();
         int lowHealthCount = 0;
         DoctrineEventBus.EventRaised += evt =>
         {
