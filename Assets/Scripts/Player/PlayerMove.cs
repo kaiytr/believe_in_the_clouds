@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMove : MonoBehaviour
 {
     [Header("이동")]
@@ -15,6 +16,7 @@ public class PlayerMove : MonoBehaviour
 
     private Rigidbody2D rb;
     private float moveInput;
+    private bool jumpRequested;
     private bool isGrounded;
 
     private void Awake()
@@ -24,20 +26,13 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
-        // 좌우 입력
+        // 입력은 렌더 프레임에서만 읽는다.
         moveInput = Input.GetAxisRaw("Horizontal");
 
-        // 바닥에 닿아있는지 확인
-        isGrounded = Physics2D.OverlapCircle(
-            groundCheck.position,
-            groundCheckRadius,
-            groundLayer
-        );
-
-        // 점프
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        // 점프 입력 예약 (실제 물리는 FixedUpdate에서 처리).
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            Jump();
+            jumpRequested = true;
         }
 
         // 플레이어 방향 전환
@@ -53,6 +48,24 @@ public class PlayerMove : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (rb == null)
+        {
+            return;
+        }
+
+        // 물리 쿼리는 물리 틱에서만. Update에서 매 프레임 돌리면 렌더 fps에 비례해 낭비된다.
+        isGrounded = groundCheck != null &&
+            Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (jumpRequested)
+        {
+            jumpRequested = false;
+            if (isGrounded)
+            {
+                Jump();
+            }
+        }
+
         // 좌우 이동
         rb.linearVelocity = new Vector2(
             moveInput * moveSpeed,
