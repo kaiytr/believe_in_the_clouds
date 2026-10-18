@@ -9,61 +9,49 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Header("Invulnerability")]
     [SerializeField] private float invulnerabilityDuration = 1f;
     [SerializeField] private float blinkInterval = 0.1f;
+    [SerializeField] private Collider2D bodyCollider;
 
     private float currentHp;
-
     private bool isInvulnerable;
     private Coroutine invulnerabilityRoutine;
-
     private SpriteRenderer[] spriteRenderers;
     private bool[] originalRendererStates;
 
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
     public bool IsInvulnerable => isInvulnerable;
+    public Collider2D BodyCollider => bodyCollider;
 
     private void Awake()
     {
         currentHp = maxHp;
+        if (bodyCollider == null)
+            bodyCollider = GetComponent<Collider2D>();
+        if (bodyCollider == null || bodyCollider.isTrigger)
+            Debug.LogError($"{name}: Assign one non-trigger Player body Collider2D on the Player root.", this);
 
-        spriteRenderers =
-            GetComponentsInChildren<SpriteRenderer>(true);
-
-        originalRendererStates =
-            new bool[spriteRenderers.Length];
-
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+        originalRendererStates = new bool[spriteRenderers.Length];
         for (int i = 0; i < spriteRenderers.Length; i++)
-        {
-            originalRendererStates[i] =
-                spriteRenderers[i].enabled;
-        }
+            originalRendererStates[i] = spriteRenderers[i].enabled;
     }
 
-    public void TakeDamage(float damage)
+    public bool TakeDamage(DamageInfo damageInfo)
     {
-        if (damage <= 0f)
-            return;
+        float damage = damageInfo.Amount;
+        if (damage <= 0f || isInvulnerable || currentHp <= 0f)
+            return false;
 
-        if (isInvulnerable)
-            return;
-
-        if (currentHp <= 0f)
-            return;
-
-        currentHp -= damage;
-        currentHp = Mathf.Max(currentHp, 0f);
-
-        Debug.Log(
-            $"[Player] Damage: {damage} / HP: {currentHp}/{maxHp}"
-        );
-
+        currentHp = Mathf.Max(0f, currentHp - damage);
+        Debug.Log($"[Player] Damage: {damage} / HP: {currentHp}/{maxHp}");
         if (currentHp <= 0f)
         {
             Die();
-            return;
+            return true;
         }
 
         StartInvulnerability();
+        return true;
     }
 
     public void ResetHealth()
@@ -80,41 +68,25 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void StartInvulnerability()
     {
-        // 같은 프레임에 여러 공격이 들어오는 것도 방지하기 위해
-        // Coroutine 시작 전에 즉시 true 처리.
         isInvulnerable = true;
-
         if (invulnerabilityRoutine != null)
-        {
             StopCoroutine(invulnerabilityRoutine);
-        }
-
-        invulnerabilityRoutine =
-            StartCoroutine(
-                InvulnerabilityRoutine()
-            );
+        invulnerabilityRoutine = StartCoroutine(InvulnerabilityRoutine());
     }
 
     private IEnumerator InvulnerabilityRoutine()
     {
         float elapsed = 0f;
         bool visible = true;
-
         while (elapsed < invulnerabilityDuration)
         {
             visible = !visible;
-
             SetRenderersVisible(visible);
-
-            yield return new WaitForSeconds(
-                blinkInterval
-            );
-
+            yield return new WaitForSeconds(blinkInterval);
             elapsed += blinkInterval;
         }
 
         RestoreRenderers();
-
         isInvulnerable = false;
         invulnerabilityRoutine = null;
     }
@@ -123,31 +95,22 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         for (int i = 0; i < spriteRenderers.Length; i++)
         {
-            if (!originalRendererStates[i])
-                continue;
-
-            spriteRenderers[i].enabled = visible;
+            if (originalRendererStates[i])
+                spriteRenderers[i].enabled = visible;
         }
     }
 
     private void RestoreRenderers()
     {
         for (int i = 0; i < spriteRenderers.Length; i++)
-        {
-            spriteRenderers[i].enabled =
-                originalRendererStates[i];
-        }
+            spriteRenderers[i].enabled = originalRendererStates[i];
     }
 
     private void Die()
     {
         isInvulnerable = true;
-
         RestoreRenderers();
-
         Debug.Log("[Player] Dead");
-
-        // 실제 Player 사망 로직은 나중에 연결
     }
 
     private void OnDisable()
