@@ -4,344 +4,229 @@ using UnityEngine;
 public class DogChargeAttack : EnemyAttack
 {
     [Header("Charge")]
-    [SerializeField]
-    private float chargeTriggerRange = 4f;
-
-    [SerializeField]
-    private float verticalAttackTolerance = 1.5f;
-
-    [SerializeField]
-    private float chargeDistance = 5f;
-
-    [SerializeField]
-    private float chargeSpeed = 12f;
+    [SerializeField, Min(0f)] private float chargeTriggerRange = 4f;
+    [SerializeField, Min(0f)] private float verticalAttackTolerance = 1.5f;
+    [SerializeField, Min(0.01f)] private float chargeDistance = 5f;
+    [SerializeField, Min(0.01f)] private float chargeSpeed = 12f;
 
     [Header("Danger Indicator")]
-    [SerializeField]
-    private DangerIndicator dangerIndicatorPrefab;
-
-    [SerializeField]
-    private float indicatorHeight = 1f;
+    [SerializeField] private DangerIndicator dangerIndicatorPrefab;
+    [SerializeField, Min(0.01f)] private float indicatorHeight = 1f;
 
     [Header("Obstacle")]
-    [SerializeField]
-    private LayerMask obstacleLayer;
+    [SerializeField] private LayerMask obstacleLayer;
 
-    private Rigidbody2D rb;
-
+    private Rigidbody2D body;
     private float lockedDirectionX;
-
+    private Vector2 chargeStartPosition;
     private bool isCharging;
-    private bool hasDamagedPlayer;
-    private bool chargeInterrupted;
+    private bool hasResolvedPlayerContact;
+    private bool playerContactAppliedHarm;
+    private bool blockedByObstacle;
+    private bool chargeCompleted;
 
-    public float ChargeTriggerRange =>
-        chargeTriggerRange;
-
-    public bool IsCharging =>
-        isCharging;
+    public float ChargeTriggerRange => chargeTriggerRange;
+    public bool IsCharging => isCharging;
+    public override bool IsConfigured => base.IsConfigured && dangerIndicatorPrefab != null &&
+                                         chargeDistance > 0f && indicatorHeight > 0f && chargeSpeed > 0f;
 
     protected override void Awake()
     {
         base.Awake();
-
-        rb = GetComponent<Rigidbody2D>();
-
-        if (rb == null)
-        {
-            Debug.LogError(
-                $"{name}: DogChargeAttack에는 Rigidbody2D가 필요합니다."
-            );
-        }
+        body = GetComponent<Rigidbody2D>();
     }
 
-    protected override bool CanAttack(
-        Transform target
-    )
+    protected override bool CanAttack(Transform target)
     {
         if (target == null)
             return false;
 
-        float horizontalDistance =
-            Mathf.Abs(
-                target.position.x -
-                transform.position.x
-            );
-
-        float verticalDistance =
-            Mathf.Abs(
-                target.position.y -
-                transform.position.y
-            );
-
-        return
-            horizontalDistance <=
-                chargeTriggerRange &&
-            verticalDistance <=
-                verticalAttackTolerance;
+        float horizontalDistance = Mathf.Abs(target.position.x - transform.position.x);
+        float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
+        return horizontalDistance <= chargeTriggerRange && verticalDistance <= verticalAttackTolerance;
     }
 
-    protected override void PrepareAttack(
-        Transform target
-    )
+    protected override void PrepareAttack(Transform target)
     {
-        float direction =
-            Mathf.Sign(
-                target.position.x -
-                transform.position.x
-            );
-
-        if (Mathf.Abs(direction) <
-            0.01f)
-        {
-            direction =
-                transform.localScale.x >= 0f
-                    ? 1f
-                    : -1f;
-        }
-
-        lockedDirectionX = direction;
-
-        hasDamagedPlayer = false;
-        chargeInterrupted = false;
+        lockedDirectionX = LockedFacingDirection;
+        hasResolvedPlayerContact = false;
+        playerContactAppliedHarm = false;
+        blockedByObstacle = false;
+        chargeCompleted = false;
     }
 
-    protected override void ShowDangerIndicator()
+    protected override DangerIndicator ShowDangerIndicator()
     {
         if (dangerIndicatorPrefab == null)
-            return;
+            return null;
 
-        Vector2 direction =
-            new Vector2(
-                lockedDirectionX,
-                0f
-            );
-
-        DangerIndicator indicator =
-            Instantiate(
-                dangerIndicatorPrefab
-            );
-
+        DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
         indicator.SetupFollowing(
             transform,
-            direction,
-            new Vector2(
-                chargeDistance,
-                indicatorHeight
-            ),
-            windupTime
-        );
+            new Vector2(lockedDirectionX, 0f),
+            new Vector2(chargeDistance, indicatorHeight),
+            windupTime);
+        return indicator;
+    }
+
+    protected override bool IsPlayerInThreatRange(Collider2D bodyCollider)
+    {
+        Vector2 origin = transform.position;
+        return IsBodyInChargeCorridor(bodyCollider, origin);
+    }
+
+    private bool IsBodyInChargeCorridor(Collider2D bodyCollider, Vector2 origin)
+    {
+        Vector2 center = origin + new Vector2(lockedDirectionX * chargeDistance * 0.5f, 0f);
+        return ColliderOverlapsBox(bodyCollider, center, new Vector2(chargeDistance, indicatorHeight));
     }
 
     protected override IEnumerator ExecuteAttackRoutine()
     {
-        if (rb == null)
+        if (body == null)
+        {
+            ReportOutcome(AttackOutcome.Missed);
             yield break;
+        }
 
         MarkAttackAsLaunched();
         isCharging = true;
-        chargeInterrupted = false;
+        chargeStartPosition = body.position;
+        owner.SetPhysicalCollisionWithPlayerEnabled(true);
 
-        float startX =
-            rb.position.x;
-
-        /*
-         * 벽 등에 막혀 이동거리를 채우지 못하는 경우
-         * 무한 돌진하지 않도록 안전 제한시간 설정.
-         */
-        float maximumChargeTime =
-            chargeDistance /
-            Mathf.Max(
-                chargeSpeed,
-                0.01f
-            )
-            + 0.25f;
-
+        float maximumChargeTime = chargeDistance / Mathf.Max(chargeSpeed, 0.01f) + 0.25f;
         float elapsed = 0f;
-
-        while (!chargeInterrupted &&
-               Mathf.Abs(
-                   rb.position.x - startX
-               ) < chargeDistance &&
+        while (!blockedByObstacle && !hasResolvedPlayerContact &&
+               Mathf.Abs(body.position.x - chargeStartPosition.x) < chargeDistance &&
                elapsed < maximumChargeTime)
         {
-            if (owner == null ||
-                owner.IsDead)
-            {
+            if (owner == null || owner.IsDead)
                 break;
-            }
 
-            rb.linearVelocity =
-                new Vector2(
-                    lockedDirectionX *
-                    chargeSpeed,
-                    rb.linearVelocity.y
-                );
-
-            elapsed +=
-                Time.fixedDeltaTime;
-
-            yield return
-                new WaitForFixedUpdate();
+            body.linearVelocity = new Vector2(lockedDirectionX * chargeSpeed, body.linearVelocity.y);
+            elapsed += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
         }
 
-        rb.linearVelocity =
-            new Vector2(
-                0f,
-                rb.linearVelocity.y
-            );
-
+        chargeCompleted = !blockedByObstacle && !hasResolvedPlayerContact &&
+                          Mathf.Abs(body.position.x - chargeStartPosition.x) >= chargeDistance - 0.02f;
+        body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+        owner.SetPhysicalCollisionWithPlayerEnabled(false);
         isCharging = false;
+
+        if (playerContactAppliedHarm)
+        {
+            ReportOutcome(AttackOutcome.Hit);
+        }
+        else if (hasResolvedPlayerContact)
+        {
+            ReportOutcome(AttackOutcome.Missed);
+        }
+        else if (blockedByObstacle)
+        {
+            ReportOutcome(AttackOutcome.Blocked);
+        }
+        else if (chargeCompleted)
+        {
+            Collider2D playerBody = PlayerBodyCollider;
+            bool outsideOriginalCorridor = playerBody != null &&
+                                           !IsBodyInChargeCorridor(playerBody, chargeStartPosition);
+            ReportOutcome(WasPlayerThreatenedDuringWarning && outsideOriginalCorridor
+                ? AttackOutcome.EvadedByPlayer
+                : AttackOutcome.Missed);
+        }
+        else
+        {
+            ReportOutcome(AttackOutcome.Missed);
+        }
     }
 
-    private void OnCollisionEnter2D(
-        Collision2D collision
-    )
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!isCharging)
+        HandleChargeCollision(collision);
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        HandleChargeCollision(collision);
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandleChargeCollider(other);
+    }
+
+    private void HandleChargeCollision(Collision2D collision)
+    {
+        Collider2D other = collision.collider;
+        if (!isCharging || other == null)
             return;
 
-        Collider2D other =
-            collision.collider;
-
-        if (TryDamagePlayer(other))
+        if (IsPlayerCollider(other))
         {
-            /*
-             * 플레이어를 물었으면
-             * 그 자리에서 돌진 종료.
-             */
-            chargeInterrupted = true;
-
+            ResolvePlayerContact();
             return;
         }
 
-        /*
-         * 벽 등에 충돌하면 돌진 종료.
-         *
-         * 평소 바닥 접촉은 이미 시작 전에
-         * 발생한 충돌이므로 문제가 되지 않는다.
-         */
-        if (IsObstacle(
-            other.gameObject.layer
-        ))
-        {
-            chargeInterrupted = true;
-        }
+        if (IsObstacle(other.gameObject.layer) && IsBlockingSurface(collision))
+            blockedByObstacle = true;
     }
 
-    private void OnCollisionStay2D(
-        Collision2D collision
-    )
+    private bool IsBlockingSurface(Collision2D collision)
     {
-        if (!isCharging)
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            float normalAlongCharge = collision.GetContact(i).normal.x * lockedDirectionX;
+            if (normalAlongCharge < -0.5f)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void HandleChargeCollider(Collider2D other)
+    {
+        if (isCharging && IsPlayerCollider(other))
+            ResolvePlayerContact();
+    }
+
+    private bool IsPlayerCollider(Collider2D other)
+    {
+        return owner != null && owner.Target != null &&
+               (other == owner.TargetBodyCollider ||
+                other.attachedRigidbody != null && other.attachedRigidbody.transform == owner.Target ||
+                other.transform.root == owner.Target);
+    }
+
+    private void ResolvePlayerContact()
+    {
+        if (hasResolvedPlayerContact)
             return;
 
-        /*
-         * 돌진 시작 시점에 이미 플레이어와
-         * 접촉 중인 경우도 대응.
-         */
-        if (TryDamagePlayer(
-            collision.collider
-        ))
-        {
-            chargeInterrupted = true;
-        }
-    }
-
-    private void OnTriggerEnter2D(
-        Collider2D other
-    )
-    {
-        if (!isCharging)
-            return;
-
-        if (TryDamagePlayer(other))
-        {
-            chargeInterrupted = true;
-        }
-    }
-
-    private bool TryDamagePlayer(
-        Collider2D other
-    )
-    {
-        if (hasDamagedPlayer)
-            return false;
-
-        Transform playerRoot =
-            GetPlayerRoot(other);
-
-        if (playerRoot == null)
-            return false;
-
-        IDamageable damageable =
-            playerRoot
-                .GetComponent<IDamageable>();
-
-        if (damageable == null)
-        {
-            damageable =
-                playerRoot
-                    .GetComponentInChildren<IDamageable>();
-        }
-
-        if (damageable == null)
-            return false;
-
-        damageable.TakeDamage(
-            damage
-        );
-
-        hasDamagedPlayer = true;
-
-        NotifyPlayerHit();
-
-        return true;
-    }
-
-    private Transform GetPlayerRoot(
-        Collider2D other
-    )
-    {
-        if (other.CompareTag("Player"))
-        {
-            return other.transform;
-        }
-
-        if (other.attachedRigidbody != null &&
-            other.attachedRigidbody.CompareTag(
-                "Player"
-            ))
-        {
-            return
-                other.attachedRigidbody.transform;
-        }
-
-        Transform root =
-            other.transform.root;
-
-        if (root != null &&
-            root.CompareTag("Player"))
-        {
-            return root;
-        }
-
-        return null;
+        hasResolvedPlayerContact = true;
+        Transform player = owner != null ? owner.Target : null;
+        IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
+        if (damageable == null && player != null)
+            damageable = player.GetComponentInChildren<IDamageable>();
+        playerContactAppliedHarm = damageable != null &&
+                                   damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
     }
 
     private bool IsObstacle(int layer)
     {
-        return
-            (obstacleLayer.value &
-             (1 << layer))
-            != 0;
+        return (obstacleLayer.value & (1 << layer)) != 0;
+    }
+
+    protected override void OnOwnerDeath()
+    {
+        isCharging = false;
+        owner?.SetPhysicalCollisionWithPlayerEnabled(false);
+        if (body != null)
+            body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
     }
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(
-            transform.position,
-            chargeTriggerRange
-        );
+        Gizmos.DrawWireSphere(transform.position, chargeTriggerRange);
     }
 }

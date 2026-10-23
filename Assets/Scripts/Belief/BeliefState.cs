@@ -1,5 +1,5 @@
 public enum BeliefState
 {
-    Active,
+    Maintained,
     Vulnerable
 }

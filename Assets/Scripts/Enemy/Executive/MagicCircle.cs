@@ -1,154 +1,61 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MagicCircle : MonoBehaviour
 {
     private float radius;
-    private EnemyAttack sourceAttack;
 
-    public void Activate(
+    public bool Activate(
         float radius,
         float damage,
         float slowMultiplier,
         float slowDuration,
         float visualDuration,
-        EnemyAttack sourceAttack = null
-    )
+        Collider2D targetBodyCollider)
     {
         this.radius = radius;
-        this.sourceAttack = sourceAttack;
-
-        float diameter =
-            radius * 2f;
-
-        transform.localScale =
-            new Vector3(
-                diameter,
-                diameter,
-                1f
-            );
-
-        ApplyEffect(
-            damage,
-            slowMultiplier,
-            slowDuration
-        );
-
-        Destroy(
-            gameObject,
-            visualDuration
-        );
+        float diameter = radius * 2f;
+        transform.localScale = new Vector3(diameter, diameter, 1f);
+        bool applied = ApplyEffect(damage, slowMultiplier, slowDuration, targetBodyCollider);
+        Destroy(gameObject, visualDuration);
+        return applied;
     }
 
-    private void ApplyEffect(
-        float damage,
-        float slowMultiplier,
-        float slowDuration
-    )
+    private bool ApplyEffect(float damage, float slowMultiplier, float slowDuration, Collider2D targetBodyCollider)
     {
-        Collider2D[] hits =
-            Physics2D.OverlapCircleAll(
-                transform.position,
-                radius
-            );
+        if (targetBodyCollider == null || !targetBodyCollider.enabled)
+            return false;
 
-        /*
-         * Player가 여러 Collider를 가지고 있어도
-         * 한 번만 맞도록 처리.
-         */
-        HashSet<Transform> processedPlayers =
-            new HashSet<Transform>();
+        Vector2 closestPoint = targetBodyCollider.ClosestPoint(transform.position);
+        if ((closestPoint - (Vector2)transform.position).sqrMagnitude > radius * radius)
+            return false;
 
-        foreach (Collider2D hit in hits)
+        Transform playerRoot = targetBodyCollider.attachedRigidbody != null
+            ? targetBodyCollider.attachedRigidbody.transform
+            : targetBodyCollider.transform.root;
+        if (playerRoot == null)
+            return false;
+
+        bool harmfulEffectApplied = false;
+        IDamageable damageable = playerRoot.GetComponent<IDamageable>();
+        if (damageable == null)
+            damageable = playerRoot.GetComponentInChildren<IDamageable>();
+        if (damageable != null)
+            harmfulEffectApplied |= damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+
+        ISlowable slowable = playerRoot.GetComponent<ISlowable>();
+        if (slowable == null)
+            slowable = playerRoot.GetComponentInChildren<ISlowable>();
+        if (slowable != null && slowDuration > 0f && slowMultiplier < 1f)
         {
-            Transform playerRoot =
-                GetPlayerRoot(hit);
-
-            if (playerRoot == null)
-                continue;
-
-            if (!processedPlayers.Add(
-                    playerRoot))
-            {
-                continue;
-            }
-
-            IDamageable damageable =
-                playerRoot
-                    .GetComponent<IDamageable>();
-
-            if (damageable == null)
-            {
-                damageable =
-                    playerRoot
-                        .GetComponentInChildren<IDamageable>();
-            }
-
-            if (damageable != null)
-            {
-                damageable.TakeDamage(
-                    damage
-                );
-
-                sourceAttack?.NotifyProjectilePlayerHit();
-            }
-
-            ISlowable slowable =
-                playerRoot
-                    .GetComponent<ISlowable>();
-
-            if (slowable == null)
-            {
-                slowable =
-                    playerRoot
-                        .GetComponentInChildren<ISlowable>();
-            }
-
-            if (slowable != null)
-            {
-                slowable.ApplySlow(
-                    slowMultiplier,
-                    slowDuration
-                );
-            }
-        }
-    }
-
-    private Transform GetPlayerRoot(
-        Collider2D other
-    )
-    {
-        if (other.CompareTag("Player"))
-        {
-            return other.transform;
+            slowable.ApplySlow(slowMultiplier, slowDuration);
+            harmfulEffectApplied = true;
         }
 
-        if (other.attachedRigidbody != null &&
-            other.attachedRigidbody.CompareTag(
-                "Player"
-            ))
-        {
-            return
-                other.attachedRigidbody.transform;
-        }
-
-        Transform root =
-            other.transform.root;
-
-        if (root != null &&
-            root.CompareTag("Player"))
-        {
-            return root;
-        }
-
-        return null;
+        return harmfulEffectApplied;
     }
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(
-            transform.position,
-            radius
-        );
+        Gizmos.DrawWireSphere(transform.position, radius);
     }
 }

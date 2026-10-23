@@ -2,38 +2,18 @@ using UnityEngine;
 
 public abstract class BeliefCondition : MonoBehaviour
 {
-    [SerializeField]
-    private BeliefController beliefController;
+    [SerializeField] private BeliefController beliefController;
 
-    protected BeliefController BeliefController =>
-        beliefController;
+    protected BeliefController Controller => beliefController;
 
     protected virtual void Awake()
     {
         if (beliefController == null)
-        {
-            beliefController =
-                GetComponent<BeliefController>();
-        }
-    }
-
-    protected bool ReduceBelief()
-    {
-        if (beliefController == null)
-            return false;
-
-        beliefController.ReduceBelief();
-
-        return true;
+            beliefController = GetComponent<BeliefController>();
     }
 
     protected bool ReduceBelief(float amount)
     {
-        if (beliefController == null)
-            return false;
-
-        beliefController.ReduceBelief(amount);
-
-        return true;
+        return beliefController != null && beliefController.ReduceBelief(amount);
     }
 }

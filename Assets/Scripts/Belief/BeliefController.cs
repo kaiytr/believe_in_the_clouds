@@ -2,161 +2,112 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-public class BeliefController : MonoBehaviour
+public sealed class BeliefController : MonoBehaviour
 {
-    [Header("Identity")]
-    [SerializeField] private string beliefId = "belief";
-    [SerializeField] private string beliefName = "Belief";
-
-    [TextArea]
-    [SerializeField] private string beliefDescription;
-
-    [Header("Belief")]
-    [SerializeField] private float maxBelief = 100f;
-    [SerializeField] private float currentBelief = 100f;
-    [SerializeField] private float defaultBeliefLossAmount = 25f;
-
-    [Header("Damage")]
-    [Range(0f, 1f)]
-    [SerializeField] private float beliefDamageReduction = 0.4f;
-    [SerializeField] private float vulnerableDamageMultiplier = 2f;
-
-    [Header("Vulnerability")]
-    [SerializeField] private float vulnerableDuration = 5f;
-
-    [Range(0f, 1f)]
-    [SerializeField] private float recoveryRatio = 1f;
-
-    [Header("Debug")]
+    [SerializeField] private BeliefType beliefType = BeliefType.Unassigned;
+    [SerializeField] private BeliefProfileCatalog profileCatalog;
     [SerializeField] private bool logStateChanges;
 
+    private BeliefProfile profile;
     private EnemyUnit owner;
     private Coroutine vulnerabilityRoutine;
-    private BeliefState currentState = BeliefState.Active;
+    private float currentBelief;
+    private BeliefState currentState = BeliefState.Maintained;
     private bool stopped;
 
-    public event Action<BeliefController, float, float> OnBeliefChanged;
-    public event Action<BeliefController> OnBeliefBroken;
-    public event Action<BeliefController> OnVulnerableStarted;
-    public event Action<BeliefController> OnVulnerableEnded;
-    public event Action<BeliefController> OnBeliefRecovered;
+    public event Action<BeliefController, float, float> BeliefChanged;
+    public event Action<BeliefController, BeliefState> StateChanged;
 
-    public string BeliefId => beliefId;
-    public string BeliefName => beliefName;
-    public string BeliefDescription => beliefDescription;
+    public BeliefType Type => beliefType == BeliefType.Unassigned && profile != null
+        ? profile.Type
+        : beliefType;
+    public BeliefProfile Profile => profile;
     public float CurrentBelief => currentBelief;
-    public float MaxBelief => maxBelief;
-    public float NormalizedBelief =>
-        maxBelief <= 0f
-            ? 0f
-            : Mathf.Clamp01(currentBelief / maxBelief);
-    public float DefaultBeliefLossAmount => defaultBeliefLossAmount;
-    public float BeliefDamageReduction => beliefDamageReduction;
-    public float VulnerableDamageMultiplier => vulnerableDamageMultiplier;
-    public float VulnerableDuration => vulnerableDuration;
-    public float RecoveryRatio => recoveryRatio;
+    public float MaxBelief => profile != null ? profile.MaxBelief : 0f;
+    public float NormalizedBelief => MaxBelief <= 0f ? 0f : Mathf.Clamp01(currentBelief / MaxBelief);
     public BeliefState CurrentState => currentState;
-    public bool IsVulnerable =>
-        currentState == BeliefState.Vulnerable;
+    public bool IsVulnerable => currentState == BeliefState.Vulnerable;
     public bool IsStopped => stopped;
+    public bool IsConfigured => profile != null;
 
     private void Awake()
     {
         owner = GetComponent<EnemyUnit>();
-
-        SanitizeValues();
-
-        currentBelief = maxBelief;
+        ConfigureProfile();
     }
 
-    private void OnValidate()
+    private void ConfigureProfile()
     {
-        SanitizeValues();
+        if (profileCatalog == null)
+        {
+            Debug.LogError($"{name}: BeliefProfileCatalog is required.", this);
+            return;
+        }
+
+        if (!profileCatalog.IsValid(out string catalogError))
+        {
+            Debug.LogError($"{name}: Invalid belief profile catalog. {catalogError}", this);
+            return;
+        }
+
+        if (beliefType == BeliefType.Unassigned)
+        {
+            Debug.LogWarning($"{name}: Belief type is Unassigned; using the rear-position default profile.", this);
+        }
+
+        profile = profileCatalog.Resolve(beliefType);
+        if (profile == null)
+        {
+            Debug.LogError($"{name}: No profile for belief type {beliefType}.", this);
+            return;
+        }
+
+        if (!profile.IsValid(out string profileError))
+        {
+            Debug.LogError($"{name}: Invalid profile for belief type {beliefType}. {profileError}", this);
+            profile = null;
+            return;
+        }
+
+        if (beliefType != BeliefType.Unassigned && profile.Type != beliefType)
+        {
+            Debug.LogError($"{name}: Resolved profile type does not match {beliefType}.", this);
+            profile = null;
+            return;
+        }
+
+        currentBelief = profile.MaxBelief;
+        currentState = BeliefState.Maintained;
     }
 
-    public void ReduceBelief()
+    public bool ReduceBelief(float amount)
     {
-        ReduceBelief(defaultBeliefLossAmount);
-    }
-
-    public void ReduceBelief(float amount)
-    {
-        if (stopped)
-            return;
-
-        if (owner != null && owner.IsDead)
-            return;
-
-        if (currentState != BeliefState.Active)
-            return;
-
-        if (amount <= 0f)
-            return;
+        if (stopped || IsVulnerable || profile == null || amount <= 0f)
+            return false;
 
         float previousBelief = currentBelief;
+        currentBelief = Mathf.Max(0f, currentBelief - amount);
+        if (Mathf.Approximately(previousBelief, currentBelief))
+            return false;
 
-        currentBelief =
-            Mathf.Max(
-                currentBelief - amount,
-                0f
-            );
-
-        if (!Mathf.Approximately(
-                previousBelief,
-                currentBelief))
-        {
-            RaiseBeliefChanged();
-        }
-
-        if (currentBelief <= 0f)
-        {
-            BreakBelief();
-        }
-    }
-
-    public void ResetBelief()
-    {
-        if (stopped)
-            return;
-
-        if (vulnerabilityRoutine != null)
-        {
-            StopCoroutine(vulnerabilityRoutine);
-            vulnerabilityRoutine = null;
-        }
-
-        bool wasVulnerable = IsVulnerable;
-        currentState = BeliefState.Active;
-        currentBelief = maxBelief;
-        if (wasVulnerable)
-            OnVulnerableEnded?.Invoke(this);
         RaiseBeliefChanged();
+        if (currentBelief <= 0f)
+            StartVulnerability();
+        return true;
     }
 
-    public float ApplyIncomingDamageModifier(float rawDamage)
+    public float ApplyIncomingDamageModifier(DamageInfo damageInfo)
     {
-        if (rawDamage <= 0f)
+        if (damageInfo.Amount <= 0f)
             return 0f;
 
-        if (stopped)
-            return rawDamage;
+        if (damageInfo.Source != DamageSource.PlayerOwned || stopped || profile == null)
+            return damageInfo.Amount;
 
-        if (currentState == BeliefState.Vulnerable)
-        {
-            return rawDamage *
-                   Mathf.Max(
-                       0f,
-                       vulnerableDamageMultiplier
-                   );
-        }
-
-        float safeReduction =
-            Mathf.Clamp01(
-                beliefDamageReduction
-            );
-
-        return rawDamage *
-               (1f - safeReduction);
+        float multiplier = IsVulnerable
+            ? profile.VulnerablePlayerDamageMultiplier
+            : profile.MaintainedPlayerDamageMultiplier;
+        return damageInfo.Amount * multiplier;
     }
 
     public void StopBeliefSystem()
@@ -165,7 +116,6 @@ public class BeliefController : MonoBehaviour
             return;
 
         stopped = true;
-
         if (vulnerabilityRoutine != null)
         {
             StopCoroutine(vulnerabilityRoutine);
@@ -173,182 +123,43 @@ public class BeliefController : MonoBehaviour
         }
     }
 
-    [ContextMenu("Debug/Reduce Belief By Default Amount")]
-    private void DebugReduceBelief()
+    private void StartVulnerability()
     {
-        ReduceBelief();
-    }
-
-    [ContextMenu("Debug/Break Belief")]
-    private void DebugBreakBelief()
-    {
-        ReduceBelief(maxBelief);
-    }
-
-    private void BreakBelief()
-    {
-        if (stopped)
-            return;
-
-        if (currentState != BeliefState.Active)
+        if (stopped || IsVulnerable || profile == null)
             return;
 
         currentBelief = 0f;
-
-        LogState(
-            "Belief Broken"
-        );
-
-        OnBeliefBroken?.Invoke(this);
-
-        StartVulnerability();
-    }
-
-    private void StartVulnerability()
-    {
-        if (stopped)
-            return;
-
-        if (vulnerabilityRoutine != null)
-            return;
-
         currentState = BeliefState.Vulnerable;
-
-        LogState(
-            "Vulnerable Started"
-        );
-
-        OnVulnerableStarted?.Invoke(this);
-
-        vulnerabilityRoutine =
-            StartCoroutine(
-                VulnerabilityRoutine()
-            );
+        LogState("Vulnerable started");
+        StateChanged?.Invoke(this, currentState);
+        RaiseBeliefChanged();
+        vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
     }
 
     private IEnumerator VulnerabilityRoutine()
     {
-        float duration =
-            Mathf.Max(
-                0f,
-                vulnerableDuration
-            );
-
-        if (duration > 0f)
-        {
-            yield return new WaitForSeconds(
-                duration
-            );
-        }
-
+        yield return new WaitForSeconds(profile.VulnerableDuration);
         vulnerabilityRoutine = null;
 
-        if (stopped)
+        if (stopped || owner != null && owner.IsDead)
             yield break;
 
-        if (owner != null && owner.IsDead)
-            yield break;
-
-        EndVulnerabilityAndRecover();
-    }
-
-    private void EndVulnerabilityAndRecover()
-    {
-        if (currentState != BeliefState.Vulnerable)
-            return;
-
-        currentState = BeliefState.Active;
-
-        LogState(
-            "Vulnerable Ended"
-        );
-
-        OnVulnerableEnded?.Invoke(this);
-
-        float recoveredBelief =
-            maxBelief *
-            Mathf.Clamp01(
-                recoveryRatio
-            );
-
-        currentBelief =
-            Mathf.Clamp(
-                recoveredBelief,
-                0f,
-                maxBelief
-            );
-
+        currentBelief = profile.MaxBelief * profile.RecoveryRatio;
+        currentState = BeliefState.Maintained;
+        LogState("Vulnerable ended; belief recovered");
+        StateChanged?.Invoke(this, currentState);
         RaiseBeliefChanged();
-
-        LogState(
-            "Belief Recovered"
-        );
-
-        OnBeliefRecovered?.Invoke(this);
     }
 
     private void RaiseBeliefChanged()
     {
-        OnBeliefChanged?.Invoke(
-            this,
-            currentBelief,
-            maxBelief
-        );
-    }
-
-    private void SanitizeValues()
-    {
-        maxBelief =
-            Mathf.Max(
-                1f,
-                maxBelief
-            );
-
-        currentBelief =
-            Mathf.Clamp(
-                currentBelief,
-                0f,
-                maxBelief
-            );
-
-        defaultBeliefLossAmount =
-            Mathf.Max(
-                0f,
-                defaultBeliefLossAmount
-            );
-
-        beliefDamageReduction =
-            Mathf.Clamp01(
-                beliefDamageReduction
-            );
-
-        vulnerableDamageMultiplier =
-            Mathf.Max(
-                0f,
-                vulnerableDamageMultiplier
-            );
-
-        vulnerableDuration =
-            Mathf.Max(
-                0f,
-                vulnerableDuration
-            );
-
-        recoveryRatio =
-            Mathf.Clamp01(
-                recoveryRatio
-            );
+        BeliefChanged?.Invoke(this, currentBelief, MaxBelief);
     }
 
     private void LogState(string message)
     {
-        if (!logStateChanges)
-            return;
-
-        Debug.Log(
-            $"[{name}] {message}: {beliefName} ({currentBelief}/{maxBelief})",
-            this
-        );
+        if (logStateChanges)
+            Debug.Log($"[{name}] {message}: {Type} ({currentBelief}/{MaxBelief})", this);
     }
 
     private void OnDisable()
