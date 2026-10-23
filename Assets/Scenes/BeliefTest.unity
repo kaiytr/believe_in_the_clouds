@@ -164,37 +164,16 @@ GameObject:
   - component: {fileID: 293926172}
   - component: {fileID: 293926171}
   - component: {fileID: 293926170}
-  - component: {fileID: 293926169}
+  - component: {fileID: 293926178}
+  - component: {fileID: 293926177}
+  - component: {fileID: 293926176}
   m_Layer: 0
   m_Name: Believer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &293926169
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293926168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36261bf754d79d840916931fbd95caee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ThrowStoneAttack
-  damage: 10
-  cooldown: 2.5
-  windupTime: 0.8
-  recoveryTime: 0.5
-  attackRange: 6
-  projectilePrefab: {fileID: 0}
-  projectileSpawnPoint: {fileID: 0}
-  projectileSpeed: 8
-  dangerIndicatorPrefab: {fileID: 0}
-  indicatorWidth: 0.3
-  verticalAttackTolerance: 1.5
+  m_IsActive: 1
 --- !u!114 &293926170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,11 +184,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
   moveSpeed: 2.5
   targetSearchInterval: 0.5
+  bodyCollider: {fileID: 293926172}
   destroyDelay: 1.5
   preferredMinDistance: 4.5
   preferredMaxDistance: 5.5
@@ -223,7 +203,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36261bf754d79d840916931fbd95caee, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ThrowStoneAttack
   damage: 10
   cooldown: 2.5
@@ -376,6 +356,46 @@ Transform:
   - {fileID: 972868828}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &293926176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293926168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
+--- !u!114 &293926177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293926168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aebdd9af67c8431cba377f3b59cfa0c4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DodgeAttackBeliefCondition
+  beliefController: {fileID: 293926178}
+--- !u!114 &293926178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293926168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
+  beliefType: 2
+  profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
+  logStateChanges: 0
 --- !u!1 &613699154
 GameObject:
   m_ObjectHideFlags: 0
@@ -388,8 +408,6 @@ GameObject:
   - component: {fileID: 613699156}
   - component: {fileID: 613699155}
   - component: {fileID: 613699158}
-  - component: {fileID: 2088011001}
-  - component: {fileID: 2088011002}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -481,7 +499,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -586,10 +604,10 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 789634364}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &789634367
@@ -672,7 +690,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &972868830
@@ -864,13 +882,16 @@ GameObject:
   - component: {fileID: 1535075229}
   - component: {fileID: 1535075228}
   - component: {fileID: 1535075227}
+  - component: {fileID: 1535075235}
+  - component: {fileID: 1535075234}
+  - component: {fileID: 1535075233}
   m_Layer: 0
   m_Name: Executive
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1535075227
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -881,11 +902,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60b0ae2ecb4f1a04f86923b2b1a1b1b3, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
   moveSpeed: 2.5
   targetSearchInterval: 0.5
+  bodyCollider: {fileID: 1535075229}
   destroyDelay: 1.5
   retreatStartDistance: 3
   retreatEndDistance: 5
@@ -899,7 +921,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ceac2c48228f5f44840c942b5bcdd11, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::MagicCircleAttack
   damage: 5
   cooldown: 4
@@ -1026,7 +1048,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.92549026, g: 0.8117648, b: 0.454902, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -1044,13 +1066,53 @@ Transform:
   m_GameObject: {fileID: 1535075226}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.59, y: -1.04978, z: 0}
+  m_LocalPosition: {x: 6.5, y: -1.04978, z: 0}
   m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1879635391}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1535075233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1535075226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
+--- !u!114 &1535075234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1535075226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aebdd9af67c8431cba377f3b59cfa0c4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DodgeAttackBeliefCondition
+  beliefController: {fileID: 1535075235}
+--- !u!114 &1535075235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1535075226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
+  beliefType: 2
+  profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
+  logStateChanges: 0
 --- !u!1 &1586999224
 GameObject:
   m_ObjectHideFlags: 0
@@ -1204,7 +1266,7 @@ Transform:
   m_GameObject: {fileID: 1586999224}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.5, y: -1.5, z: 0}
+  m_LocalPosition: {x: -4, y: -1.5, z: 0}
   m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1221,7 +1283,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ddaef1ce6251054c980874833fe675b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyTestPlayerMove
   moveSpeed: 5
   jumpPower: 10
@@ -1240,11 +1302,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHp: 100
   invulnerabilityDuration: 1
   blinkInterval: 0.1
+  bodyCollider: {fileID: 1586999227}
 --- !u!1 &1879635390
 GameObject:
   m_ObjectHideFlags: 0
@@ -1262,7 +1325,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1879635391
 Transform:
   m_ObjectHideFlags: 0
@@ -1288,7 +1351,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &1879635393
@@ -1342,13 +1405,11 @@ GameObject:
   - component: {fileID: 1928112226}
   - component: {fileID: 1928112225}
   - component: {fileID: 1928112224}
-  - component: {fileID: 201009001}
-  - component: {fileID: 201009002}
-  - component: {fileID: 201009003}
-  - component: {fileID: 201009004}
-  - component: {fileID: 201009005}
+  - component: {fileID: 1928112232}
+  - component: {fileID: 1928112231}
+  - component: {fileID: 1928112230}
   m_Layer: 0
-  m_Name: Belief Test Dummy
+  m_Name: Dog
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1363,12 +1424,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1928112223}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f48b7649382e48f9a42f9eae2f7fb56e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeliefTestDummy
+  m_Script: {fileID: 11500000, guid: ad48d021300f9ac46ab9e87e975c6c8d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DogEnemy
   maxHp: 30
   moveSpeed: 4
   targetSearchInterval: 0.5
+  bodyCollider: {fileID: 1928112226}
   destroyDelay: 1.5
   chaseStopDistance: 0.6
 --- !u!114 &1928112225
@@ -1378,10 +1440,10 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1928112223}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f022426475fc3e646951b6709093e45b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DogChargeAttack
   damage: 15
   cooldown: 3
@@ -1448,7 +1510,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 0
+  m_GravityScale: 1.5
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -1528,46 +1590,14 @@ Transform:
   m_GameObject: {fileID: 1928112223}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.5, z: 0}
-  m_LocalScale: {x: 1.5, y: 2, z: 1}
+  m_LocalPosition: {x: -1, y: 0, z: 0}
+  m_LocalScale: {x: 1.2, y: 0.8, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 789634365}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2088011001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 613699154}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c2eb5bc5f944fb9aba4a41c440fad67, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeliefTestSceneController
-  player: {fileID: 1586999230}
-  dummy: {fileID: 1928112224}
-  driver: {fileID: 2088011002}
---- !u!114 &2088011002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 613699154}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2294877f2a124e13be7af97bcc07b5da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeliefTestDriver
-  player: {fileID: 1586999230}
-  dummy: {fileID: 1928112224}
-  belief: {fileID: 201009001}
-  playerSpeed: 5
-  hitDistance: 1.2
---- !u!114 &201009001
+--- !u!114 &1928112230
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1576,38 +1606,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1928112223}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeliefController
-  beliefId: belief_test
-  beliefName: Test Belief
-  beliefDescription: Selected test condition
-  maxBelief: 100
-  currentBelief: 100
-  defaultBeliefLossAmount: 25
-  beliefDamageReduction: 0
-  vulnerableDamageMultiplier: 2
-  vulnerableDuration: 3
-  recoveryRatio: 1
-  logStateChanges: 1
---- !u!114 &201009002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1928112223}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5383f8a01af840b5b7c740f49d818513, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BeliefTestAttack
-  damage: 10
-  cooldown: 0.35
-  windupTime: 0.8
-  recoveryTime: 0.35
-  hitRange: 4
---- !u!114 &201009003
+  m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
+--- !u!114 &1928112231
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1617,11 +1619,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b14d04a33c6742cda995e0e1a2db54c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RearPositionBeliefCondition
-  beliefController: {fileID: 201009001}
-  rearCheckInterval: 0.05
---- !u!114 &201009004
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::RearPositionBeliefCondition
+  beliefController: {fileID: 1928112232}
+  enemyBodyCollider: {fileID: 1928112226}
+  maxRearDistance: 4
+  maxVerticalDifference: 1.5
+--- !u!114 &1928112232
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1630,24 +1634,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1928112223}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aebdd9af67c8431cba377f3b59cfa0c4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DodgeAttackBeliefCondition
-  beliefController: {fileID: 201009001}
---- !u!114 &201009005
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1928112223}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 33f1ea6dfb4c4d22a3107560448c8184, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SequentialFlankAttackBeliefCondition
-  beliefController: {fileID: 201009001}
-  sequenceWindow: 1.5
+  m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
+  beliefType: 1
+  profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
+  logStateChanges: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

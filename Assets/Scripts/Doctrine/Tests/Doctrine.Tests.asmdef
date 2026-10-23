@@ -2,7 +2,7 @@
     "name": "Doctrine.Tests",
     "rootNamespace": "",
     "references": [
-        "Game.Runtime",
+        "BelieveInTheClouds.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -9,5 +9,7 @@ public enum EnemyState
     Attack,
     Recovery,
 
+    Vulnerable,
+
     Dead
 }

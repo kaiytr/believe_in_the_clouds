@@ -7,61 +7,39 @@ public class StoneProjectile : MonoBehaviour
     [Header("Collision")]
     [SerializeField] private LayerMask obstacleLayer;
 
-    private Rigidbody2D rb;
-
+    private Rigidbody2D body;
     private Vector2 spawnPosition;
-
+    private Vector2 direction;
     private float damage;
     private float maxDistance;
-    private EnemyAttack sourceAttack;
-
+    private ThrowStoneAttack sourceAttack;
     private bool initialized;
-    private bool attackResultResolved;
+    private bool resultResolved;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        body = GetComponent<Rigidbody2D>();
     }
 
-    public void Initialize(
-        Vector2 direction,
-        float speed,
-        float damage,
-        float maxDistance,
-        EnemyAttack sourceAttack = null
-    )
+    public void Initialize(Vector2 direction, float speed, float damage, float maxDistance, ThrowStoneAttack sourceAttack)
     {
+        this.direction = direction.normalized;
         this.damage = damage;
         this.maxDistance = maxDistance;
         this.sourceAttack = sourceAttack;
+        spawnPosition = body.position;
+        initialized = true;
 
-        spawnPosition = rb.position;
-
-        Vector2 normalizedDirection =
-            direction.normalized;
-
-        if (speed <= 0f || maxDistance <= 0f || normalizedDirection.sqrMagnitude <= 0.0001f)
+        if (speed <= 0f || maxDistance <= 0f || this.direction.sqrMagnitude <= 0.0001f)
         {
-            initialized = true;
-            ResolveAttackResult(false);
+            Resolve(AttackOutcome.Missed);
             Destroy(gameObject);
             return;
         }
 
-        rb.linearVelocity =
-            normalizedDirection * speed;
-
-        initialized = true;
-
-        float safetyLifetime =
-            maxDistance /
-            Mathf.Max(speed, 0.01f)
-            + 1f;
-
-        Destroy(
-            gameObject,
-            safetyLifetime
-        );
+        body.linearVelocity = this.direction * speed;
+        float safetyLifetime = maxDistance / speed + 1f;
+        Destroy(gameObject, safetyLifetime);
     }
 
     private void FixedUpdate()
@@ -69,121 +47,60 @@ public class StoneProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        float traveledDistance =
-            Vector2.Distance(
-                spawnPosition,
-                rb.position
-            );
-
-        if (traveledDistance >= maxDistance)
+        if (sourceAttack == null || sourceAttack.Owner == null || sourceAttack.Owner.IsDead)
         {
-            ResolveAttackResult(false);
+            Resolve(AttackOutcome.Cancelled);
+            Destroy(gameObject);
+            return;
+        }
+
+        float travelled = Vector2.Dot(body.position - spawnPosition, direction);
+        if (travelled >= maxDistance)
+        {
+            Resolve(sourceAttack.GetOutcomeAtMaximumRange());
             Destroy(gameObject);
         }
     }
 
-    private void OnTriggerEnter2D(
-        Collider2D other
-    )
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (TryGetPlayer(
-            other,
-            out Transform playerRoot))
+        if (sourceAttack == null || sourceAttack.Owner == null)
+            return;
+
+        if (other == sourceAttack.Owner.TargetBodyCollider)
         {
-            IDamageable damageable =
-                playerRoot.GetComponent<IDamageable>();
+            Transform player = sourceAttack.Owner.Target;
+            IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
+            if (damageable == null && player != null)
+                damageable = player.GetComponentInChildren<IDamageable>();
 
-            if (damageable == null)
-            {
-                damageable =
-                    playerRoot
-                        .GetComponentInChildren<IDamageable>();
-            }
-
-            if (damageable != null)
-            {
-                damageable.TakeDamage(
-                    damage
-                );
-
-                ResolveAttackResult(true);
-            }
-
+            bool applied = damageable != null &&
+                           damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+            Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed);
             Destroy(gameObject);
-
             return;
         }
 
-        if (IsObstacle(
-            other.gameObject.layer))
+        if ((obstacleLayer.value & (1 << other.gameObject.layer)) != 0)
         {
-            ResolveAttackResult(false);
+            Resolve(AttackOutcome.Blocked);
             Destroy(gameObject);
         }
     }
 
-    private void ResolveAttackResult(bool playerHit)
+    private void Resolve(AttackOutcome outcome)
     {
-        if (attackResultResolved)
+        if (resultResolved)
             return;
-        attackResultResolved = true;
+
+        resultResolved = true;
         if (sourceAttack != null)
-            sourceAttack.ResolvePendingHitResult(playerHit);
+            sourceAttack.ResolvePendingHitResult(outcome);
     }
 
     private void OnDestroy()
     {
-        if (initialized && !attackResultResolved)
-            ResolveAttackResult(false);
-    }
-
-    private bool TryGetPlayer(
-        Collider2D other,
-        out Transform playerRoot
-    )
-    {
-        playerRoot = null;
-
-        // Collider 자체가 Player인 경우
-        if (other.CompareTag("Player"))
-        {
-            playerRoot = other.transform;
-
-            return true;
-        }
-
-        // Rigidbody 루트가 Player인 경우
-        if (other.attachedRigidbody != null &&
-            other.attachedRigidbody.CompareTag(
-                "Player"
-            ))
-        {
-            playerRoot =
-                other.attachedRigidbody.transform;
-
-            return true;
-        }
-
-        // 계층 최상단이 Player인 경우
-        Transform root =
-            other.transform.root;
-
-        if (root != null &&
-            root.CompareTag("Player"))
-        {
-            playerRoot = root;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private bool IsObstacle(int layer)
-    {
-        return
-            (obstacleLayer.value &
-             (1 << layer))
-            != 0;
+        if (initialized && !resultResolved)
+            Resolve(AttackOutcome.Missed);
     }
 }

@@ -1,33 +1,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DodgeAttackBeliefCondition : BeliefCondition
+public sealed class DodgeAttackBeliefCondition : BeliefCondition
 {
-    private readonly HashSet<EnemyAttack> subscribedAttacks =
-        new HashSet<EnemyAttack>();
-
-    private void OnEnable()
-    {
-        SubscribeToAttacks();
-    }
+    private readonly HashSet<EnemyAttack> subscribedAttacks = new HashSet<EnemyAttack>();
 
     private void Start()
-    {
-        SubscribeToAttacks();
-    }
-
-    private void SubscribeToAttacks()
     {
         foreach (EnemyAttack attack in GetComponents<EnemyAttack>())
         {
             if (attack != null && subscribedAttacks.Add(attack))
-                attack.OnPlayerDodged += HandlePlayerDodged;
+                attack.OutcomeReported += HandleOutcome;
         }
     }
 
-    private void HandlePlayerDodged(EnemyAttack attack)
+    private void HandleOutcome(EnemyAttack attack, AttackOutcome outcome)
     {
-        ReduceBelief();
+        if (outcome != AttackOutcome.EvadedByPlayer ||
+            Controller == null || Controller.Profile == null)
+        {
+            return;
+        }
+
+        ReduceBelief(Controller.Profile.ReductionPerEvade);
     }
 
     private void OnDisable()
@@ -35,7 +30,7 @@ public class DodgeAttackBeliefCondition : BeliefCondition
         foreach (EnemyAttack attack in subscribedAttacks)
         {
             if (attack != null)
-                attack.OnPlayerDodged -= HandlePlayerDodged;
+                attack.OutcomeReported -= HandleOutcome;
         }
 
         subscribedAttacks.Clear();

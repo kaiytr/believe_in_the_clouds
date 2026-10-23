@@ -1,94 +1,71 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-public class RearPositionBeliefCondition : BeliefCondition
+public sealed class RearPositionBeliefCondition : BeliefCondition
 {
-    [SerializeField, Min(0f)]
-    private float rearCheckInterval = 0.05f;
+    [SerializeField] private Collider2D enemyBodyCollider;
+    [SerializeField, Min(0f)] private float maxRearDistance = 4f;
+    [SerializeField, Min(0f)] private float maxVerticalDifference = 1.5f;
 
     private EnemyUnit owner;
-    private Transform player;
-    private float nextCheckTime;
-    private int lastPlayerSide;
-    private bool hasReducedForCurrentRearEntry;
-    private int lastFacingDirection;
-    private bool initialized;
 
-    private void OnEnable()
-    {
-        nextCheckTime = 0f;
-        lastPlayerSide = 0;
-        lastFacingDirection = 0;
-        hasReducedForCurrentRearEntry = false;
-        initialized = false;
-    }
+    public float MaxRearDistance => maxRearDistance;
+    public float MaxVerticalDifference => maxVerticalDifference;
 
     protected override void Awake()
     {
         base.Awake();
         owner = GetComponent<EnemyUnit>();
+        if (enemyBodyCollider == null)
+            enemyBodyCollider = GetComponent<Collider2D>();
     }
 
     private void Update()
     {
-        if (owner == null || owner.IsDead || Time.time < nextCheckTime)
-            return;
-
-        nextCheckTime = Time.time + rearCheckInterval;
-
-        if (player == null || !player.gameObject.activeInHierarchy)
+        if (owner == null || owner.IsDead || Controller == null ||
+            Controller.IsVulnerable || Controller.Profile == null)
         {
-            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-            player = playerObject != null ? playerObject.transform : null;
-        }
-
-        if (player == null)
-            return;
-
-        int playerSide = GetSide(player.position.x - transform.position.x);
-        int facingDirection = GetFacingDirection();
-
-        if (!initialized)
-        {
-            lastPlayerSide = playerSide;
-            lastFacingDirection = facingDirection;
-            initialized = true;
             return;
         }
 
-        bool crossedFromFrontToBack =
-            lastPlayerSide == lastFacingDirection &&
-            playerSide != 0 &&
-            playerSide != lastFacingDirection;
-        bool enemyTurnedAwayFromPlayer =
-            facingDirection != lastFacingDirection &&
-            playerSide != 0 &&
-            playerSide != facingDirection;
+        Collider2D playerBodyCollider = owner.TargetBodyCollider;
+        if (enemyBodyCollider == null || playerBodyCollider == null)
+            return;
 
-        bool enteredRear =
-            crossedFromFrontToBack ||
-            enemyTurnedAwayFromPlayer;
-        if (enteredRear && !hasReducedForCurrentRearEntry)
+        if (!IsWithinRearRange(
+                enemyBodyCollider.bounds,
+                playerBodyCollider.bounds,
+                owner.FacingDirection,
+                maxRearDistance,
+                maxVerticalDifference))
         {
-            ReduceBelief();
-            hasReducedForCurrentRearEntry = true;
-        }
-        else if (playerSide == facingDirection)
-        {
-            hasReducedForCurrentRearEntry = false;
+            return;
         }
 
-        if (playerSide != 0)
-            lastPlayerSide = playerSide;
-        lastFacingDirection = facingDirection;
+        ReduceBelief(Controller.Profile.ReductionPerSecond * Time.deltaTime);
     }
 
-    private int GetFacingDirection()
+    public static bool IsWithinRearRange(
+        Bounds enemyBounds,
+        Bounds playerBounds,
+        float facingDirection,
+        float rearDistance,
+        float verticalDifference)
     {
-        return transform.localScale.x >= 0f ? 1 : -1;
-    }
+        if (Mathf.Approximately(enemyBounds.center.x, playerBounds.center.x) ||
+            Mathf.Abs(enemyBounds.center.y - playerBounds.center.y) > verticalDifference)
+        {
+            return false;
+        }
 
-    private static int GetSide(float offset)
-    {
-        return Mathf.Abs(offset) < 0.01f ? 0 : (offset > 0f ? 1 : -1);
+        bool playerOnLeft = playerBounds.center.x < enemyBounds.center.x;
+        bool playerIsBehind = facingDirection >= 0f ? playerOnLeft : !playerOnLeft;
+        if (!playerIsBehind)
+            return false;
+
+        float horizontalGap = facingDirection >= 0f
+            ? Mathf.Max(0f, enemyBounds.min.x - playerBounds.max.x)
+            : Mathf.Max(0f, playerBounds.min.x - enemyBounds.max.x);
+
+        return horizontalGap <= rearDistance;
     }
 }
