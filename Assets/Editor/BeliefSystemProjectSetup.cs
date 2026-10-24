@@ -157,6 +157,9 @@ public static class BeliefSystemProjectSetup
             controller = enemy.AddComponent<BeliefController>();
         SerializedObject controllerData = new SerializedObject(controller);
         controllerData.FindProperty("beliefType").enumValueIndex = (int)type;
+        SerializedProperty candidates = controllerData.FindProperty("beliefTypeCandidates");
+        if (candidates != null)
+            candidates.ClearArray();
         controllerData.FindProperty("profileCatalog").objectReferenceValue = catalog;
         controllerData.ApplyModifiedPropertiesWithoutUndo();
 
