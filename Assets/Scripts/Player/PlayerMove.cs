@@ -21,6 +21,15 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private float speedMultiplier = 1f;
     private float slowEndTime;
 
+    /// <summary>
+    /// true면 이동 입력/방향 전환을 잠그고 Rigidbody 속도를 덮어쓰지 않는다.
+    /// PlayerAttack이 콤보 도중 전진(lunge) 속도를 직접 넣기 위한 용도다.
+    /// </summary>
+    public bool ControlLocked { get; set; }
+
+    /// <summary>바닥에 닿아 있는지. 공중 공격 가능 여부 판단용.</summary>
+    public bool IsGrounded => isGrounded;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -31,16 +40,19 @@ public class PlayerMove : MonoBehaviour, ISlowable
         UpdateSlow();
 
         // 입력은 렌더 프레임에서만 읽는다.
-        moveInput = Input.GetAxisRaw("Horizontal");
+        if (!ControlLocked)
+            moveInput = Input.GetAxisRaw("Horizontal");
+        else
+            moveInput = 0f;
 
         // 점프 입력 예약 (실제 물리는 FixedUpdate에서 처리).
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (!ControlLocked && Input.GetKeyDown(KeyCode.Space))
         {
             jumpRequested = true;
         }
 
-        // 플레이어 방향 전환
-        if (moveInput != 0)
+        // 플레이어 방향 전환 (공격 중에는 고정된 타격 방향 유지).
+        if (!ControlLocked && moveInput != 0)
         {
             Vector3 scale = transform.localScale;
 
@@ -70,11 +82,14 @@ public class PlayerMove : MonoBehaviour, ISlowable
             }
         }
 
-        // 좌우 이동
-        rb.linearVelocity = new Vector2(
-            moveInput * moveSpeed * speedMultiplier,
-            rb.linearVelocity.y
-        );
+        // 좌우 이동 (공격이 전진 속도를 직접 넣는 동안은 덮어쓰지 않음)
+        if (!ControlLocked)
+        {
+            rb.linearVelocity = new Vector2(
+                moveInput * moveSpeed * speedMultiplier,
+                rb.linearVelocity.y
+            );
+        }
     }
 
     public void ApplySlow(float newSpeedMultiplier, float duration)
