@@ -36,6 +36,13 @@ public class DoctrineManager : MonoBehaviour
     private readonly List<ActiveDoctrine> activeDoctrines = new List<ActiveDoctrine>();
     private int notifyDepth;
 
+    // UI 표시 전용 이벤트. 판정/실행 로직은 이 이벤트에 의존하지 않는다.
+    // (BeliefView와 같은 원칙: View는 표시만 한다)
+    public event Action<ActiveDoctrine> Activated;
+    public event Action<ActiveDoctrine> Deactivated;
+    public event Action<ActiveDoctrine, GameObject> Triggered;
+    public event Action Cleared;
+
     public IReadOnlyList<ActiveDoctrine> ActiveDoctrines => activeDoctrines;
     public int ActiveCount => activeDoctrines.Count;
 
@@ -94,11 +101,13 @@ public class DoctrineManager : MonoBehaviour
             return false;
         }
 
-        activeDoctrines.Add(new ActiveDoctrine(doctrine.Clone(), owner));
+        ActiveDoctrine entry = new ActiveDoctrine(doctrine.Clone(), owner);
+        activeDoctrines.Add(entry);
         if (verboseLogs)
         {
             Debug.Log($"[Doctrine] 활성화: {doctrine}");
         }
+        Activated?.Invoke(entry);
         return true;
     }
 
@@ -116,11 +125,13 @@ public class DoctrineManager : MonoBehaviour
             return false;
         }
 
+        ActiveDoctrine removed = activeDoctrines[index];
         activeDoctrines.RemoveAt(index);
         if (verboseLogs)
         {
             Debug.Log($"[Doctrine] 해제: {doctrine}");
         }
+        Deactivated?.Invoke(removed);
         return true;
     }
 
@@ -131,6 +142,7 @@ public class DoctrineManager : MonoBehaviour
         {
             Debug.Log("[Doctrine] 전체 해제.");
         }
+        Cleared?.Invoke();
     }
 
     public void NotifyEvent(DoctrineEventData evt)
@@ -181,9 +193,10 @@ public class DoctrineManager : MonoBehaviour
                     continue;
                 }
 
+                bool ok = false;
                 try
                 {
-                    bool ok = DoctrineEffectExecutor.Execute(entry.Doctrine, target, evt.SourceObject);
+                    ok = DoctrineEffectExecutor.Execute(entry.Doctrine, target, evt.SourceObject);
                     if (verboseLogs)
                     {
                         Debug.Log($"[Doctrine] 발동: {entry.Doctrine} -> {target.name} (성공:{ok}).");
@@ -193,6 +206,17 @@ public class DoctrineManager : MonoBehaviour
                 {
                     // 한 교리의 실패가 다른 교리 판정을 막지 않는다.
                     Debug.LogError($"[Doctrine] 효과 실행 중 예외 (다음 교리 계속 판정): {ex}");
+                }
+
+                // 효과 실행 성공 여부와 무관하게 "발동했다"는 사실은 UI에 알린다.
+                // UI 예외가 교리 실행 실패로 기록되지 않도록 try 밖에서 호출한다.
+                try
+                {
+                    Triggered?.Invoke(entry, target);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[Doctrine] 발동 이벤트 처리 중 예외: {ex}");
                 }
             }
         }
