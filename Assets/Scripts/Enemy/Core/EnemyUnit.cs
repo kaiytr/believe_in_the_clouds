@@ -124,17 +124,36 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             return FailConfiguration("A tagged Player with PlayerHealth and a root body Collider2D is required.");
 
         BeliefCondition[] conditions = GetComponents<BeliefCondition>();
-        if (conditions.Length != 1)
-            return FailConfiguration("Exactly one belief condition must be attached to the enemy root.");
-
-        bool conditionMatchesType = beliefController.Type switch
+        BeliefCondition matchingCondition = null;
+        foreach (BeliefCondition condition in conditions)
         {
-            BeliefType.RearPosition => conditions[0] is RearPositionBeliefCondition,
-            BeliefType.DodgeAttack => conditions[0] is DodgeAttackBeliefCondition,
-            _ => false
-        };
-        if (!conditionMatchesType)
-            return FailConfiguration("Belief type and condition component do not match.");
+            if (condition.SupportedType == beliefController.Type)
+            {
+                if (matchingCondition != null)
+                    return FailConfiguration($"Multiple belief conditions match {beliefController.Type}.");
+                matchingCondition = condition;
+                condition.enabled = true;
+            }
+            else
+            {
+                condition.enabled = false;
+            }
+        }
+
+        if (matchingCondition == null)
+        {
+            if (!beliefController.UsesRandomCandidate)
+                return FailConfiguration($"Belief type {beliefController.Type} and condition component do not match.");
+
+            matchingCondition = beliefController.Type switch
+            {
+                BeliefType.RearPosition => gameObject.AddComponent<RearPositionBeliefCondition>(),
+                BeliefType.DodgeAttack => gameObject.AddComponent<DodgeAttackBeliefCondition>(),
+                _ => null
+            };
+        }
+        if (matchingCondition == null)
+            return FailConfiguration($"No belief condition is available for {beliefController.Type}.");
 
         if (attacks == null || attacks.Length != 1 || attacks[0] == null)
             return FailConfiguration($"Exactly one concrete EnemyAttack must be attached to the enemy root (found {attacks?.Length ?? -1}).");

@@ -1,14 +1,17 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class BeliefController : MonoBehaviour
 {
     [SerializeField] private BeliefType beliefType = BeliefType.Unassigned;
+    [SerializeField] private List<BeliefType> beliefTypeCandidates = new List<BeliefType>();
     [SerializeField] private BeliefProfileCatalog profileCatalog;
     [SerializeField] private bool logStateChanges;
 
     private BeliefProfile profile;
+    private BeliefType selectedBeliefType = BeliefType.Unassigned;
     private EnemyUnit owner;
     private Coroutine vulnerabilityRoutine;
     private float currentBelief;
@@ -18,9 +21,8 @@ public sealed class BeliefController : MonoBehaviour
     public event Action<BeliefController, float, float> BeliefChanged;
     public event Action<BeliefController, BeliefState> StateChanged;
 
-    public BeliefType Type => beliefType == BeliefType.Unassigned && profile != null
-        ? profile.Type
-        : beliefType;
+    public BeliefType Type => profile != null ? profile.Type : selectedBeliefType;
+    public bool UsesRandomCandidate => beliefTypeCandidates != null && beliefTypeCandidates.Count > 0;
     public BeliefProfile Profile => profile;
     public float CurrentBelief => currentBelief;
     public float MaxBelief => profile != null ? profile.MaxBelief : 0f;
@@ -50,15 +52,19 @@ public sealed class BeliefController : MonoBehaviour
             return;
         }
 
-        if (beliefType == BeliefType.Unassigned)
+        selectedBeliefType = SelectBeliefType();
+        if (UsesRandomCandidate && selectedBeliefType == BeliefType.Unassigned)
+            return;
+
+        if (selectedBeliefType == BeliefType.Unassigned)
         {
             Debug.LogWarning($"{name}: Belief type is Unassigned; using the rear-position default profile.", this);
         }
 
-        profile = profileCatalog.Resolve(beliefType);
+        profile = profileCatalog.Resolve(selectedBeliefType);
         if (profile == null)
         {
-            Debug.LogError($"{name}: No profile for belief type {beliefType}.", this);
+            Debug.LogError($"{name}: No profile for belief type {selectedBeliefType}.", this);
             return;
         }
 
@@ -69,15 +75,42 @@ public sealed class BeliefController : MonoBehaviour
             return;
         }
 
-        if (beliefType != BeliefType.Unassigned && profile.Type != beliefType)
+        if (selectedBeliefType != BeliefType.Unassigned && profile.Type != selectedBeliefType)
         {
-            Debug.LogError($"{name}: Resolved profile type does not match {beliefType}.", this);
+            Debug.LogError($"{name}: Resolved profile type does not match {selectedBeliefType}.", this);
             profile = null;
             return;
         }
 
         currentBelief = profile.MaxBelief;
         currentState = BeliefState.Maintained;
+    }
+
+    private BeliefType SelectBeliefType()
+    {
+        if (beliefTypeCandidates == null || beliefTypeCandidates.Count == 0)
+            return beliefType;
+
+        List<BeliefType> validCandidates = new List<BeliefType>();
+        foreach (BeliefType candidate in beliefTypeCandidates)
+        {
+            if (candidate == BeliefType.Unassigned ||
+                profileCatalog.Resolve(candidate) == null ||
+                validCandidates.Contains(candidate))
+            {
+                continue;
+            }
+
+            validCandidates.Add(candidate);
+        }
+
+        if (validCandidates.Count == 0)
+        {
+            Debug.LogError($"{name}: Random belief candidates contain no valid profile types.", this);
+            return BeliefType.Unassigned;
+        }
+
+        return validCandidates[UnityEngine.Random.Range(0, validCandidates.Count)];
     }
 
     public bool ReduceBelief(float amount)

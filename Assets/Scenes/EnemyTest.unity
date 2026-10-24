@@ -394,6 +394,9 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 2
+  beliefTypeCandidates:
+  - 1
+  - 2
   profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
   logStateChanges: 0
 --- !u!1 &613699154
@@ -1111,6 +1114,9 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 2
+  beliefTypeCandidates:
+  - 1
+  - 2
   profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
   logStateChanges: 0
 --- !u!1 &1586999224
@@ -1638,6 +1644,9 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 1
+  beliefTypeCandidates:
+  - 1
+  - 2
   profileCatalog: {fileID: 11400000, guid: e66a788bd152fe845b922950629c4e7b, type: 2}
   logStateChanges: 0
 --- !u!1660057539 &9223372036854775807

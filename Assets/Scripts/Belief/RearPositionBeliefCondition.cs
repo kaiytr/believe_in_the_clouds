@@ -8,6 +8,8 @@ public sealed class RearPositionBeliefCondition : BeliefCondition
 
     private EnemyUnit owner;
 
+    public override BeliefType SupportedType => BeliefType.RearPosition;
+
     public float MaxRearDistance => maxRearDistance;
     public float MaxVerticalDifference => maxVerticalDifference;
 
@@ -21,7 +23,7 @@ public sealed class RearPositionBeliefCondition : BeliefCondition
 
     private void Update()
     {
-        if (owner == null || owner.IsDead || Controller == null ||
+        if (owner == null || owner.IsDead || Controller == null || Controller.Type != SupportedType ||
             Controller.IsVulnerable || Controller.Profile == null)
         {
             return;
