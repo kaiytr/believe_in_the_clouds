@@ -144,7 +144,7 @@ Transform:
   m_GameObject: {fileID: 4044089}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.05, z: 0}
+  m_LocalPosition: {x: 0.010000229, y: -0.82000005, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1169,7 +1169,7 @@ CapsuleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 1, y: 2}
   m_Direction: 0
 --- !u!50 &1586999228
 Rigidbody2D:
@@ -1185,8 +1185,8 @@ Rigidbody2D:
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_GravityScale: 1.5
+  m_AngularDamping: 0
+  m_GravityScale: 4
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -1267,7 +1267,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -4, y: -1.5, z: 0}
-  m_LocalScale: {x: 1, y: 2, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4044090}
@@ -1282,16 +1282,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 1586999224}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ddaef1ce6251054c980874833fe675b, type: 3}
+  m_Script: {fileID: 11500000, guid: 1fefc0b418b5e474d968906d858c3351, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyTestPlayerMove
-  moveSpeed: 5
-  jumpPower: 10
-  groundCheck: {fileID: 0}
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerMove
+  moveSpeed: 7
+  jumpPower: 14
+  groundCheck: {fileID: 4044090}
   groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
 --- !u!114 &1586999232
 MonoBehaviour:
   m_ObjectHideFlags: 0

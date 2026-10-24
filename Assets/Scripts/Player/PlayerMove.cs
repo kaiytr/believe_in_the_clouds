@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class PlayerMove : MonoBehaviour
+public class PlayerMove : MonoBehaviour, ISlowable
 {
     [Header("이동")]
     [SerializeField] private float moveSpeed = 5f;
@@ -18,6 +18,8 @@ public class PlayerMove : MonoBehaviour
     private float moveInput;
     private bool jumpRequested;
     private bool isGrounded;
+    private float speedMultiplier = 1f;
+    private float slowEndTime;
 
     private void Awake()
     {
@@ -26,6 +28,8 @@ public class PlayerMove : MonoBehaviour
 
     private void Update()
     {
+        UpdateSlow();
+
         // 입력은 렌더 프레임에서만 읽는다.
         moveInput = Input.GetAxisRaw("Horizontal");
 
@@ -68,9 +72,24 @@ public class PlayerMove : MonoBehaviour
 
         // 좌우 이동
         rb.linearVelocity = new Vector2(
-            moveInput * moveSpeed,
+            moveInput * moveSpeed * speedMultiplier,
             rb.linearVelocity.y
         );
+    }
+
+    public void ApplySlow(float newSpeedMultiplier, float duration)
+    {
+        newSpeedMultiplier = Mathf.Clamp01(newSpeedMultiplier);
+        speedMultiplier = Mathf.Min(speedMultiplier, newSpeedMultiplier);
+        slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
+    }
+
+    private void UpdateSlow()
+    {
+        if (speedMultiplier >= 1f || Time.time < slowEndTime)
+            return;
+
+        speedMultiplier = 1f;
     }
 
     private void Jump()
