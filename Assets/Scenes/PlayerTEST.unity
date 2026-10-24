@@ -149,6 +149,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b617507da6d07e749b7efdb34e1173e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
+  TrackerSettings:
+    BindingMode: 4
+    PositionDamping: {x: 1, y: 1, z: 1}
+    AngularDampingMode: 0
+    RotationDamping: {x: 1, y: 1, z: 1}
+    QuaternionDamping: 1
+  FollowOffset: {x: 0, y: 0, z: -10}
 --- !u!114 &202985261
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,6 +168,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
+  Priority:
+    Enabled: 0
+    m_Value: 0
+  OutputChannel: 1
+  StandbyUpdate: 2
+  m_StreamingVersion: 20241001
+  m_LegacyPriority: 0
+  Target:
+    TrackingTarget: {fileID: 0}
+    LookAtTarget: {fileID: 0}
+    CustomLookAtTarget: 0
+  Lens:
+    FieldOfView: 40
+    OrthographicSize: 10
+    NearClipPlane: 0.1
+    FarClipPlane: 5000
+    Dutch: 0
+    ModeOverride: 0
+    PhysicalProperties:
+      GateFit: 2
+      SensorSize: {x: 21.946, y: 16.002}
+      LensShift: {x: 0, y: 0}
+      FocusDistance: 10
+      Iso: 200
+      ShutterSpeed: 0.005
+      Aperture: 16
+      BladeCount: 5
+      Curvature: {x: 2, y: 11}
+      BarrelClipping: 0.25
+      Anamorphism: 0
+  BlendHint: 0
 --- !u!4 &202985262
 Transform:
   m_ObjectHideFlags: 0
@@ -189,6 +227,11 @@ GameObject:
   - component: {fileID: 788406418}
   - component: {fileID: 788406417}
   - component: {fileID: 788406416}
+  - component: {fileID: 788406421}
+  - component: {fileID: 788406425}
+  - component: {fileID: 788406424}
+  - component: {fileID: 788406423}
+  - component: {fileID: 788406422}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -354,6 +397,142 @@ Transform:
   - {fileID: 1120688467}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &788406421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788406415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f4d56ec5862a98499342b760b84b024, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerAttack
+  attackMouseButton: 0
+  comboSteps:
+  - name: "1\uD0C0: \uC219\uC774\uBA70 \uC9E7\uC740 \uC0AC\uC120 \uBCA0\uAE30"
+    damage: 10
+    hitboxSize: {x: 1.5, y: 1}
+    hitboxOffset: {x: 0.8, y: 0.2}
+    hitboxAngle: -30
+    windupTime: 0.07
+    recoveryTime: 0.16
+    comboWindow: 0.35
+    lungeDistance: 0.5
+    knockback: 2
+    launchUp: 0
+  - name: "2\uD0C0: \uBC18\uB300\uB85C \uAE38\uAC8C \uBCA0\uAE30"
+    damage: 12
+    hitboxSize: {x: 2.1, y: 1.1}
+    hitboxOffset: {x: 1, y: 0.2}
+    hitboxAngle: 30
+    windupTime: 0.09
+    recoveryTime: 0.2
+    comboWindow: 0.35
+    lungeDistance: 0.8
+    knockback: 3
+    launchUp: 0
+  - name: "3\uD0C0: \uB0AE\uCD94\uBA70 \uC804\uC9C4 \uCC0C\uB974\uAE30"
+    damage: 14
+    hitboxSize: {x: 2.4, y: 0.6}
+    hitboxOffset: {x: 1.4, y: -0.3}
+    hitboxAngle: 0
+    windupTime: 0.1
+    recoveryTime: 0.24
+    comboWindow: 0.4
+    lungeDistance: 1.8
+    knockback: 4
+    launchUp: 0
+  - name: "4\uD0C0: \uC62C\uB824\uBCA0\uAE30 \uD53C\uB2C8\uC26C"
+    damage: 24
+    hitboxSize: {x: 2, y: 1.9}
+    hitboxOffset: {x: 0.9, y: 0.6}
+    hitboxAngle: 60
+    windupTime: 0.16
+    recoveryTime: 0.38
+    comboWindow: 0
+    lungeDistance: 0.9
+    knockback: 6
+    launchUp: 5
+  airAttack:
+    name: "\uACF5\uC911: \uB4A4\uB85C \uAE38\uAC8C \uC0AC\uC120 \uBCA0\uAE30"
+    damage: 14
+    hitboxSize: {x: 2.2, y: 1.2}
+    hitboxOffset: {x: -1.1, y: 0.3}
+    hitboxAngle: -40
+    windupTime: 0.05
+    recoveryTime: 0.22
+    comboWindow: 0
+    lungeDistance: 0
+    knockback: 3
+    launchUp: 1
+  airAttackResetOnLand: 1
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  hitboxVisual: {fileID: 0}
+  hitboxVisualDuration: 0.12
+  finishHitStop: 0.06
+--- !u!114 &788406422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788406415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b480ce343042d6240b342e09dfc79405, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerBody
+--- !u!114 &788406423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788406415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4877988a808fcd40be389870ca97472, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerDash
+  dashKey: 304
+  dashSpeed: 14
+  dashTime: 0.18
+  cooldown: 0.6
+  crouchScaleY: 0.7
+  ghostInterval: 0.03
+  ghostLife: 0.3
+  ghostColor: {r: 0.6, g: 0.8, b: 1, a: 0.5}
+--- !u!114 &788406424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788406415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b480ce343042d6240b342e09dfc79405, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerBody
+--- !u!114 &788406425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788406415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92241588bfa811146bbdafc90ab3bf00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHitReact
+  hitCrouchScaleY: 0.75
+  hitCrouchDuration: 0.18
+  kneelScaleY: 0.55
 --- !u!1 &944339745
 GameObject:
   m_ObjectHideFlags: 0
@@ -413,9 +592,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
-  field of view: 60
+  near clip plane: 0.1
+  far clip plane: 5000
+  field of view: 40
   orthographic: 1
   orthographic size: 10
   m_Depth: -1
@@ -504,6 +683,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
+  ShowDebugText: 0
+  ShowCameraFrustum: 1
+  IgnoreTimeScale: 0
+  WorldUpOverride: {fileID: 0}
+  ChannelMask: -1
+  UpdateMethod: 2
+  BlendUpdateMethod: 1
+  LensModeOverride:
+    Enabled: 0
+    DefaultMode: 2
+  DefaultBlend:
+    Style: 1
+    Time: 2
+    CustomCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  CustomBlends: {fileID: 0}
 --- !u!1 &971487577
 GameObject:
   m_ObjectHideFlags: 0
