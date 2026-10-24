@@ -1282,16 +1282,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 1586999224}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ddaef1ce6251054c980874833fe675b, type: 3}
+  m_Script: {fileID: 11500000, guid: 1fefc0b418b5e474d968906d858c3351, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::EnemyTestPlayerMove
-  moveSpeed: 5
-  jumpPower: 10
-  groundCheck: {fileID: 0}
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerMove
+  moveSpeed: 7
+  jumpPower: 14
+  groundCheck: {fileID: 4044090}
   groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
 --- !u!114 &1586999232
 MonoBehaviour:
   m_ObjectHideFlags: 0
