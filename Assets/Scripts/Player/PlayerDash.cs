@@ -8,6 +8,7 @@ using UnityEngine;
 // 공격 중에 대시를 입력하면 공격을 끊고 대시가 나간다.
 [RequireComponent(typeof(PlayerMove))]
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(CombatAfterimageEmitter))]
 public class PlayerDash : MonoBehaviour
 {
     [Header("입력")]
@@ -21,10 +22,16 @@ public class PlayerDash : MonoBehaviour
     [Tooltip("재사용 대기 시간(초).")]
     [SerializeField, Min(0f)] private float cooldown = 0.6f;
 
+    [Header("대시 잔상")]
+    [SerializeField] private CombatAfterimage afterimagePrefab;
+    [SerializeField] private Color afterimageTint = new Color(0.6f, 0.8f, 1f, 0.45f);
+
     private Rigidbody2D rb;
     private PlayerMove playerMove;
     private PlayerAttack attack;
     private PlayerHealth health;
+    private SpriteRenderer bodyVisual;
+    private CombatAfterimageEmitter afterimages;
 
     private float cooldownRemaining;
     private bool isDashing;
@@ -37,6 +44,10 @@ public class PlayerDash : MonoBehaviour
         playerMove = GetComponent<PlayerMove>();
         attack = GetComponent<PlayerAttack>();
         health = GetComponent<PlayerHealth>();
+        bodyVisual = GetComponent<SpriteRenderer>();
+        if (bodyVisual == null) bodyVisual = GetComponentInChildren<SpriteRenderer>();
+        afterimages = GetComponent<CombatAfterimageEmitter>();
+        if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
     }
 
     private void Update()
@@ -49,7 +60,7 @@ public class PlayerDash : MonoBehaviour
 
     public bool TryDash()
     {
-        if (isDashing || cooldownRemaining > 0f)
+        if (!isActiveAndEnabled || isDashing || cooldownRemaining > 0f)
             return false;
         if (health != null && health.IsDead)
             return false;
@@ -83,6 +94,8 @@ public class PlayerDash : MonoBehaviour
         while (elapsed < dashTime)
         {
             rb.linearVelocity = new Vector2(dir * dashSpeed, 0f);
+            if (bodyVisual != null && bodyVisual.enabled)
+                afterimages.Emit(afterimagePrefab, bodyVisual, bodyVisual.sortingOrder - 1, afterimageTint);
             elapsed += Time.deltaTime;
             yield return null;
         }
@@ -96,6 +109,12 @@ public class PlayerDash : MonoBehaviour
     private void OnDisable()
     {
         StopAllCoroutines();
+        if (isDashing)
+        {
+            if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            if (playerMove != null) playerMove.ControlLocked = false;
+        }
+        afterimages?.Clear();
         isDashing = false;
         cooldownRemaining = 0f;
     }
