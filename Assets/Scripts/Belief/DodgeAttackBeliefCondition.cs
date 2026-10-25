@@ -7,6 +7,8 @@ public sealed class DodgeAttackBeliefCondition : BeliefCondition
 
     public override BeliefType SupportedType => BeliefType.DodgeAttack;
 
+    private void OnEnable() => Start();
+
     private void Start()
     {
         if (Controller == null || Controller.Type != SupportedType)

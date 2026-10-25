@@ -10,18 +10,21 @@ public class MagicCircle : MonoBehaviour
         float slowMultiplier,
         float slowDuration,
         float visualDuration,
-        Collider2D targetBodyCollider)
+        Collider2D targetBodyCollider,
+        out bool hpDamageApplied)
     {
         this.radius = radius;
         float diameter = radius * 2f;
         transform.localScale = new Vector3(diameter, diameter, 1f);
-        bool applied = ApplyEffect(damage, slowMultiplier, slowDuration, targetBodyCollider);
+        bool applied = ApplyEffect(damage, slowMultiplier, slowDuration, targetBodyCollider, out hpDamageApplied);
         Destroy(gameObject, visualDuration);
         return applied;
     }
 
-    private bool ApplyEffect(float damage, float slowMultiplier, float slowDuration, Collider2D targetBodyCollider)
+    private bool ApplyEffect(float damage, float slowMultiplier, float slowDuration, Collider2D targetBodyCollider,
+        out bool hpDamageApplied)
     {
+        hpDamageApplied = false;
         if (targetBodyCollider == null || !targetBodyCollider.enabled)
             return false;
 
@@ -40,7 +43,10 @@ public class MagicCircle : MonoBehaviour
         if (damageable == null)
             damageable = playerRoot.GetComponentInChildren<IDamageable>();
         if (damageable != null)
-            harmfulEffectApplied |= damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+        {
+            hpDamageApplied = damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+            harmfulEffectApplied |= hpDamageApplied;
+        }
 
         ISlowable slowable = playerRoot.GetComponent<ISlowable>();
         if (slowable == null)

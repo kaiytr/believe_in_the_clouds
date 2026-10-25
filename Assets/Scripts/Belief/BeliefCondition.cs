@@ -6,6 +6,7 @@ public abstract class BeliefCondition : MonoBehaviour
 
     protected BeliefController Controller => beliefController;
     public abstract BeliefType SupportedType { get; }
+    public virtual bool Supports(BeliefType type) => SupportedType == type;
 
     protected virtual void Awake()
     {

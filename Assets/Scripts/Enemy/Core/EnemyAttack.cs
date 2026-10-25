@@ -26,10 +26,18 @@ public abstract class EnemyAttack : MonoBehaviour
     private int pendingHitResults;
     private bool outcomeReported;
     private bool attackLaunched;
+    private bool playerHpDamaged;
+    private Transform attackTarget;
+    private int attackId;
     private bool playerThreatenedDuringWarning;
     private Vector2 lockedDirection;
 
     public event Action<EnemyAttack, AttackOutcome> OutcomeReported;
+    public event Action<EnemyAttack, EnemyAttackResult> AttackResolved;
+    public int CurrentAttackId => attackId;
+    public bool IsWindingUp => phase == AttackPhase.Windup;
+    public virtual float WindupDuration => windupTime;
+    public bool IsResolvingAttack(int id) => id == attackId && phase == AttackPhase.Resolving && !outcomeReported;
     public bool IsAttacking => phase != AttackPhase.Idle;
     public bool IsReady => owner != null && !owner.IsDead && !owner.IsVulnerable &&
                            phase == AttackPhase.Idle && cooldownRemaining <= 0f;
@@ -52,6 +60,14 @@ public abstract class EnemyAttack : MonoBehaviour
         if (owner == null || owner.IsDead)
             return;
 
+        if (phase != AttackPhase.Idle && !HasAttackTarget())
+        {
+            CancelForOwnerDeath();
+            cooldownRemaining = Mathf.Max(0f, cooldown);
+            if (!owner.IsVulnerable) owner.UnlockMovement();
+            return;
+        }
+
         if (!owner.IsVulnerable)
             cooldownRemaining = Mathf.Max(0f, cooldownRemaining - Time.deltaTime);
 
@@ -69,6 +85,9 @@ public abstract class EnemyAttack : MonoBehaviour
             direction = transform.localScale.x >= 0f ? 1f : -1f;
         lockedDirection = new Vector2(Mathf.Sign(direction), 0f);
         playerThreatenedDuringWarning = false;
+        playerHpDamaged = false;
+        attackTarget = target;
+        attackId++;
         outcomeReported = false;
         attackLaunched = false;
         pendingHitResults = 0;
@@ -85,7 +104,7 @@ public abstract class EnemyAttack : MonoBehaviour
 
     private IEnumerator AttackRoutine(Transform target)
     {
-        yield return WaitGameTime(windupTime, pauseWhileVulnerable: true);
+        yield return WaitGameTime(WindupDuration, pauseWhileVulnerable: true);
         if (owner == null || owner.IsDead || phase != AttackPhase.Windup)
             yield break;
 
@@ -165,16 +184,24 @@ public abstract class EnemyAttack : MonoBehaviour
         pendingHitResults++;
     }
 
-    public void ResolvePendingHitResult(AttackOutcome outcome)
+    public void ResolvePendingHitResult(int sourceAttackId, AttackOutcome outcome, bool completedNormally)
     {
-        if (pendingHitResults <= 0 || owner == null || owner.IsDead)
+        if (sourceAttackId != attackId || pendingHitResults <= 0 || owner == null || owner.IsDead)
             return;
 
         pendingHitResults--;
-        ReportOutcome(outcome);
+        ReportOutcome(outcome, completedNormally);
     }
 
-    protected void ReportOutcome(AttackOutcome outcome)
+    public void RecordPlayerHpDamage(int sourceAttackId)
+    {
+        if (sourceAttackId == attackId && !outcomeReported && attackLaunched)
+            playerHpDamaged = true;
+    }
+
+    private bool HasAttackTarget() => owner != null && owner.HasCombatTarget && owner.Target == attackTarget;
+
+    protected void ReportOutcome(AttackOutcome outcome, bool completedNormally = false)
     {
         if (outcomeReported || phase == AttackPhase.Idle)
             return;
@@ -182,8 +209,16 @@ public abstract class EnemyAttack : MonoBehaviour
         if (outcome == AttackOutcome.EvadedByPlayer && !attackLaunched)
             outcome = AttackOutcome.Missed;
 
+        if (!HasAttackTarget() && outcome != AttackOutcome.Cancelled)
+        {
+            outcome = AttackOutcome.Cancelled;
+            completedNormally = false;
+        }
+        var result = new EnemyAttackResult(attackId, outcome, attackLaunched, playerHpDamaged,
+            completedNormally, Time.time);
         outcomeReported = true;
         OutcomeReported?.Invoke(this, outcome);
+        AttackResolved?.Invoke(this, result);
     }
 
     public void SetVulnerable(bool vulnerable)
