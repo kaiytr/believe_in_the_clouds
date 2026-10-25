@@ -43,7 +43,7 @@ public class PlayerDash : MonoBehaviour
     {
         cooldownRemaining = Mathf.Max(0f, cooldownRemaining - Time.deltaTime);
 
-        if (Input.GetKeyDown(dashKey))
+        if (!UiModal.IsOpen && Input.GetKeyDown(dashKey))
             TryDash();
     }
 
@@ -52,6 +52,8 @@ public class PlayerDash : MonoBehaviour
         if (isDashing || cooldownRemaining > 0f)
             return false;
         if (health != null && health.IsDead)
+            return false;
+        if (UiModal.IsOpen)
             return false;
 
         float input = Input.GetAxisRaw("Horizontal");

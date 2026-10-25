@@ -41,14 +41,14 @@ public class PlayerMove : MonoBehaviour, ISlowable
     {
         UpdateSlow();
 
-        // 입력은 렌더 프레임에서만 읽는다.
-        if (!ControlLocked)
+        // 모달 UI가 열려 있는 동안은 이동 입력을 읽지 않는다.
+        if (!ControlLocked && !UiModal.IsOpen)
             moveInput = Input.GetAxisRaw("Horizontal");
         else
             moveInput = 0f;
 
         // 점프 입력 예약 (실제 물리는 FixedUpdate에서 처리).
-        if (!ControlLocked && Input.GetKeyDown(KeyCode.Space))
+        if (!ControlLocked && !UiModal.IsOpen && Input.GetKeyDown(KeyCode.Space))
         {
             jumpRequested = true;
         }

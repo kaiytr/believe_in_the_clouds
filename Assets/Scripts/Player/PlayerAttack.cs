@@ -212,7 +212,7 @@ public class PlayerAttack : MonoBehaviour
             wasGrounded = playerMove.IsGrounded;
         }
 
-        if (Input.GetMouseButtonDown(attackMouseButton))
+        if (!UiModal.IsOpen && Input.GetMouseButtonDown(attackMouseButton))
         {
             OnAttackInput();
         }
