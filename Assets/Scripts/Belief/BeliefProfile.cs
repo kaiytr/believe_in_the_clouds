@@ -12,6 +12,9 @@ public sealed class BeliefProfile : ScriptableObject
     [SerializeField, Range(0f, 1f)] private float recoveryRatio = 1f;
     [SerializeField, Min(0f)] private float reductionPerSecond;
     [SerializeField, Min(0f)] private float reductionPerEvade;
+    [SerializeField, Min(0f)] private float reductionPerSuccess;
+    [SerializeField, Min(0.01f)] private float timeWindow = 2f;
+    [SerializeField, Min(0.01f)] private float rearInterval = 2f;
 
     public BeliefType Type => type;
     public string Phrase => phrase;
@@ -22,10 +25,14 @@ public sealed class BeliefProfile : ScriptableObject
     public float RecoveryRatio => recoveryRatio;
     public float ReductionPerSecond => reductionPerSecond;
     public float ReductionPerEvade => reductionPerEvade;
+    public BeliefRule Rule => BeliefRules.For(type);
+    public float ReductionPerSuccess => reductionPerSuccess;
+    public float TimeWindow => timeWindow;
+    public float RearInterval => rearInterval;
 
     public bool IsValid(out string error)
     {
-        if (type == BeliefType.Unassigned)
+        if (Rule == BeliefRule.Unassigned)
         {
             error = "Belief profile type is Unassigned.";
             return false;
@@ -55,9 +62,12 @@ public sealed class BeliefProfile : ScriptableObject
             return false;
         }
 
-        bool hasReduction = type == BeliefType.RearPosition
-            ? reductionPerSecond > 0f
-            : reductionPerEvade > 0f;
+        bool hasReduction = Rule switch
+        {
+            BeliefRule.LegacyRearPosition => reductionPerSecond > 0f,
+            BeliefRule.LegacyDodgeAttack => reductionPerEvade > 0f,
+            _ => reductionPerSuccess > 0f && timeWindow > 0f && rearInterval > 0f
+        };
         if (!hasReduction)
         {
             error = "Belief profile is missing the reduction value for its type.";

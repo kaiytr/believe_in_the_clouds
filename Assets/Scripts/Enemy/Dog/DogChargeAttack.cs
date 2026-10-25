@@ -7,16 +7,22 @@ public class DogChargeAttack : EnemyAttack
     [SerializeField, Min(0f)] private float chargeTriggerRange = 4f;
     [SerializeField, Min(0f)] private float verticalAttackTolerance = 1.5f;
     [SerializeField, Min(0.01f)] private float chargeDistance = 5f;
-    [SerializeField, Min(0.01f)] private float chargeSpeed = 12f;
+    [SerializeField, Min(0.01f)] private float chargeSpeedRatio = 1.4f;
 
     [Header("Danger Indicator")]
     [SerializeField] private DangerIndicator dangerIndicatorPrefab;
     [SerializeField, Min(0.01f)] private float indicatorHeight = 1f;
 
+    [Header("Afterimage")]
+    [SerializeField] private CombatAfterimage afterimagePrefab;
+
     [Header("Obstacle")]
     [SerializeField] private LayerMask obstacleLayer;
 
     private Rigidbody2D body;
+    private SpriteRenderer bodyVisual;
+    private CombatAfterimageEmitter afterimages;
+    private static readonly WaitForFixedUpdate PhysicsTick = new WaitForFixedUpdate();
     private float lockedDirectionX;
     private Vector2 chargeStartPosition;
     private bool isCharging;
@@ -28,12 +34,15 @@ public class DogChargeAttack : EnemyAttack
     public float ChargeTriggerRange => chargeTriggerRange;
     public bool IsCharging => isCharging;
     public override bool IsConfigured => base.IsConfigured && dangerIndicatorPrefab != null &&
-                                         chargeDistance > 0f && indicatorHeight > 0f && chargeSpeed > 0f;
+                                         afterimagePrefab != null && chargeDistance > 0f && indicatorHeight > 0f && chargeSpeedRatio > 0f;
 
     protected override void Awake()
     {
         base.Awake();
         body = GetComponent<Rigidbody2D>();
+        bodyVisual = GetComponentInChildren<SpriteRenderer>();
+        afterimages = GetComponent<CombatAfterimageEmitter>();
+        if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
     }
 
     protected override bool CanAttack(Transform target)
@@ -64,8 +73,7 @@ public class DogChargeAttack : EnemyAttack
         indicator.SetupFollowing(
             transform,
             new Vector2(lockedDirectionX, 0f),
-            new Vector2(chargeDistance, indicatorHeight),
-            windupTime);
+            new Vector2(chargeDistance, indicatorHeight));
         return indicator;
     }
 
@@ -94,7 +102,16 @@ public class DogChargeAttack : EnemyAttack
         chargeStartPosition = body.position;
         owner.SetPhysicalCollisionWithPlayerEnabled(true);
 
-        float maximumChargeTime = chargeDistance / Mathf.Max(chargeSpeed, 0.01f) + 0.25f;
+        float chargeSpeed = owner.ReferencePlayerMoveSpeed * chargeSpeedRatio;
+        if (chargeSpeed <= 0f)
+        {
+            owner.SetPhysicalCollisionWithPlayerEnabled(false);
+            isCharging = false;
+            ReportOutcome(AttackOutcome.Missed);
+            yield break;
+        }
+
+        float maximumChargeTime = chargeDistance / chargeSpeed + 0.25f;
         float elapsed = 0f;
         while (!blockedByObstacle && !hasResolvedPlayerContact &&
                Mathf.Abs(body.position.x - chargeStartPosition.x) < chargeDistance &&
@@ -104,8 +121,9 @@ public class DogChargeAttack : EnemyAttack
                 break;
 
             body.linearVelocity = new Vector2(lockedDirectionX * chargeSpeed, body.linearVelocity.y);
+            SpawnAfterimage();
             elapsed += Time.fixedDeltaTime;
-            yield return new WaitForFixedUpdate();
+            yield return PhysicsTick;
         }
 
         chargeCompleted = !blockedByObstacle && !hasResolvedPlayerContact &&
@@ -116,11 +134,11 @@ public class DogChargeAttack : EnemyAttack
 
         if (playerContactAppliedHarm)
         {
-            ReportOutcome(AttackOutcome.Hit);
+            ReportOutcome(AttackOutcome.Hit, completedNormally: true);
         }
         else if (hasResolvedPlayerContact)
         {
-            ReportOutcome(AttackOutcome.Missed);
+            ReportOutcome(AttackOutcome.Missed, completedNormally: true);
         }
         else if (blockedByObstacle)
         {
@@ -133,7 +151,7 @@ public class DogChargeAttack : EnemyAttack
                                            !IsBodyInChargeCorridor(playerBody, chargeStartPosition);
             ReportOutcome(WasPlayerThreatenedDuringWarning && outsideOriginalCorridor
                 ? AttackOutcome.EvadedByPlayer
-                : AttackOutcome.Missed);
+                : AttackOutcome.Missed, completedNormally: true);
         }
         else
         {
@@ -210,15 +228,7 @@ public class DogChargeAttack : EnemyAttack
             damageable = player.GetComponentInChildren<IDamageable>();
         playerContactAppliedHarm = damageable != null &&
                                    damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
-
-        // Table rule: OnAttack triggers only when the hit lands.
-        if (playerContactAppliedHarm && owner != null && DoctrineEventBus.HasListeners)
-        {
-            DoctrineEventBus.Raise(
-                ConditionType.OnAttack,
-                owner.gameObject,
-                player != null ? player.gameObject : null);
-        }
+        if (playerContactAppliedHarm) NotifyPlayerHpDamageApplied(CurrentAttackId);
     }
 
     private bool IsObstacle(int layer)
@@ -226,9 +236,18 @@ public class DogChargeAttack : EnemyAttack
         return (obstacleLayer.value & (1 << layer)) != 0;
     }
 
-    protected override void OnOwnerDeath()
+    private void SpawnAfterimage()
+    {
+        if (afterimagePrefab == null || bodyVisual == null || owner == null || owner.BodyCollider == null)
+            return;
+
+        afterimages.Emit(afterimagePrefab, bodyVisual, bodyVisual.sortingOrder - 1);
+    }
+
+    protected override void OnAttackCancelled()
     {
         isCharging = false;
+        afterimages?.Clear();
         owner?.SetPhysicalCollisionWithPlayerEnabled(false);
         if (body != null)
             body.linearVelocity = new Vector2(0f, body.linearVelocity.y);

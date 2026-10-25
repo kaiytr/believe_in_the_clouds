@@ -22,3 +22,6 @@ MonoBehaviour:
   recoveryRatio: 1
   reductionPerSecond: 0
   reductionPerEvade: 25
+  reductionPerSuccess: 0
+  timeWindow: 2
+  rearInterval: 2

@@ -1,4 +1,4 @@
-using System.IO;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -16,15 +16,13 @@ public static class BeliefSystemProjectSetup
     public static void BuildBeliefSystemAssetsAndScenes()
     {
         CreateBeliefAssets();
-        Scene scene = EditorSceneManager.OpenScene(EnemyScenePath, OpenSceneMode.Single);
-        ConfigureScene(scene);
-        EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene);
-
-        string source = Path.GetFullPath(EnemyScenePath);
-        string destination = Path.GetFullPath(BeliefScenePath);
-        File.Copy(source, destination, true);
-        AssetDatabase.ImportAsset(BeliefScenePath, ImportAssetOptions.ForceUpdate);
+        foreach (string path in new[] { EnemyScenePath, BeliefScenePath })
+        {
+            Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            ConfigureScene(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
         AssetDatabase.SaveAssets();
         Debug.Log("Belief profiles and prototype test scenes are configured.");
     }
@@ -40,6 +38,26 @@ public static class BeliefSystemProjectSetup
         BeliefProfile dodge = LoadOrCreateProfile(DodgeProfilePath);
         SetProfile(dodge, BeliefType.DodgeAttack, "플레이어는 내 공격을 피할 수 없다.", 0f, 25f);
 
+        var allProfiles = new List<BeliefProfile> { rear, dodge };
+        var definitions = new (BeliefType type, string id, string phrase, float reduction)[]
+        {
+            (BeliefType.DogCounterattack, "DOG-01", "도망치는 사냥감은 약하다.", 100f),
+            (BeliefType.DogUnerringAttack, "DOG-02", "내 공격은 반드시 적중한다.", 50f),
+            (BeliefType.DogRearAttack, "DOG-03", "내가 보지 못하는 것은 나를 공격할 수 없다.", 40f),
+            (BeliefType.BelieverConsecutiveHits, "BEL-01", "너는 연속으로 공격할 수 없다.", 25f),
+            (BeliefType.BelieverUnerringStone, "BEL-02", "너는 무조건 내 돌에 맞는다.", 50f),
+            (BeliefType.BelieverSafeDistance, "BEL-03", "나는 언제나 안전한 거리를 유지한다.", 50f),
+            (BeliefType.ExecutiveEscapeCircle, "EXE-01", "내 마법진에서는 벗어날 수 없다.", 100f),
+            (BeliefType.ExecutiveRearPosition, "EXE-02", "너는 내 뒤로 갈 수 없다.", 25f),
+            (BeliefType.ExecutivePrayer, "EXE-03", "기도하는 동안 누구도 나를 방해할 수 없다.", 50f)
+        };
+        foreach (var definition in definitions)
+        {
+            BeliefProfile profile = LoadOrCreateProfile(DataFolder + "/" + definition.id + ".asset");
+            SetProfile(profile, definition.type, definition.phrase, 0f, 0f, definition.reduction);
+            allProfiles.Add(profile);
+        }
+
         BeliefProfileCatalog catalog = AssetDatabase.LoadAssetAtPath<BeliefProfileCatalog>(CatalogPath);
         if (catalog == null)
         {
@@ -50,6 +68,10 @@ public static class BeliefSystemProjectSetup
         SerializedObject catalogData = new SerializedObject(catalog);
         catalogData.FindProperty("rearPositionProfile").objectReferenceValue = rear;
         catalogData.FindProperty("dodgeAttackProfile").objectReferenceValue = dodge;
+        SerializedProperty profiles = catalogData.FindProperty("profiles");
+        profiles.arraySize = allProfiles.Count;
+        for (int i = 0; i < allProfiles.Count; i++)
+            profiles.GetArrayElementAtIndex(i).objectReferenceValue = allProfiles[i];
         catalogData.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(catalog);
         AssetDatabase.SaveAssets();
@@ -67,7 +89,7 @@ public static class BeliefSystemProjectSetup
     }
 
     private static void SetProfile(BeliefProfile profile, BeliefType type, string phrase,
-        float reductionPerSecond, float reductionPerEvade)
+        float reductionPerSecond, float reductionPerEvade, float reductionPerSuccess = 0f)
     {
         SerializedObject data = new SerializedObject(profile);
         data.FindProperty("type").enumValueIndex = (int)type;
@@ -79,6 +101,9 @@ public static class BeliefSystemProjectSetup
         data.FindProperty("recoveryRatio").floatValue = 1f;
         data.FindProperty("reductionPerSecond").floatValue = reductionPerSecond;
         data.FindProperty("reductionPerEvade").floatValue = reductionPerEvade;
+        data.FindProperty("reductionPerSuccess").floatValue = reductionPerSuccess;
+        data.FindProperty("timeWindow").floatValue = 2f;
+        data.FindProperty("rearInterval").floatValue = 2f;
         data.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(profile);
     }
@@ -107,9 +132,11 @@ public static class BeliefSystemProjectSetup
             throw new System.InvalidOperationException("Player root requires PlayerHealth and a non-trigger body collider.");
         SetObjectReference(playerHealth, "bodyCollider", playerBody);
 
-        ConfigureEnemy(dog, BeliefType.RearPosition, catalog, typeof(RearPositionBeliefCondition));
-        ConfigureEnemy(believer, BeliefType.DodgeAttack, catalog, typeof(DodgeAttackBeliefCondition));
-        ConfigureEnemy(executive, BeliefType.DodgeAttack, catalog, typeof(DodgeAttackBeliefCondition));
+        ConfigureEnemy(dog, catalog);
+        ConfigureEnemy(believer, catalog);
+        ConfigureEnemy(executive, catalog);
+        ConfigureDummyHitTool(scene, playerHealth, new[] {
+            dog.GetComponent<EnemyUnit>(), believer.GetComponent<EnemyUnit>(), executive.GetComponent<EnemyUnit>() });
 
         player.transform.position = new Vector3(-4f, player.transform.position.y, player.transform.position.z);
         dog.transform.position = new Vector3(-1f, dog.transform.position.y, dog.transform.position.z);
@@ -120,8 +147,27 @@ public static class BeliefSystemProjectSetup
         executive.SetActive(true);
     }
 
-    private static void ConfigureEnemy(GameObject enemy, BeliefType type, BeliefProfileCatalog catalog,
-        System.Type conditionType)
+    private static void ConfigureDummyHitTool(Scene scene, PlayerHealth player, EnemyUnit[] enemies)
+    {
+        GameObject root = FindRoot(scene, "BeliefDummyData");
+        if (root == null)
+        {
+            root = new GameObject("BeliefDummyData");
+            SceneManager.MoveGameObjectToScene(root, scene);
+        }
+        var tool = root.GetComponent<BeliefDummyHitTool>();
+        if (tool == null) tool = root.AddComponent<BeliefDummyHitTool>();
+        var data = new SerializedObject(tool);
+        data.FindProperty("player").objectReferenceValue = player;
+        SerializedProperty targets = data.FindProperty("targets");
+        targets.arraySize = enemies.Length;
+        for (int i = 0; i < enemies.Length; i++)
+            targets.GetArrayElementAtIndex(i).objectReferenceValue = enemies[i];
+        data.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(root);
+    }
+
+    private static void ConfigureEnemy(GameObject enemy, BeliefProfileCatalog catalog)
     {
         bool wasActive = enemy.activeSelf;
         enemy.SetActive(false);
@@ -131,6 +177,9 @@ public static class BeliefSystemProjectSetup
         if (unit == null || body == null || body.isTrigger)
             throw new System.InvalidOperationException(enemy.name + " needs an EnemyUnit and root body collider.");
         SetObjectReference(unit, "bodyCollider", body);
+        BeliefType[] roster = BeliefRules.CandidatesFor(unit);
+        if (roster.Length != 3)
+            throw new System.InvalidOperationException(enemy.name + " needs exactly three species-specific beliefs.");
 
         EnemyAttack[] attacks = enemy.GetComponents<EnemyAttack>();
         if (attacks.Length > 1)
@@ -156,7 +205,11 @@ public static class BeliefSystemProjectSetup
         if (controller == null)
             controller = enemy.AddComponent<BeliefController>();
         SerializedObject controllerData = new SerializedObject(controller);
-        controllerData.FindProperty("beliefType").enumValueIndex = (int)type;
+        controllerData.FindProperty("beliefType").intValue = (int)roster[0];
+        SerializedProperty candidates = controllerData.FindProperty("beliefTypeCandidates");
+        candidates.arraySize = roster.Length;
+        for (int i = 0; i < roster.Length; i++)
+            candidates.GetArrayElementAtIndex(i).intValue = (int)roster[i];
         controllerData.FindProperty("profileCatalog").objectReferenceValue = catalog;
         controllerData.ApplyModifiedPropertiesWithoutUndo();
 
@@ -164,21 +217,17 @@ public static class BeliefSystemProjectSetup
         BeliefCondition condition = null;
         foreach (BeliefCondition oldCondition in conditions)
         {
-            if (oldCondition.GetType() == conditionType && condition == null)
+            if (oldCondition is ExpandedBeliefCondition && condition == null)
                 condition = oldCondition;
             else
                 Object.DestroyImmediate(oldCondition, true);
         }
         if (condition == null)
-            condition = (BeliefCondition)enemy.AddComponent(conditionType);
+            condition = enemy.AddComponent<ExpandedBeliefCondition>();
         SetObjectReference(condition, "beliefController", controller);
 
-        if (condition is RearPositionBeliefCondition rear)
-        {
-            SetObjectReference(rear, "enemyBodyCollider", body);
-            SetFloat(rear, "maxRearDistance", 4f);
-            SetFloat(rear, "maxVerticalDifference", 1.5f);
-        }
+        SetFloat(condition, "maxRearDistance", 4f);
+        SetFloat(condition, "maxVerticalDifference", 1.5f);
 
         if (enemy.GetComponent<BeliefView>() == null)
             enemy.AddComponent<BeliefView>();

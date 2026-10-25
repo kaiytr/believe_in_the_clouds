@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-25",
+  "unity": "6000.3.5f2",
+  "puriBefore": "0684fd2445df2656434776a9e28bd9a25ba29917",
+  "leescBefore": "7dbc4daa95292db8daf66a0197a7a858dca56125",
+  "decisions": [
+    "Shared enemy accepted-damage postprocessing",
+    "MagicCircle returns effect and HP damage results only",
+    "AttackAttempt limited to starting shape and reachable lunge in locked direction",
+    "One player attack ID per combo swing; late entrants publish hit only"
+  ],
+  "editMode": {
+    "total": 52,
+    "passed": 52,
+    "failed": 0,
+    "skipped": 0,
+    "results": "Logs/PuriLeescEditModeFinal.xml"
+  },
+  "graphicsPlayMode": {
+    "total": 53,
+    "passed": 53,
+    "failed": 0,
+    "skipped": 0,
+    "results": "Logs/PuriLeescPlayModeFinal.xml"
+  },
+  "verification": {
+    "project": ".utmp/shared-combat-verification",
+    "comparedTrackedAssetsAndSettings": 413,
+    "mismatches": 0,
+    "originalPackagesModified": false,
+    "manualKeyboardPlay": false,
+    "profilerMeasured": false
+  },
+  "primarySourceHashes": [
+    {
+      "path": "Assets/Scripts/Combat/CombatPhysics.cs",
+      "sha256": "C493849433808D85CB9DE4F924F97ACAE28EAC14122577C1AF0FEC59B0D155F3"
+    },
+    {
+      "path": "Assets/Scripts/Combat/PlayerAttackContext.cs",
+      "sha256": "2415379F32F70BB2F588D8D96BE507BBF520E4D80DD0ACBABAC88B697DF3970D"
+    },
+    {
+      "path": "Assets/Scripts/Enemy/Believer/StoneProjectile.cs",
+      "sha256": "D0599F373BFB1318E55D7F96C319FF78D4C405689A0360C10C3C0C9101899DF7"
+    },
+    {
+      "path": "Assets/Scripts/Enemy/Core/EnemyAttack.cs",
+      "sha256": "329A73C8C2BD969EA3C75501AABD9909D9F9F7E63493DEC5B5598FDB853956A3"
+    },
+    {
+      "path": "Assets/Scripts/Enemy/Dog/DogChargeAttack.cs",
+      "sha256": "F137D4FED3FDA590740D546194F36D704567300295F73FD673D8398C0F1103CF"
+    },
+    {
+      "path": "Assets/Scripts/Enemy/Executive/MagicCircle.cs",
+      "sha256": "AAD5383842DACAD6D94EB8B44383457516DB7E7E1349B8937ED8A85C04248128"
+    },
+    {
+      "path": "Assets/Scripts/Enemy/Executive/MagicCircleAttack.cs",
+      "sha256": "6C6AD24CFEE93659FF66954A6A23D66C0F3BE1A29086F4894A95C457FDA10DD3"
+    },
+    {
+      "path": "Assets/Scripts/Player/PlayerAttack.cs",
+      "sha256": "6B1BCE380E4BB2BEB3A33368065D9AE704D2A09255B7BE3701BA0E1F07D43DDF"
+    }
+  ]
+}

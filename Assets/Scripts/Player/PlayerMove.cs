@@ -31,6 +31,8 @@ public class PlayerMove : MonoBehaviour, ISlowable
     /// <summary>바닥에 닿아 있는지. 공중 공격 가능 여부 판단용.</summary>
     public bool IsGrounded => isGrounded;
 
+    public float BaseMoveSpeed => moveSpeed;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();

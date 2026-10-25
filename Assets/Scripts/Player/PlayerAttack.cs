@@ -11,15 +11,16 @@ using UnityEngine;
 // 공중(점프 중) 공격: 뒤로 길게 사선 베기 1회. 착지 전까지 1회만 나간다.
 //
 // 판정: 각 타수마다 전방 OverlapBox 1회로 적중을 처리한다.
-// 피해: IDamageable.TakeDamage(DamageInfo(PlayerOwned)) 공통 경로를 사용하므로
+// 피해: PlayerAttackContext를 일반 적과 보스의 공통 IDamageable 경로에 전달하므로
 //       EnemyUnit의 신앙치 피해 보정(BeliefController)이 그대로 적용된다.
-// 교리: 적중 직전 DoctrineEventBus에 OnAttack을 Raise한다 (주체=플레이어).
+// 교리: 피해가 받아들여진 뒤 DoctrineEventBus에 OnAttack을 Raise한다 (주체=플레이어).
 //       "플레이어는 공격하면 ..." 계열 교리가 별도 분기 없이 발동한다.
 // 이동: 공격 중에는 PlayerMove.ControlLocked를 잠가 이동 덮어쓰기와
 //       방향 전환을 막고, 타수별 전진(lunge) 거리만큼 Rigidbody로 밀어준다.
 // 애니메이터가 있으면 Attack1~4 / AirAttack 트리거, IsAttacking / Combo 파라미터를 쏘므로
 // 나중에 스프라이트 애니메이션만 연결하면 된다.
 [RequireComponent(typeof(PlayerMove))]
+[RequireComponent(typeof(PlayerCombatEvents))]
 public class PlayerAttack : MonoBehaviour
 {
     [Serializable]
@@ -173,7 +174,10 @@ public class PlayerAttack : MonoBehaviour
     private bool inputBuffered; // 이번 타 도중 다음 타 입력이 들어왔는지
     private Coroutine attackRoutine;
     private Vector3 baseScale;
-    private static readonly HashSet<IDamageable> OverlapSeen = new HashSet<IDamageable>();
+    private readonly HashSet<IDamageable> overlapSeen = new HashSet<IDamageable>();
+    private readonly List<Collider2D> hitBuffer = new List<Collider2D>(32);
+    private readonly List<RaycastHit2D> attemptBuffer = new List<RaycastHit2D>(32);
+    private PlayerAttackContext activeSwing;
 
     public bool IsAttacking => isAttacking || isAirAttacking;
     public int CurrentCombo => currentCombo;
@@ -181,6 +185,9 @@ public class PlayerAttack : MonoBehaviour
 
     private void Awake()
     {
+        // Existing serialized players also need the signal component after this integration.
+        if (GetComponent<PlayerCombatEvents>() == null)
+            gameObject.AddComponent<PlayerCombatEvents>();
         rb = GetComponent<Rigidbody2D>();
         playerMove = GetComponent<PlayerMove>();
         animator = GetComponentInChildren<Animator>();
@@ -259,6 +266,9 @@ public class PlayerAttack : MonoBehaviour
             attackRoutine = null;
         }
 
+        activeSwing?.Dispose();
+        activeSwing = null;
+        hitboxVisual?.Hide();
         StopMotion();
         currentCombo = 0;
         inputBuffered = false;
@@ -356,74 +366,57 @@ public class PlayerAttack : MonoBehaviour
 
     private IEnumerator SwingOnce(int index)
     {
-        ComboStep step = comboSteps[index];
-        bool isFinish = index == comboSteps.Length - 1;
-
-        // 타수 시작 시점의 방향을 고정한다. 도중에 뒤집히지 않는다.
-        float facing = transform.localScale.x >= 0f ? 1f : -1f;
-        Vector3 scale = transform.localScale;
-        scale.x = Mathf.Abs(baseScale.x) * facing;
-        transform.localScale = scale;
-
         if (animator != null)
             animator.SetTrigger("Attack" + (index + 1));
-
-        // 전진: 선딜 동안 목표 거리를 속도로 환산해 밀어준다.
-        if (rb != null && step.lungeDistance > 0f)
-        {
-            float lungeTime = Mathf.Max(0.01f, step.windupTime + 0.05f);
-            rb.linearVelocity = new Vector2(
-                facing * (step.lungeDistance / lungeTime),
-                rb.linearVelocity.y);
-        }
-
-        if (step.windupTime > 0f)
-            yield return new WaitForSeconds(step.windupTime);
-
-        // 실제 판정과 같은 좌표로 비주얼 박스를 띄운다.
-        if (hitboxVisual != null)
-            hitboxVisual.ShowSwing(index, step.hitboxSize, step.hitboxOffset, step.hitboxAngle, hitboxVisualDuration);
-
-        int hitCount = DoHit(step, facing);
-
-        // 타격 후 미끄러짐을 멈춘다 (y는 중력/점프에 맡긴다).
-        StopMotion();
-
-        if (step.recoveryTime > 0f)
-            yield return new WaitForSeconds(step.recoveryTime);
-
-        if (hitCount > 0 && isFinish && finishHitStop > 0f)
-            yield return HitStop(finishHitStop);
+        return SwingOnce(comboSteps[index], index, stopSlide: true,
+            isFinish: index == comboSteps.Length - 1);
     }
 
-    private IEnumerator SwingOnce(ComboStep step, int comboIndexForVisual, bool stopSlide)
+    private IEnumerator SwingOnce(ComboStep step, int comboIndexForVisual, bool stopSlide, bool isFinish = false)
     {
         float facing = transform.localScale.x >= 0f ? 1f : -1f;
         Vector3 scale = transform.localScale;
         scale.x = Mathf.Abs(baseScale.x) * facing;
         transform.localScale = scale;
 
-        if (rb != null && step.lungeDistance > 0f)
+        // 각 타격마다 별도 ID. 시작 범위 밖에서 뒤늦게 진입한 대상은 적중만 알린다.
+        var attack = new PlayerAttackContext(gameObject);
+        activeSwing = attack;
+        try
         {
-            float lungeTime = Mathf.Max(0.01f, step.windupTime + 0.05f);
-            rb.linearVelocity = new Vector2(
-                facing * (step.lungeDistance / lungeTime),
-                rb.linearVelocity.y);
+            RegisterAttackAttempts(attack, step, facing);
+            if (activeSwing != attack || !isActiveAndEnabled)
+                yield break;
+
+            if (rb != null && step.lungeDistance > 0f)
+            {
+                float lungeTime = Mathf.Max(0.01f, step.windupTime + 0.05f);
+                rb.linearVelocity = new Vector2(
+                    facing * (step.lungeDistance / lungeTime), rb.linearVelocity.y);
+            }
+
+            if (step.windupTime > 0f)
+                yield return new WaitForSeconds(step.windupTime);
+
+            if (activeSwing != attack || !isActiveAndEnabled)
+                yield break;
+            if (hitboxVisual != null)
+                hitboxVisual.ShowSwing(comboIndexForVisual, step.hitboxSize, step.hitboxOffset,
+                    step.hitboxAngle, hitboxVisualDuration);
+
+            int hitCount = DoHit(attack, step, facing);
+            if (stopSlide) StopMotion();
+
+            if (step.recoveryTime > 0f)
+                yield return new WaitForSeconds(step.recoveryTime);
+            if (hitCount > 0 && isFinish && finishHitStop > 0f)
+                yield return HitStop(finishHitStop);
         }
-
-        if (step.windupTime > 0f)
-            yield return new WaitForSeconds(step.windupTime);
-
-        if (hitboxVisual != null)
-            hitboxVisual.ShowSwing(comboIndexForVisual, step.hitboxSize, step.hitboxOffset, step.hitboxAngle, hitboxVisualDuration);
-
-        DoHit(step, facing);
-
-        if (stopSlide && rb != null)
-            StopMotion();
-
-        if (step.recoveryTime > 0f)
-            yield return new WaitForSeconds(step.recoveryTime);
+        finally
+        {
+            if (activeSwing == attack) activeSwing = null;
+            attack.Dispose();
+        }
     }
 
     private void StopMotion()
@@ -433,17 +426,51 @@ public class PlayerAttack : MonoBehaviour
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
 
-    private int DoHit(ComboStep step, float facing)
+    private int TargetMask => targetLayers.value == 0 ? Physics2D.AllLayers : targetLayers.value;
+
+    private Vector2 HitCenter(ComboStep step, float facing) => (Vector2)transform.position +
+        new Vector2(step.hitboxOffset.x * facing, step.hitboxOffset.y);
+
+    private bool TryGetTarget(Collider2D hit, out IDamageable damageable, out GameObject targetObject)
     {
-        Vector2 center = (Vector2)transform.position +
-            new Vector2(step.hitboxOffset.x * facing, step.hitboxOffset.y);
+        damageable = null;
+        targetObject = null;
+        if (!CombatPhysics.IsBodyValid(hit) || hit.transform.IsChildOf(transform)) return false;
+        damageable = hit.GetComponent<IDamageable>() ?? hit.GetComponentInParent<IDamageable>();
+        if (damageable == null) return false;
+        Component component = damageable as Component;
+        if (component != null && (component.GetComponent<PlayerHealth>() != null || component.CompareTag("Player")))
+            return false;
+        targetObject = component != null ? component.gameObject : hit.gameObject;
+        return true;
+    }
+
+    private void RegisterAttackAttempts(PlayerAttackContext attack, ComboStep step, float facing)
+    {
+        Vector2 center = HitCenter(step, facing);
+        float angle = facing >= 0f ? step.hitboxAngle : -step.hitboxAngle;
+        CombatPhysics.OverlapBox(center, step.hitboxSize, angle, TargetMask, hitBuffer);
+        // Include the distance this windup can actually travel, in the locked attack direction.
+        float reach = rb != null ? step.lungeDistance * Mathf.Max(0f, step.windupTime) /
+            Mathf.Max(0.01f, step.windupTime + 0.05f) : 0f;
+        CombatPhysics.SweepBox(center, step.hitboxSize, angle, Vector2.right * facing,
+            reach, TargetMask, attemptBuffer);
+        for (int i = 0; i < hitBuffer.Count; i++)
+            if (TryGetTarget(hitBuffer[i], out IDamageable target, out _)) attack.Begin(target);
+        for (int i = 0; i < attemptBuffer.Count; i++)
+            if (TryGetTarget(attemptBuffer[i].collider, out IDamageable target, out _)) attack.Begin(target);
+        hitBuffer.Clear();
+        attemptBuffer.Clear();
+    }
+
+    private int DoHit(PlayerAttackContext attack, ComboStep step, float facing)
+    {
+        Vector2 center = HitCenter(step, facing);
         float angle = facing >= 0f ? step.hitboxAngle : -step.hitboxAngle;
 
-        Collider2D[] hits = targetLayers.value == 0
-            ? Physics2D.OverlapBoxAll(center, step.hitboxSize, angle)
-            : Physics2D.OverlapBoxAll(center, step.hitboxSize, angle, targetLayers);
+        CombatPhysics.OverlapBox(center, step.hitboxSize, angle, TargetMask, hitBuffer);
 
-        OverlapSeen.Clear();
+        overlapSeen.Clear();
         int hitCount = 0;
 
         float multiplier = stats != null ? stats.AttackMultiplier : 1f;
@@ -451,44 +478,27 @@ public class PlayerAttack : MonoBehaviour
         if (finalDamage <= 0f)
             return 0;
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitBuffer.Count; i++)
         {
-            Collider2D hit = hits[i];
-            if (hit == null || hit.transform.IsChildOf(transform))
-                continue;
-
-            IDamageable damageable = hit.GetComponent<IDamageable>();
-            if (damageable == null)
-                damageable = hit.GetComponentInParent<IDamageable>();
-            if (damageable == null || !OverlapSeen.Add(damageable))
-                continue;
-
-            // 같은 편(플레이어 체력)은 때리지 않는다.
-            Component targetComponent = damageable as Component;
-            if (targetComponent != null)
-            {
-                if (targetComponent.GetComponent<PlayerHealth>() != null ||
-                    targetComponent.CompareTag("Player"))
-                    continue;
-            }
-
-            GameObject targetObject = targetComponent != null
-                ? targetComponent.gameObject
-                : hit.gameObject;
+            Collider2D hit = hitBuffer[i];
+            if (!TryGetTarget(hit, out IDamageable damageable, out GameObject targetObject) ||
+                !overlapSeen.Add(damageable)) continue;
 
             // Table rule: OnAttack triggers only when the attack motion is done
             // AND the hit lands (TakeDamage applied). Whiffed swings raise nothing.
-            bool applied = damageable.TakeDamage(new DamageInfo(finalDamage, DamageSource.PlayerOwned));
+            // Late entrants may be hit, but never retroactively count as a start-of-swing attempt.
+            bool applied = attack.Begin(damageable, publishAttempt: false) && attack.TryHit(damageable, finalDamage);
             if (applied)
             {
                 if (DoctrineEventBus.HasListeners)
                     DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
+                ApplyKnockback(hit, step, facing);
             }
-
-            ApplyKnockback(hit, step, facing);
         }
 
+        overlapSeen.Clear();
+        hitBuffer.Clear();
         return hitCount;
     }
 

@@ -1,0 +1,59 @@
+{
+  "checkedOn": "2026-10-25",
+  "timezone": "Asia/Seoul",
+  "unityVersion": "6000.3.5f2",
+  "verificationProject": "isolated project copy; original Unity editor preserved",
+  "resultFiles": ["Logs/BossGameplayUIEditMode.xml", "Logs/BossGameplayUIPlayModeFinal.xml"],
+  "fullSuiteScope": "gameplay/debug UI separation, 3-second spike warning and complete boss/belief/doctrine regression",
+  "uiModes": {
+    "default": "gameplay",
+    "debugToggle": "F1 in BossTest",
+    "gameplayStyle": "BeliefView-style world health and belief bars with conditional speech bubble; compact player health bar",
+    "debugOnly": "detailed top HUD, test controls, numeric world annotations and pattern instructions",
+    "independentOfDebugHud": true
+  },
+  "spikeTimingRestoration": {
+    "spikeWarningSeconds": 3.0,
+    "resultFile": "Logs/BossSpikeTimingRestore.xml",
+    "scope": "descending dark-cloud interaction, harmless warning, activation damage and actual prefab UI captures",
+    "playMode": { "total": 2, "passed": 2, "failed": 0, "skipped": 0 }
+  },
+  "tuning": {
+    "cloudSize": [2.8, 0.7],
+    "cloudSpacing": 2.0,
+    "spikeWarningSeconds": 3.0
+  },
+  "editMode": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "playMode": {
+    "graphics": true,
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0
+  },
+  "visualChecks": [
+    "single rectangle boss body",
+    "default gameplay shows only enemy-style world bars, belief speech and compact player health",
+    "empty belief bubble hidden during regular attacks and idle",
+    "gameplay and debug UI verified at 1600x900 and 1024x576",
+    "F1 restores detailed HUD, test panel and numeric world labels",
+    "debug mode hides duplicate gameplay bars",
+    "expanded diagnostics and scroll at 1024x576",
+    "thick flat cloud platforms with solid and broken top edges",
+    "cloud identity remains visible through solid/broken top edges and storm mark; lifetime labels debug-only",
+    "3-second spike danger envelope retained in gameplay; numeric countdown debug-only",
+    "melee combo count and windup countdown retained in debug mode",
+    "dash and projectile locked direction arrows",
+    "belief speech for all three stare patterns without extra gameplay instructions",
+    "ground wave shapes retained; jump instruction in debug mode",
+    "brief burn/vulnerability state in gameplay; detailed timers in debug mode",
+    "belief reduction amount and cause feedback retained in debug mode"
+  ],
+  "manualKeyboardPlay": "not executed",
+  "finalStageIntegration": "not executed; encounter prefab and trigger test supplied"
+}

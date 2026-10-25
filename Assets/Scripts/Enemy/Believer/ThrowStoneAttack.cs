@@ -40,7 +40,7 @@ public class ThrowStoneAttack : EnemyAttack
 
         Transform origin = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.SetupFollowing(origin, LockedDirection, new Vector2(attackRange, indicatorWidth), windupTime);
+        indicator.SetupFollowing(origin, LockedDirection, new Vector2(attackRange, indicatorWidth));
         return indicator;
     }
 

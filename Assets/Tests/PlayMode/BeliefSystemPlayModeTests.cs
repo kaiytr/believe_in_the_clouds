@@ -14,6 +14,34 @@ public sealed class BeliefSystemPlayModeTests
     private readonly Dictionary<string, GameObject> sceneActors = new Dictionary<string, GameObject>();
 
     [UnityTest]
+    public IEnumerator MergedPlayerAndShopScenesKeepCombatSignalsAndModalInteraction()
+    {
+        foreach (string path in new[] { "Assets/Scenes/PlayerTEST.unity", "Assets/Scenes/ShopTest.unity" })
+        {
+            var load = LoadSceneForPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
+            while (!load.isDone) yield return null;
+            yield return null;
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            Assert.That(player, Is.Not.Null, path);
+            Assert.That(player.GetComponent<PlayerAttack>(), Is.Not.Null, path);
+            Assert.That(player.GetComponent<PlayerCombatEvents>(), Is.Not.Null,
+                "Existing serialized players must gain the shared attack signal component.");
+            Assert.That(Object.FindFirstObjectByType<DoctrineHud>(), Is.Not.Null);
+            var shop = Object.FindFirstObjectByType<ShopInteractable>();
+            if (shop == null) continue;
+            Assert.That(ShopScreen.Instance, Is.Not.Null);
+            try
+            {
+                shop.Interact(player);
+                Assert.That(ShopScreen.Instance.IsOpen, Is.True);
+                Assert.That(UiModal.IsOpen, Is.True);
+            }
+            finally { ShopScreen.Instance.Close(); }
+            Assert.That(UiModal.IsOpen, Is.False);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator BeliefIsPerEnemyDamageDependsOnSourceAndVulnerabilityRecoversOnce()
     {
         BeliefProfile rear = CreateProfile(BeliefType.RearPosition, 25f, 0f);
@@ -99,12 +127,16 @@ public sealed class BeliefSystemPlayModeTests
         believerUnit.enabled = true;
         executiveUnit.enabled = true;
         yield return null;
-        Assert.That(dog.transform.Find("BeliefUIAnchor"), Is.Not.Null);
+        // Configure all real actors, then run their attack scenarios in stages.
+        // Otherwise an early stone result can satisfy the later wait before the intended evade.
+        believerUnit.enabled = executiveUnit.enabled = false;
+        stoneAttack.CancelForOwnerDeath(); circleAttack.CancelForOwnerDeath();
+        believerUnit.LockMovement(); executiveUnit.LockMovement();
+        Assert.That(dog.GetComponent<BeliefView>().WorldView, Is.Not.Null);
         UnityEngine.UI.Text beliefPhrase = dog.GetComponentInChildren<UnityEngine.UI.Text>(true);
         Assert.That(beliefPhrase, Is.Not.Null);
         Assert.That(beliefPhrase.text, Is.EqualTo(dogUnit.Belief.Profile.Phrase));
-        Transform gaugeFillTransform = dog.transform.Find(
-            "BeliefUIAnchor/WorldSpaceBeliefUI/BeliefSpeechBubble/BeliefGaugeBackground/BeliefGaugeFill");
+        Transform gaugeFillTransform = dog.GetComponent<BeliefView>().WorldView.BeliefFill.transform;
         Assert.That(gaugeFillTransform, Is.Not.Null);
         Assert.That(gaugeFillTransform.GetComponent<UnityEngine.UI.Image>().fillAmount,
             Is.EqualTo(dogUnit.Belief.NormalizedBelief).Within(0.001f));
@@ -153,6 +185,13 @@ public sealed class BeliefSystemPlayModeTests
         playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
         Physics2D.SyncTransforms();
 
+        dogUnit.enabled = false;
+        dogAttack.CancelForOwnerDeath();
+        gotStoneOutcome = gotCircleOutcome = false;
+        typeof(EnemyAttack).GetField("cooldownRemaining", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(stoneAttack, 0f);
+        typeof(EnemyAttack).GetField("cooldownRemaining", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(circleAttack, 0f);
+        Assert.That(stoneAttack.TryAttack(player.transform), Is.True);
+        Assert.That(circleAttack.TryAttack(player.transform), Is.True);
         yield return WaitForCondition(
             () => stoneAttack.IsAttacking && stoneAttack.WasPlayerThreatenedDuringWarning &&
                   circleAttack.IsAttacking && circleAttack.WasPlayerThreatenedDuringWarning,
@@ -189,6 +228,25 @@ public sealed class BeliefSystemPlayModeTests
         yield return null;
     }
 
+    [UnityTest]
+    public IEnumerator RandomBeliefIsSelectedOnceAndKeptForTheEnemyLifetime()
+    {
+        BeliefProfile rear=CreateProfile(BeliefType.RearPosition,25f,0f);
+        BeliefProfile dodge=CreateProfile(BeliefType.DodgeAttack,0f,25f);
+        var catalog=ScriptableObject.CreateInstance<BeliefProfileCatalog>(); createdObjects.Add(catalog);
+        SetField(catalog,"rearPositionProfile",rear); SetField(catalog,"dodgeAttackProfile",dodge);
+        var actor=new GameObject("Lifetime belief test"); actor.SetActive(false); createdObjects.Add(actor);
+        var controller=actor.AddComponent<BeliefController>();
+        SetField(controller,"profileCatalog",catalog);
+        SetField(controller,"beliefTypeCandidates",new List<BeliefType>{BeliefType.RearPosition,BeliefType.DodgeAttack});
+        actor.SetActive(true); yield return null;
+        BeliefType selected=controller.Type;
+        Assert.That(selected==BeliefType.RearPosition || selected==BeliefType.DodgeAttack,Is.True);
+        controller.ReduceBelief(20f);
+        actor.SetActive(false); actor.SetActive(true); yield return null;
+        Assert.That(controller.Type,Is.EqualTo(selected)); Assert.That(controller.CurrentBelief,Is.EqualTo(80f));
+    }
+
     private void CacheAndPauseEnemyAI(Scene scene, LoadSceneMode mode)
     {
         if (scene.name != "BeliefTest")
@@ -202,6 +260,13 @@ public sealed class BeliefSystemPlayModeTests
                 EnemyUnit enemy = root.GetComponent<EnemyUnit>();
                 if (enemy != null)
                     enemy.enabled = false;
+                root.SetActive(true); // Test fixtures include all three species regardless of the manual scene selection.
+                // This scenario tests specific attack/belief pairings. Production scenes choose
+                // a random lifetime belief, so pin only these test instances before EnemyUnit.Start.
+                BeliefController belief = root.GetComponent<BeliefController>();
+                BeliefType required = root.name == "Dog" ? BeliefType.RearPosition : BeliefType.DodgeAttack;
+                SetField(belief, "beliefTypeCandidates", new List<BeliefType> { required });
+                typeof(BeliefController).GetMethod("ConfigureProfile", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(belief, null);
             }
         }
     }

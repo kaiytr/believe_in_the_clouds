@@ -3,7 +3,6 @@ using UnityEngine;
 public class MagicCircle : MonoBehaviour
 {
     private float radius;
-    private GameObject ownerObject;
 
     public bool Activate(
         float radius,
@@ -12,19 +11,20 @@ public class MagicCircle : MonoBehaviour
         float slowDuration,
         float visualDuration,
         Collider2D targetBodyCollider,
-        GameObject ownerObject = null)
+        out bool hpDamageApplied)
     {
         this.radius = radius;
-        this.ownerObject = ownerObject;
         float diameter = radius * 2f;
         transform.localScale = new Vector3(diameter, diameter, 1f);
-        bool applied = ApplyEffect(damage, slowMultiplier, slowDuration, targetBodyCollider);
+        bool applied = ApplyEffect(damage, slowMultiplier, slowDuration, targetBodyCollider, out hpDamageApplied);
         Destroy(gameObject, visualDuration);
         return applied;
     }
 
-    private bool ApplyEffect(float damage, float slowMultiplier, float slowDuration, Collider2D targetBodyCollider)
+    private bool ApplyEffect(float damage, float slowMultiplier, float slowDuration, Collider2D targetBodyCollider,
+        out bool hpDamageApplied)
     {
+        hpDamageApplied = false;
         if (targetBodyCollider == null || !targetBodyCollider.enabled)
             return false;
 
@@ -42,17 +42,10 @@ public class MagicCircle : MonoBehaviour
         IDamageable damageable = playerRoot.GetComponent<IDamageable>();
         if (damageable == null)
             damageable = playerRoot.GetComponentInChildren<IDamageable>();
-        bool damaged = false;
         if (damageable != null)
         {
-            damaged = damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
-            harmfulEffectApplied |= damaged;
-        }
-
-        // Table rule: OnAttack triggers only when the hit lands.
-        if (damaged && ownerObject != null && DoctrineEventBus.HasListeners)
-        {
-            DoctrineEventBus.Raise(ConditionType.OnAttack, ownerObject, playerRoot.gameObject);
+            hpDamageApplied = damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+            harmfulEffectApplied |= hpDamageApplied;
         }
 
         ISlowable slowable = playerRoot.GetComponent<ISlowable>();
