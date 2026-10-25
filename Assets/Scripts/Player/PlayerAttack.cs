@@ -476,11 +476,15 @@ public class PlayerAttack : MonoBehaviour
                 ? targetComponent.gameObject
                 : hit.gameObject;
 
-            if (DoctrineEventBus.HasListeners)
-                DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
-
-            if (damageable.TakeDamage(new DamageInfo(finalDamage, DamageSource.PlayerOwned)))
+            // Table rule: OnAttack triggers only when the attack motion is done
+            // AND the hit lands (TakeDamage applied). Whiffed swings raise nothing.
+            bool applied = damageable.TakeDamage(new DamageInfo(finalDamage, DamageSource.PlayerOwned));
+            if (applied)
+            {
+                if (DoctrineEventBus.HasListeners)
+                    DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
+            }
 
             ApplyKnockback(hit, step, facing);
         }

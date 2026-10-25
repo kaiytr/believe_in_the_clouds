@@ -210,6 +210,15 @@ public class DogChargeAttack : EnemyAttack
             damageable = player.GetComponentInChildren<IDamageable>();
         playerContactAppliedHarm = damageable != null &&
                                    damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+
+        // Table rule: OnAttack triggers only when the hit lands.
+        if (playerContactAppliedHarm && owner != null && DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(
+                ConditionType.OnAttack,
+                owner.gameObject,
+                player != null ? player.gameObject : null);
+        }
     }
 
     private bool IsObstacle(int layer)

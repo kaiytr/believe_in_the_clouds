@@ -76,6 +76,16 @@ public class StoneProjectile : MonoBehaviour
 
             bool applied = damageable != null &&
                            damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+
+            // Table rule: OnAttack triggers only when the hit lands.
+            if (applied && DoctrineEventBus.HasListeners)
+            {
+                DoctrineEventBus.Raise(
+                    ConditionType.OnAttack,
+                    sourceAttack.Owner.gameObject,
+                    player != null ? player.gameObject : null);
+            }
+
             Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed);
             Destroy(gameObject);
             return;

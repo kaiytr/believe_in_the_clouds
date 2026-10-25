@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
-// Doctrine 시스템 EditMode 테스트. 명령서의 테스트 기준 7항목을 검증한다.
-// Unity Editor에서 Window > General > Test Runner > EditMode로 실행한다.
-// duration 0 = 영구 버프를 사용하므로 EditMode(코루틴 미진행)에서도 판정 가능하다.
+// Doctrine system EditMode tests, aligned to the fixed table:
+// Subjects 4 / Conditions 4 / Results 4.
+// Heal = 10% max HP (20s cooldown), IncreaseSpeed = x1.4 persistent,
+// IncreaseAttack = x1.2 for 5s, Explode = 30% of exploder max HP to all sides incl. self.
 [TestFixture]
 public class DoctrineEditModeTests
 {
@@ -17,7 +18,6 @@ public class DoctrineEditModeTests
         DoctrineEventBus.RemoveAllListeners();
         GameObject go = new GameObject("[TestDoctrineManager]");
         manager = go.AddComponent<DoctrineManager>();
-        // AddComponent 메시지가 동작하지 않는 실행 환경에서도 구독 보장.
         manager.EnsureSubscribed();
         spawned.Add(go);
     }
@@ -54,21 +54,19 @@ public class DoctrineEditModeTests
         return go;
     }
 
-    // 1. 교리 하나를 생성하고 활성화할 수 있다.
     [Test]
     public void Activate_SingleDoctrine_Succeeds()
     {
-        Doctrine doctrine = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f);
+        Doctrine doctrine = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
 
         bool ok = manager.TryActivate(doctrine, out string reason);
 
-        Assert.IsTrue(ok, "활성화 실패: " + reason);
+        Assert.IsTrue(ok, "Activation failed: " + reason);
         Assert.AreEqual(1, manager.ActiveCount);
     }
 
-    // 2. 피격 이벤트가 발생하면 OnHit 조건을 가진 교리가 실행된다.
     [Test]
-    public void PlayerHit_TriggersOnHitHeal()
+    public void PlayerHit_TriggersOnHitHeal_TableRatio()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
         TestHealth health = player.GetComponent<TestHealth>();
@@ -76,15 +74,33 @@ public class DoctrineEditModeTests
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
 
         Assert.IsTrue(manager.TryActivate(
-            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f),
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal),
             player, out string reason), reason);
 
         health.TakeDamage(10f, enemy);
 
-        Assert.AreEqual(70f, health.CurrentHealth, 0.001f);
+        Assert.AreEqual(50f, health.CurrentHealth, 0.001f);
     }
 
-    // 3. 조건이 일치하지 않는 교리는 실행되지 않는다.
+    [Test]
+    public void Heal_SecondTriggerWithinCooldown_DoesNothing()
+    {
+        GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
+        TestHealth health = player.GetComponent<TestHealth>();
+        health.ForceHealth(20f);
+
+        Assert.IsTrue(manager.TryActivate(
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal),
+            player, out string reason), reason);
+
+        health.TakeDamage(5f, null);
+        float afterFirst = health.CurrentHealth;
+
+        health.TakeDamage(5f, null);
+
+        Assert.AreEqual(afterFirst - 5f, health.CurrentHealth, 0.001f);
+    }
+
     [Test]
     public void ConditionMismatch_DoesNotTrigger()
     {
@@ -94,7 +110,7 @@ public class DoctrineEditModeTests
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
 
         Assert.IsTrue(manager.TryActivate(
-            new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.Heal, 30f),
+            new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.Heal),
             player, out string reason), reason);
 
         health.TakeDamage(10f, enemy);
@@ -102,7 +118,6 @@ public class DoctrineEditModeTests
         Assert.AreEqual(40f, health.CurrentHealth, 0.001f);
     }
 
-    // 4. 두 교리의 조건이 일치하면 두 효과가 모두 실행된다.
     [Test]
     public void TwoMatchingDoctrines_BothTrigger()
     {
@@ -114,19 +129,18 @@ public class DoctrineEditModeTests
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
 
         Assert.IsTrue(manager.TryActivate(
-            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 20f),
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal),
             player, out string r1), r1);
         Assert.IsTrue(manager.TryActivate(
-            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseAttack, 1.5f, 0f),
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseAttack),
             player, out string r2), r2);
 
         health.TakeDamage(10f, enemy);
 
-        Assert.AreEqual(60f, health.CurrentHealth, 0.001f);
-        Assert.AreEqual(attackBefore * 1.5f, stats.EffectiveAttack, 0.001f);
+        Assert.AreEqual(50f, health.CurrentHealth, 0.001f);
+        Assert.AreEqual(attackBefore * 1.2f, stats.EffectiveAttack, 0.001f);
     }
 
-    // 5. 잘못된 교리는 활성화되지 않고 실패 이유를 확인할 수 있다.
     [Test]
     public void InvalidDoctrine_RejectedWithReason()
     {
@@ -135,10 +149,9 @@ public class DoctrineEditModeTests
         bool ok = manager.TryActivate(invalid, out string reason);
 
         Assert.IsFalse(ok);
-        Assert.IsFalse(string.IsNullOrEmpty(reason), "실패 이유가 비어 있다.");
+        Assert.IsFalse(string.IsNullOrEmpty(reason), "Failure reason is empty.");
     }
 
-    // 5-2. 효과 실행에 필요한 컴포넌트가 없는 대상 바인딩도 거부된다.
     [Test]
     public void DoctrineBoundToTargetWithoutHealth_RejectedWithReason()
     {
@@ -148,21 +161,20 @@ public class DoctrineEditModeTests
         subject.Identity = SubjectType.Player;
 
         bool ok = manager.TryActivate(
-            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 10f),
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal),
             bare, out string reason);
 
         Assert.IsFalse(ok);
         Assert.IsFalse(string.IsNullOrEmpty(reason));
     }
 
-    // 6. 교리를 해제하면 이후 이벤트에서 해당 교리가 실행되지 않는다.
     [Test]
     public void DeactivatedDoctrine_NoLongerTriggers()
     {
         GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
         TestHealth health = player.GetComponent<TestHealth>();
         GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
-        Doctrine doctrine = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f);
+        Doctrine doctrine = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
 
         Assert.IsTrue(manager.TryActivate(doctrine, player, out string reason), reason);
         Assert.IsTrue(manager.Deactivate(doctrine));
@@ -174,8 +186,7 @@ public class DoctrineEditModeTests
         Assert.AreEqual(0, manager.ActiveCount);
     }
 
-    // 7. 새 교리 조합이 기존 전투/이동 코드 수정 없이 공통 경로로 동작한다.
-    //    (이전 테스트에서 쓰지 않은 All + OnDodge + IncreaseSpeed 조합 사용)
+    // All + LowHealth + IncreaseSpeed: table x1.4 persistent, no code change needed.
     [Test]
     public void NewCombination_WorksWithoutCodeChange()
     {
@@ -183,15 +194,14 @@ public class DoctrineEditModeTests
         DoctrineStats stats = player.GetComponent<DoctrineStats>();
 
         Assert.IsTrue(manager.TryActivate(
-            new Doctrine(SubjectType.All, ConditionType.OnDodge, ResultType.IncreaseSpeed, 2f, 0f),
+            new Doctrine(SubjectType.All, ConditionType.LowHealth, ResultType.IncreaseSpeed),
             out string reason), reason);
 
-        DoctrineEventBus.Raise(ConditionType.OnDodge, player);
+        DoctrineEventBus.Raise(ConditionType.LowHealth, player);
 
-        Assert.AreEqual(2f, stats.SpeedMultiplier, 0.001f);
+        Assert.AreEqual(1.4f, stats.SpeedMultiplier, 0.001f);
     }
 
-    // Subject 매칭 규칙: All은 모두 일치, 타입 불일치는 제외.
     [Test]
     public void MatchesRule_AllMatchesEverySubject()
     {
@@ -203,9 +213,9 @@ public class DoctrineEditModeTests
         Assert.IsTrue(DoctrineManager.MatchesRule(playerOnly, SubjectType.Player, ConditionType.OnHit));
     }
 
-    // Explode의 피해 적용부가 지정 대상을 제외하고 주변에 피해를 준다.
+    // Table rule: friends and foes alike, so self is included (exclude = null).
     [Test]
-    public void Explode_AppliesDamageToOthersExcludingSelf()
+    public void Explode_DamagesSelfAndOthers()
     {
         GameObject self = CreateCombatant("Self", SubjectType.Player, 100f);
         GameObject other = CreateCombatant("Other", SubjectType.Enemy, 100f);
@@ -214,14 +224,34 @@ public class DoctrineEditModeTests
 
         List<IHealth> targets = new List<IHealth> { selfHealth, otherHealth };
 
-        bool ok = DoctrineEffectExecutor.ApplyExplodeDamage(targets, 25f, null, selfHealth);
+        bool ok = DoctrineEffectExecutor.ApplyExplodeDamage(targets, 30f, null, null);
 
         Assert.IsTrue(ok);
-        Assert.AreEqual(100f, selfHealth.CurrentHealth, 0.001f);
-        Assert.AreEqual(75f, otherHealth.CurrentHealth, 0.001f);
+        Assert.AreEqual(70f, selfHealth.CurrentHealth, 0.001f);
+        Assert.AreEqual(70f, otherHealth.CurrentHealth, 0.001f);
     }
 
-    // LowHealth 이벤트가 체력 임계값 돌파 시 발생한다.
+    [Test]
+    public void Explode_HasTableCooldownOfFiveSeconds()
+    {
+        Doctrine explode = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Explode);
+        Doctrine heal = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
+        Doctrine speed = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseSpeed);
+
+        Assert.AreEqual(5f, DoctrineManager.GetCooldownSeconds(explode), 0.001f);
+        Assert.AreEqual(20f, DoctrineManager.GetCooldownSeconds(heal), 0.001f);
+        Assert.AreEqual(0f, DoctrineManager.GetCooldownSeconds(speed), 0.001f);
+    }
+
+    [Test]
+    public void Explode_CooldownOverride_Wins()
+    {
+        Doctrine explode = new Doctrine(
+            SubjectType.Player, ConditionType.OnHit, ResultType.Explode, 0f, 0f, 0f, 2f);
+
+        Assert.AreEqual(2f, DoctrineManager.GetCooldownSeconds(explode), 0.001f);
+    }
+
     [Test]
     public void LowHealth_EventRaisedOnThresholdCross()
     {

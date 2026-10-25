@@ -274,12 +274,12 @@ public class DoctrineHud : MonoBehaviour
         }
 
         // 인스펙터에 아무것도 연결하지 않아도 빈 칸이 보이지 않도록
-        // 내장된 예시 3개를 쓴다. (Setup 메뉴가 만들던 SampleDoctrine1~3과 같은 조합)
+        // 내장된 예시 3개를 쓴다. (표 기준: 회복/피해증가/폭발)
         if (result.Count == 0 && useBuiltInPreview)
         {
-            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f));
-            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.IncreaseAttack, 1.3f, 5f));
-            result.Add(new Doctrine(SubjectType.Enemy, ConditionType.OnDeath, ResultType.Explode, 40f));
+            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal));
+            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.IncreaseAttack));
+            result.Add(new Doctrine(SubjectType.Enemy, ConditionType.OnDeath, ResultType.Explode));
         }
 
         return result;
