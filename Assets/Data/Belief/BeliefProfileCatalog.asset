@@ -12,5 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bea6dfe8cfeaec4890b847d3743f4d8, type: 3}
   m_Name: BeliefProfileCatalog
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefProfileCatalog
+  profiles:
+  - {fileID: 11400000, guid: 2996a5e252401d84aa5a6fadd8a4c06f, type: 2}
+  - {fileID: 11400000, guid: 2f0c156cb99bccd4b838d24b835246ff, type: 2}
+  - {fileID: 11400000, guid: 78640aa50f1fa60418cb60a26296b3d2, type: 2}
+  - {fileID: 11400000, guid: 266111632e7bb2747a0aaba12e546a49, type: 2}
+  - {fileID: 11400000, guid: 31c5c07aaa0cb0f4b9a0802bd39a1f6f, type: 2}
+  - {fileID: 11400000, guid: 77a4b1323f7e6ec428899d2bf69640c5, type: 2}
+  - {fileID: 11400000, guid: 62c0b818597fd4947af9effe8edd58cf, type: 2}
+  - {fileID: 11400000, guid: e3cd624d1b341d54c8715f81265c5d0b, type: 2}
+  - {fileID: 11400000, guid: 51a0d4d1644eca547ba1eb178c36dc05, type: 2}
+  - {fileID: 11400000, guid: 2f1da3a2863fb5c45be590d4e5b5def8, type: 2}
+  - {fileID: 11400000, guid: 681526cbcc78e144395ed43c93502091, type: 2}
   rearPositionProfile: {fileID: 11400000, guid: 2996a5e252401d84aa5a6fadd8a4c06f, type: 2}
   dodgeAttackProfile: {fileID: 11400000, guid: 2f0c156cb99bccd4b838d24b835246ff, type: 2}

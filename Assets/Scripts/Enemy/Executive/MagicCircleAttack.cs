@@ -21,6 +21,10 @@ public class MagicCircleAttack : EnemyAttack
     private Vector2 lockedTargetPosition;
 
     public float AttackRange => attackRange;
+    // The rear challenge needs an actual two-second opportunity before the AI can turn.
+    public override float WindupDuration => owner != null && owner.Belief != null &&
+        owner.Belief.Profile != null && owner.Belief.Profile.Rule == BeliefRule.RearDwell
+        ? Mathf.Max(windupTime, owner.Belief.Profile.RearInterval + 1f) : windupTime;
     public override bool IsConfigured => base.IsConfigured && magicCirclePrefab != null &&
                                          dangerIndicatorPrefab != null && circleRadius > 0f;
 
@@ -41,7 +45,7 @@ public class MagicCircleAttack : EnemyAttack
 
         float diameter = circleRadius * 2f;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.Setup(lockedTargetPosition, 0f, new Vector2(diameter, diameter), windupTime);
+        indicator.Setup(lockedTargetPosition, 0f, new Vector2(diameter, diameter));
         return indicator;
     }
 
@@ -67,14 +71,15 @@ public class MagicCircleAttack : EnemyAttack
             slowDuration,
             circleVisualDuration,
             PlayerBodyCollider,
-            owner != null ? owner.gameObject : gameObject);
+            out bool hpDamageApplied);
+        if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);
 
         if (harmfulEffectApplied)
-            ReportOutcome(AttackOutcome.Hit);
+            ReportOutcome(AttackOutcome.Hit, completedNormally: true);
         else if (WasPlayerThreatenedDuringWarning && IsPlayerOutsideThreatRange())
-            ReportOutcome(AttackOutcome.EvadedByPlayer);
+            ReportOutcome(AttackOutcome.EvadedByPlayer, completedNormally: true);
         else
-            ReportOutcome(AttackOutcome.Missed);
+            ReportOutcome(AttackOutcome.Missed, completedNormally: true);
     }
 
     private void OnDrawGizmosSelected()

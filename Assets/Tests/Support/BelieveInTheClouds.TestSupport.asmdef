@@ -1,0 +1,8 @@
+{
+  "name": "BelieveInTheClouds.TestSupport",
+  "references": ["BelieveInTheClouds.Runtime"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "autoReferenced": false,
+  "optionalUnityReferences": ["TestAssemblies"]
+}

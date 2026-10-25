@@ -26,12 +26,20 @@ public abstract class EnemyAttack : MonoBehaviour
     private int pendingHitResults;
     private bool outcomeReported;
     private bool attackLaunched;
+    private bool playerHpDamaged;
+    private Transform attackTarget;
+    private int attackId;
     private bool playerThreatenedDuringWarning;
     private Vector2 lockedDirection;
 
     public event Action<EnemyAttack, AttackOutcome> OutcomeReported;
+    public event Action<EnemyAttack, EnemyAttackResult> AttackResolved;
+    public int CurrentAttackId => attackId;
+    public bool IsWindingUp => phase == AttackPhase.Windup;
+    public virtual float WindupDuration => windupTime;
+    public bool IsResolvingAttack(int id) => id == attackId && phase == AttackPhase.Resolving && !outcomeReported;
     public bool IsAttacking => phase != AttackPhase.Idle;
-    public bool IsReady => owner != null && !owner.IsDead && !owner.IsVulnerable &&
+    public bool IsReady => isActiveAndEnabled && owner != null && !owner.IsDead &&
                            phase == AttackPhase.Idle && cooldownRemaining <= 0f;
     public float LockedFacingDirection => lockedDirection.x < 0f ? -1f : 1f;
     public EnemyUnit Owner => owner;
@@ -52,8 +60,13 @@ public abstract class EnemyAttack : MonoBehaviour
         if (owner == null || owner.IsDead)
             return;
 
-        if (!owner.IsVulnerable)
-            cooldownRemaining = Mathf.Max(0f, cooldownRemaining - Time.deltaTime);
+        if (phase != AttackPhase.Idle && !HasAttackTarget())
+        {
+            CancelAttack(true);
+            return;
+        }
+
+        cooldownRemaining = Mathf.Max(0f, cooldownRemaining - Time.deltaTime);
 
         if (phase == AttackPhase.Windup)
             TrackThreatDuringWarning();
@@ -69,6 +82,9 @@ public abstract class EnemyAttack : MonoBehaviour
             direction = transform.localScale.x >= 0f ? 1f : -1f;
         lockedDirection = new Vector2(Mathf.Sign(direction), 0f);
         playerThreatenedDuringWarning = false;
+        playerHpDamaged = false;
+        attackTarget = target;
+        attackId++;
         outcomeReported = false;
         attackLaunched = false;
         pendingHitResults = 0;
@@ -85,7 +101,7 @@ public abstract class EnemyAttack : MonoBehaviour
 
     private IEnumerator AttackRoutine(Transform target)
     {
-        yield return WaitGameTime(windupTime, pauseWhileVulnerable: true);
+        yield return WaitWindup(WindupDuration);
         if (owner == null || owner.IsDead || phase != AttackPhase.Windup)
             yield break;
 
@@ -108,21 +124,18 @@ public abstract class EnemyAttack : MonoBehaviour
         cooldownRemaining = Mathf.Max(0f, cooldown);
         phase = AttackPhase.Recovery;
         owner.ChangeState(EnemyState.Recovery);
-        yield return WaitGameTime(recoveryTime, pauseWhileVulnerable: true);
+        yield return WaitGameTime(recoveryTime);
 
         if (owner != null && !owner.IsDead)
         {
             phase = AttackPhase.Idle;
             attackRoutine = null;
-            if (!owner.IsVulnerable)
-            {
-                owner.UnlockMovement();
-                owner.ChangeState(EnemyState.Idle);
-            }
+            owner.UnlockMovement();
+            owner.ChangeState(EnemyState.Idle);
         }
     }
 
-    private IEnumerator WaitGameTime(float duration, bool pauseWhileVulnerable)
+    private IEnumerator WaitGameTime(float duration)
     {
         float remaining = Mathf.Max(0f, duration);
         while (remaining > 0f)
@@ -130,10 +143,32 @@ public abstract class EnemyAttack : MonoBehaviour
             if (owner == null || owner.IsDead)
                 yield break;
 
-            if (!pauseWhileVulnerable || !owner.IsVulnerable)
-                remaining -= Time.deltaTime;
+            remaining -= Time.deltaTime;
             yield return null;
         }
+    }
+
+    private IEnumerator WaitWindup(float duration)
+    {
+        float remaining = Mathf.Max(0f, duration);
+        while (remaining > 0f)
+        {
+            if (owner == null || owner.IsDead)
+                yield break;
+
+            remaining -= Time.deltaTime;
+
+            if (activeIndicator != null)
+                activeIndicator.SetProgress(duration > 0f ? 1f - remaining / duration : 1f);
+            yield return null;
+        }
+
+        if (activeIndicator != null)
+        {
+            activeIndicator.SetProgress(1f);
+            activeIndicator.Cancel();
+        }
+        activeIndicator = null;
     }
 
     private void TrackThreatDuringWarning()
@@ -165,16 +200,30 @@ public abstract class EnemyAttack : MonoBehaviour
         pendingHitResults++;
     }
 
-    public void ResolvePendingHitResult(AttackOutcome outcome)
+    public void ResolvePendingHitResult(int sourceAttackId, AttackOutcome outcome, bool completedNormally)
     {
-        if (pendingHitResults <= 0 || owner == null || owner.IsDead)
+        if (sourceAttackId != attackId || pendingHitResults <= 0 || owner == null || owner.IsDead)
             return;
 
         pendingHitResults--;
-        ReportOutcome(outcome);
+        ReportOutcome(outcome, completedNormally);
     }
 
-    protected void ReportOutcome(AttackOutcome outcome)
+    /// <summary>Called once accepted HP damage is known; records belief data before notifying doctrines.</summary>
+    public void NotifyPlayerHpDamageApplied(int sourceAttackId)
+    {
+        if (sourceAttackId != attackId || outcomeReported || !attackLaunched || playerHpDamaged)
+            return;
+
+        playerHpDamaged = true;
+        if (owner != null && DoctrineEventBus.HasListeners)
+            DoctrineEventBus.Raise(ConditionType.OnAttack, owner.gameObject,
+                attackTarget != null ? attackTarget.gameObject : null);
+    }
+
+    private bool HasAttackTarget() => owner != null && owner.HasCombatTarget && owner.Target == attackTarget;
+
+    protected void ReportOutcome(AttackOutcome outcome, bool completedNormally = false)
     {
         if (outcomeReported || phase == AttackPhase.Idle)
             return;
@@ -182,8 +231,16 @@ public abstract class EnemyAttack : MonoBehaviour
         if (outcome == AttackOutcome.EvadedByPlayer && !attackLaunched)
             outcome = AttackOutcome.Missed;
 
+        if (!HasAttackTarget() && outcome != AttackOutcome.Cancelled)
+        {
+            outcome = AttackOutcome.Cancelled;
+            completedNormally = false;
+        }
+        var result = new EnemyAttackResult(attackId, outcome, attackLaunched, playerHpDamaged,
+            completedNormally, Time.time);
         outcomeReported = true;
         OutcomeReported?.Invoke(this, outcome);
+        AttackResolved?.Invoke(this, result);
     }
 
     public void SetVulnerable(bool vulnerable)
@@ -192,84 +249,35 @@ public abstract class EnemyAttack : MonoBehaviour
             CancelWindup();
     }
 
-    private void CancelWindup()
-    {
-        if (attackRoutine != null)
-        {
-            StopCoroutine(attackRoutine);
-            attackRoutine = null;
-        }
+    private void CancelWindup() => CancelAttack(true);
 
-        if (activeIndicator != null)
-            activeIndicator.Cancel();
+    public void CancelForOwnerDeath() => CancelAttack(false);
+
+    private void CancelAttack(bool startCooldown)
+    {
+        if (attackRoutine != null) StopCoroutine(attackRoutine);
+        attackRoutine = null;
+        if (activeIndicator != null) activeIndicator.Cancel();
         activeIndicator = null;
-        ReportOutcome(AttackOutcome.Cancelled);
-        cooldownRemaining = Mathf.Max(0f, cooldown);
-        phase = AttackPhase.Idle;
-    }
-
-    public void CancelForOwnerDeath()
-    {
-        if (phase == AttackPhase.Idle && attackRoutine == null)
-            return;
-
-        if (attackRoutine != null)
-        {
-            StopCoroutine(attackRoutine);
-            attackRoutine = null;
-        }
-
-        if (activeIndicator != null)
-            activeIndicator.Cancel();
-        activeIndicator = null;
-        ReportOutcome(AttackOutcome.Cancelled);
-        pendingHitResults = 0;
-        phase = AttackPhase.Idle;
-        OnOwnerDeath();
-    }
-
-    protected virtual void OnOwnerDeath() { }
-
-    protected static bool ColliderOverlapsBox(Collider2D body, Vector2 center, Vector2 size, float angle = 0f)
-    {
-        if (body == null || !body.enabled || !body.gameObject.activeInHierarchy)
-            return false;
-
-        Collider2D[] overlaps = Physics2D.OverlapBoxAll(center, size, angle, Physics2D.AllLayers);
-        foreach (Collider2D overlap in overlaps)
-        {
-            if (overlap == body)
-                return true;
-        }
-        return false;
-    }
-
-    protected static bool ColliderOverlapsCircle(Collider2D body, Vector2 center, float radius)
-    {
-        if (body == null || !body.enabled || !body.gameObject.activeInHierarchy)
-            return false;
-
-        Vector2 closest = body.ClosestPoint(center);
-        return (closest - center).sqrMagnitude <= radius * radius;
-    }
-
-    protected virtual void OnDisable()
-    {
-        if (attackRoutine != null)
-        {
-            StopCoroutine(attackRoutine);
-            attackRoutine = null;
-        }
-
-        if (activeIndicator != null)
-            activeIndicator.Cancel();
-        activeIndicator = null;
-        if (phase != AttackPhase.Idle)
-            ReportOutcome(AttackOutcome.Cancelled);
+        if (phase != AttackPhase.Idle) ReportOutcome(AttackOutcome.Cancelled);
         phase = AttackPhase.Idle;
         pendingHitResults = 0;
-
-        if (owner != null && !owner.IsDead && !owner.IsVulnerable)
+        if (startCooldown) cooldownRemaining = Mathf.Max(0f, cooldown);
+        OnAttackCancelled();
+        if (owner != null && !owner.IsDead)
+        {
             owner.UnlockMovement();
+            owner.ChangeState(EnemyState.Idle);
+        }
     }
+
+    protected virtual void OnAttackCancelled() { }
+
+    protected static bool ColliderOverlapsBox(Collider2D body, Vector2 center, Vector2 size, float angle = 0f) =>
+        CombatPhysics.OverlapsBox(body, center, size, angle);
+
+    protected static bool ColliderOverlapsCircle(Collider2D body, Vector2 center, float radius) =>
+        CombatPhysics.OverlapsCircle(body, center, radius);
+
+    protected virtual void OnDisable() => CancelAttack(false);
 }

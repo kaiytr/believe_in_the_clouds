@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "BelieveInTheClouds.Runtime",
+        "BelieveInTheClouds.TestSupport",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

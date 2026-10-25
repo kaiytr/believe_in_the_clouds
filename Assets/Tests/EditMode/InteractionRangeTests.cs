@@ -50,7 +50,8 @@ public class InteractionRangeTests
         Assert.IsTrue(interactable.IsInRange(new Vector3(5f, 0f, 0f)));
 
         // 중심 기준으로는 5m라 예전 방식이면 실패했을 위치
-        Assert.Greater(interactable.DistanceTo(Vector3.zero), 0f);
+        Assert.Greater(Vector2.Distance(new Vector2(5f, 0f), target.transform.position),
+            interactable.InteractionRadius);
     }
 
     // 콜라이더 안쪽에 있으면 거리 0.

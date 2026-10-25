@@ -15,6 +15,7 @@ public class StoneProjectile : MonoBehaviour
     private ThrowStoneAttack sourceAttack;
     private bool initialized;
     private bool resultResolved;
+    private int sourceAttackId;
 
     private void Awake()
     {
@@ -27,6 +28,7 @@ public class StoneProjectile : MonoBehaviour
         this.damage = damage;
         this.maxDistance = maxDistance;
         this.sourceAttack = sourceAttack;
+        sourceAttackId = sourceAttack != null ? sourceAttack.CurrentAttackId : 0;
         spawnPosition = body.position;
         initialized = true;
 
@@ -47,7 +49,8 @@ public class StoneProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        if (sourceAttack == null || sourceAttack.Owner == null || sourceAttack.Owner.IsDead)
+        if (sourceAttack == null || sourceAttack.Owner == null || sourceAttack.Owner.IsDead ||
+            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId))
         {
             Resolve(AttackOutcome.Cancelled);
             Destroy(gameObject);
@@ -57,14 +60,15 @@ public class StoneProjectile : MonoBehaviour
         float travelled = Vector2.Dot(body.position - spawnPosition, direction);
         if (travelled >= maxDistance)
         {
-            Resolve(sourceAttack.GetOutcomeAtMaximumRange());
+            Resolve(sourceAttack.GetOutcomeAtMaximumRange(), completedNormally: true);
             Destroy(gameObject);
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (sourceAttack == null || sourceAttack.Owner == null)
+        if (resultResolved || sourceAttack == null || sourceAttack.Owner == null ||
+            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId))
             return;
 
         if (other == sourceAttack.Owner.TargetBodyCollider)
@@ -76,17 +80,8 @@ public class StoneProjectile : MonoBehaviour
 
             bool applied = damageable != null &&
                            damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
-
-            // Table rule: OnAttack triggers only when the hit lands.
-            if (applied && DoctrineEventBus.HasListeners)
-            {
-                DoctrineEventBus.Raise(
-                    ConditionType.OnAttack,
-                    sourceAttack.Owner.gameObject,
-                    player != null ? player.gameObject : null);
-            }
-
-            Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed);
+            if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
+            Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
             Destroy(gameObject);
             return;
         }
@@ -98,14 +93,14 @@ public class StoneProjectile : MonoBehaviour
         }
     }
 
-    private void Resolve(AttackOutcome outcome)
+    private void Resolve(AttackOutcome outcome, bool completedNormally = false)
     {
         if (resultResolved)
             return;
 
         resultResolved = true;
         if (sourceAttack != null)
-            sourceAttack.ResolvePendingHitResult(outcome);
+            sourceAttack.ResolvePendingHitResult(sourceAttackId, outcome, completedNormally);
     }
 
     private void OnDestroy()
