@@ -1,6 +1,9 @@
-// 교리(Doctrine) 시스템의 타입 안전한 식별자 모음.
-// 문자열 비교 대신 enum으로 주어/조건/결과를 관리한다.
-// None = 0 값은 "미지정" 검출용이다.
+// Doctrine system identifier enums.
+// Subject/Condition/Result are managed as enums instead of strings.
+// None = 0 is for "unspecified" detection.
+// Fixed by table: Subjects 4 / Conditions 4 / Results 4.
+// (Conditions: OnHit/OnAttack/OnDeath/LowHealth, Results: Heal/Explode/IncreaseSpeed/IncreaseAttack)
+// Numeric values keep serialized asset compatibility (removed Slow=3, OnDodge=5, TakeDamage=6).
 public enum SubjectType
 {
     None = 0,
@@ -16,8 +19,7 @@ public enum ConditionType
     OnHit = 1,
     OnAttack = 2,
     OnDeath = 3,
-    LowHealth = 4,
-    OnDodge = 5
+    LowHealth = 4
 }
 
 public enum ResultType
@@ -25,8 +27,6 @@ public enum ResultType
     None = 0,
     Heal = 1,
     Explode = 2,
-    Slow = 3,
     IncreaseSpeed = 4,
-    IncreaseAttack = 5,
-    TakeDamage = 6
+    IncreaseAttack = 5
 }

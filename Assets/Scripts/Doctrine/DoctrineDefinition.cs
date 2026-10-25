@@ -11,13 +11,13 @@ public class DoctrineDefinition : ScriptableObject
     public ConditionType Condition = ConditionType.OnHit;
     public ResultType Result = ResultType.Heal;
 
-    [Tooltip("효과 수치: Heal량, TakeDamage량, Explode 피해량, 버프 배율(Slow는 0~1 사이 속도 배율). 0이면 기본값 사용.")]
+    [Tooltip("효과 수치: 명시 피해/회복량 오버라이드. 0이면 표 고정값(비율) 사용.")]
     public float Magnitude;
 
-    [Tooltip("지속 시간(초). 0이면 기본값 사용, Slow/Increase 계열에서 사용.")]
+    [Tooltip("지속 시간(초). 0이면 표 고정값(피해증가 5초, 이속 영속) 사용. 피해증가 오버라이드용.")]
     public float Duration;
 
-    [Tooltip("Explode 반경. 0이면 기본값 사용.")]
+    [Tooltip("Explode 반경. 0이면 표 고정값(3) 사용.")]
     public float Radius;
 
     public Doctrine ToRuntime()

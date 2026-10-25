@@ -2,22 +2,26 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 교리 실행 엔진.
-// 책임: 활성 교리 목록 관리, 등록/해제, 이벤트 수신, 조건 판정, 효과 실행 요청.
-// 처리 흐름: 게임 이벤트 발생(DoctrineEventBus) -> NotifyEvent ->
-//            활성 교리 순회 판정 -> 조건 일치 교리의 효과 실행(DoctrineEffectExecutor).
-// 교리별 if문 없이 공통 판정(MatchesRule)과 공통 실행 경로를 사용한다.
-// 하나의 교리 실행이 나머지 교리 판정을 중단시키지 않는다.
+// Doctrine execution engine.
+// Responsibilities: active doctrine list, register/unregister, event intake,
+// condition match, effect execution request.
+// Flow: game event (DoctrineEventBus) -> NotifyEvent ->
+//         scan active doctrines -> matching doctrines execute (DoctrineEffectExecutor).
+// Common match (MatchesRule) + common execution path; no per-doctrine branches.
+// One doctrine's execution never stops the remaining doctrines.
+// Table rules:
+//   Heal has a per-doctrine 20s cooldown (keyed by doctrine rule + owner).
+//   IncreaseSpeed (+40%) is persistent: re-applied on every matching event.
 public class DoctrineManager : MonoBehaviour
 {
     public static DoctrineManager Instance { get; private set; }
 
-    [Header("안전 장치")]
-    [Tooltip("TakeDamage 교리가 OnHit을 재발생시키는 등의 연쇄를 끊기 위한 최대 중첩 깊이.")]
+    [Header("Safety")]
+    [Tooltip("Max nesting depth to break chains like Heal re-triggering OnHit.")]
     [SerializeField] private int maxNestedDepth = 8;
 
-    [Header("로그")]
-    [Tooltip("켜면 발동/활성화 로그를 출력한다. 콘솔 스팸은 에디터 렉의 주범이라 기본 OFF.")]
+    [Header("Log")]
+    [Tooltip("Enable for trigger/activation logs. Off by default (console spam lags the editor).")]
     [SerializeField] private bool verboseLogs = false;
 
     [Serializable]
@@ -33,8 +37,22 @@ public class DoctrineManager : MonoBehaviour
         }
     }
 
+    [Serializable]
+    private sealed class CooldownEntry
+    {
+        public string Key;
+        public float ReadyAt;
+    }
+
     private readonly List<ActiveDoctrine> activeDoctrines = new List<ActiveDoctrine>();
+    private readonly List<CooldownEntry> cooldowns = new List<CooldownEntry>();
     private int notifyDepth;
+
+    // Display-only events. Match/execute logic never depends on these.
+    public event Action<ActiveDoctrine> Activated;
+    public event Action<ActiveDoctrine> Deactivated;
+    public event Action<ActiveDoctrine, GameObject> Triggered;
+    public event Action Cleared;
 
     public IReadOnlyList<ActiveDoctrine> ActiveDoctrines => activeDoctrines;
     public int ActiveCount => activeDoctrines.Count;
@@ -43,12 +61,13 @@ public class DoctrineManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning("[Doctrine] DoctrineManager가 이미 있어 중복 객체를 파기합니다.");
+            Debug.LogWarning("[Doctrine] Duplicate DoctrineManager destroyed.");
             Destroy(gameObject);
             return;
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void OnDestroy()
@@ -69,36 +88,40 @@ public class DoctrineManager : MonoBehaviour
         DoctrineEventBus.EventRaised -= NotifyEvent;
     }
 
-    // 메시지(Awake/OnEnable)가 호출되지 않는 환경에서도
-    // 테스트 하네스가 명시적으로 구독을 보장하기 위한 멱등 메서드.
-    // 중복 구독되지 않는다.
+    // Idempotent subscribe for harnesses running without Awake/OnEnable messages.
     public void EnsureSubscribed()
     {
         DoctrineEventBus.EventRaised -= NotifyEvent;
         DoctrineEventBus.EventRaised += NotifyEvent;
     }
 
-    // 향후 상점/슬롯/UI가 연결할 인터페이스: 생성된 Doctrine을 넘기면 검증 후 활성화.
+    // Shop/slot/UI entry: validates then activates the built Doctrine.
     public bool TryActivate(Doctrine doctrine, out string reason)
     {
         return TryActivate(doctrine, null, out reason);
     }
 
-    // owner 지정 시 해당 객체의 이벤트에만 반응하는 바인딩 등록.
-    // (향후 교리 슬롯/장착 개념과 연결 가능)
+    // Owner-bound registration: only reacts to that object's events.
     public bool TryActivate(Doctrine doctrine, GameObject owner, out string reason)
     {
         if (!DoctrineValidator.TryValidate(doctrine, owner, out reason))
         {
-            Debug.LogWarning($"[Doctrine] 활성화 실패: {reason}");
+            Debug.LogWarning($"[Doctrine] Activation failed: {reason}");
             return false;
         }
 
-        activeDoctrines.Add(new ActiveDoctrine(doctrine.Clone(), owner));
+        ActiveDoctrine entry = new ActiveDoctrine(doctrine.Clone(), owner);
+        activeDoctrines.Add(entry);
+        if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
+        {
+            ReapplyPersistentSpeed(entry);
+        }
+
         if (verboseLogs)
         {
-            Debug.Log($"[Doctrine] 활성화: {doctrine}");
+            Debug.Log($"[Doctrine] Activated: {doctrine}");
         }
+        Activated?.Invoke(entry);
         return true;
     }
 
@@ -116,27 +139,55 @@ public class DoctrineManager : MonoBehaviour
             return false;
         }
 
+        ActiveDoctrine removed = activeDoctrines[index];
         activeDoctrines.RemoveAt(index);
+        if (removed.Doctrine != null && removed.Doctrine.Result == ResultType.IncreaseSpeed)
+        {
+            RefreshPersistentSpeed(removed.Owner, removed.Doctrine);
+        }
+
+        RemoveCooldownsFor(removed);
         if (verboseLogs)
         {
-            Debug.Log($"[Doctrine] 해제: {doctrine}");
+            Debug.Log($"[Doctrine] Deactivated: {doctrine}");
         }
+        Deactivated?.Invoke(removed);
         return true;
     }
 
     public void Clear()
     {
+        // Reset persistent speed buffs held by owners.
+        for (int i = 0; i < activeDoctrines.Count; i++)
+        {
+            ActiveDoctrine entry = activeDoctrines[i];
+            if (entry == null || entry.Doctrine == null)
+            {
+                continue;
+            }
+
+            if (entry.Doctrine.Result == ResultType.IncreaseSpeed && entry.Owner != null)
+            {
+                DoctrineStats stats = entry.Owner.GetComponent<DoctrineStats>();
+                if (stats != null)
+                {
+                    stats.ClearPersistentSpeedBuff();
+                }
+            }
+        }
+
         activeDoctrines.Clear();
+        cooldowns.Clear();
         if (verboseLogs)
         {
-            Debug.Log("[Doctrine] 전체 해제.");
+            Debug.Log("[Doctrine] Cleared all.");
         }
+        Cleared?.Invoke();
     }
 
     public void NotifyEvent(DoctrineEventData evt)
     {
-        // 활성 교리가 없으면 GetComponent/스냅샷 할당 없이 즉시 복귀.
-        // TakeDamage가 매 타격마다 OnHit을 Raise하므로 핫패스다.
+        // No active doctrines: return without GetComponent/snapshot allocs.
         if (activeDoctrines.Count == 0)
         {
             return;
@@ -144,7 +195,7 @@ public class DoctrineManager : MonoBehaviour
 
         if (notifyDepth >= maxNestedDepth)
         {
-            Debug.LogWarning("[Doctrine] 중첩 깊이 초과로 이벤트를 무시합니다 (무한 재귀 방지).");
+            Debug.LogWarning("[Doctrine] Nesting depth exceeded; ignoring event (infinite recursion guard).");
             return;
         }
 
@@ -157,11 +208,11 @@ public class DoctrineManager : MonoBehaviour
                 return;
             }
 
-            // 루프당 GetComponent 1회로 고정. 기존 Matches(entry, evt)는
-            // 교리 수만큼 GetComponent를 호출해서 이벤트 핫패스를 느리게 했다.
+            // One GetComponent per event. Matches(entry, evt) called GetComponent
+            // per doctrine and slowed the hot path.
             SubjectType identity = DoctrineSubject.GetIdentity(target);
 
-            // 실행 중 등록/해제가 일어나도 안전하도록 스냅샷 순회.
+            // Snapshot so register/unregister during execution stays safe.
             List<ActiveDoctrine> snapshot = new List<ActiveDoctrine>(activeDoctrines);
             foreach (ActiveDoctrine entry in snapshot)
             {
@@ -175,24 +226,50 @@ public class DoctrineManager : MonoBehaviour
                     continue;
                 }
 
-                // Owner 바인딩이 있으면 해당 객체의 이벤트에만 반응.
+                // Owner-bound entries only react to their owner's events.
                 if (entry.Owner != null && entry.Owner != target)
                 {
                     continue;
                 }
 
+                if (IsOnCooldown(entry, target))
+                {
+                    continue;
+                }
+
+                bool ok = false;
                 try
                 {
-                    bool ok = DoctrineEffectExecutor.Execute(entry.Doctrine, target, evt.SourceObject);
+                    ok = DoctrineEffectExecutor.Execute(entry.Doctrine, target, evt.SourceObject);
+                    if (ok)
+                    {
+                        MarkCooldown(entry, target);
+                        if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
+                        {
+                            ReapplyPersistentSpeed(entry);
+                        }
+                    }
+
                     if (verboseLogs)
                     {
-                        Debug.Log($"[Doctrine] 발동: {entry.Doctrine} -> {target.name} (성공:{ok}).");
+                        Debug.Log($"[Doctrine] Triggered: {entry.Doctrine} -> {target.name} (ok:{ok}).");
                     }
                 }
                 catch (Exception ex)
                 {
-                    // 한 교리의 실패가 다른 교리 판정을 막지 않는다.
-                    Debug.LogError($"[Doctrine] 효과 실행 중 예외 (다음 교리 계속 판정): {ex}");
+                    // One doctrine's failure never stops the rest.
+                    Debug.LogError($"[Doctrine] Effect exception (continuing): {ex}");
+                }
+
+                // UI is told "it triggered" regardless of effect success.
+                // UI exceptions are isolated so they never count as effect failure.
+                try
+                {
+                    Triggered?.Invoke(entry, target);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[Doctrine] Trigger event exception: {ex}");
                 }
             }
         }
@@ -214,7 +291,7 @@ public class DoctrineManager : MonoBehaviour
             return false;
         }
 
-        // Owner 바인딩이 있으면 해당 객체의 이벤트에만 반응.
+        // Owner-bound entries only react to their owner's events.
         if (entry.Owner != null && entry.Owner != evt.SubjectObject)
         {
             return false;
@@ -223,8 +300,8 @@ public class DoctrineManager : MonoBehaviour
         return true;
     }
 
-    // 새 교리 조합 추가 시 수정 없이 재사용되는 공통 판정.
-    // All은 모든 주어와 일치한다.
+    // Common match reused without edits when new doctrine combos are added.
+    // All matches every subject.
     public static bool MatchesRule(Doctrine doctrine, SubjectType actualIdentity, ConditionType condition)
     {
         if (doctrine == null || doctrine.Condition != condition)
@@ -238,5 +315,170 @@ public class DoctrineManager : MonoBehaviour
         }
 
         return actualIdentity != SubjectType.None && doctrine.Subject == actualIdentity;
+    }
+
+    // Per-doctrine cooldown. Heal: table 20s, Explode: table 5s.
+    // Explicit CooldownSec overrides both.
+    public static float GetCooldownSeconds(Doctrine doctrine)
+    {
+        return ResolveCooldown(doctrine);
+    }
+
+    private bool IsOnCooldown(ActiveDoctrine entry, GameObject target)
+    {
+        float cooldown = ResolveCooldown(entry.Doctrine);
+        if (cooldown <= 0f)
+        {
+            return false;
+        }
+
+        string key = CooldownKey(entry, target);
+        float now = Time.time;
+        for (int i = 0; i < cooldowns.Count; i++)
+        {
+            if (cooldowns[i].Key == key && now < cooldowns[i].ReadyAt)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void MarkCooldown(ActiveDoctrine entry, GameObject target)
+    {
+        float cooldown = ResolveCooldown(entry.Doctrine);
+        if (cooldown <= 0f)
+        {
+            return;
+        }
+
+        string key = CooldownKey(entry, target);
+        float readyAt = Time.time + cooldown;
+        for (int i = 0; i < cooldowns.Count; i++)
+        {
+            if (cooldowns[i].Key == key)
+            {
+                cooldowns[i].ReadyAt = readyAt;
+                return;
+            }
+        }
+
+        cooldowns.Add(new CooldownEntry { Key = key, ReadyAt = readyAt });
+    }
+
+    private void RemoveCooldownsFor(ActiveDoctrine entry)
+    {
+        if (entry == null || entry.Doctrine == null)
+        {
+            return;
+        }
+
+        float cooldown = ResolveCooldown(entry.Doctrine);
+        if (cooldown <= 0f)
+        {
+            return;
+        }
+
+        for (int i = cooldowns.Count - 1; i >= 0; i--)
+        {
+            if (cooldowns[i].Key != null &&
+                cooldowns[i].Key.StartsWith(CooldownPrefix(entry), StringComparison.Ordinal))
+            {
+                cooldowns.RemoveAt(i);
+            }
+        }
+    }
+
+    private static float ResolveCooldown(Doctrine doctrine)
+    {
+        if (doctrine == null)
+        {
+            return 0f;
+        }
+
+        if (doctrine.CooldownSec > 0f)
+        {
+            return doctrine.CooldownSec;
+        }
+
+        if (doctrine.Result == ResultType.Heal)
+        {
+            return DoctrineTable.HealCooldownSec;
+        }
+
+        if (doctrine.Result == ResultType.Explode)
+        {
+            return DoctrineTable.ExplodeCooldownSec;
+        }
+
+        return 0f;
+    }
+
+    private static string CooldownPrefix(ActiveDoctrine entry)
+    {
+        Doctrine d = entry.Doctrine;
+        int ownerId = entry.Owner != null ? entry.Owner.GetInstanceID() : 0;
+        return $"{ownerId}:{(int)d.Subject}:{(int)d.Condition}:{(int)d.Result}:{d.Magnitude}:{d.Duration}:{d.Radius}:{d.CooldownSec}|";
+    }
+
+    private static string CooldownKey(ActiveDoctrine entry, GameObject target)
+    {
+        int targetId = target != null ? target.GetInstanceID() : 0;
+        return CooldownPrefix(entry) + targetId;
+    }
+
+    // Persistent +40% speed: assert it on activate and on every matching event
+    // so revives / stat resets cannot silently drop it.
+    private static void ReapplyPersistentSpeed(ActiveDoctrine entry)
+    {
+        if (entry == null || entry.Doctrine == null)
+        {
+            return;
+        }
+
+        GameObject owner = entry.Owner;
+        if (owner == null)
+        {
+            return;
+        }
+
+        DoctrineStats stats = owner.GetComponent<DoctrineStats>();
+        if (stats == null)
+        {
+            return;
+        }
+
+        stats.ApplySpeedBuff(1f + DoctrineTable.SpeedIncreaseRatio, 0f);
+    }
+
+    // Removing one IncreaseSpeed doctrine while others remain must keep x1.4.
+    private void RefreshPersistentSpeed(GameObject owner, Doctrine removed)
+    {
+        if (owner == null || removed == null)
+        {
+            return;
+        }
+
+        DoctrineStats stats = owner.GetComponent<DoctrineStats>();
+        if (stats == null)
+        {
+            return;
+        }
+
+        stats.ClearPersistentSpeedBuff();
+        for (int i = 0; i < activeDoctrines.Count; i++)
+        {
+            ActiveDoctrine entry = activeDoctrines[i];
+            if (entry == null || entry.Doctrine == null || entry.Owner != owner)
+            {
+                continue;
+            }
+
+            if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
+            {
+                stats.ApplySpeedBuff(1f + DoctrineTable.SpeedIncreaseRatio, 0f);
+            }
+        }
     }
 }

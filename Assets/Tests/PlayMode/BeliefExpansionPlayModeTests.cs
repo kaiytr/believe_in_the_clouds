@@ -531,6 +531,110 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(tool.ReplayLastHit(), Is.False);
     }
 
+    [UnityTest]
+    public IEnumerator SharedEnemyHitPostprocessingRecordsAcceptedDamageAndRaisesOneDoctrinePerAttack()
+    {
+        yield return Load();
+        var events = new List<DoctrineEventData>();
+        Action<DoctrineEventData> listener = evt =>
+        {
+            if (evt.Condition == ConditionType.OnHit && evt.SubjectObject == player.gameObject)
+                player.Heal(player.MaxHp); // Net HP stays unchanged, but the hit was accepted.
+            if (evt.Condition != ConditionType.OnAttack) return;
+            events.Add(evt);
+            var source = evt.SubjectObject.GetComponent<EnemyAttack>();
+            source?.NotifyPlayerHpDamageApplied(source.CurrentAttackId); // Must not notify twice/re-enter.
+        };
+        DoctrineEventBus.EventRaised += listener;
+        try
+        {
+            foreach (EnemyUnit enemy in new[] { Dog, Believer, Executive })
+            {
+                Place(enemy, Vector2.right * 2f);
+                player.ResetHealth();
+                EnemyAttackResult? result = null;
+                EnemyAttack attack = enemy.GetComponent<EnemyAttack>();
+                Action<EnemyAttack, EnemyAttackResult> resolved = (_, value) => result = value;
+                attack.AttackResolved += resolved;
+                events.Clear();
+                BeginAttack(enemy, .08f);
+                attack.NotifyPlayerHpDamageApplied(attack.CurrentAttackId - 1);
+                Assert.That(events, Is.Empty, "A stale attack ID must not trigger doctrines.");
+                yield return Until(() => result.HasValue);
+                Assert.That(result.Value.PlayerHpDamaged, Is.True, enemy.name);
+                Assert.That(result.Value.CompletedNormally, Is.True, enemy.name);
+                Assert.That(player.CurrentHp, Is.EqualTo(player.MaxHp), "OnHit healing must not erase hit attribution.");
+                Assert.That(events.Count, Is.EqualTo(1), enemy.name);
+                Assert.That(events[0].SubjectObject, Is.SameAs(enemy.gameObject));
+                Assert.That(events[0].SourceObject, Is.SameAs(player.gameObject));
+                attack.NotifyPlayerHpDamageApplied(attack.CurrentAttackId);
+                Assert.That(events.Count, Is.EqualTo(1));
+                attack.AttackResolved -= resolved;
+                yield return Until(() => !attack.IsAttacking);
+            }
+        }
+        finally { DoctrineEventBus.EventRaised -= listener; }
+    }
+
+    [UnityTest]
+    public IEnumerator SlowOnlyMagicCircleReturnsItsEffectWithoutReportingHpDamageOrAttackDoctrine()
+    {
+        yield return Load();
+        Place(Executive, Vector2.left * 2f);
+        player.TakeDamage(new DamageInfo(1f, DamageSource.Environment));
+        float hp = player.CurrentHp;
+        int attackEvents = 0;
+        Action<DoctrineEventData> listener = evt =>
+        {
+            if (evt.Condition == ConditionType.OnAttack && evt.SubjectObject == Executive.gameObject)
+                attackEvents++;
+        };
+        DoctrineEventBus.EventRaised += listener;
+        try
+        {
+            EnemyAttackResult? result = null;
+            Executive.GetComponent<EnemyAttack>().AttackResolved += (_, value) => result = value;
+            BeginAttack(Executive, .08f);
+            yield return Until(() => result.HasValue);
+            Assert.That(result.Value.Outcome, Is.EqualTo(AttackOutcome.Hit), "A slow is still a harmful effect.");
+            Assert.That(result.Value.PlayerHpDamaged, Is.False);
+            Assert.That(result.Value.CompletedNormally, Is.True);
+            Assert.That(player.CurrentHp, Is.EqualTo(hp));
+            Assert.That(attackEvents, Is.Zero);
+            var move = player.GetComponent<PlayerMove>();
+            Assert.That((float)typeof(PlayerMove).GetField("speedMultiplier", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(move), Is.LessThan(1f));
+        }
+        finally { DoctrineEventBus.EventRaised -= listener; }
+    }
+
+    [UnityTest]
+    public IEnumerator RealPlayerComboFeedsOrdinaryEnemyHitBeliefsWithDistinctSwingIds()
+    {
+        yield return Load();
+        Place(Believer, Vector2.left * 1.2f);
+        Vector3 scale = player.transform.localScale; scale.x = Mathf.Abs(scale.x); player.transform.localScale = scale;
+        Set(player.GetComponent<PlayerMove>(), "isGrounded", true);
+        var attack = player.gameObject.AddComponent<PlayerAttack>();
+        var step = new PlayerAttack.ComboStep
+        {
+            name = "Ordinary enemy integration", damage = 2f,
+            hitboxSize = new Vector2(1.5f, 1.5f), hitboxOffset = Vector2.right,
+            windupTime = .04f, recoveryTime = .04f, comboWindow = .2f
+        };
+        Set(attack, "comboSteps", new[] { step, step }); Set(attack, "finishHitStop", 0f);
+        var hits = new List<PlayerHitResult>(); Believer.PlayerHitReceived += hits.Add;
+        MethodInfo input = typeof(PlayerAttack).GetMethod("OnAttackInput", BindingFlags.Instance | BindingFlags.NonPublic);
+        input.Invoke(attack, null);
+        float deadline = Time.time + 2f;
+        while (attack.IsAttacking && Time.time < deadline) { input.Invoke(attack, null); yield return null; }
+        Assert.That(attack.IsAttacking, Is.False);
+        Assert.That(hits.Count, Is.EqualTo(2));
+        Assert.That(hits[0].AttackId, Is.Not.EqualTo(hits[1].AttackId));
+        Assert.That(Believer.Belief.CurrentBelief,
+            Is.EqualTo(Believer.Belief.Profile.MaxBelief - Believer.Belief.Profile.ReductionPerSuccess));
+    }
+
     private static void SaveRender(Camera camera, int width, int height, string fileName)
     {
         var target = new RenderTexture(width, height, 24);

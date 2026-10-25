@@ -40,7 +40,17 @@ public class EnemyContactDamage : MonoBehaviour
         IDamageable damageable = playerRoot.GetComponent<IDamageable>();
         if (damageable == null)
             damageable = playerRoot.GetComponentInChildren<IDamageable>();
-        damageable?.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+        if (damageable == null)
+            return;
+
+        // Table rule: OnAttack triggers only when the hit lands.
+        // Owner = enemy root (this may sit on a child part), subject = attacker.
+        GameObject ownerObject = transform.root != null ? transform.root.gameObject : gameObject;
+        if (damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy)) &&
+            DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(ConditionType.OnAttack, ownerObject, playerRoot.gameObject);
+        }
     }
 
     private static Transform GetPlayerRoot(Collider2D other)

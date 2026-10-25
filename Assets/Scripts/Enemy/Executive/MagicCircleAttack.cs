@@ -72,7 +72,7 @@ public class MagicCircleAttack : EnemyAttack
             circleVisualDuration,
             PlayerBodyCollider,
             out bool hpDamageApplied);
-        if (hpDamageApplied) RecordPlayerHpDamage(CurrentAttackId);
+        if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);
 
         if (harmfulEffectApplied)
             ReportOutcome(AttackOutcome.Hit, completedNormally: true);

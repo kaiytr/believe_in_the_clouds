@@ -80,7 +80,7 @@ public class StoneProjectile : MonoBehaviour
 
             bool applied = damageable != null &&
                            damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
-            if (applied) sourceAttack.RecordPlayerHpDamage(sourceAttackId);
+            if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
             Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
             Destroy(gameObject);
             return;

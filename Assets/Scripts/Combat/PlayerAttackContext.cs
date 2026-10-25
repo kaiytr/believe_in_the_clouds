@@ -36,14 +36,14 @@ public sealed class PlayerAttackContext : IDisposable
         amount > 0f && !float.IsNaN(amount) && !float.IsInfinity(amount) && hitIndex >= 0 &&
         Begin(target) && target.TakeDamage(Damage(amount, hitIndex));
 
-    public bool Begin(IDamageable target)
+    public bool Begin(IDamageable target, bool publishAttempt = true)
     {
         if (completed || Actor == null || target == null || target is Component component && component == null)
             return false;
         if (targets.TryGetValue(target, out TargetHits hits))
             return hits.Generation == GenerationOf(target);
         targets.Add(target, new TargetHits(GenerationOf(target)));
-        Publish(target, PlayerCombatSignalType.AttackAttempt, 0f);
+        if (publishAttempt) Publish(target, PlayerCombatSignalType.AttackAttempt, 0f);
         return !completed && targets.TryGetValue(target, out hits) && hits.Generation == GenerationOf(target);
     }
 

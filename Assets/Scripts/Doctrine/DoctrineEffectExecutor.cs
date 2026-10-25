@@ -1,22 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 효과 실행 계층. 교리마다 분기문을 추가하는 대신,
-// 모든 Result가 이 공통 경로를 통과한다.
-// 호출 측(전투 코드, PlayerMove 등)에 교리별 분기를 두지 않는다.
+// Effect execution layer. Every Result goes through this common path
+// instead of adding branches per doctrine.
+// Table-fixed values (DoctrineTable) are the defaults:
+//   Explode       = 30% of exploder max HP, friends and foes alike (incl. self)
+//   IncreaseSpeed = x1.4 persistent (re-applied by manager while equipped)
+//   IncreaseAttack= x1.2 for 5s
+//   Heal          = 10% of max HP
+// Doctrine.Magnitude (>0) acts as an explicit damage/amount override when set.
 public static class DoctrineEffectExecutor
 {
     public static bool VerboseLogs = false;
 
     private static readonly HashSet<IHealth> OverlapSeen = new HashSet<IHealth>();
-    public const float DefaultHealAmount = 20f;
-    public const float DefaultDamageAmount = 10f;
-    public const float DefaultExplodeDamage = 30f;
     public const float DefaultExplodeRadius = 3f;
-    public const float DefaultSlowMultiplier = 0.5f;
-    public const float DefaultBuffMultiplier = 1.5f;
-    public const float DefaultDebuffDuration = 3f;
-    public const float DefaultBuffDuration = 5f;
+    public const float DefaultAttackBuffDuration = 5f;
 
     public static bool IsSupported(ResultType result)
     {
@@ -24,18 +23,16 @@ public static class DoctrineEffectExecutor
         {
             case ResultType.Heal:
             case ResultType.Explode:
-            case ResultType.Slow:
             case ResultType.IncreaseSpeed:
             case ResultType.IncreaseAttack:
-            case ResultType.TakeDamage:
                 return true;
             default:
                 return false;
         }
     }
 
-    // target: 효과가 적용될 객체. 일반적으로 이벤트의 SubjectObject.
-    // source: 원인이 된 객체(가해자 등). TakeDamage/Explode의 source로 전달된다.
+    // target: object the effect applies to. Usually the event's SubjectObject.
+    // source: cause object (attacker etc). Passed as source of Explode damage.
     public static bool Execute(Doctrine doctrine, GameObject target, GameObject source = null)
     {
         if (doctrine == null || target == null)
@@ -46,38 +43,30 @@ public static class DoctrineEffectExecutor
         switch (doctrine.Result)
         {
             case ResultType.Heal:
-                return ExecuteHeal(target, ResolveMagnitude(doctrine.Magnitude, DefaultHealAmount));
-
-            case ResultType.TakeDamage:
-                return ExecuteTakeDamage(target, ResolveMagnitude(doctrine.Magnitude, DefaultDamageAmount), source);
-
-            case ResultType.Slow:
-                return ExecuteSpeedBuff(
-                    target,
-                    ResolveSlowMultiplier(doctrine.Magnitude),
-                    ResolveDuration(doctrine.Duration, DefaultDebuffDuration));
+                return ExecuteHealMaxRatio(target, DoctrineTable.HealMaxHpRatio, doctrine.Magnitude);
 
             case ResultType.IncreaseSpeed:
                 return ExecuteSpeedBuff(
                     target,
-                    ResolveBoostMultiplier(doctrine.Magnitude),
-                    ResolveDuration(doctrine.Duration, DefaultBuffDuration));
+                    1f + DoctrineTable.SpeedIncreaseRatio,
+                    0f); // persistent (no revert)
 
             case ResultType.IncreaseAttack:
                 return ExecuteAttackBuff(
                     target,
-                    ResolveBoostMultiplier(doctrine.Magnitude),
-                    ResolveDuration(doctrine.Duration, DefaultBuffDuration));
+                    1f + DoctrineTable.AttackIncreaseRatio,
+                    ResolveDuration(doctrine.Duration, DoctrineTable.AttackBuffDuration));
 
             case ResultType.Explode:
-                return ExecuteExplode(
+                return ExecuteExplodeMaxRatio(
                     target,
-                    ResolveMagnitude(doctrine.Magnitude, DefaultExplodeDamage),
+                    DoctrineTable.ExplodeMaxHpRatio,
                     ResolveRadius(doctrine.Radius),
-                    source);
+                    source,
+                    doctrine.Magnitude);
 
             default:
-                Debug.LogWarning($"[Doctrine] 미구현 Result: {doctrine.Result}.");
+                Debug.LogWarning($"[Doctrine] Unimplemented Result: {doctrine.Result}.");
                 return false;
         }
     }
@@ -92,7 +81,7 @@ public static class DoctrineEffectExecutor
         IHealth health = target.GetComponent<IHealth>();
         if (health == null)
         {
-            Debug.LogWarning($"[Doctrine] Heal 실패: {target.name}에 IHealth가 없습니다.");
+            Debug.LogWarning($"[Doctrine] Heal failed: {target.name} has no IHealth.");
             return false;
         }
 
@@ -100,7 +89,8 @@ public static class DoctrineEffectExecutor
         return true;
     }
 
-    public static bool ExecuteTakeDamage(GameObject target, float amount, GameObject source = null)
+    // Table heal: 10% of max HP. amountOverride (>0) replaces the ratio amount.
+    public static bool ExecuteHealMaxRatio(GameObject target, float ratio, float amountOverride = 0f)
     {
         if (target == null)
         {
@@ -110,11 +100,17 @@ public static class DoctrineEffectExecutor
         IHealth health = target.GetComponent<IHealth>();
         if (health == null)
         {
-            Debug.LogWarning($"[Doctrine] TakeDamage 실패: {target.name}에 IHealth가 없습니다.");
+            Debug.LogWarning($"[Doctrine] Heal failed: {target.name} has no IHealth.");
             return false;
         }
 
-        health.TakeDamage(amount, source);
+        float amount = amountOverride > 0f ? amountOverride : health.MaxHealth * ratio;
+        if (amount <= 0f)
+        {
+            return false;
+        }
+
+        health.Heal(amount);
         return true;
     }
 
@@ -128,7 +124,7 @@ public static class DoctrineEffectExecutor
         DoctrineStats stats = target.GetComponent<DoctrineStats>();
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] IncreaseAttack 실패: {target.name}에 DoctrineStats가 없습니다.");
+            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: {target.name} has no DoctrineStats.");
             return false;
         }
 
@@ -146,12 +142,43 @@ public static class DoctrineEffectExecutor
         DoctrineStats stats = target.GetComponent<DoctrineStats>();
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] 속도 변경 실패: {target.name}에 DoctrineStats가 없습니다.");
+            Debug.LogWarning($"[Doctrine] Speed change failed: {target.name} has no DoctrineStats.");
             return false;
         }
 
         stats.ApplySpeedBuff(multiplier, duration);
         return true;
+    }
+
+    // Table explode: ratio of the exploder's max HP, friends and foes alike (incl. self).
+    // damageOverride (>0) replaces the ratio damage (legacy params / tuning).
+    public static bool ExecuteExplodeMaxRatio(
+        GameObject center,
+        float ratio,
+        float radius,
+        GameObject source = null,
+        float damageOverride = 0f)
+    {
+        if (center == null)
+        {
+            return false;
+        }
+
+        float damage = damageOverride;
+        if (damage <= 0f)
+        {
+            IHealth selfHealth = center.GetComponent<IHealth>();
+            float maxHp = selfHealth != null ? selfHealth.MaxHealth : 0f;
+            damage = maxHp * ratio;
+        }
+
+        if (damage <= 0f)
+        {
+            return false;
+        }
+
+        List<IHealth> targets = FindTargetsInRadius(center, radius);
+        return ApplyExplodeDamage(targets, damage, source, null);
     }
 
     public static bool ExecuteExplode(GameObject center, float damage, float radius, GameObject source = null)
@@ -162,8 +189,7 @@ public static class DoctrineEffectExecutor
         }
 
         List<IHealth> targets = FindTargetsInRadius(center, radius);
-        IHealth self = center.GetComponent<IHealth>();
-        return ApplyExplodeDamage(targets, damage, source, self);
+        return ApplyExplodeDamage(targets, damage, source, null);
     }
 
     public static List<IHealth> FindTargetsInRadius(GameObject center, float radius)
@@ -174,8 +200,8 @@ public static class DoctrineEffectExecutor
             return result;
         }
 
-        // NonAlloc/ContactFilter 오버로드가 이 프로젝트 설정에서
-        // 오버로드 해석에 실패하므로 확실하게 컴파일되는 OverlapCircleAll 사용.
+        // OverlapCircleAll: NonAlloc/ContactFilter overloads fail overload
+        // resolution in this project setup, so use the reliable overload.
         Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)center.transform.position, radius);
         OverlapSeen.Clear();
         for (int i = 0; i < hits.Length; i++)
@@ -201,7 +227,9 @@ public static class DoctrineEffectExecutor
         return result;
     }
 
-    // 물리 쿼리와 분리된 순수 피해 적용부. 테스트에서 직접 호출 가능하다.
+    // Pure damage application separated from physics query. Callable from tests.
+    // Table rule: friends and foes alike, so exclude is normally null (self included).
+    // exclude is kept for explicit cases only.
     public static bool ApplyExplodeDamage(
         List<IHealth> targets,
         float damage,
@@ -227,14 +255,9 @@ public static class DoctrineEffectExecutor
 
         if (VerboseLogs)
         {
-            Debug.Log($"[Doctrine] Explode 실행: {hitCount}기 타격 (피해 {damage}).");
+            Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
         }
         return true;
-    }
-
-    private static float ResolveMagnitude(float value, float defaultValue)
-    {
-        return value > 0f ? value : defaultValue;
     }
 
     private static float ResolveDuration(float value, float defaultValue)
@@ -245,15 +268,5 @@ public static class DoctrineEffectExecutor
     private static float ResolveRadius(float value)
     {
         return value > 0f ? value : DefaultExplodeRadius;
-    }
-
-    private static float ResolveBoostMultiplier(float value)
-    {
-        return value > 1f ? value : DefaultBuffMultiplier;
-    }
-
-    private static float ResolveSlowMultiplier(float value)
-    {
-        return value > 0f && value < 1f ? value : DefaultSlowMultiplier;
     }
 }

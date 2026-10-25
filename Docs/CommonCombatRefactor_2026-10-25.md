@@ -33,6 +33,8 @@ BossPlayerCombatEvents는 PlayerCombatEvents로 옮겼고 기존 스크립트 GU
 
 ## 공격 정보 사용 계약
 
+2026-10-25 Puri·Leesc 통합에서 실제 PlayerAttack을 이 경로에 연결했다. 플레이어 콤보의 각 타격은 별도 컨텍스트를 사용하며, 시작 범위 밖에서 늦게 진입한 대상은 `Begin(target, publishAttempt: false)`로 등록해 실제 적중만 알린다. [병합 및 공격 시도 규칙](C:/Users/1-3/Documents/UnityProjects/believe_in_the_clouds/Docs/PuriLeescMerge_2026-10-25.md)을 참고한다.
+
 공격 하나마다 컨텍스트를 만들고, 실제 다단 타격은 hitIndex를 증가시킨다. 같은 공격을 여러 콜라이더에서 검사할 때는 같은 컨텍스트와 타격 순번을 전달한다.
 
 ```csharp

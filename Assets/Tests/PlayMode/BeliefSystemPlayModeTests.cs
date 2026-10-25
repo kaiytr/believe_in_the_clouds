@@ -14,6 +14,34 @@ public sealed class BeliefSystemPlayModeTests
     private readonly Dictionary<string, GameObject> sceneActors = new Dictionary<string, GameObject>();
 
     [UnityTest]
+    public IEnumerator MergedPlayerAndShopScenesKeepCombatSignalsAndModalInteraction()
+    {
+        foreach (string path in new[] { "Assets/Scenes/PlayerTEST.unity", "Assets/Scenes/ShopTest.unity" })
+        {
+            var load = LoadSceneForPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
+            while (!load.isDone) yield return null;
+            yield return null;
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            Assert.That(player, Is.Not.Null, path);
+            Assert.That(player.GetComponent<PlayerAttack>(), Is.Not.Null, path);
+            Assert.That(player.GetComponent<PlayerCombatEvents>(), Is.Not.Null,
+                "Existing serialized players must gain the shared attack signal component.");
+            Assert.That(Object.FindFirstObjectByType<DoctrineHud>(), Is.Not.Null);
+            var shop = Object.FindFirstObjectByType<ShopInteractable>();
+            if (shop == null) continue;
+            Assert.That(ShopScreen.Instance, Is.Not.Null);
+            try
+            {
+                shop.Interact(player);
+                Assert.That(ShopScreen.Instance.IsOpen, Is.True);
+                Assert.That(UiModal.IsOpen, Is.True);
+            }
+            finally { ShopScreen.Instance.Close(); }
+            Assert.That(UiModal.IsOpen, Is.False);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator BeliefIsPerEnemyDamageDependsOnSourceAndVulnerabilityRecoversOnce()
     {
         BeliefProfile rear = CreateProfile(BeliefType.RearPosition, 25f, 0f);

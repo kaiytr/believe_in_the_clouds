@@ -209,10 +209,16 @@ public abstract class EnemyAttack : MonoBehaviour
         ReportOutcome(outcome, completedNormally);
     }
 
-    public void RecordPlayerHpDamage(int sourceAttackId)
+    /// <summary>Called once accepted HP damage is known; records belief data before notifying doctrines.</summary>
+    public void NotifyPlayerHpDamageApplied(int sourceAttackId)
     {
-        if (sourceAttackId == attackId && !outcomeReported && attackLaunched)
-            playerHpDamaged = true;
+        if (sourceAttackId != attackId || outcomeReported || !attackLaunched || playerHpDamaged)
+            return;
+
+        playerHpDamaged = true;
+        if (owner != null && DoctrineEventBus.HasListeners)
+            DoctrineEventBus.Raise(ConditionType.OnAttack, owner.gameObject,
+                attackTarget != null ? attackTarget.gameObject : null);
     }
 
     private bool HasAttackTarget() => owner != null && owner.HasCombatTarget && owner.Target == attackTarget;

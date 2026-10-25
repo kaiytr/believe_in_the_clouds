@@ -11,6 +11,21 @@ public static class CombatPhysics
 
     public static bool IsBodyValid(Collider2D body) => body != null && body.enabled && body.gameObject.activeInHierarchy;
 
+    // Caller-owned buffers stay valid while damage callbacks perform other combat queries.
+    public static void OverlapBox(Vector2 center, Vector2 size, float angle, int mask, List<Collider2D> results)
+    {
+        results.Clear();
+        Physics2D.OverlapBox(center, size, angle, Filter(mask), results);
+    }
+
+    public static void SweepBox(Vector2 center, Vector2 size, float angle, Vector2 direction,
+        float distance, int mask, List<RaycastHit2D> results)
+    {
+        results.Clear();
+        if (distance > 0f)
+            Physics2D.BoxCast(center, size, angle, direction, Filter(mask), results, distance);
+    }
+
     public static bool OverlapsBox(Collider2D target, Vector2 center, Vector2 size, float angle = 0f)
     {
         if (!IsBodyValid(target)) return false;
