@@ -1,11 +1,11 @@
-using System;
 using UnityEngine;
 
-// 게임 객체의 교리 주어(Subject) 정체성.
-// DoctrineManager가 이벤트의 SubjectObject에서 이 컴포넌트를 읽어
-// 교리의 SubjectType과 비교한다.
-// 컴포넌트가 없는 객체는 SubjectType.None으로 취급되어
-// Subject == All인 교리에만 매칭된다.
+// Game object's doctrine subject identity.
+// DoctrineManager reads this component from the event's SubjectObject
+// and compares it with the doctrine's SubjectType.
+// Fallback inference (no manual setup needed in any scene):
+//   PlayerHealth -> Player, EnemyUnit -> Enemy (name contains "boss" -> Boss).
+// Objects with neither are SubjectType.None and match only Subject == All.
 public class DoctrineSubject : MonoBehaviour
 {
     public SubjectType Identity = SubjectType.Enemy;
@@ -17,11 +17,33 @@ public class DoctrineSubject : MonoBehaviour
             return SubjectType.None;
         }
 
-        if (!go.TryGetComponent(out DoctrineSubject subject) || subject == null)
+        if (go.TryGetComponent(out DoctrineSubject subject) && subject != null)
         {
-            return SubjectType.None;
+            return subject.Identity;
         }
 
-        return subject.Identity;
+        if (go.GetComponent<PlayerHealth>() != null)
+        {
+            return SubjectType.Player;
+        }
+
+        EnemyUnit enemy = go.GetComponent<EnemyUnit>();
+        if (enemy == null)
+        {
+            enemy = go.GetComponentInParent<EnemyUnit>();
+        }
+
+        if (enemy != null)
+        {
+            if (go.name.ToLowerInvariant().Contains("boss") ||
+                enemy.name.ToLowerInvariant().Contains("boss"))
+            {
+                return SubjectType.Boss;
+            }
+
+            return SubjectType.Enemy;
+        }
+
+        return SubjectType.None;
     }
 }

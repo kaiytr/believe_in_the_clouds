@@ -1,12 +1,10 @@
-using System;
-
-// 교리 하나를 표현하는 런타임 데이터.
-// [주어 Subject] + [조건 Condition] + [결과 Result] 조합.
-// 예: Player + OnHit + Heal = "플레이어는 피격당하면 회복한다".
-// Magnitude/Duration/Radius는 효과의 수치 파라미터다.
-// (Heal량, TakeDamage량, 버프 배율, Explode 피해/반경 등)
-// 원본 에셋(DoctrineDefinition)과 구분되는 런타임 복사본으로 사용한다.
-[Serializable]
+// Doctrine runtime data: [Subject] + [Condition] + [Result].
+// e.g. Player + OnHit + Heal = "Player is healed when hit".
+// CooldownSec: result cooldown (seconds). 0 = no cooldown.
+// Magnitude/Duration/Radius are kept for tuning but new doctrines use
+// fixed table values via DoctrineTable (magnitude is an override when > 0).
+// This is a runtime copy, distinct from the DoctrineDefinition asset.
+[System.Serializable]
 public sealed class Doctrine
 {
     public SubjectType Subject;
@@ -15,6 +13,7 @@ public sealed class Doctrine
     public float Magnitude;
     public float Duration;
     public float Radius;
+    public float CooldownSec;
 
     public Doctrine()
     {
@@ -26,7 +25,8 @@ public sealed class Doctrine
         ResultType result,
         float magnitude = 0f,
         float duration = 0f,
-        float radius = 0f)
+        float radius = 0f,
+        float cooldownSec = 0f)
     {
         Subject = subject;
         Condition = condition;
@@ -34,6 +34,7 @@ public sealed class Doctrine
         Magnitude = magnitude;
         Duration = duration;
         Radius = radius;
+        CooldownSec = cooldownSec;
     }
 
     public bool IsFullySpecified =>
@@ -41,13 +42,13 @@ public sealed class Doctrine
         Condition != ConditionType.None &&
         Result != ResultType.None;
 
-    // 등록 시 외부 변경으로부터 보호하기 위한 복사.
+    // Copy on registration to protect against external mutation.
     public Doctrine Clone()
     {
-        return new Doctrine(Subject, Condition, Result, Magnitude, Duration, Radius);
+        return new Doctrine(Subject, Condition, Result, Magnitude, Duration, Radius, CooldownSec);
     }
 
-    // 해제(Deactivate) 시 규칙 동등성 비교용.
+    // Rule equality check for Deactivate.
     public bool HasSameRule(Doctrine other)
     {
         if (other == null)
@@ -60,12 +61,13 @@ public sealed class Doctrine
                Result == other.Result &&
                Magnitude == other.Magnitude &&
                Duration == other.Duration &&
-               Radius == other.Radius;
+               Radius == other.Radius &&
+               CooldownSec == other.CooldownSec;
     }
 
     public override string ToString()
     {
         return $"{Subject} + {Condition} + {Result} " +
-               $"(mag:{Magnitude}, dur:{Duration}, rad:{Radius})";
+               $"(mag:{Magnitude}, dur:{Duration}, rad:{Radius}, cd:{CooldownSec})";
     }
 }

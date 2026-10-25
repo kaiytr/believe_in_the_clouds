@@ -5,8 +5,6 @@ using UnityEngine;
 // 입력: LeftShift (인스펙터에서 변경 가능). 이동 중이면 그 방향,
 // 가만히 있으면 바라보는 방향으로 짧게 돌진한다.
 //
-// 교리: 시작 시 DoctrineDodgeEmitter가 있으면 OnDodge를 Raise해서
-//       "회피하면 ..." 계열 교리가 별도 분기 없이 발동한다.
 // 공격 중에 대시를 입력하면 공격을 끊고 대시가 나간다.
 [RequireComponent(typeof(PlayerMove))]
 [RequireComponent(typeof(Rigidbody2D))]
@@ -27,7 +25,6 @@ public class PlayerDash : MonoBehaviour
     private PlayerMove playerMove;
     private PlayerAttack attack;
     private PlayerHealth health;
-    private DoctrineDodgeEmitter dodgeEmitter;
 
     private float cooldownRemaining;
     private bool isDashing;
@@ -40,7 +37,6 @@ public class PlayerDash : MonoBehaviour
         playerMove = GetComponent<PlayerMove>();
         attack = GetComponent<PlayerAttack>();
         health = GetComponent<PlayerHealth>();
-        dodgeEmitter = GetComponent<DoctrineDodgeEmitter>();
     }
 
     private void Update()
@@ -80,8 +76,6 @@ public class PlayerDash : MonoBehaviour
         isDashing = true;
         cooldownRemaining = cooldown;
         playerMove.ControlLocked = true;
-        if (dodgeEmitter != null)
-            dodgeEmitter.PerformDodge();
 
         float elapsed = 0f;
         while (elapsed < dashTime)

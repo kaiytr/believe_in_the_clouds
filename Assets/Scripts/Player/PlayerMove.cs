@@ -20,6 +20,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private bool isGrounded;
     private float speedMultiplier = 1f;
     private float slowEndTime;
+    private DoctrineStats doctrineStats;
 
     /// <summary>
     /// true면 이동 입력/방향 전환을 잠그고 Rigidbody 속도를 덮어쓰지 않는다.
@@ -33,6 +34,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        doctrineStats = GetComponent<DoctrineStats>();
     }
 
     private void Update()
@@ -83,10 +85,12 @@ public class PlayerMove : MonoBehaviour, ISlowable
         }
 
         // 좌우 이동 (공격이 전진 속도를 직접 넣는 동안은 덮어쓰지 않음)
+        // 교리 이속 증가(+40%)는 DoctrineStats.SpeedMultiplier로 합산된다.
         if (!ControlLocked)
         {
+            float doctrineSpeed = doctrineStats != null ? doctrineStats.SpeedMultiplier : 1f;
             rb.linearVelocity = new Vector2(
-                moveInput * moveSpeed * speedMultiplier,
+                moveInput * moveSpeed * speedMultiplier * doctrineSpeed,
                 rb.linearVelocity.y
             );
         }
@@ -97,6 +101,17 @@ public class PlayerMove : MonoBehaviour, ISlowable
         newSpeedMultiplier = Mathf.Clamp01(newSpeedMultiplier);
         speedMultiplier = Mathf.Min(speedMultiplier, newSpeedMultiplier);
         slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
+    }
+
+    // Doctrine IncreaseSpeed (+40%): persistent while equipped.
+    public void ApplyDoctrineSpeed(float multiplier)
+    {
+        if (doctrineStats == null)
+            doctrineStats = GetComponent<DoctrineStats>();
+        if (doctrineStats == null || multiplier <= 0f)
+            return;
+
+        doctrineStats.ApplySpeedBuff(multiplier, 0f);
     }
 
     private void UpdateSlow()

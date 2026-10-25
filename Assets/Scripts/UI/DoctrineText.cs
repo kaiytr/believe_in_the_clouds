@@ -2,7 +2,7 @@ using System.Text;
 using UnityEngine;
 
 // Doctrine을 사람이 읽는 문장으로 바꾼다.
-// 주어 + 조건 + 결과 = "플레이어는 피격당하면 회복한다 (+30)"
+// 주어 + 조건 + 결과 = 표 고정값 기준.
 // UI뿐 아니라 로그/테스트에서도 재사용할 수 있게 순수 함수로 둔다.
 public static class DoctrineText
 {
@@ -11,9 +11,9 @@ public static class DoctrineText
         switch (subject)
         {
             case SubjectType.Player: return "플레이어는";
-            case SubjectType.Enemy: return "적은";
+            case SubjectType.Enemy: return "일반 적은";
             case SubjectType.Boss: return "보스는";
-            case SubjectType.All: return "모두";
+            case SubjectType.All: return "모든 존재는";
             default: return "?";
         }
     }
@@ -24,9 +24,8 @@ public static class DoctrineText
         {
             case ConditionType.OnHit: return "피격당하면";
             case ConditionType.OnAttack: return "공격하면";
-            case ConditionType.OnDeath: return "죽으면";
-            case ConditionType.LowHealth: return "체력이 낮아지면";
-            case ConditionType.OnDodge: return "회피하면";
+            case ConditionType.OnDeath: return "사망하면";
+            case ConditionType.LowHealth: return "체력이 30% 이하가 되면";
             default: return "?";
         }
     }
@@ -36,11 +35,9 @@ public static class DoctrineText
         switch (result)
         {
             case ResultType.Heal: return "회복한다";
-            case ResultType.Explode: return "주변을 폭발시킨다";
-            case ResultType.Slow: return "느려지게 한다";
-            case ResultType.IncreaseSpeed: return "빨라진다";
-            case ResultType.IncreaseAttack: return "공격력이 강해진다";
-            case ResultType.TakeDamage: return "피해를 입는다";
+            case ResultType.Explode: return "폭발한다";
+            case ResultType.IncreaseSpeed: return "이동속도가 증가한다";
+            case ResultType.IncreaseAttack: return "가하는 피해가 증가한다";
             default: return "?";
         }
     }
@@ -76,9 +73,8 @@ public static class DoctrineText
         {
             case ConditionType.OnHit: return "피격";
             case ConditionType.OnAttack: return "공격";
-            case ConditionType.OnDeath: return "죽음";
-            case ConditionType.LowHealth: return "저체력";
-            case ConditionType.OnDodge: return "회피";
+            case ConditionType.OnDeath: return "사망";
+            case ConditionType.LowHealth: return "체력30%이하";
             default: return "?";
         }
     }
@@ -89,42 +85,32 @@ public static class DoctrineText
         {
             case ResultType.Heal: return "회복";
             case ResultType.Explode: return "폭발";
-            case ResultType.Slow: return "둔화";
-            case ResultType.IncreaseSpeed: return "가속";
-            case ResultType.IncreaseAttack: return "강화";
-            case ResultType.TakeDamage: return "피해";
+            case ResultType.IncreaseSpeed: return "이속증가";
+            case ResultType.IncreaseAttack: return "피해증가";
             default: return "?";
         }
     }
 
-    // 수치/지속시간/반경을 괄호로 덧붙인다.
+    // 표 고정값 안내.
     private static string Explain(Doctrine doctrine)
     {
         StringBuilder sb = new StringBuilder();
 
-        if (doctrine.Magnitude > 0f)
+        switch (doctrine.Result)
         {
-            switch (doctrine.Result)
-            {
-                case ResultType.Heal:
-                    sb.Append($" (+{doctrine.Magnitude:0.#})");
-                    break;
-                case ResultType.TakeDamage:
-                case ResultType.Explode:
-                    sb.Append($" ({doctrine.Magnitude:0.#} 피해)");
-                    break;
-                case ResultType.Slow:
-                    sb.Append($" (속도 {doctrine.Magnitude * 100f:0}%)");
-                    break;
-                case ResultType.IncreaseSpeed:
-                case ResultType.IncreaseAttack:
-                    sb.Append($" (x{doctrine.Magnitude:0.##})");
-                    break;
-            }
+            case ResultType.Heal:
+                sb.Append(" (최대체력 10%, 20초 쿨타임)");
+                break;
+            case ResultType.Explode:
+                sb.Append(" (최대체력 30%, 아군·적군 무구분, 5초 쿨타임)");
+                break;
+            case ResultType.IncreaseSpeed:
+                sb.Append(" (기본 이속 +40%)");
+                break;
+            case ResultType.IncreaseAttack:
+                sb.Append(" (직후 5초간 +20%)");
+                break;
         }
-
-        if (doctrine.Duration > 0f)
-            sb.Append($" · {doctrine.Duration:0.#}초");
 
         if (doctrine.Radius > 0f && doctrine.Result == ResultType.Explode)
             sb.Append($" · 반경 {doctrine.Radius:0.#}");

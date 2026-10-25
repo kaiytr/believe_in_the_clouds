@@ -358,7 +358,23 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         StopMovement();
         if (rb != null)
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+        // Doctrine: enemy/boss OnDeath doctrines trigger when the death motion ends.
+        // PlayerHealth raises at Die() entry (no motion there); enemies raise just
+        // before destroy so "explode on death" lands at motion end.
+        // (A coroutine on this object cannot run past Destroy, so raise slightly early.)
+        float deathRaiseDelay = Mathf.Max(0f, destroyDelay - 0.05f);
+        StartCoroutine(RaiseDeathDoctrineAfterMotion(deathRaiseDelay));
         Destroy(gameObject, destroyDelay);
+    }
+
+    private System.Collections.IEnumerator RaiseDeathDoctrineAfterMotion(float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        if (DoctrineEventBus.HasListeners)
+            DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, null);
     }
 
     private void IgnorePhysicalCollisionWithPlayer(Transform playerRoot)

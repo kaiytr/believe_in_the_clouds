@@ -66,7 +66,8 @@ public class MagicCircleAttack : EnemyAttack
             slowMultiplier,
             slowDuration,
             circleVisualDuration,
-            PlayerBodyCollider);
+            PlayerBodyCollider,
+            owner != null ? owner.gameObject : gameObject);
 
         if (harmfulEffectApplied)
             ReportOutcome(AttackOutcome.Hit);
