@@ -38,7 +38,7 @@ public static class BossProjectSetup
         }
         var data = AssetDatabase.LoadAssetAtPath<BossCombatSettings>(SettingsPath);
         if (data == null) { data = ScriptableObject.CreateInstance<BossCombatSettings>(); AssetDatabase.CreateAsset(data, SettingsPath); }
-        data.WarningPrefab = Effect("BossWarning", square, new Color(1f, 0.16f, 0.12f, 0.3f), true);
+        data.WarningPrefab = Effect("BossWarning", square, new Color(1f, 0f, 0f, 0.29803923f), true, false);
         data.SlashPrefab = Effect("BossSlash", slash, new Color(1f, 0.92f, 0.55f, 1f));
         data.DashPrefab = Effect("BossDashTrail", square, new Color(1f, 0.86f, 0.45f, 0.3f));
         data.ImpactPrefab = Effect("BossImpact", disc, new Color(1f, 0.95f, 0.75f, 1f), false, false);
@@ -97,14 +97,15 @@ public static class BossProjectSetup
 
     private static BossAttackVisual Effect(string name, Sprite sprite, Color color, bool warning = false, bool hasOutline = true)
     {
-        // Start from the existing ordinary-enemy warning prefab, retaining its DangerIndicator contract.
+        // Keep the ordinary-enemy warning's flat sprite/material and DangerIndicator contract.
         GameObject root = warning ? (GameObject)PrefabUtility.InstantiatePrefab(
             AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemy/Common/DangerIndicator_Line.prefab")) : new GameObject(name);
         if (warning) PrefabUtility.UnpackPrefabInstance(root, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
         root.name = name;
         var renderer = root.GetComponent<SpriteRenderer>();
         if (renderer == null) renderer = root.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite; renderer.sharedMaterial = material; renderer.color = color; renderer.sortingOrder = warning ? 20 : 24;
+        if (!warning) { renderer.sprite = sprite; renderer.sharedMaterial = material; }
+        renderer.color = color; renderer.sortingOrder = warning ? 20 : 24;
         var visual = root.AddComponent<BossAttackVisual>();
         Set(visual, "baseColor", color); Set(visual, "warning", warning);
         if (hasOutline)

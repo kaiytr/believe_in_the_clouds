@@ -11,7 +11,7 @@ public sealed class BossAttackVisual : MonoBehaviour
     private BossAttackGeometry geometry;
     private BossWorldCue cue;
     private LineRenderer directionMarker;
-    private Color warningColor = new Color(1f, .4f, .3f);
+    private Color warningColor = Color.red;
     public SpriteRenderer Renderer => fill != null ? fill : GetComponent<SpriteRenderer>();
 
     private void Awake() { fill = GetComponent<SpriteRenderer>(); }
@@ -39,7 +39,7 @@ public sealed class BossAttackVisual : MonoBehaviour
     {
         value = Mathf.Clamp01(value);
         Color color = Renderer.color;
-        color.a = warning ? Mathf.Lerp(0.12f, 0.42f, value) : baseColor.a;
+        color.a = warning ? Mathf.Lerp(0.12f, baseColor.a, value) : baseColor.a;
         Renderer.color = color;
         if (warning && outline != null)
             outline.startWidth = outline.endWidth = Mathf.Lerp(.025f, .065f, value);
@@ -47,9 +47,13 @@ public sealed class BossAttackVisual : MonoBehaviour
 
     public void SetTint(Color color)
     {
+        // Gameplay warning fills stay red like ordinary enemy indicators; type tint only colors debug cues.
         warningColor = color;
-        Color fillColor = color; fillColor.a = .18f; Renderer.color = fillColor;
-        if (outline != null) outline.startColor = outline.endColor = color;
+        if (!warning)
+        {
+            Color fillColor = color; fillColor.a = .18f; Renderer.color = fillColor;
+            if (outline != null) outline.startColor = outline.endColor = color;
+        }
     }
 
     public void SetCue(string text, float remaining, float progress, BossCombatController owner)

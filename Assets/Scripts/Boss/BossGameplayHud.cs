@@ -15,7 +15,6 @@ public sealed class BossGameplayHud : MonoBehaviour
     [SerializeField] private Image playerHealthFill;
     [SerializeField] private Text playerState;
     private BossCombatController owner;
-    private float previousHealth, previousBelief, healthFlashUntil, beliefFlashUntil;
 
     public bool IsConfigured => beliefCanvas != null && healthCanvas != null && playerCanvas != null &&
         healthFill != null && beliefFill != null && beliefBackground != null && speechBubble != null &&
@@ -28,8 +27,6 @@ public sealed class BossGameplayHud : MonoBehaviour
     public void Initialize(BossCombatController boss, Font font)
     {
         owner = boss;
-        previousHealth = boss.CurrentHp; previousBelief = boss.CurrentBelief;
-        healthFlashUntil = beliefFlashUntil = 0f;
         foreach (Text text in beliefCanvas.GetComponentsInChildren<Text>(true)) text.font = font;
         foreach (Text text in playerCanvas.GetComponentsInChildren<Text>(true)) text.font = font;
         Refresh();
@@ -43,15 +40,11 @@ public sealed class BossGameplayHud : MonoBehaviour
         beliefCanvas.enabled = healthCanvas.enabled = fighting && gameplay;
         PlayerHealth player = owner.PlayerHealth;
         playerCanvas.enabled = gameplay && owner.isActiveAndEnabled && !owner.IsDead && (fighting || player != null && player.IsDead);
-        if (owner.CurrentHp < previousHealth) healthFlashUntil = Time.time + .18f;
-        if (owner.CurrentBelief < previousBelief) beliefFlashUntil = Time.time + .18f;
-        previousHealth = owner.CurrentHp; previousBelief = owner.CurrentBelief;
         healthFill.fillAmount = owner.MaxHp > 0f ? owner.CurrentHp / owner.MaxHp : 0f;
         beliefFill.fillAmount = owner.IsVulnerable ? 0f : owner.NormalizedBelief;
         Color neutral = new Color(.4f, .4f, .4f);
-        healthFill.color = Time.time < healthFlashUntil ? new Color(.7f, .28f, .24f) : neutral;
-        beliefFill.color = owner.IsVulnerable ? new Color(.94f, .31f, .25f) :
-            Time.time < beliefFlashUntil ? new Color(.85f, .55f, .3f) : neutral;
+        healthFill.color = neutral;
+        beliefFill.color = owner.IsVulnerable ? new Color(.94f, .31f, .25f) : neutral;
         beliefBackground.color = owner.IsVulnerable ? new Color(.78f, .64f, .62f) : new Color(.73f, .73f, .73f);
         phrase.text = owner.IsVulnerable ? "믿음 붕괴" : owner.ActiveBeliefPhrase;
         speechBubble.gameObject.SetActive(!string.IsNullOrEmpty(phrase.text));
