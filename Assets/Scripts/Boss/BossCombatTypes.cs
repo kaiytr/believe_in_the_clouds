@@ -51,39 +51,6 @@ public enum BossAttackEndReason { Completed, Contact, Wall, Cancelled, TargetLos
 public enum BossPresentationState { Idle, Stare, Windup, Active, Recovery, Charging, Vulnerable, Dead }
 
 [Serializable]
-public struct BossPlayerCombatSignal
-{
-    public BossPlayerCombatSignalType Type { get; }
-    public int AttackId { get; }
-    public GameObject Actor { get; }
-    public GameObject Target { get; }
-    public float Damage { get; }
-    public float OccurredAt { get; }
-
-    public BossPlayerCombatSignal(
-        BossPlayerCombatSignalType type,
-        int attackId,
-        GameObject actor,
-        GameObject target,
-        float damage)
-    {
-        Type = type;
-        AttackId = attackId;
-        Actor = actor;
-        Target = target;
-        Damage = damage;
-        OccurredAt = Time.time;
-    }
-}
-
-public enum BossPlayerCombatSignalType
-{
-    AttackAttempt,
-    HitConfirmed,
-    AttackEvaded
-}
-
-[Serializable]
 public sealed class BossPatternWeight
 {
     [SerializeField] private BossPatternKind pattern;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
-public sealed class BossCombatController : MonoBehaviour, IDamageable
+public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGeneration
 {
     [SerializeField] private bool startOnAwake;
     [SerializeField] private BossCombatSettings settings;
@@ -21,12 +21,16 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     private readonly Dictionary<BossPatternKind, int> patternUses = new Dictionary<BossPatternKind, int>();
     private readonly Dictionary<int, BossAttackRecord> activeAttacks = new Dictionary<int, BossAttackRecord>();
     private readonly List<BossAttackRecord> history = new List<BossAttackRecord>();
-    private readonly HashSet<int> windowAttackIds = new HashSet<int>();
+    private readonly HashSet<long> windowAttackIds = new HashSet<long>();
     private readonly List<GameObject> effects = new List<GameObject>();
+    private readonly List<float> candidateWeights = new List<float>(9);
+    private System.Predicate<BossPatternKind> eligibleAny, eligibleRegular, eligibleConnected;
+    private float nextPatternSearchAt;
+    private static readonly WaitForSeconds SelectionRetry = new WaitForSeconds(.1f);
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
     private PlayerHealth playerHealth;
-    private BossPlayerCombatEvents playerEvents;
+    private PlayerCombatEvents playerEvents;
     private BossSharedBelief belief;
     private Coroutine patternRoutine;
     private Transform effectRoot;
@@ -48,6 +52,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     public BossCombatSettings Settings => settings;
     public Rigidbody2D Body => body;
     public Collider2D BodyCollider => bodyCollider;
+    public SpriteRenderer BodyRenderer => presentation != null ? presentation.BodyRenderer : null;
     public PlayerHealth PlayerHealth => playerHealth;
     public Collider2D PlayerCollider => playerHealth != null ? playerHealth.BodyCollider : null;
     public BossPhase Phase { get; private set; }
@@ -59,6 +64,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     public bool AllowManualEvadeInjection { get => allowManualEvadeInjection; set => allowManualEvadeInjection = value; }
     public int ForcedComboHits { get; set; }
     public int Generation => generation;
+    public int CombatGeneration => generation;
     public int PatternId => patternId;
     public int Facing => facing;
     public float CurrentHp => currentHp;
@@ -68,7 +74,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     public float NormalizedBelief => MaxBelief > 0f ? CurrentBelief / MaxBelief : 0f;
     public float VulnerableRemaining => belief != null ? belief.Remaining(Time.time) : 0f;
     public float BurnRemaining => Mathf.Max(0f, burnEndsAt - Time.time);
-    public bool IsBurning => EncounterStarted && !IsVulnerable && BurnRemaining > 0f;
+    public bool IsBurning => EncounterStarted && BurnRemaining > 0f;
     public float ConditionRemaining => Mathf.Max(0f, conditionEndsAt - Time.time);
     public float ConditionProgress => conditionDuration > 0f ? 1f - ConditionRemaining / conditionDuration : 0f;
     public float SpeedMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoSpeedMultiplier : 1f;
@@ -96,11 +102,14 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     public Vector2 AttackOrigin => attackOrigin.position;
     public Vector2 ProjectileOrigin => projectileOrigin.position;
     public bool TargetValid => playerHealth != null && !playerHealth.IsDead && playerHealth.isActiveAndEnabled && PlayerCollider != null && PlayerCollider.enabled;
-    public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && !IsVulnerable && TargetValid;
+    public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && TargetValid;
     public bool CanStartNextHit => CanContinue && (activeBelief != BossBeliefKind.Burn || IsBurning);
 
     private void Awake()
     {
+        eligibleAny = candidate => IsPatternEligible(candidate, true);
+        eligibleRegular = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate, true);
+        eligibleConnected = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate, false);
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
         spawnPosition = transform.position;
@@ -126,11 +135,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
             return;
         }
         if (belief.Tick(Time.time, settings.BeliefRecoveryRatio))
-        { SetActionCue("믿음 회복", "다음 공격의 예고를 확인하세요.", BossPresentationState.Idle); SetStatus("믿음 회복"); }
-        if (automaticPatterns && !patternRunning && !IsVulnerable)
+        {
+            if (!patternRunning)
+                SetActionCue("믿음 회복", "다음 공격의 예고를 확인하세요.", BossPresentationState.Idle);
+            SetStatus("믿음 회복");
+        }
+        if (automaticPatterns && !patternRunning && Time.time >= nextPatternSearchAt)
         {
             if (ChoosePattern(false, out BossPatternKind selected)) StartPattern(selected);
-            else SetStatus("실행 가능한 패턴 없음 · 대상 거리/지면/설정 확인");
+            else { nextPatternSearchAt = Time.time + .1f; SetStatus("실행 가능한 패턴 없음 · 대상 거리/지면/설정 확인"); }
         }
     }
     public List<string> ValidateEncounter()
@@ -159,7 +172,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         if (!BindPlayer())
         {
             SetStatus("PlayerHealth와 유효한 몸체 콜라이더 필요");
-            Debug.LogError(name + ": tagged Player requires PlayerHealth, a non-trigger body Collider2D and BossPlayerCombatEvents.", this);
+            Debug.LogError(name + ": tagged Player requires PlayerHealth, a non-trigger body Collider2D and PlayerCombatEvents.", this);
             return;
         }
         attacks.Initialize(this);
@@ -177,7 +190,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         if (actor == null) return false;
         if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
         playerHealth = actor.GetComponent<PlayerHealth>();
-        playerEvents = actor.GetComponent<BossPlayerCombatEvents>();
+        playerEvents = actor.GetComponent<PlayerCombatEvents>();
         if (playerHealth == null || PlayerCollider == null || PlayerCollider.isTrigger || playerEvents == null) return false;
         playerEvents.SignalPublished += HandlePlayerSignal;
         Physics2D.IgnoreCollision(bodyCollider, PlayerCollider, true);
@@ -191,14 +204,19 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     }
     public bool TakeDamage(DamageInfo info)
     {
-        if (!EncounterStarted || IsDead || info.Amount <= 0f) return false;
+        if (!EncounterStarted || IsDead || info.Amount <= 0f || float.IsNaN(info.Amount) || float.IsInfinity(info.Amount)) return false;
+        PlayerAttackContext attack = info.PlayerAttack;
+        if (attack != null && (playerHealth == null || attack.Actor != playerHealth.gameObject || !attack.Begin(this))) return false;
         float damage = info.Amount * (info.Source == DamageSource.PlayerOwned ?
             (IsVulnerable ? settings.VulnerableDamageMultiplier : settings.MaintainedDamageMultiplier) : 1f);
         if (damage <= 0f) return false;
+        if (attack != null && !attack.TryConsumeHit(this, info.HitIndex)) return false;
+        float before = currentHp;
         float threshold = MaxHp * settings.PhaseTwoHealthRatio;
         currentHp = Mathf.Max(Phase == BossPhase.One ? threshold : 0f, currentHp - damage);
         if (currentHp <= 0f) Die();
         else if (Phase == BossPhase.One && currentHp <= threshold) EnterPhaseTwo();
+        attack?.ConfirmHit(this, before - currentHp, info.HitIndex);
         Notify();
         return true;
     }
@@ -207,7 +225,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         CancelCombat(false);
         Phase = BossPhase.Two;
         patternUses.Clear();
-        SetPresentation(IsVulnerable ? BossPresentationState.Vulnerable : BossPresentationState.Idle);
+        SetPresentation(BossPresentationState.Idle);
         presentation.FlashPhaseChange();
         SetStatus("2페이즈");
         ShowFeedback("2페이즈 · 새로운 믿음 패턴", new Color(.6f, .8f, 1f));
@@ -282,14 +300,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         if (entered)
         {
             CancelCombat(false);
-            SetPresentation(BossPresentationState.Vulnerable);
-            SetStatus("취약 · " + reason);
+            SetPresentation(BossPresentationState.Idle);
+            SetStatus("방어력 저하 · " + reason);
         }
         else SetStatus(reason);
         ShowFeedback($"믿음 -{before - CurrentBelief:0} · {reason}", new Color(.5f, 1f, .77f));
     }
     private void StartPattern(BossPatternKind pattern)
     {
+        nextPatternSearchAt = 0f;
         activePattern = pattern;
         activeBelief = BossBeliefKind.None;
         patternId++;
@@ -329,7 +348,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
                 conditionEndsAt = 0f;
                 while (CanContinue && IsBurning && token == generation)
                 {
-                    if (!ChoosePattern(true, out BossPatternKind regular)) { SetStatus("강화: 실행 가능한 일반 공격 대기"); yield return null; continue; }
+                    if (!ChoosePattern(true, out BossPatternKind regular)) { SetStatus("강화: 실행 가능한 일반 공격 대기"); yield return SelectionRetry; continue; }
                     yield return attacks.Regular(regular);
                 }
                 burnEndsAt = 0f;
@@ -339,9 +358,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
                 yield return Stare(settings.StareDuration);
                 while (token == generation && CanContinue)
                 {
-                    if (ChoosePattern(true, out BossPatternKind followup)) { yield return attacks.Regular(followup); break; }
+                    if (ChoosePattern(true, out BossPatternKind followup, allowApproachDash: false))
+                    { yield return attacks.Regular(followup); break; }
                     SetStatus("응시 완료 · 연결 공격을 실행할 수 있는 대상/경로 대기");
-                    yield return null;
+                    yield return SelectionRetry;
                 }
                 break;
             case BossPatternKind.NoAttackBelief:
@@ -402,28 +422,30 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     { windowAttackIds.Clear(); playerActed = false; signalWindow = true; windowStartedAt = Time.time; }
     private void EndSignalWindow() { signalWindow = false; windowAttackIds.Clear(); }
     public void SetConditionTimer(float duration) { conditionDuration = duration; conditionEndsAt = Time.time + duration; Notify(); }
-    private void HandlePlayerSignal(BossPlayerCombatSignal signal)
+    private void HandlePlayerSignal(PlayerCombatSignal signal)
     {
         if (!EncounterStarted || IsDead || !TargetValid || signal.Actor != playerHealth.gameObject || signal.Target != gameObject ||
             signal.AttackId <= 0 || signal.OccurredAt < encounterStartedAt) return;
-        if (signal.Type == BossPlayerCombatSignalType.AttackEvaded)
+        if (signal.Type == PlayerCombatSignalType.AttackEvaded)
         {
             if (allowManualEvadeInjection) SetStatus("수동 회피 신호 #" + signal.AttackId + " · 실제 결과/믿음에 미반영");
             return;
         }
         if (!signalWindow || signal.OccurredAt < windowStartedAt || ConditionRemaining <= 0f) return;
         bool eligible = settings.AttackSignalMode == BossAttackSignalMode.Either ||
-            settings.AttackSignalMode == BossAttackSignalMode.Attempt && signal.Type == BossPlayerCombatSignalType.AttackAttempt ||
-            settings.AttackSignalMode == BossAttackSignalMode.HitConfirmed && signal.Type == BossPlayerCombatSignalType.HitConfirmed;
+            settings.AttackSignalMode == BossAttackSignalMode.Attempt && signal.Type == PlayerCombatSignalType.AttackAttempt ||
+            settings.AttackSignalMode == BossAttackSignalMode.HitConfirmed && signal.Type == PlayerCombatSignalType.HitConfirmed;
         if (!eligible || !windowAttackIds.Add(signal.AttackId)) return;
         playerActed = true;
         if (activeBelief == BossBeliefKind.NoAttack && windowAttackIds.Count == 1)
             ReduceBelief(settings.BeliefReduction, "응시 중 공격함");
     }
-    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern) => BossPatternSelection.TryChoose(
+    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern, bool allowApproachDash = true) => BossPatternSelection.TryChoose(
         Phase == BossPhase.One ? settings.PhaseOnePool : settings.PhaseTwoPool, patternUses,
-        candidate => (!regularOnly || BossPatternSelection.IsRegular(candidate)) && IsPatternEligible(candidate), UnityEngine.Random.value, out pattern);
-    public bool IsPatternEligible(BossPatternKind candidate)
+        !regularOnly ? eligibleAny : allowApproachDash ? eligibleRegular : eligibleConnected,
+        UnityEngine.Random.value, out pattern, candidateWeights);
+    public bool IsPatternEligible(BossPatternKind candidate) => IsPatternEligible(candidate, true);
+    private bool IsPatternEligible(BossPatternKind candidate, bool allowApproachDash)
     {
         if (!TargetValid || !BossPatternSelection.AllowedInPhase(candidate, Phase)) return false;
         int direction = PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1;
@@ -431,7 +453,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         {
             Vector3 offset = attackOrigin.localPosition; offset.x = Mathf.Abs(offset.x) * direction;
             Vector2 origin = transform.TransformPoint(offset);
-            return new BossAttackGeometry(origin + Vector2.right * direction * settings.MeleeSize.x * .5f, settings.MeleeSize).Overlaps(PlayerCollider);
+            return new AttackGeometry(origin + Vector2.right * direction * settings.MeleeSize.x * .5f, settings.MeleeSize).Overlaps(PlayerCollider);
         }
         if (candidate == BossPatternKind.Projectile)
         {
@@ -445,8 +467,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         if (candidate == BossPatternKind.Dash)
         {
             Vector2 size = bodyCollider.bounds.size;
-            float distance = BossCombatPhysics.ClearDistance(bodyCollider.bounds.center, size, Vector2.right * direction, settings.DashDistance, this, false, out _);
-            return BossCombatPhysics.SweptTarget(bodyCollider.bounds.center, size, Vector2.right * direction, distance, this, false);
+            Vector2 origin = bodyCollider.bounds.center;
+            Vector2 dashDirection = Vector2.right * direction;
+            float distance = BossCombatPhysics.ClearDistance(origin, size, dashDirection, settings.DashDistance, this, false, out bool blocked);
+            bool reachesPlayer = BossCombatPhysics.SweptTarget(origin, size, dashDirection, distance, this, false);
+            return reachesPlayer || (allowApproachDash && !blocked && distance > 0.01f);
         }
         if (candidate == BossPatternKind.CloudBelief || candidate == BossPatternKind.ShockwaveBelief)
             return BossCombatPhysics.FindGround(candidate == BossPatternKind.CloudBelief ? (Vector2)PlayerCollider.bounds.min : (Vector2)bodyCollider.bounds.center,
@@ -456,7 +481,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
     public void RecordRegularUse(BossPatternKind pattern) { if (BossPatternSelection.IsRegular(pattern)) RecordUse(pattern); }
     private void RecordUse(BossPatternKind pattern) { patternUses[pattern] = PatternUseCount(pattern) + 1; }
     public int PatternUseCount(BossPatternKind pattern) => patternUses.TryGetValue(pattern, out int count) ? count : 0;
-    public BossAttackRecord CreateAttack(BossAttackKind kind, int hitIndex, BossAttackGeometry geometry, float damage,
+    public BossAttackRecord CreateAttack(BossAttackKind kind, int hitIndex, AttackGeometry geometry, float damage,
         BossBeliefKind attackBelief, bool burn)
     {
         var record = new BossAttackRecord(generation, patternId, nextAttackId++, hitIndex, kind, attackBelief, geometry, damage * DamageMultiplier, burn);
@@ -465,8 +490,13 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         return record;
     }
     public bool IsAttackValid(BossAttackRecord record) => record != null && record.Generation == generation && !record.IsComplete && CanContinue && activeAttacks.ContainsKey(record.Id);
-    public void Observe(BossAttackRecord record, BossAttackGeometry shape)
-    { if (IsAttackValid(record)) record.Observe(shape.Overlaps(PlayerCollider), PlayerCollider.bounds.center); }
+    public bool Observe(BossAttackRecord record, AttackGeometry shape)
+    {
+        if (!IsAttackValid(record)) return false;
+        bool overlaps = shape.Overlaps(PlayerCollider);
+        record.Observe(overlaps, PlayerCollider.bounds.center);
+        return overlaps;
+    }
     public void TryHit(BossAttackRecord record)
     {
         if (!IsAttackValid(record) || !record.TryContact()) return;
@@ -544,7 +574,9 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable
         foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
         activeAttacks.Clear();
         generation++;
+        nextPatternSearchAt = 0f;
         if (hazards != null) hazards.Cancel();
+        if (attacks != null) attacks.ClearAfterimages();
         if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
         effects.Clear();
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);

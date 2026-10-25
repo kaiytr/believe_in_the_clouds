@@ -69,6 +69,7 @@ public sealed class BeliefDummyHitTool : MonoBehaviour
             LastStatus = "주입 불가: 살아 있는 플레이어·대상과 유효한 피해 데이터가 필요합니다.";
             return false;
         }
+        lastAttack?.Dispose();
         lastAttack = new PlayerAttackContext(player.gameObject, data.Kind);
         lastTarget = target;
         lastData = data;
@@ -130,6 +131,7 @@ public sealed class BeliefDummyHitTool : MonoBehaviour
     private void OnDisable()
     {
         StopBurst();
+        lastAttack?.Dispose();
         lastAttack = null;
         lastTarget = null;
     }

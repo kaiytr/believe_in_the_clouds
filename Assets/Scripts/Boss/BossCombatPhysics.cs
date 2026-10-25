@@ -12,7 +12,7 @@ public static class BossCombatPhysics
 
     public static bool FindGround(Vector2 point, float above, float below, BossCombatController boss, out Vector2 ground)
     {
-        RaycastHit2D[] hits = Physics2D.RaycastAll(point + Vector2.up * above, Vector2.down, above + below, boss.Settings.GroundMask);
+        var hits = CombatPhysics.Raycast(point + Vector2.up * above, Vector2.down, above + below, boss.Settings.GroundMask);
         foreach (RaycastHit2D hit in hits)
         {
             if (!IsObstacle(hit.collider, boss) || hit.normal.y < 0.65f) continue;
@@ -28,8 +28,7 @@ public static class BossCombatPhysics
     {
         blocked = false;
         float clear = distance;
-        RaycastHit2D[] hits = circle ? Physics2D.CircleCastAll(center, size.x * 0.5f, direction, distance, boss.Settings.ObstacleMask) :
-            Physics2D.BoxCastAll(center, size, 0f, direction, distance, boss.Settings.ObstacleMask);
+        var hits = CombatPhysics.Cast(center, size, direction, distance, boss.Settings.ObstacleMask, circle);
         foreach (RaycastHit2D hit in hits)
         {
             if (!IsObstacle(hit.collider, boss)) continue;
@@ -44,14 +43,7 @@ public static class BossCombatPhysics
     public static bool SweptTarget(Vector2 center, Vector2 size, Vector2 direction, float distance,
         BossCombatController boss, bool circle)
     {
-        Collider2D target = boss.PlayerCollider;
-        if (target == null) return false;
-        var shape = new BossAttackGeometry(center, size, 0f, circle);
-        if (shape.Overlaps(target)) return true;
-        RaycastHit2D[] hits = circle ? Physics2D.CircleCastAll(center, size.x * 0.5f, direction, distance) :
-            Physics2D.BoxCastAll(center, size, 0f, direction, distance);
-        foreach (var hit in hits) if (hit.collider == target) return true;
-        return false;
+        return CombatPhysics.SweptTarget(boss.PlayerCollider, center, size, direction, distance, circle);
     }
 
     public static BossWavePath TraceGroundPath(Vector2 origin, int direction, float maxDistance, BossCombatController boss)

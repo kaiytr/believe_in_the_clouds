@@ -16,8 +16,8 @@ public sealed class BossHazardDirector : MonoBehaviour
         float halfWidth = data.CloudSize.x * 0.5f;
         float x = Mathf.Clamp(foot.x, data.ArenaX.x + data.CloudSpacing + halfWidth, data.ArenaX.y - data.CloudSpacing - halfWidth);
         float y = floor.y + data.CloudTopHeight - data.CloudSize.y * 0.5f;
-        var blackShape = new BossAttackGeometry(new Vector2(x - data.CloudSpacing, y), data.CloudSize);
-        var whiteShape = new BossAttackGeometry(new Vector2(x + data.CloudSpacing, y), data.CloudSize);
+        var blackShape = new AttackGeometry(new Vector2(x - data.CloudSpacing, y), data.CloudSize);
+        var whiteShape = new AttackGeometry(new Vector2(x + data.CloudSpacing, y), data.CloudSize);
         var executor = owner.GetComponent<BossAttackExecutor>();
         var blackWarning = executor.CreateWarning(blackShape);
         var whiteWarning = executor.CreateWarning(whiteShape);
@@ -53,7 +53,7 @@ public sealed class BossHazardDirector : MonoBehaviour
         if (owner == null || !owner.CanContinue ||
             !BossCombatPhysics.FindGround(dropPoint, 0.05f, 20f, owner, out Vector2 ground)) return false;
         var data = owner.Settings;
-        var shape = new BossAttackGeometry(ground + Vector2.up * data.SpikeSize.y * 0.5f, data.SpikeSize);
+        var shape = new AttackGeometry(ground + Vector2.up * data.SpikeSize.y * 0.5f, data.SpikeSize);
         var record = owner.CreateAttack(BossAttackKind.Spike, 0, shape, data.SpikeDamage, BossBeliefKind.None, false);
         var spike = owner.SpawnEffect(data.SpikePrefab);
         spike.Initialize(owner, record);

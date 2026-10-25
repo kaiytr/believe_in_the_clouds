@@ -6,7 +6,7 @@ public sealed class BossTestBootstrap : MonoBehaviour
     [SerializeField] private BossCombatController boss;
     [SerializeField] private bool startAutomatically = true;
     [SerializeField] private bool showDebugPanel;
-    private BossPlayerCombatEvents playerEvents;
+    private PlayerCombatEvents playerEvents;
     private BossDebugPanel debugPanel;
     private bool ready;
     public string LatestSignal { get; private set; } = "테스트 신호 없음";
@@ -21,10 +21,10 @@ public sealed class BossTestBootstrap : MonoBehaviour
     private void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        playerEvents = player != null ? player.GetComponent<BossPlayerCombatEvents>() : null;
+        playerEvents = player != null ? player.GetComponent<PlayerCombatEvents>() : null;
         if (boss == null || playerEvents == null)
         {
-            Debug.LogError("BossTest requires a serialized Boss prefab and a player with PlayerHealth/BossPlayerCombatEvents.", this);
+            Debug.LogError("BossTest requires a serialized Boss prefab and a player with PlayerHealth/PlayerCombatEvents.", this);
             enabled = false;
             return;
         }
@@ -43,7 +43,7 @@ public sealed class BossTestBootstrap : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.K)) PublishTestAttack(true);
         if (Input.GetKeyDown(KeyCode.L) && boss.AllowManualEvadeInjection && boss.ActiveBossAttackId > 0)
         {
-            playerEvents.PublishBossAttackEvaded(boss.ActiveBossAttackId, boss.gameObject);
+            playerEvents.PublishAttackEvaded(boss.ActiveBossAttackId, boss.gameObject);
             LatestSignal = "수동 회피 신호 (결과에는 미반영)";
         }
         if (Input.GetKeyDown(KeyCode.B)) boss.ReduceBeliefForTest(20f);
@@ -62,14 +62,13 @@ public sealed class BossTestBootstrap : MonoBehaviour
     public void PublishTestAttack(bool hit)
     {
         if (!ready) return;
-        int id = playerEvents.PublishAttackAttempt(boss.gameObject);
-        if (hit) playerEvents.TryApplyHitAndPublish(id, boss.gameObject, 10f);
-        LatestSignal = hit ? "더미 적중 #" + id + " (기본 피해 10)" : "더미 공격 시도 #" + id;
+        using var attack = playerEvents.PublishAttackAttempt(boss.gameObject);
+        if (hit) playerEvents.TryApplyHitAndPublish(attack, boss.gameObject, 10f);
+        LatestSignal = hit ? "더미 적중 #" + attack?.Id + " (기본 피해 10)" : "더미 공격 시도 #" + attack?.Id;
     }
     public void RestartForTest()
     {
         if (!ready) return;
-        playerEvents.ResetTestHistory();
         boss.ResetEncounterForTest();
         LatestSignal = "전투 초기화";
     }

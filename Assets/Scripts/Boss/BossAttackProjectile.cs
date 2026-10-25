@@ -17,14 +17,14 @@ public sealed class BossAttackProjectile : MonoBehaviour
         visual = GetComponent<BossAttackVisual>();
         Present();
     }
-    private void Present() => visual.Show(new BossAttackGeometry(position, Vector2.one * owner.Settings.ProjectileDiameter, 0f, true), owner.Settings.AttackOrder, owner.IsBurning);
+    private void Present() => visual.Show(new AttackGeometry(position, Vector2.one * owner.Settings.ProjectileDiameter, 0f, true), owner.Settings.AttackOrder, owner.IsBurning);
     private void FixedUpdate()
     {
         if (owner == null || !owner.IsAttackValid(record)) { gameObject.SetActive(false); return; }
         float diameter = owner.Settings.ProjectileDiameter;
         float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
         step = BossCombatPhysics.ClearDistance(position, Vector2.one * diameter, direction, step, owner, true, out bool blocked);
-        owner.Observe(record, BossAttackGeometry.Corridor(position - direction * diameter * 0.5f, direction, remaining + diameter, diameter));
+        owner.Observe(record, AttackGeometry.Corridor(position - direction * diameter * 0.5f, direction, remaining + diameter, diameter));
         if (BossCombatPhysics.SweptTarget(position, Vector2.one * diameter, direction, step, owner, true))
         {
             owner.TryHit(record);

@@ -16,7 +16,6 @@ public sealed class BossCombatHud : MonoBehaviour
     [SerializeField] private Text playerStatus;
     [SerializeField] private string preferredFont = "Malgun Gothic";
     private BossCombatController owner;
-    private static Font koreanFont;
     private float previousHp, previousBelief, feedbackUntil;
     private void Awake() { if (canvas != null) canvas.gameObject.SetActive(false); }
     public bool IsConfigured => gameplayHud != null && gameplayHud.IsConfigured;
@@ -29,19 +28,8 @@ public sealed class BossCombatHud : MonoBehaviour
     public Font KoreanFont => ResolveFont();
     public float TopInsetPixels => canvas != null && canvas.gameObject.activeInHierarchy ? 250f * canvas.scaleFactor : 0f;
 
-    private Font ResolveFont()
-    {
-        if (koreanFont != null) return koreanFont;
-        string[] available = Font.GetOSInstalledFontNames();
-        string[] choices = { preferredFont, "맑은 고딕", "Noto Sans CJK KR", "Apple SD Gothic Neo" };
-        foreach (string family in choices)
-        {
-            if (System.Array.IndexOf(available, family) < 0) continue;
-            Font candidate = Font.CreateDynamicFontFromOSFont(family, 28);
-            if (candidate != null && candidate.HasCharacter('너')) { koreanFont = candidate; return candidate; }
-        }
-        return null;
-    }
+    public event System.Action<bool> DebugVisibilityChanged;
+    private Font ResolveFont() => CombatUiResources.KoreanFont(preferredFont);
     public void Initialize(BossCombatController boss)
     {
         owner = boss;
@@ -56,8 +44,10 @@ public sealed class BossCombatHud : MonoBehaviour
     }
     public void SetDebugVisible(bool visible)
     {
+        bool wasVisible = DebugVisible;
         DebugVisible = visible && HasDebugUi;
         if (canvas != null) canvas.gameObject.SetActive(owner != null && DebugVisible);
+        if (wasVisible != DebugVisible) DebugVisibilityChanged?.Invoke(DebugVisible);
     }
     private void LateUpdate()
     {
@@ -80,7 +70,7 @@ public sealed class BossCombatHud : MonoBehaviour
             owner.CueState == BossPresentationState.Stare ? "남은 시간" :
             owner.CueState == BossPresentationState.Charging ? "준비" : "";
         state.text = owner.IsDead ? "보스 격파" : !owner.EncounterStarted ? "전투 대기 / 종료" :
-            owner.IsVulnerable ? $"믿음 붕괴 · 취약 {owner.VulnerableRemaining:0.0}초" :
+            owner.IsVulnerable ? $"방어력 저하 · {owner.VulnerableRemaining:0.0}초" :
             owner.CueTitle + (stage.Length > 0 ? " · " + stage : "") + (owner.HasCueTimer ? $" {owner.CueRemaining:0.0}초" : "");
         hint.text = owner.IsDead ? "R 키로 다시 도전할 수 있습니다." : owner.IsVulnerable ?
             $"지금 공격하세요 · 받는 피해 ×{owner.Settings.VulnerableDamageMultiplier:0.#}" : owner.CueHint;

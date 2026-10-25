@@ -69,7 +69,7 @@ public sealed class BossCombatSettings : ScriptableObject
     [Header("Required presentation assets (world-unit sprites)")]
     public BossAttackVisual WarningPrefab;
     public BossAttackVisual SlashPrefab;
-    public BossAttackVisual DashPrefab;
+    public CombatAfterimage DashPrefab;
     public BossAttackVisual ImpactPrefab;
     public BossAttackProjectile ProjectilePrefab;
     public BossGroundWave WavePrefab;
@@ -185,21 +185,26 @@ public static class BossPatternSelection
         pattern >= BossPatternKind.AttackAndDodgeBelief && pattern <= BossPatternKind.ShockwaveBelief);
 
     public static bool TryChoose(BossPatternWeight[] pool, IDictionary<BossPatternKind, int> uses,
-        System.Predicate<BossPatternKind> eligible, float roll, out BossPatternKind result)
+        System.Predicate<BossPatternKind> eligible, float roll, out BossPatternKind result, List<float> weights = null)
     {
         result = default;
-        float total = 0f;
         if (pool == null) return false;
-        foreach (var entry in pool)
-            if (entry != null && entry.BaseWeight > 0f && eligible(entry.Pattern))
-                total += entry.EffectiveWeight(uses.TryGetValue(entry.Pattern, out int count) ? count : 0);
-        if (total <= 0f) return false;
-        float cursor = Mathf.Clamp01(roll) * total;
+        if (weights == null) weights = new List<float>(pool.Length);
+        weights.Clear();
+        float total = 0f;
         foreach (var entry in pool)
         {
-            if (entry == null || entry.BaseWeight <= 0f || !eligible(entry.Pattern)) continue;
-            result = entry.Pattern;
-            cursor -= entry.EffectiveWeight(uses.TryGetValue(entry.Pattern, out int count) ? count : 0);
+            float weight = entry != null && entry.BaseWeight > 0f && eligible(entry.Pattern) ?
+                entry.EffectiveWeight(uses.TryGetValue(entry.Pattern, out int count) ? count : 0) : 0f;
+            weights.Add(weight); total += weight;
+        }
+        if (total <= 0f) return false;
+        float cursor = Mathf.Clamp01(roll) * total;
+        for (int i = 0; i < pool.Length; i++)
+        {
+            if (weights[i] <= 0f) continue;
+            result = pool[i].Pattern;
+            cursor -= weights[i];
             if (cursor < 0f) return true;
         }
         return true;

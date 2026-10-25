@@ -45,7 +45,7 @@ public class MagicCircleAttack : EnemyAttack
 
         float diameter = circleRadius * 2f;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.Setup(lockedTargetPosition, 0f, new Vector2(diameter, diameter), WindupDuration);
+        indicator.Setup(lockedTargetPosition, 0f, new Vector2(diameter, diameter));
         return indicator;
     }
 

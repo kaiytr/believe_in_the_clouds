@@ -20,7 +20,7 @@ public sealed class BossGroundWave : MonoBehaviour
         visual = GetComponent<BossAttackVisual>();
         Present();
     }
-    private void Present() => visual.Show(new BossAttackGeometry(ground + Vector2.up * (owner.Settings.WaveSize.y * 0.5f + 0.02f), owner.Settings.WaveSize), owner.Settings.AttackOrder);
+    private void Present() => visual.Show(new AttackGeometry(ground + Vector2.up * (owner.Settings.WaveSize.y * 0.5f + 0.02f), owner.Settings.WaveSize), owner.Settings.AttackOrder);
     private void FixedUpdate()
     {
         if (Finished || owner == null || !owner.IsAttackValid(record)) return;
@@ -31,7 +31,7 @@ public sealed class BossGroundWave : MonoBehaviour
         step = BossCombatPhysics.ClearDistance(center, data.WaveSize, move, step, owner, false, out bool wall);
         Vector2 next = path.GroundAt(travelled+step);
         if (!BossCombatPhysics.FindGround(next, data.MaximumGroundStep, data.MaximumGroundStep, owner, out Vector2 currentGround) ||
-            !path.Encloses(new BossAttackGeometry(currentGround+Vector2.up*(data.WaveSize.y*.5f+.02f),data.WaveSize)))
+            !path.Encloses(new AttackGeometry(currentGround+Vector2.up*(data.WaveSize.y*.5f+.02f),data.WaveSize)))
         { Blocked = true; End(); return; }
         next=currentGround;
         Vector2 displacement=next-ground;

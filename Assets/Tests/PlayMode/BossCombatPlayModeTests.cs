@@ -140,6 +140,71 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator DistantAttackAndDodgeUsesProjectileAndCountsMovementEvade()
+    {
+        data.StareDuration=.15f;
+        boss.ForcePhaseTwoForTest();
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*2f);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.True);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.False);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Projectile),Is.True);
+
+        boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
+        yield return Until(()=>Object.FindFirstObjectByType<BossAttackProjectile>()!=null);
+        playerBody.linearVelocity=Vector2.up*10f;
+        yield return Until(()=>Count(BossAttackKind.Projectile)>0);
+        Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
+        Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.EvadedByPlayer));
+        Assert.That(boss.CurrentBelief,Is.EqualTo(data.MaxBelief-data.BeliefReduction));
+        Assert.That(player.CurrentHp,Is.EqualTo(100f));
+    }
+
+    [UnityTest]
+    public IEnumerator BurnBeliefDistantProjectileEvadeReducesBelief()
+    {
+        data.BurnPreparation=.15f; data.BurnWindow=1.2f;
+        data.PhaseOnePool=new[] { new BossPatternWeight(BossPatternKind.BurnBelief,1f,.5f),
+            new BossPatternWeight(BossPatternKind.Projectile,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        boss.ForcePatternForTest(BossPatternKind.BurnBelief);
+        yield return Until(()=>Object.FindFirstObjectByType<BossAttackProjectile>()!=null);
+        playerBody.linearVelocity=Vector2.up*10f;
+        yield return Until(()=>Count(BossAttackKind.Projectile)>0);
+        Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.Burn));
+        Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.EvadedByPlayer));
+        Assert.That(boss.CurrentBelief,Is.EqualTo(data.MaxBelief-data.BeliefReduction));
+        Assert.That(player.CurrentHp,Is.EqualTo(100f));
+    }
+
+    [UnityTest]
+    public IEnumerator BurnBeliefDashApproachesWhenPlayerIsBeyondDashRange()
+    {
+        data.BurnPreparation=.1f; data.BurnWindow=.8f;
+        data.PhaseOnePool=new[] { new BossPatternWeight(BossPatternKind.BurnBelief,1f,.5f),
+            new BossPatternWeight(BossPatternKind.Dash,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        float startX=boss.Body.position.x;
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
+        boss.ForcePatternForTest(BossPatternKind.BurnBelief);
+        yield return Until(()=>Count(BossAttackKind.Dash)>0);
+        Assert.That(boss.Body.position.x,Is.GreaterThan(startX+4f));
+        Assert.That(Last.WasThreatened,Is.False);
+        Assert.That(boss.CurrentBelief,Is.EqualTo(data.MaxBelief));
+    }
+
+    [UnityTest]
+    public IEnumerator DistantDashIsNotCandidateWhenObstacleBlocksApproach()
+    {
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        Wall(boss.transform.position.x+2f);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.False);
+        yield return null;
+    }
+
+    [UnityTest]
     public IEnumerator PhaseBoundaryCancelsLiveAttacksPreservesBeliefAndVulnerabilityDeadline()
     {
         PutPlayer(new Vector2(-5f,boss.transform.position.y));
@@ -170,13 +235,13 @@ public sealed class BossCombatPlayModeTests
         yield return Until(()=>boss.ConditionRemaining>0f);
         yield return Until(()=>!boss.IsPatternRunning);
         Assert.That(boss.CurrentBelief,Is.EqualTo(80f)); Assert.That(boss.ActiveBeliefPhrase,Is.Empty);
-        var events=player.GetComponent<BossPlayerCombatEvents>();
+        var events=player.GetComponent<PlayerCombatEvents>();
         boss.ForcePatternForTest(BossPatternKind.AttackIntentBelief); yield return Until(()=>boss.ConditionRemaining>0f);
         events.PublishAttackAttempt(boss.gameObject); yield return Until(()=>!boss.IsPatternRunning);
         Assert.That(boss.CurrentBelief,Is.EqualTo(80f));
         boss.ForcePhaseTwoForTest(); data.AttackSignalMode=BossAttackSignalMode.Either;
         boss.ForcePatternForTest(BossPatternKind.NoAttackBelief); yield return Until(()=>boss.ConditionRemaining>0f);
-        int id=events.PublishAttackAttempt(boss.gameObject); events.PublishHitConfirmed(id,boss.gameObject,10f);
+        var id=events.PublishAttackAttempt(boss.gameObject); events.PublishHitConfirmed(id,boss.gameObject,10f);
         events.PublishAttackAttempt(boss.gameObject);
         Assert.That(boss.CurrentBelief,Is.EqualTo(60f)); Assert.That(boss.CurrentHp,Is.EqualTo(250f),"A notification never applies damage a second time.");
         int before=Count(BossAttackKind.Melee); yield return Until(()=>!boss.IsPatternRunning);
@@ -193,7 +258,7 @@ public sealed class BossCombatPlayModeTests
         yield return Until(()=>!boss.IsPatternRunning);
         Assert.That(boss.AttackHistory.Count,Is.GreaterThan(0));
         Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
-        var events=player.GetComponent<BossPlayerCombatEvents>(); int id=events.PublishAttackAttempt(boss.gameObject);
+        var events=player.GetComponent<PlayerCombatEvents>(); var id=events.PublishAttackAttempt(boss.gameObject);
         float hp=boss.CurrentHp;
         Assert.That(events.TryApplyHitAndPublish(id,boss.gameObject,10f),Is.True);
         events.PublishHitConfirmed(id,boss.gameObject,10f);
@@ -338,8 +403,8 @@ public sealed class BossCombatPlayModeTests
     public IEnumerator VulnerabilityCancelsScheduledSpikesAndRejectsPreviousGenerationPlayerHits()
     {
         PutPlayer(new Vector2(-4f,-2.33f));
-        var events=player.GetComponent<BossPlayerCombatEvents>();
-        int oldAttempt=events.PublishAttackAttempt(boss.gameObject);
+        var events=player.GetComponent<PlayerCombatEvents>();
+        var oldAttempt=events.PublishAttackAttempt(boss.gameObject);
         Assert.That(boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-4f,-1f)),Is.True);
         var record=new List<BossAttackRecord>(boss.ActiveAttacks)[0];
         boss.ReduceBeliefForTest(100f);
@@ -365,7 +430,7 @@ public sealed class BossCombatPlayModeTests
         while(!wave.Finished)
         {
             var bounds=wave.GetComponent<SpriteRenderer>().bounds;
-            Assert.That(path.Encloses(new BossAttackGeometry(bounds.center,bounds.size)),Is.True);
+            Assert.That(path.Encloses(new AttackGeometry(bounds.center,bounds.size)),Is.True);
             yield return new WaitForFixedUpdate();
         }
         Assert.That(wave.Blocked,Is.False);
@@ -395,8 +460,7 @@ public sealed class BossCombatPlayModeTests
         yield return Until(()=>Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None).Length==2);
         Assert.That(boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-8f,-1f)),Is.True);
         yield return null;
-        foreach(var cue in Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None))
-            Assert.That(cue.GetComponent<Canvas>().enabled,Is.False,"Numeric world labels are debug-only.");
+        Assert.That(Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None),Is.Empty,"Hidden debug annotations should not allocate UI.");
         var warning=Object.FindFirstObjectByType<DangerIndicator>().GetComponent<SpriteRenderer>();
         Assert.That(warning.enabled,Is.True,"Gameplay must retain the actual danger envelope.");
         int generation=boss.Generation, pattern=boss.PatternId, attack=boss.ActiveBossAttackId;
@@ -405,8 +469,9 @@ public sealed class BossCombatPlayModeTests
         Assert.That(hud.DebugVisible,Is.True); Assert.That(hud.DebugCanvas.gameObject.activeInHierarchy,Is.True);
         Assert.That(hud.GameplayHud.HealthCanvas.enabled,Is.False,"Debug mode avoids duplicate gameplay bars.");
         Assert.That(hud.GameplayHud.PlayerCanvas.enabled,Is.False);
-        foreach(var cue in Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None))
-            Assert.That(cue.GetComponent<Canvas>().enabled,Is.True);
+        var visibleCues=Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None);
+        Assert.That(visibleCues.Length,Is.GreaterThanOrEqualTo(3));
+        foreach(var cue in visibleCues) Assert.That(cue.GetComponent<Canvas>().enabled,Is.True);
         tools.ShowDebugPanel=false; yield return null;
         Assert.That(hud.DebugVisible,Is.False); Assert.That(warning.enabled,Is.True);
         Assert.That(hud.GameplayHud.HealthCanvas.enabled,Is.True);
@@ -422,6 +487,50 @@ public sealed class BossCombatPlayModeTests
         Assert.That(hud.IsConfigured,Is.True); Assert.That(boss.ValidateEncounter(),Is.Empty);
         boss.ResetEncounterForTest(); boss.AutomaticPatterns=false; yield return null;
         Assert.That(boss.EncounterStarted,Is.True); Assert.That(hud.GameplayHud.HealthCanvas.enabled,Is.True);
+    }
+
+    [UnityTest]
+    public IEnumerator SharedPlayerContextDeduplicatesRawAndAdapterHitsAndPublishesOneBeliefSignal()
+    {
+        data.AttackSignalMode=BossAttackSignalMode.HitConfirmed;
+        boss.ForcePatternForTest(BossPatternKind.NoAttackBelief);
+        yield return Until(()=>boss.ConditionRemaining>0f);
+        float hp=boss.CurrentHp, belief=boss.CurrentBelief;
+        using(var attack=new PlayerAttackContext(player.gameObject))
+        {
+            DamageInfo hit=attack.Damage(10f);
+            Assert.That(boss.TakeDamage(hit),Is.True);
+            Assert.That(boss.TakeDamage(hit),Is.False);
+            Assert.That(attack.TryHit(boss,10f),Is.False);
+            Assert.That(attack.TryHit(boss,10f,1),Is.True);
+            Assert.That(boss.CurrentHp,Is.EqualTo(hp-20f*data.MaintainedDamageMultiplier).Within(.001f));
+            Assert.That(boss.CurrentBelief,Is.EqualTo(belief-data.BeliefReduction));
+        }
+        var stale=new PlayerAttackContext(player.gameObject);
+        Assert.That(stale.Begin(boss),Is.True);
+        boss.PauseAndCancelForTest(); hp=boss.CurrentHp;
+        Assert.That(stale.TryHit(boss,100f),Is.False);
+        Assert.That(boss.TakeDamage(stale.Damage(100f)),Is.False);
+        Assert.That(boss.CurrentHp,Is.EqualTo(hp)); stale.Dispose();
+        var finished=player.GetComponent<PlayerCombatEvents>().PublishAttackAttempt(boss.gameObject);
+        finished.Dispose(); Assert.That(finished.TryHit(boss,10f),Is.False);
+    }
+
+    [UnityTest]
+    public IEnumerator AfterimagesReuseInstancesAndEncounterCancellationReturnsActiveTrails()
+    {
+        var emitter=boss.GetComponent<CombatAfterimageEmitter>();
+        int created=emitter.CreatedCount;
+        for(int i=0;i<24;i++)
+        {
+            for(int repeat=0;repeat<5;repeat++) emitter.Emit(data.DashPrefab,boss.BodyRenderer,20);
+            yield return new WaitForSeconds(.06f);
+        }
+        Assert.That(emitter.CreatedCount-created,Is.LessThanOrEqualTo(6),"Repeated emissions should reuse short-lived instances.");
+        emitter.Emit(data.DashPrefab,boss.BodyRenderer,20);
+        Assert.That(emitter.ActiveCount,Is.GreaterThan(0));
+        Assert.That(data.DashPrefab.GetComponentsInChildren<LineRenderer>(true),Is.Empty);
+        boss.PauseAndCancelForTest(); Assert.That(emitter.ActiveCount,Is.Zero);
     }
 
     [UnityTest]

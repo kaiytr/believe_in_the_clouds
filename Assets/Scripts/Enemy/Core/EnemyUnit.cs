@@ -8,7 +8,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 {
     [Header("Stats")]
     [SerializeField] protected float maxHp = 30f;
-    [SerializeField] protected float moveSpeed = 2.5f;
+    [SerializeField, Min(0f)] protected float moveSpeedRatio = 1f;
 
     [Header("Target")]
     [SerializeField] private float targetSearchInterval = 0.5f;
@@ -31,12 +31,11 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     private BeliefView beliefView;
     private Collider2D targetBodyCollider;
     private PlayerHealth targetHealth;
+    private PlayerMove targetMovement;
     private float moveInput;
     private bool movementLocked;
     private bool configurationValid;
     private float nextTargetSearchTime;
-    // Local to this enemy's lifetime; not cleared when vulnerability ends.
-    private readonly HashSet<(long attack, int hit)> receivedPlayerHits = new HashSet<(long, int)>();
 
     public event Action<PlayerHitResult> PlayerHitReceived;
 
@@ -50,6 +49,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     public BeliefController Belief => beliefController;
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
+    public float ReferencePlayerMoveSpeed => targetMovement != null ? targetMovement.BaseMoveSpeed : 0f;
     public float FacingDirection => GetActiveAttackDirection();
     public bool HasCombatTarget => HasValidTarget();
 
@@ -67,6 +67,11 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             bodyCollider = GetComponent<Collider2D>();
     }
 
+    protected virtual void OnEnable()
+    {
+        if (target != null) SetPhysicalCollisionWithPlayerEnabled(false);
+    }
+
     protected virtual void Start()
     {
         TryAcquirePlayer();
@@ -76,13 +81,13 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             return;
         }
 
-        beliefController.StateChanged += HandleBeliefStateChanged;
         if (!beliefView.Initialize(beliefController))
         {
             Debug.LogError($"{name}: BeliefView failed to create its phrase and gauge UI.", this);
             gameObject.SetActive(false);
             return;
         }
+        beliefController.StateChanged += HandleBeliefStateChanged;
         if (IsVulnerable)
             HandleBeliefStateChanged(beliefController, BeliefState.Vulnerable);
     }
@@ -91,13 +96,6 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     {
         if (IsDead || !configurationValid)
             return;
-
-        if (IsVulnerable)
-        {
-            StopMovement();
-            ChangeState(EnemyState.Vulnerable);
-            return;
-        }
 
         if (!HasValidTarget())
         {
@@ -115,7 +113,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (IsDead || movementLocked)
             return;
 
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(moveInput * ReferencePlayerMoveSpeed * moveSpeedRatio, rb.linearVelocity.y);
     }
 
     protected abstract void UpdateAI();
@@ -130,6 +128,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
         if (target == null || targetBodyCollider == null)
             return FailConfiguration("A tagged Player with PlayerHealth and a root body Collider2D is required.");
+
+        if (targetMovement == null)
+            return FailConfiguration("A tagged Player with PlayerMove is required for enemy speed ratios.");
 
         BeliefCondition[] conditions = GetComponents<BeliefCondition>();
         BeliefCondition matchingCondition = null;
@@ -184,33 +185,13 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     private void HandleBeliefStateChanged(BeliefController controller, BeliefState state)
     {
-        bool vulnerable = state == BeliefState.Vulnerable;
-        foreach (EnemyContactDamage contact in contactDamageComponents)
-        {
-            if (contact != null)
-                contact.SetSuppressed(vulnerable || IsDead);
-        }
+        if (state != BeliefState.Vulnerable)
+            return;
 
         foreach (EnemyAttack attack in attacks)
         {
             if (attack != null)
-                attack.SetVulnerable(vulnerable);
-        }
-
-        if (vulnerable)
-        {
-            LockMovement();
-            ChangeState(EnemyState.Vulnerable);
-        }
-        else if (!IsDead)
-        {
-            bool attackStillRunning = false;
-            foreach (EnemyAttack attack in attacks)
-                attackStillRunning |= attack != null && attack.IsAttacking;
-
-            if (!attackStillRunning)
-                UnlockMovement();
-            ChangeState(EnemyState.Idle);
+                attack.SetVulnerable(true);
         }
     }
 
@@ -233,6 +214,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
         PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
         targetHealth = playerHealth;
+        targetMovement = player.GetComponent<PlayerMove>();
         if (playerHealth == null || playerHealth.BodyCollider == null || playerHealth.BodyCollider.isTrigger)
         {
             target = player.transform;
@@ -285,7 +267,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     protected void SetHorizontalMove(float direction)
     {
-        if (!movementLocked && !IsVulnerable)
+        if (!movementLocked)
             moveInput = Mathf.Clamp(direction, -1f, 1f);
     }
 
@@ -304,14 +286,14 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     public void UnlockMovement()
     {
-        if (IsDead || IsVulnerable)
+        if (IsDead)
             return;
         movementLocked = false;
     }
 
     public void FaceTarget()
     {
-        if (target != null && !IsVulnerable)
+        if (target != null)
             SetFacingDirection(target.position.x - transform.position.x);
     }
 
@@ -354,7 +336,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         PlayerAttackContext playerAttack = damageInfo.PlayerAttack;
         if (playerAttack != null &&
             (playerAttack.Actor == null || target == null || playerAttack.Actor != target.gameObject ||
-             damageInfo.HitIndex < 0 || receivedPlayerHits.Contains((playerAttack.Id, damageInfo.HitIndex))))
+             damageInfo.HitIndex < 0 || !playerAttack.Begin(this)))
             return false;
 
         float finalDamage = beliefController != null
@@ -363,8 +345,8 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (finalDamage <= 0f)
             return false;
 
-        if (playerAttack != null)
-            receivedPlayerHits.Add((playerAttack.Id, damageInfo.HitIndex));
+        if (playerAttack != null && !playerAttack.TryConsumeHit(this, damageInfo.HitIndex))
+            return false;
         float previousHp = currentHp;
         Bounds enemyBounds = bodyCollider != null ? bodyCollider.bounds : default;
         Bounds playerBounds = targetBodyCollider != null ? targetBodyCollider.bounds : default;
@@ -376,6 +358,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         else if (playerAttack != null && playerAttack.CountsForBelief && targetBodyCollider != null)
             PlayerHitReceived?.Invoke(new PlayerHitResult(playerAttack.Id, damageInfo.HitIndex,
                 previousHp - currentHp, Time.time, enemyBounds, playerBounds, facing));
+        playerAttack?.ConfirmHit(this, previousHp - currentHp, damageInfo.HitIndex);
         return true;
     }
 

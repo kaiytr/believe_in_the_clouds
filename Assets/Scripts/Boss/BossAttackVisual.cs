@@ -7,19 +7,23 @@ public sealed class BossAttackVisual : MonoBehaviour
     [SerializeField] private Color baseColor = Color.white;
     [SerializeField] private bool warning;
     private SpriteRenderer fill;
+    private DangerIndicator indicator;
+    private BossCombatController cueOwner;
+    private BossCombatHud cueHud;
+    private string cueText;
+    private float cueDeadline, cueRemainingFraction;
+    private bool wantsCue;
     private float fadeEndsAt, fadeDuration;
-    private BossAttackGeometry geometry;
+    private AttackGeometry geometry;
     private BossWorldCue cue;
-    private LineRenderer directionMarker;
     private Color warningColor = Color.red;
     public SpriteRenderer Renderer => fill != null ? fill : GetComponent<SpriteRenderer>();
 
-    private void Awake() { fill = GetComponent<SpriteRenderer>(); }
+    private void Awake() { fill = GetComponent<SpriteRenderer>(); indicator = GetComponent<DangerIndicator>(); }
 
-    public void Show(BossAttackGeometry geometry, int order, bool burning = false)
+    public void Show(AttackGeometry geometry, int order, bool burning = false)
     {
         this.geometry = geometry;
-        DangerIndicator indicator = GetComponent<DangerIndicator>();
         if (indicator != null) indicator.Present(geometry.Center, geometry.Angle, geometry.Size);
         else
         {
@@ -38,6 +42,7 @@ public sealed class BossAttackVisual : MonoBehaviour
     public void SetProgress(float value)
     {
         value = Mathf.Clamp01(value);
+        if (indicator != null) { indicator.SetProgress(value); return; }
         Color color = Renderer.color;
         color.a = warning ? Mathf.Lerp(0.12f, baseColor.a, value) : baseColor.a;
         Renderer.color = color;
@@ -58,37 +63,40 @@ public sealed class BossAttackVisual : MonoBehaviour
 
     public void SetCue(string text, float remaining, float progress, BossCombatController owner)
     {
-        if (cue == null) cue = BossWorldCue.Create(transform, owner.PresentationFont, owner);
+        if (cueOwner != owner)
+        {
+            if (cueHud != null) cueHud.DebugVisibilityChanged -= OnDebugVisibilityChanged;
+            cueOwner = owner;
+            cueHud = owner.GetComponent<BossCombatHud>();
+            if (cueHud != null) cueHud.DebugVisibilityChanged += OnDebugVisibilityChanged;
+        }
+        cueText = text; cueDeadline = Time.time + Mathf.Max(0f, remaining);
+        cueRemainingFraction = 1f - progress; wantsCue = true;
+        RefreshCue();
+    }
+    private void OnDebugVisibilityChanged(bool visible) => RefreshCue();
+    private void RefreshCue()
+    {
+        if (!wantsCue || !isActiveAndEnabled || cueOwner == null || !cueOwner.DebugUiVisible)
+        { if (cue != null) cue.gameObject.SetActive(false); return; }
+        if (cue == null) cue = BossWorldCue.Create(transform, cueOwner.PresentationFont, cueOwner);
         float radians = geometry.Angle * Mathf.Deg2Rad;
         float height = Mathf.Abs(Mathf.Sin(radians)) * geometry.Size.x + Mathf.Abs(Mathf.Cos(radians)) * geometry.Size.y;
+        float remaining = Mathf.Max(0f, cueDeadline - Time.time);
         cue.Show(geometry.Center + Vector2.up * (height * .5f),
-            remaining > 0f ? text + $" · {remaining:0.0}초" : text, warningColor, 1f - progress);
+            remaining > 0f ? cueText + $" · {remaining:0.0}초" : cueText, warningColor, cueRemainingFraction);
     }
 
     public void SetDirection(float sign = 1f)
     {
-        if (directionMarker == null)
-        {
-            directionMarker = new GameObject("Travel direction").AddComponent<LineRenderer>();
-            directionMarker.transform.SetParent(transform, false); directionMarker.useWorldSpace = true;
-            directionMarker.sharedMaterial = Renderer.sharedMaterial;
-            directionMarker.startColor = directionMarker.endColor = new Color(1f, .88f, .65f);
-            directionMarker.startWidth = directionMarker.endWidth = .055f;
-            directionMarker.sortingOrder = Renderer.sortingOrder + 2;
-        }
         float angle = geometry.Angle * Mathf.Deg2Rad;
         Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * Mathf.Sign(sign);
-        Vector2 side = new Vector2(-direction.y, direction.x);
-        Vector2 tip = geometry.Center + direction * Mathf.Min(.35f, geometry.Size.x * .25f);
-        float head = Mathf.Min(.18f, geometry.Size.y * .35f);
-        directionMarker.positionCount = 5;
-        directionMarker.SetPositions(new[] { (Vector3)(geometry.Center - direction * Mathf.Min(.3f, geometry.Size.x * .25f)), (Vector3)tip,
-            (Vector3)(tip - direction * head + side * head), (Vector3)tip,
-            (Vector3)(tip - direction * head - side * head) });
+        indicator?.SetDirection(direction);
     }
 
     public void Fade(float duration)
     {
+        wantsCue = false;
         if (cue != null) cue.gameObject.SetActive(false);
         fadeDuration = Mathf.Max(0.01f, duration);
         fadeEndsAt = Time.time + fadeDuration;
@@ -110,5 +118,9 @@ public sealed class BossAttackVisual : MonoBehaviour
         if (remaining <= 0f) gameObject.SetActive(false);
     }
     private void OnDisable() { if (cue != null) cue.gameObject.SetActive(false); }
-    private void OnDestroy() { if (cue != null) Destroy(cue.gameObject); }
+    private void OnDestroy()
+    {
+        if (cueHud != null) cueHud.DebugVisibilityChanged -= OnDebugVisibilityChanged;
+        if (cue != null) Destroy(cue.gameObject);
+    }
 }

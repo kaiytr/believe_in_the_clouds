@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeed: 2.5
+  moveSpeedRatio: 0.8
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 293926172}
   destroyDelay: 1.5
@@ -963,7 +963,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
-  moveSpeed: 2.5
+  moveSpeedRatio: 1
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1535075229}
   destroyDelay: 1.5
@@ -1490,7 +1490,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DogEnemy
   maxHp: 30
-  moveSpeed: 4
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1928112226}
   destroyDelay: 1.5
@@ -1514,9 +1514,10 @@ MonoBehaviour:
   chargeTriggerRange: 4
   verticalAttackTolerance: 1.5
   chargeDistance: 5
-  chargeSpeed: 12
+  chargeSpeedRatio: 1.4
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorHeight: 1
+  afterimagePrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64

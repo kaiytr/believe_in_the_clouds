@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95b677292f1c7db4082f62c4f18893e1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefDummyHitTool
   player: {fileID: 1586999232}
   targets:
@@ -228,7 +228,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &293926170
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,10 +239,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeed: 2.5
+  moveSpeedRatio: 0.8
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 293926172}
   destroyDelay: 1.5
@@ -258,7 +258,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36261bf754d79d840916931fbd95caee, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThrowStoneAttack
   damage: 10
   cooldown: 2.5
@@ -421,7 +421,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
 --- !u!114 &293926178
 MonoBehaviour:
@@ -433,7 +433,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 6
   beliefTypeCandidates: 060000000700000008000000
@@ -449,7 +449,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5341e2d44ecc1d44aaaf368afaac7b8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::ExpandedBeliefCondition
   beliefController: {fileID: 293926178}
   maxRearDistance: 4
@@ -557,7 +557,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -665,7 +665,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &789634367
@@ -748,7 +748,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &972868830
@@ -949,7 +949,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1535075227
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -960,10 +960,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60b0ae2ecb4f1a04f86923b2b1a1b1b3, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
-  moveSpeed: 2.5
+  moveSpeedRatio: 1
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1535075229}
   destroyDelay: 1.5
@@ -979,7 +979,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ceac2c48228f5f44840c942b5bcdd11, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MagicCircleAttack
   damage: 5
   cooldown: 4
@@ -1141,7 +1141,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
 --- !u!114 &1535075235
 MonoBehaviour:
@@ -1153,7 +1153,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 9
   beliefTypeCandidates: 090000000a0000000b000000
@@ -1169,7 +1169,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5341e2d44ecc1d44aaaf368afaac7b8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::ExpandedBeliefCondition
   beliefController: {fileID: 1535075235}
   maxRearDistance: 4
@@ -1344,7 +1344,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fefc0b418b5e474d968906d858c3351, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerMove
   moveSpeed: 7
   jumpPower: 14
@@ -1363,7 +1363,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHp: 100
   invulnerabilityDuration: 1
@@ -1413,7 +1413,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4588dfd65d852724da19270e5081bd87, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyContactDamage
   damage: 5
 --- !u!70 &1879635393
@@ -1487,10 +1487,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad48d021300f9ac46ab9e87e975c6c8d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DogEnemy
   maxHp: 30
-  moveSpeed: 4
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1928112226}
   destroyDelay: 1.5
@@ -1505,7 +1505,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f022426475fc3e646951b6709093e45b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DogChargeAttack
   damage: 15
   cooldown: 3
@@ -1514,9 +1514,10 @@ MonoBehaviour:
   chargeTriggerRange: 4
   verticalAttackTolerance: 1.5
   chargeDistance: 5
-  chargeSpeed: 12
+  chargeSpeedRatio: 1.4
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorHeight: 1
+  afterimagePrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -1669,7 +1670,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64feabc6f4ce3004f846b4fbd9b98282, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefView
 --- !u!114 &1928112232
 MonoBehaviour:
@@ -1681,7 +1682,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7909bcf81e3843dfb9e17292efb43827, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefController
   beliefType: 3
   beliefTypeCandidates: 030000000400000005000000
@@ -1697,7 +1698,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f5341e2d44ecc1d44aaaf368afaac7b8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::ExpandedBeliefCondition
   beliefController: {fileID: 1928112232}
   maxRearDistance: 4

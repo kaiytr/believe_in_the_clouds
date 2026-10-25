@@ -25,7 +25,7 @@ public sealed class BossTimedDamageHazard : MonoBehaviour
     private void FixedUpdate()
     {
         if (owner == null || !owner.IsAttackValid(record)) return;
-        owner.Observe(record, record.Geometry);
+        bool overlaps = owner.Observe(record, record.Geometry);
         if (!record.Activated && Time.time >= activatesAt)
         {
             owner.DestroyEffect(warning != null ? warning.gameObject : null);
@@ -44,7 +44,7 @@ public sealed class BossTimedDamageHazard : MonoBehaviour
         {
             visual.SetCue("가시 · 접근 금지", expiresAt - Time.time,
                 1f - (expiresAt - Time.time) / owner.Settings.SpikeDuration, owner);
-            if (record.Geometry.Overlaps(owner.PlayerCollider)) owner.TryHit(record);
+            if (overlaps) owner.TryHit(record);
         }
         else if (!record.Activated && warning != null)
         {

@@ -71,6 +71,7 @@ public sealed class BeliefExpansionPlayModeTests
             EnemyUnit enemy = root.GetComponent<EnemyUnit>();
             if (enemy == null) continue;
             enemy.enabled = false;
+            root.SetActive(true);
             enemies[root.name] = enemy;
             Set(enemy, "maxHp", 1000f);
             Set(enemy, "currentHp", 1000f);
@@ -289,6 +290,28 @@ public sealed class BeliefExpansionPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator DisablingAnActiveDogChargeCleansMotionCollisionAndTrailsBeforeReuse()
+    {
+        yield return Load(dog:BeliefType.DogUnerringAttack);
+        Place(Dog,Vector2.right*2f);
+        var attack=(DogChargeAttack)BeginAttack(Dog,.08f);
+        var results=new List<EnemyAttackResult>(); attack.AttackResolved+=(_,value)=>results.Add(value);
+        yield return Until(()=>attack.IsCharging);
+        attack.enabled=false;
+        Assert.That(attack.IsCharging,Is.False); Assert.That(attack.IsAttacking,Is.False);
+        Assert.That(Dog.GetComponent<Rigidbody2D>().linearVelocity.x,Is.Zero.Within(.001f));
+        Assert.That(Physics2D.GetIgnoreCollision(Dog.BodyCollider,player.BodyCollider),Is.True);
+        Assert.That(Dog.GetComponent<CombatAfterimageEmitter>().ActiveCount,Is.Zero);
+        Assert.That(results.Count,Is.EqualTo(1)); Assert.That(results[0].Outcome,Is.EqualTo(AttackOutcome.Cancelled));
+        attack.enabled=true; Place(Dog,Vector2.right*2f); BeginAttack(Dog,.08f);
+        yield return Until(()=>attack.IsCharging);
+        Dog.gameObject.SetActive(false);
+        Assert.That(attack.IsCharging,Is.False); Assert.That(results.Count,Is.EqualTo(2));
+        Dog.gameObject.SetActive(true); yield return null;
+        Assert.That(attack.IsAttacking,Is.False);
+    }
+
+    [UnityTest]
     public IEnumerator RearDwellIsAchievableDuringTheRealDirectionLockedCircleWindup()
     {
         yield return Load(executive: BeliefType.ExecutiveRearPosition);
@@ -399,7 +422,7 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(Dog.IsDead, Is.True);
         Assert.That(Dog.Belief.IsStopped, Is.True);
         Assert.That(Dog.Belief.CurrentBelief, Is.EqualTo(100f));
-        Assert.That(Dog.transform.Find("BeliefUIAnchor").gameObject.activeSelf, Is.False);
+        Assert.That(Dog.GetComponent<BeliefView>().WorldView.BeliefCanvas.enabled, Is.False);
     }
 
     [UnityTest]

@@ -99,12 +99,16 @@ public sealed class BeliefSystemPlayModeTests
         believerUnit.enabled = true;
         executiveUnit.enabled = true;
         yield return null;
-        Assert.That(dog.transform.Find("BeliefUIAnchor"), Is.Not.Null);
+        // Configure all real actors, then run their attack scenarios in stages.
+        // Otherwise an early stone result can satisfy the later wait before the intended evade.
+        believerUnit.enabled = executiveUnit.enabled = false;
+        stoneAttack.CancelForOwnerDeath(); circleAttack.CancelForOwnerDeath();
+        believerUnit.LockMovement(); executiveUnit.LockMovement();
+        Assert.That(dog.GetComponent<BeliefView>().WorldView, Is.Not.Null);
         UnityEngine.UI.Text beliefPhrase = dog.GetComponentInChildren<UnityEngine.UI.Text>(true);
         Assert.That(beliefPhrase, Is.Not.Null);
         Assert.That(beliefPhrase.text, Is.EqualTo(dogUnit.Belief.Profile.Phrase));
-        Transform gaugeFillTransform = dog.transform.Find(
-            "BeliefUIAnchor/WorldSpaceBeliefUI/BeliefGaugeBackground/BeliefGaugeFill");
+        Transform gaugeFillTransform = dog.GetComponent<BeliefView>().WorldView.BeliefFill.transform;
         Assert.That(gaugeFillTransform, Is.Not.Null);
         Assert.That(gaugeFillTransform.GetComponent<UnityEngine.UI.Image>().fillAmount,
             Is.EqualTo(dogUnit.Belief.NormalizedBelief).Within(0.001f));
@@ -153,6 +157,13 @@ public sealed class BeliefSystemPlayModeTests
         playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
         Physics2D.SyncTransforms();
 
+        dogUnit.enabled = false;
+        dogAttack.CancelForOwnerDeath();
+        gotStoneOutcome = gotCircleOutcome = false;
+        typeof(EnemyAttack).GetField("cooldownRemaining", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(stoneAttack, 0f);
+        typeof(EnemyAttack).GetField("cooldownRemaining", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(circleAttack, 0f);
+        Assert.That(stoneAttack.TryAttack(player.transform), Is.True);
+        Assert.That(circleAttack.TryAttack(player.transform), Is.True);
         yield return WaitForCondition(
             () => stoneAttack.IsAttacking && stoneAttack.WasPlayerThreatenedDuringWarning &&
                   circleAttack.IsAttacking && circleAttack.WasPlayerThreatenedDuringWarning,
@@ -221,6 +232,7 @@ public sealed class BeliefSystemPlayModeTests
                 EnemyUnit enemy = root.GetComponent<EnemyUnit>();
                 if (enemy != null)
                     enemy.enabled = false;
+                root.SetActive(true); // Test fixtures include all three species regardless of the manual scene selection.
                 // This scenario tests specific attack/belief pairings. Production scenes choose
                 // a random lifetime belief, so pin only these test instances before EnemyUnit.Start.
                 BeliefController belief = root.GetComponent<BeliefController>();

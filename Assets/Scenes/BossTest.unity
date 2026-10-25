@@ -392,7 +392,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f1277b7c0a634e8a8ba71061b7695911, type: 3}
   m_Name:
-  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossPlayerCombatEvents
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerCombatEvents
 --- !u!114 &788406422
 MonoBehaviour:
   m_ObjectHideFlags: 0

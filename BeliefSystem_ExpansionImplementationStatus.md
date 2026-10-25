@@ -17,6 +17,14 @@
 
 콘텐츠 9개는 8종의 판정 규칙을 사용한다. 개와 신자의 HP 피해 실패 규칙을 공유한다. [판정 상태](Assets/Scripts/Belief/BeliefChallengeState.cs)는 개체별 기억과 시간을 관리하고, [조건 컴포넌트](Assets/Scripts/Belief/ExpandedBeliefCondition.cs)는 실제 적중·공격·후퇴 상태와 이를 연결한다. 공통 적 클래스에는 믿음별 판정 분기를 추가하지 않았다.
 
+## 이동 속도와 공용 공격 연출
+
+일반 적의 이동 속도는 플레이어의 `PlayerMove.BaseMoveSpeed`를 기준으로 비례 계산한다. 현재 플레이어 설정값 7에서 간부는 7, 신자는 5.6, 개는 2.8, 개 돌진은 9.8 Unity 단위/초다. 플레이어 기준값을 바꾸면 적 이동과 개 돌진도 같은 비율로 따라간다.
+
+보스와 일반 적은 경고 범위·진행 표시·공격 방향 화살표에 공용 `DangerIndicator`를 사용한다. 보스와 개의 돌진 잔상은 같은 `BossDashTrail` 프리팹과 `CombatAfterimage` 컴포넌트를 사용하며, 돌진하는 개체의 현재 스프라이트를 캡처해 짧게 페이드한다.
+
+취약 상태는 플레이어 소유 피해 배율만 변경한다. 붕괴 진입 시 일반 적의 준비 중 공격과 보스의 현재 패턴은 취소하지만, 이후 취약 시간에도 AI·이동·접촉 피해·쿨다운과 보스 자동 패턴은 계속 동작한다. 붕괴 자세는 캐릭터 애니메이션에서 표현한다.
+
 ## 실제 전투와의 연결
 
 - [PlayerAttackContext](Assets/Scripts/Combat/PlayerAttackContext.cs)는 공격 하나의 식별자와 공격 종류를 제공한다. 같은 공격·타격 순번·대상에 대한 중복 콜백은 HP와 믿음 모두 한 번만 처리한다. 다른 타격 순번은 별도 타격으로 처리한다.
@@ -55,9 +63,11 @@ attack.TryHit(enemy, baseDamage, hitIndex: 0);
 // 다음 독립된 샘플은 새로운 context 또는 별도 hitIndex를 사용한다.
 ```
 
-일반 IDamageable 경로에서는 `receiver.TakeDamage(attack.Damage(baseDamage, hitIndex))`를 사용할 수 있다. 동일 적중에 두 경로를 함께 호출하지 않는다. 기존의 피해량·출처만 전달하는 DamageInfo는 HP 피해용으로 유지하며, 타격 식별이 없는 호출은 적중형 믿음을 발동시키지 않는다. 보스는 기존 BossPlayerCombatEvents 계약을 계속 사용한다.
+일반 IDamageable 경로에서는 `receiver.TakeDamage(attack.Damage(baseDamage, hitIndex))`를 사용할 수 있다. 동일 적중에 두 경로를 함께 호출하지 않는다. 기존의 피해량·출처만 전달하는 DamageInfo는 HP 피해용으로 유지하며, 타격 식별이 없는 호출은 적중형 믿음을 발동시키지 않는다. 보스도 공용 PlayerAttackContext/PlayerCombatEvents 계약을 사용한다. 공격 완료·취소 시 컨텍스트를 Dispose한다.
 
 ## 검증 결과
+
+아래 검사 결과는 이번 취약 동작 조정 전 기록이다. 현재 동작은 붕괴 진입 시 진행 중인 공격/패턴을 취소하되, 취약 타이머 동안 AI·이동·접촉 피해·쿨다운과 보스 패턴 선택이 계속된다. 이 단락의 표는 해당 변경 전 기록이며, 이후 최신 전체 회귀 결과(EditMode 46/46, PlayMode 44/44)는 문서 끝의 공통 전투 정리 기록을 참조한다.
 
 | 검사 | 결과 | 결과 파일 |
 | --- | --- | --- |
@@ -83,3 +93,7 @@ attack.TryHit(enemy, baseDamage, hitIndex: 0);
 긴 문구 세 개를 실제 적의 BeliefView로 표시하여 [1600×900](Docs/BeliefExpansionVerification/01-long-phrases-1600x900.png), [1024×576](Docs/BeliefExpansionVerification/02-long-phrases-1024x576.png)에서 렌더했다. 한국어 문구의 줄바꿈과 말풍선 안 표시를 확인했다. UI 검사용으로 실제 적의 위치·상태를 고정한 캡처이며 사람이 공격 조작으로 전투를 완주한 기록은 아니다.
 
 현재 검증은 실제 적 공격과 더미 적중 데이터로 수행하며 플레이어 공격 구현에 의존하지 않는다. 일반 적 HP 30은 유지했고, 자동 판정 검사에서는 HP를 충분히 높여 사망과 믿음 공략을 구분했다. 실제 플레이어 공격의 조작·연출·전투 난이도, 최종 스테이지 배치와 사람의 장시간 플레이 검증은 이번 결과에 포함하지 않는다.
+
+## 공통 전투 로직 정리 · 2026-10-25
+
+일반 적과 보스의 타격 중복 검사, 형상/물리 검색, 폰트, 체력·믿음 표시, 잔상 방출·재사용을 공유하도록 정리했다. 취약 중 행동과 더미 데이터 검증은 유지한다. 구현 내용과 이번 검증 결과는 [공통 전투 정리 기록](Docs/CommonCombatRefactor_2026-10-25.md)을 참조한다.

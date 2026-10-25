@@ -8,13 +8,20 @@ public sealed class BossAttackExecutor : MonoBehaviour
     private static readonly WaitForFixedUpdate PhysicsTick = new WaitForFixedUpdate();
     private BossCombatController owner;
     private int comboHits;
+    private CombatAfterimageEmitter afterimages;
     private BossCombatSettings Data => owner.Settings;
-    public void Initialize(BossCombatController boss) { owner = boss; }
+    public void Initialize(BossCombatController boss)
+    {
+        owner = boss;
+        afterimages = GetComponent<CombatAfterimageEmitter>();
+        if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
+    }
+    public void ClearAfterimages() => afterimages?.Clear();
 
-    public BossAttackGeometry MeleeGeometry() => new BossAttackGeometry(
+    public AttackGeometry MeleeGeometry() => new AttackGeometry(
         owner.AttackOrigin + Vector2.right * owner.Facing * Data.MeleeSize.x * 0.5f, Data.MeleeSize);
 
-    public BossAttackVisual CreateWarning(BossAttackGeometry geometry)
+    public BossAttackVisual CreateWarning(AttackGeometry geometry)
     {
         var warning = owner.SpawnEffect(Data.WarningPrefab);
         warning.Show(geometry, Data.WarningOrder);
@@ -23,7 +30,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
     public void Impact(Vector2 position, bool blocked)
     {
         var effect = owner.SpawnEffect(Data.ImpactPrefab);
-        effect.Show(new BossAttackGeometry(position, Vector2.one * (blocked ? 0.6f : 0.4f)), Data.AttackOrder + 2);
+        effect.Show(new AttackGeometry(position, Vector2.one * (blocked ? 0.6f : 0.4f)), Data.AttackOrder + 2);
         Fade(effect, 0.18f);
     }
     private void Fade(BossAttackVisual effect, float duration)
@@ -85,8 +92,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < Data.MeleeActiveTime / owner.SpeedMultiplier && owner.IsAttackValid(record))
         {
-            owner.Observe(record, record.Geometry);
-            if (record.Geometry.Overlaps(owner.PlayerCollider)) owner.TryHit(record);
+            if (owner.Observe(record, record.Geometry)) owner.TryHit(record);
             yield return PhysicsTick;
             elapsed += Time.fixedDeltaTime;
         }
@@ -102,7 +108,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 direction = Vector2.right * owner.Facing;
         Vector2 size = owner.BodyCollider.bounds.size;
         Vector2 start = owner.BodyCollider.bounds.center;
-        var corridor = new BossAttackGeometry(start + direction * Data.DashDistance * 0.5f,
+        var corridor = new AttackGeometry(start + direction * Data.DashDistance * 0.5f,
             new Vector2(Data.DashDistance + size.x, size.y));
         var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, owner.RegularAttackBelief, true);
         float speed = Data.DashSpeed * owner.SpeedMultiplier;
@@ -117,12 +123,11 @@ public sealed class BossAttackExecutor : MonoBehaviour
             Vector2 center = owner.BodyCollider.bounds.center;
             float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
             step = BossCombatPhysics.ClearDistance(center, size, direction, step, owner, false, out blocked);
-            var ahead = new BossAttackGeometry(center + direction * remaining * 0.5f, new Vector2(remaining + size.x, size.y));
+            var ahead = new AttackGeometry(center + direction * remaining * 0.5f, new Vector2(remaining + size.x, size.y));
             owner.Observe(record, ahead);
             if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
-            var trail = owner.SpawnEffect(Data.DashPrefab);
-            trail.Show(new BossAttackGeometry(center, size), Data.AttackOrder, owner.IsBurning);
-            Fade(trail, 0.16f);
+            Color? tint = owner.IsBurning ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
+            afterimages.Emit(Data.DashPrefab, owner.BodyRenderer, Data.AttackOrder, tint);
             owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
             owner.Body.MovePosition(owner.Body.position + direction * step);
             remaining -= step;
@@ -146,7 +151,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         float length = BossCombatPhysics.ClearDistance(origin, Vector2.one * Data.ProjectileDiameter, direction,
             maxDistance, owner, true, out bool endBlocked);
         // Include the projectile's cap so the visible warning encloses all swept damage.
-        var geometry = BossAttackGeometry.Corridor(origin - direction * Data.ProjectileDiameter * 0.5f,
+        var geometry = AttackGeometry.Corridor(origin - direction * Data.ProjectileDiameter * 0.5f,
             direction, length + Data.ProjectileDiameter, Data.ProjectileDiameter);
         var record = owner.CreateAttack(BossAttackKind.Projectile, 0, geometry, Data.ProjectileDamage, owner.RegularAttackBelief, true);
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
@@ -165,7 +170,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         if (!BossCombatPhysics.FindGround(foot, 0.15f, 2f, owner, out Vector2 ground)) yield break;
         var left = BossCombatPhysics.TraceGroundPath(ground, -1, Data.WaveDistance, owner);
         var right = BossCombatPhysics.TraceGroundPath(ground, 1, Data.WaveDistance, owner);
-        var shapes = new List<BossAttackGeometry>(left.Warnings);
+        var shapes = new List<AttackGeometry>(left.Warnings);
         shapes.AddRange(right.Warnings);
         var record = owner.CreateAttack(BossAttackKind.Shockwave, 0, shapes[0], Data.WaveDamage, BossBeliefKind.Shockwave, false);
         var warnings = new List<BossAttackVisual>();

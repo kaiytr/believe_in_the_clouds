@@ -40,7 +40,7 @@ public static class BossProjectSetup
         if (data == null) { data = ScriptableObject.CreateInstance<BossCombatSettings>(); AssetDatabase.CreateAsset(data, SettingsPath); }
         data.WarningPrefab = Effect("BossWarning", square, new Color(1f, 0f, 0f, 0.29803923f), true, false);
         data.SlashPrefab = Effect("BossSlash", slash, new Color(1f, 0.92f, 0.55f, 1f));
-        data.DashPrefab = Effect("BossDashTrail", square, new Color(1f, 0.86f, 0.45f, 0.3f));
+        data.DashPrefab = AfterimageEffect("BossDashTrail", square, new Color(1f, 0.86f, 0.45f, 0.3f));
         data.ImpactPrefab = Effect("BossImpact", disc, new Color(1f, 0.95f, 0.75f, 1f), false, false);
         var projectile = Effect("BossProjectile", disc, new Color(1f, 0.83f, 0.3f, 1f), false, false);
         GameObject edit = PrefabUtility.LoadPrefabContents(AssetDatabase.GetAssetPath(projectile));
@@ -119,6 +119,24 @@ public static class BossProjectSetup
             Set(visual, "outline", line);
         }
         var saved = PrefabUtility.SaveAsPrefabAsset(root, Fx + "/" + name + ".prefab").GetComponent<BossAttackVisual>();
+        Object.DestroyImmediate(root);
+        return saved;
+    }
+
+    private static CombatAfterimage AfterimageEffect(string name, Sprite sprite, Color color)
+    {
+        var root = new GameObject(name);
+        var renderer = root.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sharedMaterial = material;
+        renderer.color = color;
+        renderer.sortingOrder = 24;
+
+        var afterimage = root.AddComponent<CombatAfterimage>();
+        Set(afterimage, "opacity", color.a);
+        Set(afterimage, "lifetime", 0.16f);
+        Set(afterimage, "tint", new Color(color.r, color.g, color.b, 1f));
+        var saved = PrefabUtility.SaveAsPrefabAsset(root, Fx + "/" + name + ".prefab").GetComponent<CombatAfterimage>();
         Object.DestroyImmediate(root);
         return saved;
     }
@@ -281,29 +299,8 @@ public static class BossProjectSetup
     private static BossGameplayHud BuildGameplayHud(Transform parent)
     {
         var group = new GameObject("Gameplay HUD").transform; group.SetParent(parent, false);
-        var beliefCanvas = WorldCanvas("WorldSpaceBeliefUI", group, new Vector2(300f, 110f), 32);
-        var bubble = Image("BeliefSpeechBubble", beliefCanvas.transform, new Color(.84f, .84f, .84f, .96f));
-        Anchors(bubble.rectTransform, new Vector2(.08f, .12f), new Vector2(.92f, .68f));
-        var tail = Image("BeliefSpeechBubbleTail", bubble.transform, bubble.color);
-        tail.rectTransform.anchorMin = tail.rectTransform.anchorMax = new Vector2(.5f, 0f);
-        tail.rectTransform.sizeDelta = new Vector2(18f,18f); tail.rectTransform.anchoredPosition = new Vector2(0f,-5f);
-        tail.rectTransform.localRotation = Quaternion.Euler(0f,0f,45f);
-        var phrase = Label("BeliefPhrase", bubble.transform, Vector2.zero, Vector2.zero, 19);
-        Anchors(phrase.rectTransform, Vector2.zero, Vector2.one);
-        phrase.rectTransform.offsetMin = new Vector2(10f,4f); phrase.rectTransform.offsetMax = new Vector2(-10f,-4f);
-        phrase.color = new Color(.08f,.08f,.08f); phrase.resizeTextForBestFit = true;
-        phrase.resizeTextMinSize = 12; phrase.resizeTextMaxSize = 19;
-        var beliefBackground = Image("BeliefGaugeBackground", beliefCanvas.transform, new Color(.73f,.73f,.73f));
-        Anchors(beliefBackground.rectTransform,new Vector2(.08f,.84f),new Vector2(.92f,.94f));
-        var beliefFill = GaugeFill("BeliefGaugeFill", beliefBackground.transform);
-
-        var healthCanvas = WorldCanvas("EnemyHealthWorldSpaceUI", group, new Vector2(220f,32f), 31);
-        var healthPanel = Image("EnemyHealthPanel", healthCanvas.transform, new Color(.84f,.84f,.84f,.94f));
-        Anchors(healthPanel.rectTransform,Vector2.zero,Vector2.one);
-        var healthBackground = Image("EnemyHealthGaugeBackground", healthCanvas.transform, new Color(.72f,.72f,.72f));
-        Anchors(healthBackground.rectTransform,new Vector2(.16f,.32f),new Vector2(.84f,.68f));
-        var healthFill = GaugeFill("EnemyHealthGaugeFill",healthBackground.transform);
-
+        var sharedPrefab = CommonCombatProjectSetup.EnsureHudPrefab();
+        var worldView = ((GameObject)PrefabUtility.InstantiatePrefab(sharedPrefab.gameObject, group)).GetComponent<CombatantHudView>();
         var playerObject = new GameObject("Player gameplay HUD",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler));
         playerObject.transform.SetParent(group,false);
         var playerCanvas = playerObject.GetComponent<Canvas>(); playerCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -322,20 +319,11 @@ public static class BossProjectSetup
         playerState.rectTransform.pivot = new Vector2(0f,.5f); playerState.alignment = TextAnchor.MiddleLeft;
         playerState.color = new Color(1f,.62f,.38f);
         var hud = parent.GetComponent<BossGameplayHud>(); if (hud == null) hud = parent.gameObject.AddComponent<BossGameplayHud>();
-        Set(hud,"beliefCanvas",beliefCanvas); Set(hud,"healthCanvas",healthCanvas); Set(hud,"playerCanvas",playerCanvas);
-        Set(hud,"healthFill",healthFill); Set(hud,"beliefFill",beliefFill); Set(hud,"beliefBackground",beliefBackground);
-        Set(hud,"speechBubble",bubble); Set(hud,"phrase",phrase); Set(hud,"playerHealthFill",playerFill); Set(hud,"playerState",playerState);
+        Set(hud,"worldView",worldView); Set(hud,"playerCanvas",playerCanvas);
+        Set(hud,"playerHealthFill",playerFill); Set(hud,"playerState",playerState);
         return hud;
     }
 
-    private static Canvas WorldCanvas(string name, Transform parent, Vector2 size, int order)
-    {
-        var obj = new GameObject(name,typeof(RectTransform),typeof(Canvas)); obj.transform.SetParent(parent,false);
-        var canvas = obj.GetComponent<Canvas>(); canvas.renderMode = RenderMode.WorldSpace;
-        canvas.overrideSorting = true; canvas.sortingOrder = order; canvas.enabled = false;
-        ((RectTransform)obj.transform).sizeDelta = size; obj.transform.localScale = Vector3.one * .01f;
-        return canvas;
-    }
     private static void Anchors(RectTransform rect, Vector2 min, Vector2 max)
     { rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = rect.offsetMax = Vector2.zero; }
     private static Image GaugeFill(string name, Transform parent)
@@ -392,7 +380,7 @@ public static class BossProjectSetup
         Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/PlayerTEST.unity",OpenSceneMode.Single);
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player.GetComponent<PlayerHealth>() == null) player.AddComponent<PlayerHealth>();
-        if (player.GetComponent<BossPlayerCombatEvents>() == null) player.AddComponent<BossPlayerCombatEvents>();
+        if (player.GetComponent<PlayerCombatEvents>() == null) player.AddComponent<PlayerCombatEvents>();
         foreach (GameObject root in scene.GetRootGameObjects())
             if (root.name == "Ground" || root.name == "CinemachineCamera") Object.DestroyImmediate(root);
         Camera camera = Camera.main;
@@ -423,6 +411,8 @@ public static class BossProjectSetup
     }
     private static void Set(Object target, string field, Object value)
     { var data = new SerializedObject(target); data.FindProperty(field).objectReferenceValue = value; data.ApplyModifiedPropertiesWithoutUndo(); }
+    private static void Set(Object target, string field, float value)
+    { var data = new SerializedObject(target); data.FindProperty(field).floatValue = value; data.ApplyModifiedPropertiesWithoutUndo(); }
     private static void Set(Object target, string field, bool value)
     { var data = new SerializedObject(target); data.FindProperty(field).boolValue = value; data.ApplyModifiedPropertiesWithoutUndo(); }
     private static void Set(Object target, string field, Color value)
