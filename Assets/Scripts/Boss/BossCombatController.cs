@@ -6,1094 +6,640 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
 public sealed class BossCombatController : MonoBehaviour, IDamageable
 {
-    private static Sprite placeholderSprite;
+    [SerializeField] private bool startOnAwake;
+    [SerializeField] private BossCombatSettings settings;
+    [SerializeField] private BossAttackExecutor attacks;
+    [SerializeField] private BossHazardDirector hazards;
+    [SerializeField] private BossCombatView presentation;
+    [SerializeField] private BossCombatHud hud;
+    [SerializeField] private Transform attackOrigin;
+    [SerializeField] private Transform projectileOrigin;
+    [SerializeField] private bool automaticPatterns = true;
+    [SerializeField] private bool allowManualEvadeInjection;
+    [SerializeField] private bool showAttackGizmos;
 
-    [Header("Health and phase")]
-    [SerializeField] private bool startOnAwake = true;
-    [SerializeField, Min(1f)] private float maxHp = 500f;
-    [SerializeField, Range(0.1f, 0.9f)] private float phaseTwoHealthRatio = 0.5f;
-    [SerializeField, Min(1f)] private float maxBelief = 100f;
-
-    [Header("Shared belief gauge")]
-    [SerializeField, Min(0f)] private float beliefReductionPerCondition = 20f;
-    [SerializeField, Min(0f)] private float vulnerableDuration = 5f;
-    [SerializeField, Range(0f, 1f)] private float recoveryRatio = 1f;
-    [SerializeField, Min(0f)] private float maintainedDamageMultiplier = 0.6f;
-    [SerializeField, Min(0f)] private float vulnerableDamageMultiplier = 2f;
-    [SerializeField] private BossAttackSignalMode attackSignalMode = BossAttackSignalMode.Attempt;
-
-    [Header("Pattern selection")]
-    [SerializeField, Min(0f)] private float patternRecovery = 0.65f;
-    [SerializeField] private BossPatternWeight[] phaseOnePatternPool =
-    {
-        new BossPatternWeight(BossPatternKind.MeleeCombo, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.Dash, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.Projectile, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.AttackIntentBelief, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.CloudBelief, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.BurnBelief, 1f, 0.5f)
-    };
-    [SerializeField] private BossPatternWeight[] phaseTwoPatternPool =
-    {
-        new BossPatternWeight(BossPatternKind.MeleeCombo, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.Dash, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.Projectile, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.AttackAndDodgeBelief, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.NoAttackBelief, 1f, 0.5f),
-        new BossPatternWeight(BossPatternKind.ShockwaveBelief, 1f, 0.5f)
-    };
-    [SerializeField, Min(0.1f)] private float phaseTwoAttackSpeedMultiplier = 1f;
-    [SerializeField, Min(0f)] private float phaseTwoAttackDamageMultiplier = 1f;
-
-    [Header("Pattern timings")]
-    [SerializeField, Min(0f)] private float stareDuration = 3f;
-    [SerializeField, Min(0f)] private float cloudPatternDuration = 4f;
-    [SerializeField, Min(0f)] private float firePreparationDuration = 5f;
-    [SerializeField, Min(0f)] private float burnApplicationWindow = 10f;
-    [SerializeField, Min(0f)] private float burnDuration = 5f;
-    [SerializeField, Min(0f)] private float burnDamagePerTick = 2f;
-    [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
-
-    [Header("General attacks")]
-    [SerializeField, Min(0f)] private float attackWindup = 0.65f;
-    [SerializeField, Min(0f)] private float attackRecovery = 0.45f;
-    [SerializeField, Min(0f)] private float meleeDamage = 14f;
-    [SerializeField, Min(0.1f)] private float meleeRange = 2.6f;
-    [SerializeField, Min(0f)] private float meleeVerticalRange = 1.5f;
-    [SerializeField, Min(0f)] private float dashDamage = 18f;
-    [SerializeField, Min(0.1f)] private float dashSpeed = 10f;
-    [SerializeField, Min(0.1f)] private float dashDuration = 0.45f;
-    [SerializeField, Min(0f)] private float projectileDamage = 12f;
-    [SerializeField, Min(0.1f)] private float projectileSpeed = 8f;
-    [SerializeField, Min(0.1f)] private float projectileLifetime = 3f;
-    [SerializeField, Min(0.1f)] private float shockwaveRadius = 7f;
-    [SerializeField, Min(0.1f)] private float shockwaveExpansionSpeed = 6f;
-    [SerializeField, Min(0f)] private float shockwaveDamage = 16f;
-    [SerializeField, Min(0f)] private float spikeDamage = 18f;
-    [SerializeField, Min(0f)] private float spikeDelay = 3f;
-
-    private readonly Dictionary<BossPatternKind, int> patternUseCounts = new Dictionary<BossPatternKind, int>();
-    private readonly HashSet<int> attackSignalIdsInWindow = new HashSet<int>();
-    private readonly HashSet<int> appliedPlayerAttackIds = new HashSet<int>();
-    private readonly Queue<int> appliedPlayerAttackOrder = new Queue<int>();
-    private readonly List<GameObject> transientObjects = new List<GameObject>();
-
+    private readonly Dictionary<BossPatternKind, int> patternUses = new Dictionary<BossPatternKind, int>();
+    private readonly Dictionary<int, BossAttackRecord> activeAttacks = new Dictionary<int, BossAttackRecord>();
+    private readonly List<BossAttackRecord> history = new List<BossAttackRecord>();
+    private readonly HashSet<int> windowAttackIds = new HashSet<int>();
+    private readonly List<GameObject> effects = new List<GameObject>();
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
-    private Transform player;
     private PlayerHealth playerHealth;
-    private Collider2D playerBodyCollider;
-    private BossPlayerCombatEvents playerCombatEvents;
+    private BossPlayerCombatEvents playerEvents;
+    private BossSharedBelief belief;
     private Coroutine patternRoutine;
-    private Coroutine vulnerabilityRoutine;
-    private BossPhase phase = BossPhase.One;
-    private BossBeliefKind activeBelief = BossBeliefKind.None;
+    private Transform effectRoot;
+    private BossBeliefKind activeBelief;
     private BossPatternKind activePattern;
-    private bool hasActivePattern;
-    private bool encounterStarted;
-    private bool isVulnerable;
-    private bool isDead;
-    private bool attackSignalWindowOpen;
-    private bool playerActedDuringSignalWindow;
-    private bool cloudTouched;
-    private bool attackThreatened;
-    private bool attackHit;
-    private bool attackEvadeReported;
-    private bool phaseTwoStarted;
+    private bool patternRunning, signalWindow, playerActed, cloudTouched, initialized;
+    private float windowStartedAt, encounterStartedAt, burnEndsAt, conditionEndsAt, conditionDuration;
+    private int generation = 1, patternId, nextAttackId = 1, facing = 1, initialFacing;
     private float currentHp;
-    private float currentBelief;
-    private float burnWindowEndsAt;
-    private int nextBossAttackId = 1;
-    private int activeBossAttackId;
-    private int effectGeneration;
-    private BossAttackKind activeBossAttackKind;
-    private string statusMessage = "Waiting for encounter";
-    private SpriteRenderer robeRenderer;
+    private Vector3 spawnPosition, playerSpawnPosition, playerSpawnScale;
+    private bool savedPlayerSpawn;
+    private string statusMessage = "전투 대기";
+    private float cueEndsAt, cueDuration, feedbackEndsAt;
+    private string cueTitle = "전투 대기", cueHint = "공격 예고를 보고 대응하세요.", feedback;
+    private Color feedbackColor = Color.white;
 
     public event Action StatusChanged;
-
-    public BossPhase Phase => phase;
+    public event Action<BossAttackRecord> AttackResolved;
+    public BossCombatSettings Settings => settings;
+    public Rigidbody2D Body => body;
+    public Collider2D BodyCollider => bodyCollider;
+    public PlayerHealth PlayerHealth => playerHealth;
+    public Collider2D PlayerCollider => playerHealth != null ? playerHealth.BodyCollider : null;
+    public BossPhase Phase { get; private set; }
+    public bool IsDead { get; private set; }
+    public bool EncounterStarted { get; private set; }
+    public bool IsVulnerable => belief != null && belief.IsVulnerable;
+    public bool IsPatternRunning => patternRunning;
+    public bool AutomaticPatterns { get => automaticPatterns; set { automaticPatterns = value; Notify(); } }
+    public bool AllowManualEvadeInjection { get => allowManualEvadeInjection; set => allowManualEvadeInjection = value; }
+    public int ForcedComboHits { get; set; }
+    public int Generation => generation;
+    public int PatternId => patternId;
+    public int Facing => facing;
     public float CurrentHp => currentHp;
-    public float MaxHp => maxHp;
-    public float CurrentBelief => currentBelief;
-    public float MaxBelief => maxBelief;
-    public float NormalizedBelief => maxBelief <= 0f ? 0f : Mathf.Clamp01(currentBelief / maxBelief);
-    public bool IsVulnerable => isVulnerable;
-    public bool IsDead => isDead;
-    public bool EncounterStarted => encounterStarted;
-    public int ActiveBossAttackId => activeBossAttackId;
-    public string ActiveBeliefPhrase => GetBeliefPhrase(activeBelief);
-    public string ActivePatternName => hasActivePattern ? activePattern.ToString() : "Waiting";
+    public float MaxHp => settings != null ? settings.MaxHp : 0f;
+    public float CurrentBelief => belief != null ? belief.Current : 0f;
+    public float MaxBelief => belief != null ? belief.Maximum : 0f;
+    public float NormalizedBelief => MaxBelief > 0f ? CurrentBelief / MaxBelief : 0f;
+    public float VulnerableRemaining => belief != null ? belief.Remaining(Time.time) : 0f;
+    public float BurnRemaining => Mathf.Max(0f, burnEndsAt - Time.time);
+    public bool IsBurning => EncounterStarted && !IsVulnerable && BurnRemaining > 0f;
+    public float ConditionRemaining => Mathf.Max(0f, conditionEndsAt - Time.time);
+    public float ConditionProgress => conditionDuration > 0f ? 1f - ConditionRemaining / conditionDuration : 0f;
+    public float SpeedMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoSpeedMultiplier : 1f;
+    public float DamageMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoDamageMultiplier : 1f;
+    public string ActivePatternName => patternRunning ? PatternName(activePattern) : "대기";
+    public BossPatternKind ActivePattern => activePattern;
+    public string ActiveBeliefPhrase => BeliefPhrase(activeBelief);
+    public Font PresentationFont => hud.KoreanFont;
+    public bool DebugUiVisible => hud != null && hud.DebugVisible;
+    public string CueTitle => cueTitle;
+    public string CueHint => cueHint;
+    public BossPresentationState CueState { get; private set; }
+    public float CueRemaining => Mathf.Max(0f, cueEndsAt - Time.time);
+    public float CueProgress => cueDuration > 0f ? Mathf.Clamp01(1f - CueRemaining / cueDuration) : 0f;
+    public bool HasCueTimer => cueDuration > 0f;
+    public string Feedback => Time.time < feedbackEndsAt ? feedback : "";
+    public Color FeedbackColor => feedbackColor;
     public string StatusMessage => statusMessage;
-
-    private float CurrentPhaseDamageMultiplier => phase == BossPhase.Two ? phaseTwoAttackDamageMultiplier : 1f;
-    private float CurrentPhaseSpeedMultiplier => phase == BossPhase.Two ? phaseTwoAttackSpeedMultiplier : 1f;
+    public IReadOnlyList<BossAttackRecord> AttackHistory => history;
+    public ICollection<BossAttackRecord> ActiveAttacks => activeAttacks.Values;
+    public int ActiveBossAttackId
+    {
+        get { int latest = 0; foreach (int id in activeAttacks.Keys) latest = Mathf.Max(latest, id); return latest; }
+    }
+    public Vector2 AttackOrigin => attackOrigin.position;
+    public Vector2 ProjectileOrigin => projectileOrigin.position;
+    public bool TargetValid => playerHealth != null && !playerHealth.IsDead && playerHealth.isActiveAndEnabled && PlayerCollider != null && PlayerCollider.enabled;
+    public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && !IsVulnerable && TargetValid;
+    public bool CanStartNextHit => CanContinue && (activeBelief != BossBeliefKind.Burn || IsBurning);
 
     private void Awake()
     {
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
-        currentHp = maxHp;
-        currentBelief = maxBelief;
-        BuildPlaceholderVisual();
+        spawnPosition = transform.position;
+        initialFacing = facing;
+        InitializeState();
     }
-
-    private void Start()
+    private void InitializeState()
     {
-        BindPlayer();
-        if (encounterStarted)
-            return;
-
-        // The boss test scene starts immediately. Production scenes can disable this
-        // and call BeginEncounter from BossEncounterTrigger.
-        if (startOnAwake && gameObject.activeInHierarchy)
-            BeginEncounter();
+        if (settings == null || initialized) return;
+        currentHp = settings.MaxHp;
+        belief = new BossSharedBelief(settings.MaxBelief);
+        initialized = true;
     }
-
+    private void Start() { if (startOnAwake && !EncounterStarted) BeginEncounter(); }
     private void Update()
     {
-        if (!encounterStarted || isDead)
+        if (!EncounterStarted || IsDead) return;
+        if (!TargetValid)
+        {
+            EncounterStarted = false;
+            CancelCombat(true);
+            SetStatus("플레이어 전투 종료 · R 재시작");
             return;
-
-        if (player == null || playerHealth == null || playerBodyCollider == null)
-            BindPlayer();
-
-        if (!isVulnerable && patternRoutine == null && player != null)
-            patternRoutine = StartCoroutine(RunPatternLoop());
+        }
+        if (belief.Tick(Time.time, settings.BeliefRecoveryRatio))
+        { SetActionCue("믿음 회복", "다음 공격의 예고를 확인하세요.", BossPresentationState.Idle); SetStatus("믿음 회복"); }
+        if (automaticPatterns && !patternRunning && !IsVulnerable)
+        {
+            if (ChoosePattern(false, out BossPatternKind selected)) StartPattern(selected);
+            else SetStatus("실행 가능한 패턴 없음 · 대상 거리/지면/설정 확인");
+        }
     }
-
+    public List<string> ValidateEncounter()
+    {
+        var errors = settings != null ? settings.ValidateSettings() : new List<string> { "Boss.settings is missing." };
+        if (attacks == null) errors.Add("Boss.attacks is missing.");
+        if (hazards == null) errors.Add("Boss.hazards is missing.");
+        if (presentation == null || !presentation.IsConfigured) errors.Add("Boss.presentation / VisualRoot / body renderer references are missing.");
+        if (hud == null || !hud.IsConfigured) errors.Add("Boss.hud / gameplay health, belief and speech references are missing.");
+        else if (!hud.HasKoreanFont) errors.Add("Boss.hud requires a Korean font (preferredFont / installed OS fonts).");
+        if (attackOrigin == null || projectileOrigin == null) errors.Add("Boss.AttackOrigin / ProjectileOrigin is missing.");
+        if (transform.localScale != Vector3.one) errors.Add("Boss physics root scale must be (1,1,1).");
+        return errors;
+    }
     public void BeginEncounter()
     {
-        if (isDead || encounterStarted)
-            return;
-
-        BindPlayer();
-        encounterStarted = true;
-        SetStatus("Encounter started");
-    }
-
-    public bool TakeDamage(DamageInfo damageInfo)
-    {
-        if (isDead || damageInfo.Amount <= 0f)
-            return false;
-
-        float multiplier = 1f;
-        if (damageInfo.Source == DamageSource.PlayerOwned)
-            multiplier = isVulnerable ? vulnerableDamageMultiplier : maintainedDamageMultiplier;
-
-        float finalDamage = damageInfo.Amount * multiplier;
-        if (finalDamage <= 0f)
-            return false;
-
-        float phaseThreshold = maxHp * phaseTwoHealthRatio;
-        if (!phaseTwoStarted)
-            finalDamage = Mathf.Min(finalDamage, Mathf.Max(0f, currentHp - phaseThreshold));
-
-        currentHp = Mathf.Max(0f, currentHp - finalDamage);
-        if (!phaseTwoStarted && currentHp <= phaseThreshold)
+        if (!isActiveAndEnabled || IsDead || EncounterStarted) return;
+        InitializeState();
+        List<string> errors = ValidateEncounter();
+        if (errors.Count > 0)
         {
-            currentHp = phaseThreshold;
-            EnterPhaseTwo();
+            SetStatus("보스 설정 오류 · 전투 중지");
+            Debug.LogError(name + ": cannot start boss encounter:\n" + string.Join("\n", errors), this);
+            return;
         }
-
-        SetStatus(isVulnerable ? "Boss damaged while vulnerable" : "Boss damaged");
-        if (currentHp <= 0f)
-            Die();
-        else
-            StatusChanged?.Invoke();
+        if (!BindPlayer())
+        {
+            SetStatus("PlayerHealth와 유효한 몸체 콜라이더 필요");
+            Debug.LogError(name + ": tagged Player requires PlayerHealth, a non-trigger body Collider2D and BossPlayerCombatEvents.", this);
+            return;
+        }
+        attacks.Initialize(this);
+        hazards.Initialize(this);
+        presentation.Initialize(this);
+        hud.Initialize(this);
+        encounterStartedAt = Time.time;
+        EncounterStarted = true;
+        SetPresentation(BossPresentationState.Idle);
+        SetStatus("전투 시작");
+    }
+    private bool BindPlayer()
+    {
+        GameObject actor = GameObject.FindGameObjectWithTag("Player");
+        if (actor == null) return false;
+        if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
+        playerHealth = actor.GetComponent<PlayerHealth>();
+        playerEvents = actor.GetComponent<BossPlayerCombatEvents>();
+        if (playerHealth == null || PlayerCollider == null || PlayerCollider.isTrigger || playerEvents == null) return false;
+        playerEvents.SignalPublished += HandlePlayerSignal;
+        Physics2D.IgnoreCollision(bodyCollider, PlayerCollider, true);
+        if (!savedPlayerSpawn)
+        {
+            playerSpawnPosition = actor.transform.position;
+            playerSpawnScale = actor.transform.localScale;
+            savedPlayerSpawn = true;
+        }
         return true;
     }
-
-    public void ForcePhaseTwoForTest()
+    public bool TakeDamage(DamageInfo info)
     {
-        if (!phaseTwoStarted && !isDead)
-        {
-            currentHp = Mathf.Min(currentHp, maxHp * phaseTwoHealthRatio);
-            EnterPhaseTwo();
-            StatusChanged?.Invoke();
-        }
-    }
-
-    public void ForcePatternForTest(BossPatternKind pattern)
-    {
-        if (!encounterStarted || isDead || isVulnerable)
-            return;
-
-        CancelCurrentPattern();
-        CleanupTransientObjects();
-        patternRoutine = StartCoroutine(RunForcedPattern(pattern));
-    }
-
-    public void ReduceBeliefForTest(float amount)
-    {
-        ReduceBelief(amount, "Test signal reduced shared belief");
-    }
-
-    public void ResetEncounterForTest()
-    {
-        StopAllCoroutines();
-        patternRoutine = null;
-        vulnerabilityRoutine = null;
-        CleanupTransientObjects();
-        isDead = false;
-        encounterStarted = true;
-        isVulnerable = false;
-        phase = BossPhase.One;
-        phaseTwoStarted = false;
-        activeBelief = BossBeliefKind.None;
-        hasActivePattern = false;
-        attackSignalWindowOpen = false;
-        playerActedDuringSignalWindow = false;
-        burnWindowEndsAt = 0f;
-        activeBossAttackId = 0;
-        patternUseCounts.Clear();
-        currentHp = maxHp;
-        currentBelief = maxBelief;
-        if (bodyCollider != null)
-            bodyCollider.enabled = true;
-        appliedPlayerAttackIds.Clear();
-        appliedPlayerAttackOrder.Clear();
-        if (body != null)
-            body.linearVelocity = Vector2.zero;
-        SetStatus("Encounter reset");
-    }
-
-    internal void ResolveBossAttackHit(int attackId, GameObject hitObject, float damage, bool allowBurn)
-    {
-        if (isDead || hitObject == null || attackId != activeBossAttackId)
-            return;
-
-        PlayerHealth hitHealth = hitObject.GetComponentInParent<PlayerHealth>();
-        if (hitHealth == null || hitHealth.gameObject != (player != null ? player.gameObject : null))
-            return;
-
-        attackHit = true;
-        bool damageApplied = hitHealth.TakeDamage(new DamageInfo(
-            Mathf.Max(0f, damage * CurrentPhaseDamageMultiplier),
-            DamageSource.Enemy));
-        if (damageApplied && allowBurn && Time.time <= burnWindowEndsAt)
-            ApplyBurn(hitHealth);
-        StatusChanged?.Invoke();
-    }
-
-    internal void ReportProjectileMissed(int attackId)
-    {
-        if (attackId == activeBossAttackId && attackThreatened && !attackHit)
-            ReportAttackEvadedIfNeeded(attackId);
-    }
-
-    internal void OnCloudInteraction(bool isWhiteCloud, GameObject playerObject)
-    {
-        if (playerObject == null || player == null || playerObject.transform.root != player)
-            return;
-
-        cloudTouched = true;
-        if (!isWhiteCloud)
-        {
-            Vector2 dropPoint = player.position;
-            StartCoroutine(SpawnSpikesAfterDrop(dropPoint, effectGeneration));
-        }
-        StatusChanged?.Invoke();
-    }
-
-    private void BindPlayer()
-    {
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject == null)
-            return;
-
-        Transform nextPlayer = playerObject.transform;
-        if (player == nextPlayer && playerHealth != null)
-            return;
-
-        if (playerCombatEvents != null)
-            playerCombatEvents.SignalPublished -= HandlePlayerSignal;
-
-        player = nextPlayer;
-        playerHealth = player.GetComponent<PlayerHealth>();
-        playerBodyCollider = playerHealth != null ? playerHealth.BodyCollider : player.GetComponent<Collider2D>();
-        if (playerHealth == null)
-            playerHealth = player.gameObject.AddComponent<PlayerHealth>();
-        playerCombatEvents = player.GetComponent<BossPlayerCombatEvents>();
-        if (playerCombatEvents == null)
-            playerCombatEvents = player.gameObject.AddComponent<BossPlayerCombatEvents>();
-        playerCombatEvents.SignalPublished += HandlePlayerSignal;
-
-        if (bodyCollider != null && playerBodyCollider != null)
-            Physics2D.IgnoreCollision(bodyCollider, playerBodyCollider, true);
-    }
-
-    private void HandlePlayerSignal(BossPlayerCombatSignal signal)
-    {
-        if (!encounterStarted || isDead || player == null || signal.Actor != player.gameObject)
-            return;
-
-        if (signal.Type == BossPlayerCombatSignalType.AttackEvaded)
-        {
-            if (signal.Target == gameObject && signal.AttackId == activeBossAttackId)
-                HandleAttackEvaded(signal.AttackId);
-            return;
-        }
-
-        if (signal.Target != gameObject)
-            return;
-
-        if (attackSignalWindowOpen && ShouldCountAttackSignal(signal.Type))
-        {
-            if (attackSignalIdsInWindow.Add(signal.AttackId))
-                playerActedDuringSignalWindow = true;
-        }
-
-        if (signal.Type == BossPlayerCombatSignalType.HitConfirmed &&
-            RememberAttackId(signal.AttackId))
-        {
-            TakeDamage(new DamageInfo(signal.Damage, DamageSource.PlayerOwned));
-        }
-    }
-
-    private bool ShouldCountAttackSignal(BossPlayerCombatSignalType type)
-    {
-        switch (attackSignalMode)
-        {
-            case BossAttackSignalMode.Attempt:
-                return type == BossPlayerCombatSignalType.AttackAttempt;
-            case BossAttackSignalMode.HitConfirmed:
-                return type == BossPlayerCombatSignalType.HitConfirmed;
-            default:
-                return type == BossPlayerCombatSignalType.AttackAttempt ||
-                       type == BossPlayerCombatSignalType.HitConfirmed;
-        }
-    }
-
-    private bool RememberAttackId(int attackId)
-    {
-        if (attackId <= 0 || !appliedPlayerAttackIds.Add(attackId))
-            return false;
-
-        appliedPlayerAttackOrder.Enqueue(attackId);
-        while (appliedPlayerAttackOrder.Count > 256)
-            appliedPlayerAttackIds.Remove(appliedPlayerAttackOrder.Dequeue());
+        if (!EncounterStarted || IsDead || info.Amount <= 0f) return false;
+        float damage = info.Amount * (info.Source == DamageSource.PlayerOwned ?
+            (IsVulnerable ? settings.VulnerableDamageMultiplier : settings.MaintainedDamageMultiplier) : 1f);
+        if (damage <= 0f) return false;
+        float threshold = MaxHp * settings.PhaseTwoHealthRatio;
+        currentHp = Mathf.Max(Phase == BossPhase.One ? threshold : 0f, currentHp - damage);
+        if (currentHp <= 0f) Die();
+        else if (Phase == BossPhase.One && currentHp <= threshold) EnterPhaseTwo();
+        Notify();
         return true;
     }
-
     private void EnterPhaseTwo()
     {
-        phaseTwoStarted = true;
-        phase = BossPhase.Two;
-        patternUseCounts.Clear();
-        activeBelief = BossBeliefKind.None;
-        burnWindowEndsAt = 0f;
-        CancelCurrentPattern();
-        SetStatus("Phase 2");
+        CancelCombat(false);
+        Phase = BossPhase.Two;
+        patternUses.Clear();
+        SetPresentation(IsVulnerable ? BossPresentationState.Vulnerable : BossPresentationState.Idle);
+        presentation.FlashPhaseChange();
+        SetStatus("2페이즈");
+        ShowFeedback("2페이즈 · 새로운 믿음 패턴", new Color(.6f, .8f, 1f));
     }
-
-    private void StartVulnerableState()
+    public void ForcePhaseTwoForTest()
     {
-        if (isDead || isVulnerable)
-            return;
-
-        CancelCurrentPattern();
-        CleanupTransientObjects();
-        isVulnerable = true;
-        attackSignalWindowOpen = false;
-        burnWindowEndsAt = 0f;
-        if (body != null)
-            body.linearVelocity = Vector2.zero;
-        SetStatus("Vulnerable");
-        vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
+        if (!EncounterStarted || IsDead || Phase == BossPhase.Two) return;
+        currentHp = Mathf.Min(currentHp, MaxHp * settings.PhaseTwoHealthRatio);
+        EnterPhaseTwo();
     }
-
-    private IEnumerator VulnerabilityRoutine()
+    public void ForcePatternForTest(BossPatternKind pattern)
     {
-        yield return new WaitForSeconds(vulnerableDuration);
-        vulnerabilityRoutine = null;
-        if (isDead)
-            yield break;
-
-        currentBelief = maxBelief * recoveryRatio;
-        isVulnerable = false;
-        SetStatus("Belief recovered");
+        if (!CanContinue) return;
+        automaticPatterns = false;
+        if (!BossPatternSelection.AllowedInPhase(pattern, Phase))
+        {
+            if (BossPatternSelection.AllowedInPhase(pattern, BossPhase.Two)) ForcePhaseTwoForTest();
+            else { SetStatus("1페이즈 전용 패턴 · R 재시작 후 실행"); return; }
+        }
+        CancelCombat(false);
+        StartPattern(pattern);
     }
-
+    public void PauseAndCancelForTest()
+    { automaticPatterns = false; CancelCombat(false); SetStatus("단일 패턴 대기"); }
+    public void ResetEncounterForTest()
+    {
+        InitializeState();
+        if (!initialized) { BeginEncounter(); return; }
+        CancelCombat(true);
+        IsDead = false;
+        EncounterStarted = false;
+        Phase = BossPhase.One;
+        currentHp = MaxHp;
+        belief.Reset();
+        patternUses.Clear();
+        history.Clear();
+        feedbackEndsAt = 0f;
+        facing = initialFacing;
+        transform.position = spawnPosition;
+        body.position = spawnPosition;
+        body.linearVelocity = Vector2.zero;
+        body.angularVelocity = 0f;
+        bodyCollider.enabled = true;
+        if (playerHealth != null && savedPlayerSpawn)
+        {
+            playerHealth.transform.SetPositionAndRotation(playerSpawnPosition, Quaternion.identity);
+            playerHealth.transform.localScale = playerSpawnScale;
+            Rigidbody2D playerBody = playerHealth.GetComponent<Rigidbody2D>();
+            if (playerBody != null) { playerBody.position = playerSpawnPosition; playerBody.linearVelocity = Vector2.zero; playerBody.angularVelocity = 0f; }
+            playerHealth.ResetHealth();
+        }
+        Physics2D.SyncTransforms();
+        BeginEncounter();
+        Face(facing);
+        SetStatus("전투 재시작");
+    }
+    public void SetHpForTest(float hp)
+    {
+        if (IsDead || !EncounterStarted) return;
+        currentHp = Mathf.Clamp(hp, 0f, MaxHp);
+        if (Phase == BossPhase.One && currentHp <= MaxHp * settings.PhaseTwoHealthRatio)
+        { currentHp = MaxHp * settings.PhaseTwoHealthRatio; EnterPhaseTwo(); }
+        else if (currentHp <= 0f) Die();
+        Notify();
+    }
+    public void ReduceBeliefForTest(float amount) => ReduceBelief(amount, "테스트 믿음 감소");
     private void ReduceBelief(float amount, string reason)
     {
-        if (isDead || isVulnerable || amount <= 0f)
-            return;
-
-        float previous = currentBelief;
-        currentBelief = Mathf.Max(0f, currentBelief - amount);
-        if (Mathf.Approximately(previous, currentBelief))
-            return;
-
-        statusMessage = reason;
-        StatusChanged?.Invoke();
-        if (currentBelief <= 0f)
-            StartVulnerableState();
-    }
-
-    private IEnumerator RunPatternLoop()
-    {
-        BossPatternKind selectedPattern = ChoosePattern();
-        activePattern = selectedPattern;
-        hasActivePattern = true;
-        RecordPatternUse(selectedPattern);
-        SetStatus($"Pattern: {selectedPattern}");
-
-        yield return ExecutePattern(selectedPattern);
-        if (isDead || isVulnerable)
+        if (!EncounterStarted || IsDead || IsVulnerable || amount <= 0f) return;
+        float before = CurrentBelief;
+        bool entered = belief.Reduce(amount, Time.time, settings.VulnerableDuration);
+        if (entered)
         {
-            patternRoutine = null;
-            yield break;
+            CancelCombat(false);
+            SetPresentation(BossPresentationState.Vulnerable);
+            SetStatus("취약 · " + reason);
         }
-
-        if (patternRecovery > 0f)
-            yield return new WaitForSeconds(patternRecovery / CurrentPhaseSpeedMultiplier);
-
-        hasActivePattern = false;
-        patternRoutine = null;
-        StatusChanged?.Invoke();
+        else SetStatus(reason);
+        ShowFeedback($"믿음 -{before - CurrentBelief:0} · {reason}", new Color(.5f, 1f, .77f));
     }
-
-    private IEnumerator RunForcedPattern(BossPatternKind pattern)
+    private void StartPattern(BossPatternKind pattern)
     {
         activePattern = pattern;
-        hasActivePattern = true;
-        SetStatus($"Forced test pattern: {pattern}");
-        yield return ExecutePattern(pattern);
-        hasActivePattern = false;
-        patternRoutine = null;
-        if (!isDead && !isVulnerable)
-            StatusChanged?.Invoke();
+        activeBelief = BossBeliefKind.None;
+        patternId++;
+        patternRunning = true;
+        if (!BossPatternSelection.IsRegular(pattern)) RecordUse(pattern);
+        patternRoutine = StartCoroutine(RunPattern(pattern, generation));
     }
-
-    private BossPatternKind ChoosePattern()
+    private IEnumerator RunPattern(BossPatternKind pattern, int token)
     {
-        BossPatternWeight[] pool = phase == BossPhase.One ? phaseOnePatternPool : phaseTwoPatternPool;
-        if (pool == null || pool.Length == 0)
-            return BossPatternKind.MeleeCombo;
-
-        float total = 0f;
-        for (int i = 0; i < pool.Length; i++)
-        {
-            if (pool[i] == null || pool[i].BaseWeight <= 0f)
-                continue;
-            patternUseCounts.TryGetValue(pool[i].Pattern, out int uses);
-            total += pool[i].EffectiveWeight(uses);
-        }
-
-        if (total <= 0f)
-            return BossPatternKind.MeleeCombo;
-
-        float roll = UnityEngine.Random.value * total;
-        for (int i = 0; i < pool.Length; i++)
-        {
-            if (pool[i] == null || pool[i].BaseWeight <= 0f)
-                continue;
-            patternUseCounts.TryGetValue(pool[i].Pattern, out int uses);
-            roll -= pool[i].EffectiveWeight(uses);
-            if (roll <= 0f)
-                return pool[i].Pattern;
-        }
-
-        for (int i = pool.Length - 1; i >= 0; i--)
-        {
-            if (pool[i] != null && pool[i].BaseWeight > 0f)
-                return pool[i].Pattern;
-        }
-        return BossPatternKind.MeleeCombo;
-    }
-
-    private BossPatternKind ChooseRegularAttack()
-    {
-        BossPatternWeight[] pool = phase == BossPhase.One ? phaseOnePatternPool : phaseTwoPatternPool;
-        float total = 0f;
-        if (pool == null)
-            return BossPatternKind.MeleeCombo;
-
-        foreach (BossPatternWeight entry in pool)
-        {
-            if (entry == null || !IsRegularAttack(entry.Pattern) || entry.BaseWeight <= 0f)
-                continue;
-            patternUseCounts.TryGetValue(entry.Pattern, out int uses);
-            total += entry.EffectiveWeight(uses);
-        }
-
-        if (total <= 0f)
-            return BossPatternKind.MeleeCombo;
-
-        float roll = UnityEngine.Random.value * total;
-        foreach (BossPatternWeight entry in pool)
-        {
-            if (entry == null || !IsRegularAttack(entry.Pattern) || entry.BaseWeight <= 0f)
-                continue;
-            patternUseCounts.TryGetValue(entry.Pattern, out int uses);
-            roll -= entry.EffectiveWeight(uses);
-            if (roll <= 0f)
-                return entry.Pattern;
-        }
-        return BossPatternKind.MeleeCombo;
-    }
-
-    private void RecordPatternUse(BossPatternKind pattern)
-    {
-        patternUseCounts.TryGetValue(pattern, out int used);
-        patternUseCounts[pattern] = used + 1;
-    }
-
-    private static bool IsRegularAttack(BossPatternKind pattern)
-    {
-        return pattern == BossPatternKind.MeleeCombo ||
-               pattern == BossPatternKind.Dash ||
-               pattern == BossPatternKind.Projectile;
-    }
-
-    private IEnumerator ExecutePattern(BossPatternKind pattern)
-    {
+        SetStatus("패턴: " + PatternName(pattern));
         switch (pattern)
         {
-            case BossPatternKind.MeleeCombo:
-                yield return ExecuteMeleeCombo();
-                break;
-            case BossPatternKind.Dash:
-                yield return ExecuteDash();
-                break;
-            case BossPatternKind.Projectile:
-                yield return ExecuteProjectile();
-                break;
+            case BossPatternKind.MeleeCombo: case BossPatternKind.Dash: case BossPatternKind.Projectile:
+                yield return attacks.Regular(pattern); break;
             case BossPatternKind.AttackIntentBelief:
-                yield return ExecuteAttackIntentBelief();
+                activeBelief = BossBeliefKind.AttackIntent;
+                BeginSignalWindow();
+                yield return Stare(settings.StareDuration);
+                EndSignalWindow();
+                if (token == generation && CanContinue && !playerActed) ReduceBelief(settings.BeliefReduction, "응시 중 공격하지 않음");
+                else if (token == generation && CanContinue) ShowFeedback("공격을 감지했습니다 · 믿음 유지", new Color(1f, .8f, .45f));
                 break;
             case BossPatternKind.CloudBelief:
-                yield return ExecuteCloudBelief();
+                activeBelief = BossBeliefKind.Cloud;
+                cloudTouched = false;
+                yield return hazards.Clouds();
+                if (token == generation && CanContinue && !cloudTouched) ReduceBelief(settings.BeliefReduction, "구름에 올라가지 않음");
+                else if (token == generation && CanContinue) ShowFeedback("구름을 밟았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
                 break;
             case BossPatternKind.BurnBelief:
-                yield return ExecuteBurnBelief();
+                activeBelief = BossBeliefKind.Burn;
+                SetConditionTimer(settings.BurnPreparation);
+                SetActionCue("화상 강화 준비", "강화 후 공격을 피하면 믿음 감소 · 피격 시 화상", BossPresentationState.Charging, settings.BurnPreparation);
+                yield return new WaitForSeconds(settings.BurnPreparation);
+                if (token != generation || !CanContinue) yield break;
+                burnEndsAt = Time.time + settings.BurnWindow;
+                conditionEndsAt = 0f;
+                while (CanContinue && IsBurning && token == generation)
+                {
+                    if (!ChoosePattern(true, out BossPatternKind regular)) { SetStatus("강화: 실행 가능한 일반 공격 대기"); yield return null; continue; }
+                    yield return attacks.Regular(regular);
+                }
+                burnEndsAt = 0f;
                 break;
             case BossPatternKind.AttackAndDodgeBelief:
-                yield return ExecuteAttackAndDodgeBelief();
+                activeBelief = BossBeliefKind.AttackAndDodge;
+                yield return Stare(settings.StareDuration);
+                while (token == generation && CanContinue)
+                {
+                    if (ChoosePattern(true, out BossPatternKind followup)) { yield return attacks.Regular(followup); break; }
+                    SetStatus("응시 완료 · 연결 공격을 실행할 수 있는 대상/경로 대기");
+                    yield return null;
+                }
                 break;
             case BossPatternKind.NoAttackBelief:
-                yield return ExecuteNoAttackBelief();
+                activeBelief = BossBeliefKind.NoAttack;
+                BeginSignalWindow();
+                yield return StareWithMeleeWarning();
                 break;
             case BossPatternKind.ShockwaveBelief:
-                yield return ExecuteShockwaveBelief();
+                activeBelief = BossBeliefKind.Shockwave;
+                yield return attacks.Melee(0, settings.Windup, settings.MeleeDamage, BossBeliefKind.None);
+                if (token == generation && CanContinue) yield return attacks.Shockwave();
                 break;
         }
-    }
-
-    private IEnumerator ExecuteMeleeCombo()
-    {
-        int hitCount = UnityEngine.Random.Range(2, 4);
-        for (int i = 0; i < hitCount && !isDead && !isVulnerable; i++)
-        {
-            yield return PerformMeleeSwing(attackWindup, meleeDamage, BossAttackKind.Melee);
-            if (i < hitCount - 1 && attackRecovery > 0f)
-                yield return new WaitForSeconds(attackRecovery / CurrentPhaseSpeedMultiplier);
-        }
-    }
-
-    private IEnumerator ExecuteDash()
-    {
-        FacePlayer();
-        int attackId = BeginAttack(BossAttackKind.Dash, meleeRange + 3f, meleeVerticalRange + 0.8f);
-        yield return WaitAndTrackThreat(attackWindup, meleeRange + 3f, meleeVerticalRange + 0.8f);
-        if (isDead || isVulnerable)
-            yield break;
-
-        SetStatus("Dash");
-        float elapsed = 0f;
-        float direction = GetFacingDirection();
-        while (elapsed < dashDuration / CurrentPhaseSpeedMultiplier && !isDead && !isVulnerable)
-        {
-            body.linearVelocity = new Vector2(direction * dashSpeed * CurrentPhaseSpeedMultiplier, body.linearVelocity.y);
-            if (IsTargetWithinAttackRange(0.9f, meleeVerticalRange))
-                attackThreatened = true;
-            if (!attackHit && bodyCollider.bounds.Intersects(playerBodyCollider.bounds))
-                ResolveBossAttackHit(attackId, player.gameObject, dashDamage, true);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
-        ReportAttackEvadedIfNeeded(attackId);
-        if (attackRecovery > 0f)
-            yield return new WaitForSeconds(attackRecovery / CurrentPhaseSpeedMultiplier);
-    }
-
-    private IEnumerator ExecuteProjectile()
-    {
-        FacePlayer();
-        int attackId = BeginAttack(BossAttackKind.Projectile, 40f, 30f);
-        yield return WaitAndTrackThreat(attackWindup, 40f, 30f);
-        if (isDead || isVulnerable)
-            yield break;
-
-        Vector2 spawn = transform.position + Vector3.up * 0.25f + Vector3.right * GetFacingDirection() * 0.7f;
-        Vector2 direction = player != null
-            ? ((Vector2)player.position + Vector2.up * 0.25f - spawn).normalized
-            : Vector2.right * GetFacingDirection();
-        GameObject projectileObject = CreateTransientObject("BossProjectile", spawn);
-        SpriteRenderer renderer = projectileObject.AddComponent<SpriteRenderer>();
-        renderer.sprite = GetPlaceholderSprite();
-        renderer.color = new Color(0.95f, 0.76f, 0.25f, 1f);
-        renderer.sortingOrder = 14;
-        projectileObject.transform.localScale = Vector3.one * 0.42f;
-        Rigidbody2D projectileBody = projectileObject.AddComponent<Rigidbody2D>();
-        projectileBody.bodyType = RigidbodyType2D.Kinematic;
-        projectileBody.gravityScale = 0f;
-        CircleCollider2D projectileCollider = projectileObject.AddComponent<CircleCollider2D>();
-        projectileCollider.isTrigger = true;
-        projectileCollider.radius = 0.45f;
-        BossAttackProjectile projectile = projectileObject.AddComponent<BossAttackProjectile>();
-        projectile.Initialize(this, attackId, direction, projectileSpeed * CurrentPhaseSpeedMultiplier, projectileDamage, projectileLifetime);
-        SetStatus("Projectile");
-
-        float wait = projectileLifetime + 0.1f;
-        while (wait > 0f && !isDead && !isVulnerable)
-        {
-            wait -= Time.deltaTime;
-            yield return null;
-        }
-
-        if (!isDead && !isVulnerable)
-            ReportAttackEvadedIfNeeded(attackId);
-    }
-
-    private IEnumerator ExecuteAttackIntentBelief()
-    {
-        activeBelief = BossBeliefKind.AttackIntent;
-        SetStatus(ActiveBeliefPhrase);
-        BeginAttackSignalWindow();
-        yield return WaitAndTrackThreat(stareDuration, 0f, 0f);
-        bool playerActed = EndAttackSignalWindow();
-        if (!playerActed)
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: player did not attack");
-    }
-
-    private IEnumerator ExecuteCloudBelief()
-    {
-        activeBelief = BossBeliefKind.Cloud;
-        cloudTouched = false;
-        SetStatus(ActiveBeliefPhrase);
-        Vector3 center = player != null ? player.position : transform.position + Vector3.right * 2f;
-        float cloudY = Mathf.Max(transform.position.y + 2.5f, center.y + 2.2f);
-        GameObject blackCloud = CreateCloud(new Vector2(center.x - 1.4f, cloudY), false);
-        GameObject whiteCloud = CreateCloud(new Vector2(center.x + 1.4f, cloudY), true);
-
-        yield return new WaitForSeconds(cloudPatternDuration);
-        if (!cloudTouched)
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: neither cloud was reached");
-        DestroyTransient(blackCloud);
-        DestroyTransient(whiteCloud);
-    }
-
-    private IEnumerator ExecuteBurnBelief()
-    {
-        activeBelief = BossBeliefKind.Burn;
-        SetStatus(ActiveBeliefPhrase);
-        yield return new WaitForSeconds(firePreparationDuration);
-        if (isDead || isVulnerable)
-            yield break;
-
-        burnWindowEndsAt = Time.time + burnApplicationWindow;
-        BossPatternKind attackChoice = ChooseRegularAttack();
-        RecordPatternUse(attackChoice);
-        if (attackChoice == BossPatternKind.MeleeCombo)
-            yield return ExecuteMeleeCombo();
-        else if (attackChoice == BossPatternKind.Dash)
-            yield return ExecuteDash();
-        else
-            yield return ExecuteProjectile();
-    }
-
-    private IEnumerator ExecuteAttackAndDodgeBelief()
-    {
-        activeBelief = BossBeliefKind.AttackAndDodge;
-        SetStatus(ActiveBeliefPhrase);
-        yield return new WaitForSeconds(stareDuration);
-    }
-
-    private IEnumerator ExecuteNoAttackBelief()
-    {
-        activeBelief = BossBeliefKind.NoAttack;
-        SetStatus(ActiveBeliefPhrase);
-        BeginAttackSignalWindow();
-        yield return WaitAndTrackThreat(stareDuration, 0f, 0f);
-        bool playerActed = EndAttackSignalWindow();
-        if (playerActed)
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: player attacked during the stare");
-        if (isDead || isVulnerable)
-            yield break;
-
-        yield return PerformMeleeSwing(Mathf.Min(0.18f, attackWindup), meleeDamage * 1.15f, BossAttackKind.Melee);
-    }
-
-    private IEnumerator ExecuteShockwaveBelief()
-    {
-        activeBelief = BossBeliefKind.Shockwave;
-        SetStatus(ActiveBeliefPhrase);
-        yield return PerformMeleeSwing(attackWindup, meleeDamage, BossAttackKind.Melee);
-        if (isDead || isVulnerable)
-            yield break;
-
-        yield return ExecuteShockwave();
-    }
-
-    private IEnumerator PerformMeleeSwing(float windup, float damage, BossAttackKind attackKind)
-    {
-        FacePlayer();
-        int attackId = BeginAttack(attackKind, meleeRange + 0.6f, meleeVerticalRange);
-        yield return WaitAndTrackThreat(windup, meleeRange + 0.6f, meleeVerticalRange);
-        if (isDead || isVulnerable)
-            yield break;
-
-        float direction = GetFacingDirection();
-        Vector2 boxSize = new Vector2(meleeRange, meleeVerticalRange * 2f);
-        Vector2 center = (Vector2)transform.position + Vector2.right * direction * meleeRange * 0.55f;
-        Bounds attackBounds = new Bounds(center, boxSize);
-        if (playerBodyCollider != null && attackBounds.Intersects(playerBodyCollider.bounds))
-            ResolveBossAttackHit(attackId, player.gameObject, damage, true);
-
-        ReportAttackEvadedIfNeeded(attackId);
-        if (attackRecovery > 0f)
-            yield return new WaitForSeconds(attackRecovery / CurrentPhaseSpeedMultiplier);
-    }
-
-    private IEnumerator ExecuteShockwave()
-    {
-        int attackId = BeginAttack(BossAttackKind.Shockwave, shockwaveRadius, shockwaveRadius);
-        float radius = 0.2f;
-        float previousRadius = 0f;
-        float duration = shockwaveRadius / (shockwaveExpansionSpeed * CurrentPhaseSpeedMultiplier);
-        GameObject visual = CreateTransientObject("ExpandingShockwave", transform.position);
-        SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
-        renderer.sprite = GetPlaceholderSprite();
-        renderer.color = new Color(1f, 0.82f, 0.32f, 0.22f);
-        renderer.sortingOrder = 11;
-
-        float elapsed = 0f;
-        while (elapsed < duration && !isDead && !isVulnerable)
-        {
-            previousRadius = radius;
-            radius = Mathf.Min(shockwaveRadius, radius + shockwaveExpansionSpeed * CurrentPhaseSpeedMultiplier * Time.deltaTime);
-            visual.transform.position = transform.position;
-            visual.transform.localScale = Vector3.one * radius * 2f;
-
-            if (playerBodyCollider != null)
-            {
-                float distance = Vector2.Distance(transform.position, playerBodyCollider.bounds.center);
-                float bodyRadius = Mathf.Max(playerBodyCollider.bounds.extents.x, playerBodyCollider.bounds.extents.y);
-                if (distance <= shockwaveRadius + bodyRadius)
-                    attackThreatened = true;
-                bool crossedPlayer = distance + bodyRadius >= previousRadius && distance - bodyRadius <= radius;
-                if (!attackHit && crossedPlayer)
-                    ResolveBossAttackHit(attackId, player.gameObject, shockwaveDamage, false);
-            }
-
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        ReportAttackEvadedIfNeeded(attackId);
-        DestroyTransient(visual);
-    }
-
-    private IEnumerator WaitAndTrackThreat(float duration, float horizontalRange, float verticalRange)
-    {
-        float elapsed = 0f;
-        while (elapsed < duration && !isDead && !isVulnerable)
-        {
-            if (horizontalRange > 0f && IsTargetWithinAttackRange(horizontalRange, verticalRange))
-                attackThreatened = true;
-            elapsed += Time.deltaTime * CurrentPhaseSpeedMultiplier;
-            yield return null;
-        }
-    }
-
-    private int BeginAttack(BossAttackKind kind, float threatRange, float verticalRange)
-    {
-        activeBossAttackId = nextBossAttackId++;
-        activeBossAttackKind = kind;
-        attackHit = false;
-        attackEvadeReported = false;
-        attackThreatened = IsTargetWithinAttackRange(threatRange, verticalRange);
-        return activeBossAttackId;
-    }
-
-    private void ReportAttackEvadedIfNeeded(int attackId)
-    {
-        if (attackId <= 0 || attackId != activeBossAttackId || !attackThreatened || attackHit || attackEvadeReported)
-            return;
-
-        if (playerCombatEvents != null)
-            playerCombatEvents.PublishBossAttackEvaded(attackId, gameObject);
-        else
-            HandleAttackEvaded(attackId);
-    }
-
-    private void HandleAttackEvaded(int attackId)
-    {
-        if (attackId != activeBossAttackId || !attackThreatened || attackHit || attackEvadeReported)
-            return;
-
-        attackEvadeReported = true;
-        if (phase == BossPhase.One && activeBelief == BossBeliefKind.Burn && Time.time <= burnWindowEndsAt)
-        {
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: player evaded a burning attack");
-        }
-        else if (phase == BossPhase.Two && activeBelief == BossBeliefKind.AttackAndDodge)
-        {
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: player evaded an attack");
-        }
-        else if (phase == BossPhase.Two && activeBelief == BossBeliefKind.Shockwave &&
-                 activeBossAttackKind == BossAttackKind.Shockwave)
-        {
-            ReduceBelief(beliefReductionPerCondition, "Belief decreased: player evaded the shockwave");
-        }
-        else
-        {
-            StatusChanged?.Invoke();
-        }
-    }
-
-    private bool IsTargetWithinAttackRange(float horizontalRange, float verticalRange)
-    {
-        if (playerBodyCollider == null)
-            return false;
-
-        return Mathf.Abs(playerBodyCollider.bounds.center.x - transform.position.x) <= horizontalRange &&
-               Mathf.Abs(playerBodyCollider.bounds.center.y - transform.position.y) <= verticalRange;
-    }
-
-    private void BeginAttackSignalWindow()
-    {
-        attackSignalIdsInWindow.Clear();
-        playerActedDuringSignalWindow = false;
-        attackSignalWindowOpen = true;
-    }
-
-    private bool EndAttackSignalWindow()
-    {
-        attackSignalWindowOpen = false;
-        return playerActedDuringSignalWindow;
-    }
-
-    private GameObject CreateCloud(Vector2 position, bool isWhite)
-    {
-        GameObject cloud = CreateTransientObject(isWhite ? "WhitePlatformCloud" : "BlackPassThroughCloud", position);
-        SpriteRenderer renderer = cloud.AddComponent<SpriteRenderer>();
-        renderer.sprite = GetPlaceholderSprite();
-        renderer.color = isWhite
-            ? new Color(0.93f, 0.95f, 1f, 1f)
-            : new Color(0.15f, 0.17f, 0.22f, 0.9f);
-        renderer.sortingOrder = 8;
-        cloud.transform.localScale = new Vector3(1.6f, 0.28f, 1f);
-
-        BoxCollider2D collider = cloud.AddComponent<BoxCollider2D>();
-        collider.size = Vector2.one;
-        collider.isTrigger = !isWhite;
-        BossCloudPlatform platform = cloud.AddComponent<BossCloudPlatform>();
-        platform.Initialize(this, isWhite);
-        return cloud;
-    }
-
-    private IEnumerator SpawnSpikesAfterDrop(Vector2 dropPoint, int generation)
-    {
-        yield return new WaitForSeconds(spikeDelay);
-        if (generation != effectGeneration || isDead || isVulnerable)
-            yield break;
-
-        float floorY = 0f;
-        RaycastHit2D[] hits = Physics2D.RaycastAll(
-            new Vector2(dropPoint.x, dropPoint.y + 4f),
-            Vector2.down,
-            40f);
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        foreach (RaycastHit2D hit in hits)
-        {
-            if (hit.collider == null || hit.collider.isTrigger ||
-                (player != null && hit.collider.transform.root == player) ||
-                hit.collider.transform.root == transform)
-            {
-                continue;
-            }
-
-            floorY = hit.point.y;
-            break;
-        }
-
-        GameObject spikes = CreateTransientObject("BeliefSpikes", new Vector2(dropPoint.x, floorY + 0.45f));
-        SpriteRenderer renderer = spikes.AddComponent<SpriteRenderer>();
-        renderer.sprite = GetPlaceholderSprite();
-        renderer.color = new Color(0.8f, 0.19f, 0.27f, 1f);
-        renderer.sortingOrder = 13;
-        spikes.transform.localScale = new Vector3(1.25f, 0.8f, 1f);
-        BoxCollider2D collider = spikes.AddComponent<BoxCollider2D>();
-        collider.isTrigger = true;
-        spikes.AddComponent<BossTimedDamageHazard>().Initialize(spikeDamage, 2f);
-    }
-
-    private void ApplyBurn(PlayerHealth targetHealth)
-    {
-        if (targetHealth == null)
-            return;
-
-        BossBurnEffect effect = targetHealth.GetComponent<BossBurnEffect>();
-        if (effect == null)
-            effect = targetHealth.gameObject.AddComponent<BossBurnEffect>();
-        effect.Apply(burnDamagePerTick, burnDuration, burnTickInterval);
-    }
-
-    private GameObject CreateTransientObject(string objectName, Vector3 position)
-    {
-        GameObject created = new GameObject(objectName);
-        created.transform.position = position;
-        transientObjects.Add(created);
-        return created;
-    }
-
-    private void DestroyTransient(GameObject targetObject)
-    {
-        if (targetObject == null)
-            return;
-        targetObject.SetActive(false);
-        transientObjects.Remove(targetObject);
-        Destroy(targetObject);
-    }
-
-    private void CleanupTransientObjects()
-    {
-        effectGeneration++;
-        foreach (GameObject transient in transientObjects)
-        {
-            if (transient == null)
-                continue;
-            transient.SetActive(false);
-            Destroy(transient);
-        }
-        transientObjects.Clear();
-    }
-
-    private void CancelCurrentPattern()
-    {
-        if (patternRoutine == null)
-            return;
-        StopCoroutine(patternRoutine);
+        if (token != generation || !CanContinue) yield break;
+        activeBelief = BossBeliefKind.None;
+        EndSignalWindow();
+        conditionEndsAt = 0f;
+        SetActionCue("패턴 종료 · 반격 기회", "다음 공격의 예고를 확인하세요.", BossPresentationState.Recovery, settings.PatternRecovery / SpeedMultiplier);
+        yield return new WaitForSeconds(settings.PatternRecovery / SpeedMultiplier);
+        if (token != generation) yield break;
+        patternRunning = false;
         patternRoutine = null;
-        hasActivePattern = false;
-        attackSignalWindowOpen = false;
-        if (body != null)
-            body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+        SetActionCue("다음 패턴 대기", "공격 예고를 보고 대응하세요.", BossPresentationState.Idle);
+        Notify();
     }
-
+    private IEnumerator Stare(float duration)
+    {
+        SetConditionTimer(duration);
+        SetActionCue(ActivePatternName, activeBelief == BossBeliefKind.AttackIntent ?
+            $"공격하지 않고 기다리면 믿음 -{settings.BeliefReduction:0}" :
+            $"응시 뒤 이어지는 공격을 회피하면 믿음 -{settings.BeliefReduction:0}", BossPresentationState.Stare, duration);
+        while (CanContinue && ConditionRemaining > 0f) { FacePlayer(); yield return null; }
+        conditionEndsAt = 0f;
+    }
+    private IEnumerator StareWithMeleeWarning()
+    {
+        int token = generation;
+        SetConditionTimer(settings.StareDuration);
+        SetActionCue("공격 금지 예언 · 응시", $"지금 공격하면 믿음 -{settings.BeliefReduction:0} · 응시 직후 베기", BossPresentationState.Stare, settings.StareDuration);
+        BossAttackVisual preview = attacks.CreateWarning(attacks.MeleeGeometry());
+        while (CanContinue && ConditionRemaining > 0f && token == generation)
+        {
+            FacePlayer();
+            preview.Show(attacks.MeleeGeometry(), settings.WarningOrder);
+            preview.SetProgress(ConditionProgress);
+            preview.SetCue("응시 후 베기", ConditionRemaining, ConditionProgress, this);
+            yield return null;
+        }
+        DestroyEffect(preview != null ? preview.gameObject : null);
+        EndSignalWindow();
+        conditionEndsAt = 0f;
+        if (token == generation && CanContinue && !playerActed)
+            ShowFeedback("응시 중 공격하지 않았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
+        if (token == generation && CanContinue)
+            yield return attacks.Melee(0, settings.SurpriseWindup, settings.MeleeDamage * 1.15f, BossBeliefKind.None, false);
+    }
+    private void BeginSignalWindow()
+    { windowAttackIds.Clear(); playerActed = false; signalWindow = true; windowStartedAt = Time.time; }
+    private void EndSignalWindow() { signalWindow = false; windowAttackIds.Clear(); }
+    public void SetConditionTimer(float duration) { conditionDuration = duration; conditionEndsAt = Time.time + duration; Notify(); }
+    private void HandlePlayerSignal(BossPlayerCombatSignal signal)
+    {
+        if (!EncounterStarted || IsDead || !TargetValid || signal.Actor != playerHealth.gameObject || signal.Target != gameObject ||
+            signal.AttackId <= 0 || signal.OccurredAt < encounterStartedAt) return;
+        if (signal.Type == BossPlayerCombatSignalType.AttackEvaded)
+        {
+            if (allowManualEvadeInjection) SetStatus("수동 회피 신호 #" + signal.AttackId + " · 실제 결과/믿음에 미반영");
+            return;
+        }
+        if (!signalWindow || signal.OccurredAt < windowStartedAt || ConditionRemaining <= 0f) return;
+        bool eligible = settings.AttackSignalMode == BossAttackSignalMode.Either ||
+            settings.AttackSignalMode == BossAttackSignalMode.Attempt && signal.Type == BossPlayerCombatSignalType.AttackAttempt ||
+            settings.AttackSignalMode == BossAttackSignalMode.HitConfirmed && signal.Type == BossPlayerCombatSignalType.HitConfirmed;
+        if (!eligible || !windowAttackIds.Add(signal.AttackId)) return;
+        playerActed = true;
+        if (activeBelief == BossBeliefKind.NoAttack && windowAttackIds.Count == 1)
+            ReduceBelief(settings.BeliefReduction, "응시 중 공격함");
+    }
+    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern) => BossPatternSelection.TryChoose(
+        Phase == BossPhase.One ? settings.PhaseOnePool : settings.PhaseTwoPool, patternUses,
+        candidate => (!regularOnly || BossPatternSelection.IsRegular(candidate)) && IsPatternEligible(candidate), UnityEngine.Random.value, out pattern);
+    public bool IsPatternEligible(BossPatternKind candidate)
+    {
+        if (!TargetValid || !BossPatternSelection.AllowedInPhase(candidate, Phase)) return false;
+        int direction = PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1;
+        if (candidate == BossPatternKind.MeleeCombo)
+        {
+            Vector3 offset = attackOrigin.localPosition; offset.x = Mathf.Abs(offset.x) * direction;
+            Vector2 origin = transform.TransformPoint(offset);
+            return new BossAttackGeometry(origin + Vector2.right * direction * settings.MeleeSize.x * .5f, settings.MeleeSize).Overlaps(PlayerCollider);
+        }
+        if (candidate == BossPatternKind.Projectile)
+        {
+            Vector3 offset = projectileOrigin.localPosition; offset.x = Mathf.Abs(offset.x) * direction;
+            Vector2 origin = transform.TransformPoint(offset);
+            Vector2 aim = ((Vector2)PlayerCollider.bounds.center - origin).normalized;
+            float distance = BossCombatPhysics.ClearDistance(origin, Vector2.one * settings.ProjectileDiameter, aim,
+                Mathf.Min(settings.ProjectileDistance, settings.ProjectileSpeed * settings.ProjectileLifetime), this, true, out _);
+            return BossCombatPhysics.SweptTarget(origin, Vector2.one * settings.ProjectileDiameter, aim, distance, this, true);
+        }
+        if (candidate == BossPatternKind.Dash)
+        {
+            Vector2 size = bodyCollider.bounds.size;
+            float distance = BossCombatPhysics.ClearDistance(bodyCollider.bounds.center, size, Vector2.right * direction, settings.DashDistance, this, false, out _);
+            return BossCombatPhysics.SweptTarget(bodyCollider.bounds.center, size, Vector2.right * direction, distance, this, false);
+        }
+        if (candidate == BossPatternKind.CloudBelief || candidate == BossPatternKind.ShockwaveBelief)
+            return BossCombatPhysics.FindGround(candidate == BossPatternKind.CloudBelief ? (Vector2)PlayerCollider.bounds.min : (Vector2)bodyCollider.bounds.center,
+                0.1f, 8f, this, out _);
+        return true;
+    }
+    public void RecordRegularUse(BossPatternKind pattern) { if (BossPatternSelection.IsRegular(pattern)) RecordUse(pattern); }
+    private void RecordUse(BossPatternKind pattern) { patternUses[pattern] = PatternUseCount(pattern) + 1; }
+    public int PatternUseCount(BossPatternKind pattern) => patternUses.TryGetValue(pattern, out int count) ? count : 0;
+    public BossAttackRecord CreateAttack(BossAttackKind kind, int hitIndex, BossAttackGeometry geometry, float damage,
+        BossBeliefKind attackBelief, bool burn)
+    {
+        var record = new BossAttackRecord(generation, patternId, nextAttackId++, hitIndex, kind, attackBelief, geometry, damage * DamageMultiplier, burn);
+        activeAttacks.Add(record.Id, record);
+        Observe(record, geometry);
+        return record;
+    }
+    public bool IsAttackValid(BossAttackRecord record) => record != null && record.Generation == generation && !record.IsComplete && CanContinue && activeAttacks.ContainsKey(record.Id);
+    public void Observe(BossAttackRecord record, BossAttackGeometry shape)
+    { if (IsAttackValid(record)) record.Observe(shape.Overlaps(PlayerCollider), PlayerCollider.bounds.center); }
+    public void TryHit(BossAttackRecord record)
+    {
+        if (!IsAttackValid(record) || !record.TryContact()) return;
+        bool accepted = playerHealth.TakeDamage(new DamageInfo(record.Damage, DamageSource.Enemy));
+        if (!accepted) return;
+        record.AcceptDamage();
+        ShowFeedback($"피격 -{record.Damage:0}" + (record.AllowsBurn && IsBurning ? " · 화상 발생" : ""), new Color(1f, .5f, .42f));
+        attacks.Impact(PlayerCollider.bounds.center, false);
+        if (record.AllowsBurn && IsBurning)
+        {
+            BossBurnEffect burn = playerHealth.GetComponent<BossBurnEffect>();
+            if (burn == null) burn = playerHealth.gameObject.AddComponent<BossBurnEffect>();
+            burn.Apply(this, settings);
+        }
+        Notify();
+    }
+    public void CompleteAttack(BossAttackRecord record, BossAttackEndReason reason)
+    {
+        if (record == null || record.Generation != generation || !activeAttacks.ContainsKey(record.Id)) return;
+        if (!TargetValid && reason != BossAttackEndReason.Cancelled) reason = BossAttackEndReason.TargetLost;
+        if (!record.Finish(reason)) return;
+        activeAttacks.Remove(record.Id);
+        history.Add(record);
+        if (history.Count > 64) history.RemoveAt(0);
+        if (record.Outcome == AttackOutcome.EvadedByPlayer &&
+            (record.Belief == BossBeliefKind.Burn || record.Belief == BossBeliefKind.AttackAndDodge ||
+             record.Belief == BossBeliefKind.Shockwave && record.Kind == BossAttackKind.Shockwave))
+            ReduceBelief(settings.BeliefReduction, AttackName(record.Kind) + " 회피 성공");
+        else if (record.Outcome == AttackOutcome.EvadedByPlayer)
+            ShowFeedback(AttackName(record.Kind) + " 회피 성공", new Color(.6f, .85f, 1f));
+        AttackResolved?.Invoke(record);
+        Notify();
+    }
+    public BossBeliefKind RegularAttackBelief => activeBelief == BossBeliefKind.Burn || activeBelief == BossBeliefKind.AttackAndDodge ? activeBelief : BossBeliefKind.None;
+    public void OnCloudInteraction(bool white, Vector2 feet, int cloudGeneration, int cloudPattern)
+    {
+        if (!CanContinue || activeBelief != BossBeliefKind.Cloud || cloudGeneration != generation || cloudPattern != patternId) return;
+        cloudTouched = true;
+        if (white) ShowFeedback("흰 구름 착지 · 발판에서 다시 점프할 수 있습니다", new Color(.65f, .95f, 1f));
+        else if (hazards.ScheduleSpike(feet))
+            ShowFeedback($"먹구름 통과 · {settings.SpikeWarning:0.0}초 후 발밑 가시", new Color(1f, .68f, .45f));
+        Notify();
+    }
+    public T SpawnEffect<T>(T prefab) where T : Component
+    {
+        if (effectRoot == null)
+        {
+            var root = new GameObject(name + " owned effects");
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, gameObject.scene);
+            effectRoot = root.transform;
+        }
+        T instance = Instantiate(prefab, effectRoot);
+        effects.RemoveAll(effect => effect == null);
+        effects.Add(instance.gameObject);
+        return instance;
+    }
+    public void DestroyEffect(GameObject effect)
+    {
+        if (effect == null) return;
+        effects.Remove(effect);
+        effect.SetActive(false);
+        Destroy(effect);
+    }
+    private void CancelCombat(bool removeBurn)
+    {
+        if (patternRoutine != null) StopCoroutine(patternRoutine);
+        patternRoutine = null;
+        patternRunning = false;
+        EndSignalWindow();
+        activeBelief = BossBeliefKind.None;
+        burnEndsAt = conditionEndsAt = 0f;
+        cueDuration = cueEndsAt = 0f;
+        cueTitle = "전투 대기"; cueHint = "공격 예고를 보고 대응하세요.";
+        CueState = BossPresentationState.Idle;
+        foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
+        activeAttacks.Clear();
+        generation++;
+        if (hazards != null) hazards.Cancel();
+        if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
+        effects.Clear();
+        if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+        if (removeBurn && playerHealth != null) playerHealth.GetComponent<BossBurnEffect>()?.Clear(this);
+    }
     private void Die()
     {
-        if (isDead)
-            return;
-        isDead = true;
-        encounterStarted = false;
-        isVulnerable = false;
-        StopAllCoroutines();
-        patternRoutine = null;
-        vulnerabilityRoutine = null;
-        attackSignalWindowOpen = false;
-        if (body != null)
-            body.linearVelocity = Vector2.zero;
-        CleanupTransientObjects();
-        if (bodyCollider != null)
-            bodyCollider.enabled = false;
-        SetStatus("Boss defeated");
+        IsDead = true;
+        EncounterStarted = false;
+        CancelCombat(true);
+        body.linearVelocity = Vector2.zero;
+        bodyCollider.enabled = false;
+        SetPresentation(BossPresentationState.Dead);
+        SetStatus("보스 격파");
     }
-
-    private void SetStatus(string message)
+    public void FacePlayer() { if (TargetValid) Face(PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1); }
+    private void Face(int direction)
     {
-        statusMessage = message;
-        StatusChanged?.Invoke();
+        facing = direction;
+        if (attackOrigin != null) { Vector3 p = attackOrigin.localPosition; p.x = Mathf.Abs(p.x) * facing; attackOrigin.localPosition = p; }
+        if (projectileOrigin != null) { Vector3 p = projectileOrigin.localPosition; p.x = Mathf.Abs(p.x) * facing; projectileOrigin.localPosition = p; }
+        if (presentation != null) presentation.SetFacing(facing);
     }
-
-    private void FacePlayer()
+    public void SetPresentation(BossPresentationState state) { if (presentation != null) presentation.SetState(state); }
+    public void SetActionCue(string title, string hint, BossPresentationState state, float duration = 0f)
     {
-        if (player == null)
-            return;
-        float direction = player.position.x - transform.position.x;
-        if (Mathf.Abs(direction) < 0.01f)
-            return;
-
-        Vector3 scale = transform.localScale;
-        scale.x = Mathf.Abs(scale.x) * Mathf.Sign(direction);
-        transform.localScale = scale;
+        cueTitle = title; cueHint = hint; CueState = state;
+        cueDuration = Mathf.Max(0f, duration); cueEndsAt = Time.time + cueDuration;
+        SetPresentation(state);
     }
-
-    private float GetFacingDirection()
-    {
-        return transform.localScale.x >= 0f ? 1f : -1f;
-    }
-
-    private string GetBeliefPhrase(BossBeliefKind kind)
+    public void ShowFeedback(string message, Color color)
+    { feedback = message; feedbackColor = color; feedbackEndsAt = Time.time + 2.6f; }
+    public static string AttackName(BossAttackKind kind)
     {
         switch (kind)
         {
-            case BossBeliefKind.AttackIntent:
-            case BossBeliefKind.AttackAndDodge:
-                return "너는 날 공격할 것이다.";
-            case BossBeliefKind.Cloud:
-                return "너는 구름 위에 올라갈 것이다.";
-            case BossBeliefKind.Burn:
-                return "너는 불타게 될 것이다.";
-            case BossBeliefKind.NoAttack:
-                return "너는 날 공격하지 않을 것이다.";
-            case BossBeliefKind.Shockwave:
-                return "너는 피하지 못할 것이다.";
-            default:
-                return "";
+            case BossAttackKind.Melee: return "베기";
+            case BossAttackKind.Dash: return "돌진";
+            case BossAttackKind.Projectile: return "투사체";
+            case BossAttackKind.Shockwave: return "지면 충격파";
+            case BossAttackKind.Spike: return "가시";
+            default: return "공격";
         }
     }
-
-    private void BuildPlaceholderVisual()
+    private static string PatternName(BossPatternKind kind)
     {
-        if (GetComponentInChildren<SpriteRenderer>() != null)
-            return;
-
-        GameObject robe = CreateVisualPart("WhiteAndGoldRobe", Vector3.zero, new Vector3(0.95f, 1.45f, 1f), Color.white, 10);
-        robeRenderer = robe.GetComponent<SpriteRenderer>();
-        CreateVisualPart("GoldTrim", new Vector3(0f, -0.15f, -0.02f), new Vector3(0.72f, 0.12f, 1f), new Color(0.85f, 0.65f, 0.18f), 11);
-        CreateVisualPart("Face", new Vector3(0f, 0.92f, 0f), new Vector3(0.42f, 0.43f, 1f), new Color(0.93f, 0.78f, 0.65f), 12);
-        CreateVisualPart("WhiteHair", new Vector3(0f, 1.12f, -0.02f), new Vector3(0.5f, 0.22f, 1f), new Color(0.96f, 0.96f, 1f), 13);
-        CreateVisualPart("LeftGoldEye", new Vector3(-0.1f, 0.95f, -0.03f), new Vector3(0.07f, 0.035f, 1f), new Color(0.93f, 0.72f, 0.12f), 14);
-        CreateVisualPart("RightGoldEye", new Vector3(0.1f, 0.95f, -0.03f), new Vector3(0.07f, 0.035f, 1f), new Color(0.93f, 0.72f, 0.12f), 14);
-        bodyCollider.size = new Vector2(0.85f, 1.9f);
+        switch (kind)
+        {
+            case BossPatternKind.MeleeCombo: return "연속 베기";
+            case BossPatternKind.Dash: return "돌진";
+            case BossPatternKind.Projectile: return "투사체";
+            case BossPatternKind.AttackIntentBelief: return "공격 예언 · 응시";
+            case BossPatternKind.CloudBelief: return "구름 시험";
+            case BossPatternKind.BurnBelief: return "화상 강화";
+            case BossPatternKind.AttackAndDodgeBelief: return "응시 후 공격";
+            case BossPatternKind.NoAttackBelief: return "공격 금지 예언";
+            case BossPatternKind.ShockwaveBelief: return "베기 후 충격파";
+            default: return "대기";
+        }
     }
-
-    private GameObject CreateVisualPart(string partName, Vector3 localPosition, Vector3 localScale, Color color, int sortingOrder)
+    private void SetStatus(string value) { if (statusMessage == value) return; statusMessage = value; Notify(); }
+    private void Notify() => StatusChanged?.Invoke();
+    private void OnDisable()
     {
-        GameObject part = new GameObject(partName);
-        part.transform.SetParent(transform, false);
-        part.transform.localPosition = localPosition;
-        part.transform.localScale = localScale;
-        SpriteRenderer renderer = part.AddComponent<SpriteRenderer>();
-        renderer.sprite = GetPlaceholderSprite();
-        renderer.color = color;
-        renderer.sortingOrder = sortingOrder;
-        return part;
+        EncounterStarted = false;
+        CancelCombat(true);
+        if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
+        if (presentation != null) presentation.SetState(IsDead ? BossPresentationState.Dead : BossPresentationState.Idle);
+        Notify();
     }
-
-    private static Sprite GetPlaceholderSprite()
-    {
-        if (placeholderSprite == null)
-            placeholderSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f), new Vector2(0.5f, 0.5f));
-        return placeholderSprite;
-    }
-
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(1f, 0.78f, 0.2f, 0.35f);
-        Gizmos.DrawWireSphere(transform.position, shockwaveRadius);
+        if (!showAttackGizmos) return;
+        foreach (var record in activeAttacks.Values)
+        {
+            Gizmos.color = record.Activated ? Color.yellow : Color.red;
+            foreach (var shape in record.WarningGeometry)
+            {
+                Gizmos.matrix = Matrix4x4.TRS(shape.Center, Quaternion.Euler(0, 0, shape.Angle), Vector3.one);
+                Gizmos.DrawWireCube(Vector3.zero, shape.Size);
+            }
+        }
+        Gizmos.matrix = Matrix4x4.identity;
+        if (attackOrigin != null) { Gizmos.color = Color.cyan; Gizmos.DrawSphere(attackOrigin.position, 0.07f); }
     }
-
-    private void OnDestroy()
+    private static string BeliefPhrase(BossBeliefKind kind)
     {
-        if (playerCombatEvents != null)
-            playerCombatEvents.SignalPublished -= HandlePlayerSignal;
-        CleanupTransientObjects();
+        switch (kind)
+        {
+            case BossBeliefKind.AttackIntent: case BossBeliefKind.AttackAndDodge: return "너는 날 공격할 것이다.";
+            case BossBeliefKind.Cloud: return "너는 구름 위에 올라갈 것이다.";
+            case BossBeliefKind.Burn: return "너는 불타게 될 것이다.";
+            case BossBeliefKind.NoAttack: return "너는 날 공격하지 않을 것이다.";
+            case BossBeliefKind.Shockwave: return "너는 피하지 못할 것이다.";
+            default: return "";
+        }
     }
 }

@@ -1,130 +1,76 @@
 using UnityEngine;
 
-/// <summary>
-/// Sets up player test hooks and controls for the boss placed in BossTest.unity.
-/// The scene itself is cloned from PlayerTEST.unity so the PlayerMove serialized
-/// values stay in sync.
-/// </summary>
+/// <summary>Development inputs; the separate Canvas panel owns debug layout.</summary>
 public sealed class BossTestBootstrap : MonoBehaviour
 {
-    private BossCombatController boss;
-    private PlayerHealth playerHealth;
-    private BossPlayerCombatEvents playerCombatEvents;
-    private int pendingAttackId;
-    private bool setupComplete;
-    private string latestSignal = "No test signal sent";
+    [SerializeField] private BossCombatController boss;
+    [SerializeField] private bool startAutomatically = true;
+    [SerializeField] private bool showDebugPanel;
+    private BossPlayerCombatEvents playerEvents;
+    private BossDebugPanel debugPanel;
+    private bool ready;
+    public string LatestSignal { get; private set; } = "테스트 신호 없음";
+    public bool ShowDebugPanel
+    {
+        get => showDebugPanel;
+        set { showDebugPanel = value; if (debugPanel != null) debugPanel.SetVisible(value); }
+    }
+    public BossCombatController Boss => boss;
+    public BossDebugPanel DebugPanel => debugPanel;
 
-    private void Awake()
+    private void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
+        playerEvents = player != null ? player.GetComponent<BossPlayerCombatEvents>() : null;
+        if (boss == null || playerEvents == null)
         {
-            Debug.LogError("BossTest requires a GameObject tagged Player.", this);
+            Debug.LogError("BossTest requires a serialized Boss prefab and a player with PlayerHealth/BossPlayerCombatEvents.", this);
             enabled = false;
             return;
         }
-
-        playerHealth = player.GetComponent<PlayerHealth>();
-        if (playerHealth == null)
-            playerHealth = player.AddComponent<PlayerHealth>();
-
-        playerCombatEvents = player.GetComponent<BossPlayerCombatEvents>();
-        if (playerCombatEvents == null)
-            playerCombatEvents = player.AddComponent<BossPlayerCombatEvents>();
-
-        boss = FindFirstObjectByType<BossCombatController>();
-        if (boss == null)
-        {
-            Debug.LogError("BossTest requires a BossCombatController placed in the scene.", this);
-            enabled = false;
-            return;
-        }
-
-        boss.BeginEncounter();
-        setupComplete = true;
+        if (startAutomatically) boss.BeginEncounter();
+        ready = true;
+        debugPanel = gameObject.AddComponent<BossDebugPanel>();
+        debugPanel.Initialize(this, boss);
+        debugPanel.SetVisible(showDebugPanel);
     }
 
     private void Update()
     {
-        if (!setupComplete || boss == null || playerCombatEvents == null)
-            return;
-
-        if (Input.GetKeyDown(KeyCode.J))
+        if (!ready) return;
+        if (Input.GetKeyDown(KeyCode.F1)) ShowDebugPanel = !ShowDebugPanel;
+        if (Input.GetKeyDown(KeyCode.J)) PublishTestAttack(false);
+        if (Input.GetKeyDown(KeyCode.K)) PublishTestAttack(true);
+        if (Input.GetKeyDown(KeyCode.L) && boss.AllowManualEvadeInjection && boss.ActiveBossAttackId > 0)
         {
-            pendingAttackId = playerCombatEvents.PublishAttackAttempt(boss.gameObject);
-            latestSignal = $"Attack attempt #{pendingAttackId}";
+            playerEvents.PublishBossAttackEvaded(boss.ActiveBossAttackId, boss.gameObject);
+            LatestSignal = "수동 회피 신호 (결과에는 미반영)";
         }
-
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            pendingAttackId = playerCombatEvents.PublishAttackAttempt(boss.gameObject);
-            playerCombatEvents.PublishHitConfirmed(pendingAttackId, boss.gameObject, 10f);
-            latestSignal = $"Attack hit #{pendingAttackId} (10 damage)";
-        }
-
-        if (Input.GetKeyDown(KeyCode.L) && boss.ActiveBossAttackId > 0)
-        {
-            playerCombatEvents.PublishBossAttackEvaded(boss.ActiveBossAttackId, boss.gameObject);
-            latestSignal = $"Evaded boss attack #{boss.ActiveBossAttackId}";
-        }
-
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            boss.ReduceBeliefForTest(20f);
-            latestSignal = "Reduced shared belief by 20";
-        }
-
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            boss.ForcePhaseTwoForTest();
-            latestSignal = "Forced phase 2";
-        }
-
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            boss.ResetEncounterForTest();
-            playerHealth.ResetHealth();
-            latestSignal = "Encounter reset";
-        }
-
-        HandlePatternKey(KeyCode.Alpha1, BossPatternKind.MeleeCombo);
-        HandlePatternKey(KeyCode.Alpha2, BossPatternKind.Dash);
-        HandlePatternKey(KeyCode.Alpha3, BossPatternKind.Projectile);
-        HandlePatternKey(KeyCode.Alpha4, BossPatternKind.AttackIntentBelief);
-        HandlePatternKey(KeyCode.Alpha5, BossPatternKind.CloudBelief);
-        HandlePatternKey(KeyCode.Alpha6, BossPatternKind.BurnBelief);
-        HandlePatternKey(KeyCode.Alpha7, BossPatternKind.AttackAndDodgeBelief);
-        HandlePatternKey(KeyCode.Alpha8, BossPatternKind.NoAttackBelief);
-        HandlePatternKey(KeyCode.Alpha9, BossPatternKind.ShockwaveBelief);
+        if (Input.GetKeyDown(KeyCode.B)) boss.ReduceBeliefForTest(20f);
+        if (Input.GetKeyDown(KeyCode.P)) boss.ForcePhaseTwoForTest();
+        if (Input.GetKeyDown(KeyCode.R)) RestartForTest();
+        if (Input.GetKeyDown(KeyCode.T)) ToggleAutomatic();
+        for (int i = 0; i < 9; i++)
+            if (Input.GetKeyDown((KeyCode)((int)KeyCode.Alpha1 + i))) boss.ForcePatternForTest((BossPatternKind)i);
     }
 
-    private void HandlePatternKey(KeyCode key, BossPatternKind pattern)
+    public void ToggleAutomatic()
     {
-        if (!Input.GetKeyDown(key))
-            return;
-
-        boss.ForcePatternForTest(pattern);
-        latestSignal = $"Forced pattern: {pattern}";
+        if (boss.AutomaticPatterns) boss.PauseAndCancelForTest();
+        else boss.AutomaticPatterns = true;
     }
-
-    private void OnGUI()
+    public void PublishTestAttack(bool hit)
     {
-        if (!setupComplete || boss == null)
-            return;
-
-        GUILayout.BeginArea(new Rect(12f, 12f, 420f, 280f), GUI.skin.box);
-        GUILayout.Label("BOSS TEST  |  Placeholder visuals");
-        GUILayout.Label($"Phase: {boss.Phase}    HP: {boss.CurrentHp:0}/{boss.MaxHp:0}");
-        GUILayout.Label($"Belief: {boss.CurrentBelief:0}/{boss.MaxBelief:0}    State: {(boss.IsVulnerable ? "Vulnerable" : "Maintained")}");
-        GUILayout.HorizontalSlider(boss.NormalizedBelief, 0f, 1f);
-        GUILayout.Label($"Belief: {boss.ActiveBeliefPhrase}");
-        GUILayout.Label($"Pattern: {boss.ActivePatternName}    {boss.StatusMessage}");
-        GUILayout.Space(6f);
-        GUILayout.Label("Move: A/D or arrows   Jump: Space");
-        GUILayout.Label("J: attack attempt   K: attack + 10 damage   L: evade current boss attack");
-        GUILayout.Label("B: reduce belief   P: phase 2   R: reset");
-        GUILayout.Label("1-9: force melee / dash / projectile / P1 belief patterns / P2 belief patterns");
-        GUILayout.Label($"Last signal: {latestSignal}");
-        GUILayout.EndArea();
+        if (!ready) return;
+        int id = playerEvents.PublishAttackAttempt(boss.gameObject);
+        if (hit) playerEvents.TryApplyHitAndPublish(id, boss.gameObject, 10f);
+        LatestSignal = hit ? "더미 적중 #" + id + " (기본 피해 10)" : "더미 공격 시도 #" + id;
+    }
+    public void RestartForTest()
+    {
+        if (!ready) return;
+        playerEvents.ResetTestHistory();
+        boss.ResetEncounterForTest();
+        LatestSignal = "전투 초기화";
     }
 }
