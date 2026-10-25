@@ -21,6 +21,8 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private float speedMultiplier = 1f;
     private float slowEndTime;
 
+    public float BaseMoveSpeed => moveSpeed;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();

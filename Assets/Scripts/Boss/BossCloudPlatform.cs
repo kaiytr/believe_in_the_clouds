@@ -9,11 +9,12 @@ public sealed class BossCloudPlatform : MonoBehaviour
     private float previousFeet;
     private BoxCollider2D surface;
     private BossWorldCue cue;
+    private BossCombatHud cueHud;
     private float expiresAt;
     private SpriteRenderer visual;
     public bool IsWhite => white;
     public bool Reported => reported;
-    public void Initialize(BossCombatController boss, bool whiteCloud, BossAttackGeometry shape)
+    public void Initialize(BossCombatController boss, bool whiteCloud, AttackGeometry shape)
     {
         owner = boss; white = whiteCloud; generation = boss.Generation; pattern = boss.PatternId;
         transform.position = shape.Center;
@@ -25,16 +26,26 @@ public sealed class BossCloudPlatform : MonoBehaviour
         previousFeet = boss.PlayerCollider.bounds.min.y;
         expiresAt = Time.time + boss.Settings.CloudDuration;
         visual = GetComponent<SpriteRenderer>();
-        cue = BossWorldCue.Create(transform, boss.PresentationFont, boss);
+        cueHud = boss.GetComponent<BossCombatHud>();
+        if (cueHud != null) cueHud.DebugVisibilityChanged += OnDebugVisibilityChanged;
     }
     private void Update()
     {
-        if (cue == null || owner == null) return;
+        if (owner == null) return;
+        float remaining = Mathf.Max(0f, expiresAt - Time.time);
+        RefreshCue();
+        Color fill = visual.color; fill.a = Mathf.Lerp(.35f, 1f, Mathf.Clamp01(remaining / .5f)); visual.color = fill;
+    }
+    private void OnDebugVisibilityChanged(bool visible) => RefreshCue();
+    private void RefreshCue()
+    {
+        if (!isActiveAndEnabled || owner == null || !owner.DebugUiVisible)
+        { if (cue != null) cue.gameObject.SetActive(false); return; }
+        if (cue == null) cue = BossWorldCue.Create(transform, owner.PresentationFont, owner);
         float remaining = Mathf.Max(0f, expiresAt - Time.time);
         Color color = white ? new Color(.6f, .95f, 1f) : new Color(1f, .64f, .88f);
         cue.Show(new Vector2(transform.position.x, surface.bounds.max.y),
             (white ? "흰 구름 · 착지 발판" : "먹구름 · 통과 시 가시") + $"\n{remaining:0.0}초 후 사라짐", color, remaining / owner.Settings.CloudDuration);
-        Color fill = visual.color; fill.a = Mathf.Lerp(.35f, 1f, Mathf.Clamp01(remaining / .5f)); visual.color = fill;
     }
     private void FixedUpdate()
     {
@@ -56,5 +67,9 @@ public sealed class BossCloudPlatform : MonoBehaviour
         previousFeet = feet;
     }
     private void OnDisable() { if (cue != null) cue.gameObject.SetActive(false); }
-    private void OnDestroy() { if (cue != null) Destroy(cue.gameObject); }
+    private void OnDestroy()
+    {
+        if (cueHud != null) cueHud.DebugVisibilityChanged -= OnDebugVisibilityChanged;
+        if (cue != null) Destroy(cue.gameObject);
+    }
 }

@@ -5,12 +5,12 @@ using UnityEngine;
 public sealed class BossWavePath
 {
     public IReadOnlyList<Vector2> Points => points;
-    public IReadOnlyList<BossAttackGeometry> Warnings => warnings;
+    public IReadOnlyList<AttackGeometry> Warnings => warnings;
     public int Direction { get; }
     public float Distance { get; }
     public bool Blocked { get; }
     private readonly List<Vector2> points;
-    private readonly List<BossAttackGeometry> warnings = new List<BossAttackGeometry>();
+    private readonly List<AttackGeometry> warnings = new List<AttackGeometry>();
     private readonly Vector2 waveSize;
 
     public BossWavePath(List<Vector2> groundPoints, int direction, Vector2 size, bool blocked)
@@ -35,7 +35,7 @@ public sealed class BossWavePath
                 warnings.RemoveAt(warnings.Count-1);
             }
         }
-        warnings.Add(new BossAttackGeometry(new Vector2((minX+maxX)*.5f,(minY+maxY)*.5f),new Vector2(maxX-minX,maxY-minY)));
+        warnings.Add(new AttackGeometry(new Vector2((minX+maxX)*.5f,(minY+maxY)*.5f),new Vector2(maxX-minX,maxY-minY)));
     }
     public Vector2 GroundAt(float travelled)
     {
@@ -57,12 +57,12 @@ public sealed class BossWavePath
             if(Direction>0) min=Mathf.Max(min,currentX-waveSize.x*.5f);
             else max=Mathf.Min(max,currentX+waveSize.x*.5f);
             if(max<min) continue;
-            var remaining=new BossAttackGeometry(new Vector2((min+max)*.5f,shape.Center.y),new Vector2(max-min,shape.Size.y));
+            var remaining=new AttackGeometry(new Vector2((min+max)*.5f,shape.Center.y),new Vector2(max-min,shape.Size.y));
             if(remaining.Overlaps(target)) return true;
         }
         return false;
     }
-    public bool Encloses(BossAttackGeometry body)
+    public bool Encloses(AttackGeometry body)
     {
         Vector2 min=body.Center-body.Size*.5f, max=body.Center+body.Size*.5f;
         foreach(var warning in warnings)

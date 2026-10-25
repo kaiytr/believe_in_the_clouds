@@ -1,13 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
 public enum PlayerAttackKind { Direct, Projectile, Skill, DamageOverTime, Summon }
 
 /// <summary>Create once per attack; reuse across colliders, with a distinct index for each real hit.</summary>
-public sealed class PlayerAttackContext
+public sealed class PlayerAttackContext : IDisposable
 {
+    private sealed class TargetHits
+    {
+        public readonly int Generation;
+        public readonly Dictionary<int, bool> Hits = new Dictionary<int, bool>();
+        public TargetHits(int generation) { Generation = generation; }
+    }
     private static long nextId;
+    private readonly Dictionary<IDamageable, TargetHits> targets = new Dictionary<IDamageable, TargetHits>();
+    private bool completed;
     public long Id { get; }
     public GameObject Actor { get; }
     public PlayerAttackKind Kind { get; }
@@ -23,9 +32,49 @@ public sealed class PlayerAttackContext
     }
 
     public DamageInfo Damage(float amount, int hitIndex = 0) => new DamageInfo(amount, this, hitIndex);
-    public bool TryHit(EnemyUnit target, float amount, int hitIndex = 0) =>
-        target != null && target.TakeDamage(Damage(amount, hitIndex));
+    public bool TryHit(IDamageable target, float amount, int hitIndex = 0) =>
+        amount > 0f && !float.IsNaN(amount) && !float.IsInfinity(amount) && hitIndex >= 0 &&
+        Begin(target) && target.TakeDamage(Damage(amount, hitIndex));
+
+    public bool Begin(IDamageable target)
+    {
+        if (completed || Actor == null || target == null || target is Component component && component == null)
+            return false;
+        if (targets.TryGetValue(target, out TargetHits hits))
+            return hits.Generation == GenerationOf(target);
+        targets.Add(target, new TargetHits(GenerationOf(target)));
+        Publish(target, PlayerCombatSignalType.AttackAttempt, 0f);
+        return !completed && targets.TryGetValue(target, out hits) && hits.Generation == GenerationOf(target);
+    }
+
+    public bool TryConsumeHit(IDamageable target, int hitIndex)
+    {
+        if (hitIndex < 0 || !Begin(target)) return false;
+        return targets[target].Hits.TryAdd(hitIndex, false);
+    }
+
+    public bool ConfirmHit(IDamageable target, float appliedDamage, int hitIndex = 0)
+    {
+        if (hitIndex < 0 || appliedDamage <= 0f || !Begin(target)) return false;
+        TargetHits hits = targets[target];
+        if (hits.Hits.TryGetValue(hitIndex, out bool confirmed) && confirmed) return false;
+        hits.Hits[hitIndex] = true;
+        Publish(target, PlayerCombatSignalType.HitConfirmed, appliedDamage);
+        return true;
+    }
+
+    private void Publish(IDamageable target, PlayerCombatSignalType type, float damage)
+    {
+        if (CountsForBelief && target is Component component && component != null && Actor != null)
+            Actor.GetComponent<PlayerCombatEvents>()?.Publish(new PlayerCombatSignal(type, Id, Actor, component.gameObject, damage));
+    }
+
+    private static int GenerationOf(IDamageable target) => target is ICombatGeneration owner ? owner.CombatGeneration : 0;
+    public void Dispose() { completed = true; targets.Clear(); }
 }
+
+/// <summary>Encounter resets invalidate attacks captured before the reset.</summary>
+public interface ICombatGeneration { int CombatGeneration { get; } }
 
 public readonly struct PlayerHitResult
 {

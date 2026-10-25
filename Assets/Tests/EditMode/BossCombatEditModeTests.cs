@@ -9,10 +9,10 @@ using Object = UnityEngine.Object;
 public sealed class BossCombatEditModeTests
 {
     private static BossAttackRecord Record() => new BossAttackRecord(3, 7, 12, 1, BossAttackKind.Melee,
-        BossBeliefKind.AttackAndDodge, new BossAttackGeometry(Vector2.right, new Vector2(2f, 3f)), 14f, true);
+        BossBeliefKind.AttackAndDodge, new AttackGeometry(Vector2.right, new Vector2(2f, 3f)), 14f, true);
 
     [TestCase(BossAttackEndReason.Completed, true, false, false, AttackOutcome.EvadedByPlayer)]
-    [TestCase(BossAttackEndReason.Wall, true, false, false, AttackOutcome.Blocked)]
+    [TestCase(BossAttackEndReason.Wall, true, false, false, AttackOutcome.EvadedByPlayer)]
     [TestCase(BossAttackEndReason.Cancelled, true, false, false, AttackOutcome.Cancelled)]
     [TestCase(BossAttackEndReason.TargetLost, true, false, false, AttackOutcome.Cancelled)]
     [TestCase(BossAttackEndReason.Completed, false, false, false, AttackOutcome.Missed)]
@@ -41,6 +41,18 @@ public sealed class BossCombatEditModeTests
         Assert.That(stationary.Outcome, Is.EqualTo(AttackOutcome.Missed));
         var outside = Record(); outside.Activate(); outside.Observe(false, Vector2.up * 8f); outside.Finish(BossAttackEndReason.Completed);
         Assert.That(outside.Outcome, Is.EqualTo(AttackOutcome.Missed));
+    }
+
+    [Test]
+    public void WallBlocksWithoutPriorThreatButDoesNotEraseAnActualEscape()
+    {
+        var blocked = Record(); blocked.Activate(); blocked.Finish(BossAttackEndReason.Wall);
+        Assert.That(blocked.Outcome, Is.EqualTo(AttackOutcome.Blocked));
+
+        var escaped = Record();
+        escaped.Observe(true, Vector2.zero); escaped.Observe(false, Vector2.up * 2f); escaped.Activate();
+        escaped.Finish(BossAttackEndReason.Wall);
+        Assert.That(escaped.Outcome, Is.EqualTo(AttackOutcome.EvadedByPlayer));
     }
 
     [Test]
@@ -76,10 +88,10 @@ public sealed class BossCombatEditModeTests
         var target = new GameObject("Target"); var collider = target.AddComponent<CapsuleCollider2D>(); collider.size = new Vector2(1f,2f);
         try
         {
-            var front = new BossAttackGeometry(new Vector2(1.73f,0f),new Vector2(2.6f,3f));
+            var front = new AttackGeometry(new Vector2(1.73f,0f),new Vector2(2.6f,3f));
             target.transform.position = new Vector2(-1f,0f); Physics2D.SyncTransforms(); Assert.That(front.Overlaps(collider), Is.False);
             target.transform.position = new Vector2(1f,0f); Physics2D.SyncTransforms(); Assert.That(front.Overlaps(collider), Is.True);
-            var wave = new BossAttackGeometry(new Vector2(1f,.3f),new Vector2(.6f,.6f));
+            var wave = new AttackGeometry(new Vector2(1f,.3f),new Vector2(.6f,.6f));
             target.transform.position = new Vector2(1f,1.7f); Physics2D.SyncTransforms(); Assert.That(wave.Overlaps(collider), Is.False);
         }
         finally { Object.DestroyImmediate(target); }
@@ -92,13 +104,17 @@ public sealed class BossCombatEditModeTests
         Assert.That(boss.ValidateEncounter(), Is.Empty);
         var data = boss.Settings;
         Assert.That(data.ValidateSettings(), Is.Empty);
-        foreach (BossAttackVisual visual in new[] { data.WarningPrefab,data.SlashPrefab,data.DashPrefab,data.ImpactPrefab,
+        foreach (BossAttackVisual visual in new BossAttackVisual[] { data.WarningPrefab,data.SlashPrefab,data.ImpactPrefab,
             data.ProjectilePrefab.GetComponent<BossAttackVisual>(),data.WavePrefab.GetComponent<BossAttackVisual>(),data.SpikePrefab.GetComponent<BossAttackVisual>() })
         {
             Assert.That(visual.Renderer.sprite.bounds.size.x, Is.EqualTo(1f).Within(.001f), visual.name);
             Assert.That(visual.Renderer.sprite.bounds.size.y, Is.EqualTo(1f).Within(.001f), visual.name);
             Assert.That(visual.Renderer.sharedMaterial, Is.Not.Null);
         }
+        var afterimageRenderer = data.DashPrefab.GetComponent<SpriteRenderer>();
+        Assert.That(afterimageRenderer.sprite.bounds.size.x, Is.EqualTo(1f).Within(.001f));
+        Assert.That(afterimageRenderer.sprite.bounds.size.y, Is.EqualTo(1f).Within(.001f));
+        Assert.That(afterimageRenderer.sharedMaterial, Is.Not.Null);
         Assert.That(data.ProjectilePrefab.GetComponent<CircleCollider2D>().radius * 2f, Is.EqualTo(1f));
         Assert.That(data.WhiteCloudPrefab.GetComponent<BoxCollider2D>().usedByEffector, Is.True);
         Assert.That(data.WhiteCloudPrefab.GetComponent<PlatformEffector2D>().useOneWay, Is.True);
