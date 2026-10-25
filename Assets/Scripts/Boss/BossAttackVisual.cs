@@ -15,16 +15,25 @@ public sealed class BossAttackVisual : MonoBehaviour
     private bool wantsCue;
     private float fadeEndsAt, fadeDuration;
     private AttackGeometry geometry;
+    private Transform followTarget;
+    private Vector2 followOffset;
     private BossWorldCue cue;
     private Color warningColor = Color.red;
     public SpriteRenderer Renderer => fill != null ? fill : GetComponent<SpriteRenderer>();
 
     private void Awake() { fill = GetComponent<SpriteRenderer>(); indicator = GetComponent<DangerIndicator>(); }
 
-    public void Show(AttackGeometry geometry, int order, bool burning = false)
+    public void Show(AttackGeometry geometry, int order, bool burning = false, Transform followTarget = null)
     {
         this.geometry = geometry;
-        if (indicator != null) indicator.Present(geometry.Center, geometry.Angle, geometry.Size);
+        this.followTarget = warning ? followTarget : null;
+        followOffset = this.followTarget != null
+            ? geometry.Center - (Vector2)this.followTarget.position
+            : Vector2.zero;
+
+        if (indicator != null && this.followTarget != null)
+            indicator.SetupFollowing(this.followTarget, followOffset, geometry.Angle, geometry.Size);
+        else if (indicator != null) indicator.Present(geometry.Center, geometry.Angle, geometry.Size);
         else
         {
             transform.SetPositionAndRotation(geometry.Center, Quaternion.Euler(0f, 0f, geometry.Angle));
@@ -75,6 +84,21 @@ public sealed class BossAttackVisual : MonoBehaviour
         RefreshCue();
     }
     private void OnDebugVisibilityChanged(bool visible) => RefreshCue();
+    private void LateUpdate()
+    {
+        if (followTarget == null)
+            return;
+
+        Vector2 center = (Vector2)followTarget.position + followOffset;
+        geometry = new AttackGeometry(center, geometry.Size, geometry.Angle, geometry.IsCircle);
+        if (indicator == null)
+        {
+            transform.SetPositionAndRotation(center, Quaternion.Euler(0f, 0f, geometry.Angle));
+            transform.localScale = new Vector3(geometry.Size.x, geometry.Size.y, 1f);
+        }
+        if (wantsCue)
+            RefreshCue();
+    }
     private void RefreshCue()
     {
         if (!wantsCue || !isActiveAndEnabled || cueOwner == null || !cueOwner.DebugUiVisible)

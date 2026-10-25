@@ -10,6 +10,8 @@ public class DangerIndicator : MonoBehaviour
 
     private Transform followTarget;
     private Vector2 lockedDirection;
+    private Vector2 followOffset;
+    private float followAngle;
     private Vector2 indicatorSize;
     private Vector2 indicatorCenter;
     private Vector2 markerDirection;
@@ -30,6 +32,7 @@ public class DangerIndicator : MonoBehaviour
     public void Setup(Vector2 center, float angle, Vector2 size)
     {
         followTargetEnabled = false;
+        followTarget = null;
         indicatorSize = size;
         Present(center, angle, size);
         SetProgress(0f);
@@ -39,6 +42,7 @@ public class DangerIndicator : MonoBehaviour
     public void Present(Vector2 center, float angle, Vector2 size)
     {
         followTargetEnabled = false;
+        followTarget = null;
         indicatorCenter = center;
         indicatorSize = size;
         transform.position = center;
@@ -52,8 +56,22 @@ public class DangerIndicator : MonoBehaviour
         this.followTarget = followTarget;
         lockedDirection = direction.normalized;
         indicatorSize = size;
+        followOffset = lockedDirection * (indicatorSize.x * 0.5f);
+        followAngle = Mathf.Atan2(lockedDirection.y, lockedDirection.x) * Mathf.Rad2Deg;
         followTargetEnabled = true;
         SetDirection(lockedDirection);
+        UpdateFollowPosition();
+        SetProgress(0f);
+    }
+
+    // Follows an already-computed warning shape while keeping its locked offset and angle.
+    public void SetupFollowing(Transform followTarget, Vector2 centerOffset, float angle, Vector2 size)
+    {
+        this.followTarget = followTarget;
+        followOffset = centerOffset;
+        followAngle = angle;
+        indicatorSize = size;
+        followTargetEnabled = true;
         UpdateFollowPosition();
         SetProgress(0f);
     }
@@ -112,11 +130,12 @@ public class DangerIndicator : MonoBehaviour
 
     private void UpdateFollowPosition()
     {
-        Vector2 origin = followTarget.position;
-        indicatorCenter = origin + lockedDirection * (indicatorSize.x * 0.5f);
-        float angle = Mathf.Atan2(lockedDirection.y, lockedDirection.x) * Mathf.Rad2Deg;
+        if (followTarget == null)
+            return;
+
+        indicatorCenter = (Vector2)followTarget.position + followOffset;
         transform.position = indicatorCenter;
-        transform.rotation = Quaternion.Euler(0f, 0f, angle);
+        transform.rotation = Quaternion.Euler(0f, 0f, followAngle);
         transform.localScale = new Vector3(indicatorSize.x, indicatorSize.y, 1f);
         UpdateDirectionMarker();
     }

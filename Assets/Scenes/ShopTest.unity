@@ -547,9 +547,12 @@ GameObject:
   - component: {fileID: 2074097232}
   - component: {fileID: 2074097231}
   - component: {fileID: 2074097230}
-  - component: {fileID: 2074097229}
   - component: {fileID: 2074097228}
   - component: {fileID: 2074097227}
+  - component: {fileID: 2074097237}
+  - component: {fileID: 2074097238}
+  - component: {fileID: 2074097239}
+  - component: {fileID: 2074097240}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -585,18 +588,8 @@ MonoBehaviour:
   dashSpeed: 14
   dashTime: 0.18
   cooldown: 0.6
---- !u!114 &2074097229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2074097226}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b480ce343042d6240b342e09dfc79405, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerBody
+  afterimagePrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
+  afterimageTint: {r: 0.6, g: 0.8, b: 1, a: 0.45}
 --- !u!114 &2074097230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -708,6 +701,61 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+--- !u!114 &2074097237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074097226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHealth
+  maxHp: 100
+  invulnerabilityDuration: 1
+  blinkInterval: 0.1
+  bodyCollider: {fileID: 2074097234}
+  lowHealthRatio: 0.3
+--- !u!114 &2074097238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074097226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1277b7c0a634e8a8ba71061b7695911, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerCombatEvents
+--- !u!114 &2074097239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074097226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ad4292fa453e848b08acf02ce097ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CombatAfterimageEmitter
+  emissionInterval: 0.05
+--- !u!114 &2074097240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2074097226}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28d4e5c3d21f24845b1177e6d8806dc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineStats
+  baseAttack: 10
 --- !u!50 &2074097233
 Rigidbody2D:
   serializedVersion: 5

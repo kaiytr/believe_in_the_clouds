@@ -31,6 +31,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private CapsuleCollider2D bodyCollider;
     private PlayerHealth playerHealth;
     private PlayerCombatEvents playerEvents;
+    private EnemyContactDamage[] contactDamageComponents;
     private BossSharedBelief belief;
     private Coroutine patternRoutine;
     private Transform effectRoot;
@@ -112,6 +113,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         eligibleConnected = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate, false);
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
+        contactDamageComponents = GetComponentsInChildren<EnemyContactDamage>(true);
+        SetContactDamageSuppressed(true);
         spawnPosition = transform.position;
         initialFacing = facing;
         InitializeState();
@@ -130,6 +133,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         if (!TargetValid)
         {
             EncounterStarted = false;
+            SetContactDamageSuppressed(true);
             CancelCombat(true);
             SetStatus("플레이어 전투 종료 · R 재시작");
             return;
@@ -181,6 +185,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         hud.Initialize(this);
         encounterStartedAt = Time.time;
         EncounterStarted = true;
+        SetContactDamageSuppressed(false);
         SetPresentation(BossPresentationState.Idle);
         SetStatus("전투 시작");
     }
@@ -401,11 +406,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         int token = generation;
         SetConditionTimer(settings.StareDuration);
         SetActionCue("공격 금지 예언 · 응시", $"지금 공격하면 믿음 -{settings.BeliefReduction:0} · 응시 직후 베기", BossPresentationState.Stare, settings.StareDuration);
-        BossAttackVisual preview = attacks.CreateWarning(attacks.MeleeGeometry());
+        BossAttackVisual preview = attacks.CreateWarning(attacks.MeleeGeometry(), followOwner: true);
         while (CanContinue && ConditionRemaining > 0f && token == generation)
         {
             FacePlayer();
-            preview.Show(attacks.MeleeGeometry(), settings.WarningOrder);
+            preview.Show(attacks.MeleeGeometry(), settings.WarningOrder, followTarget: transform);
             preview.SetProgress(ConditionProgress);
             preview.SetCue("응시 후 베기", ConditionRemaining, ConditionProgress, this);
             yield return null;
@@ -586,6 +591,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     {
         IsDead = true;
         EncounterStarted = false;
+        SetContactDamageSuppressed(true);
         CancelCombat(true);
         body.linearVelocity = Vector2.zero;
         bodyCollider.enabled = false;
@@ -639,9 +645,19 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     }
     private void SetStatus(string value) { if (statusMessage == value) return; statusMessage = value; Notify(); }
     private void Notify() => StatusChanged?.Invoke();
+    private void SetContactDamageSuppressed(bool suppressed)
+    {
+        if (contactDamageComponents == null)
+            return;
+
+        foreach (EnemyContactDamage contact in contactDamageComponents)
+            if (contact != null)
+                contact.SetSuppressed(suppressed);
+    }
     private void OnDisable()
     {
         EncounterStarted = false;
+        SetContactDamageSuppressed(true);
         CancelCombat(true);
         if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
         if (presentation != null) presentation.SetState(IsDead ? BossPresentationState.Dead : BossPresentationState.Idle);

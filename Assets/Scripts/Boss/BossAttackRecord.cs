@@ -10,7 +10,7 @@ public sealed class BossAttackRecord
     public int HitIndex { get; }
     public BossAttackKind Kind { get; }
     public BossBeliefKind Belief { get; }
-    public AttackGeometry Geometry { get; }
+    public AttackGeometry Geometry { get; private set; }
     public float Damage { get; }
     public bool AllowsBurn { get; }
     public bool Activated { get; private set; }
@@ -41,6 +41,16 @@ public sealed class BossAttackRecord
     }
 
     public void AddWarningGeometry(AttackGeometry geometry) { if (!Activated && !IsComplete) warningGeometry.Add(geometry); }
+
+    public void TranslateWarning(Vector2 offset)
+    {
+        if (Activated || IsComplete || offset.sqrMagnitude <= 0f)
+            return;
+
+        Geometry = Geometry.Translated(offset);
+        for (int i = 0; i < warningGeometry.Count; i++)
+            warningGeometry[i] = warningGeometry[i].Translated(offset);
+    }
 
     public void Observe(bool overlaps, Vector2 targetPosition)
     {

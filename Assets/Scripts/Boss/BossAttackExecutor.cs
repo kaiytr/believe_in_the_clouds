@@ -21,10 +21,10 @@ public sealed class BossAttackExecutor : MonoBehaviour
     public AttackGeometry MeleeGeometry() => new AttackGeometry(
         owner.AttackOrigin + Vector2.right * owner.Facing * Data.MeleeSize.x * 0.5f, Data.MeleeSize);
 
-    public BossAttackVisual CreateWarning(AttackGeometry geometry)
+    public BossAttackVisual CreateWarning(AttackGeometry geometry, bool followOwner = false)
     {
         var warning = owner.SpawnEffect(Data.WarningPrefab);
-        warning.Show(geometry, Data.WarningOrder);
+        warning.Show(geometry, Data.WarningOrder, followTarget: followOwner ? owner.transform : null);
         return warning;
     }
     public void Impact(Vector2 position, bool blocked)
@@ -38,19 +38,29 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
     private IEnumerator Windup(BossAttackRecord record, float duration)
     {
-        var warning = CreateWarning(record.Geometry);
+        var warning = CreateWarning(record.Geometry, followOwner: true);
         string label = AttackLabel(record);
         owner.SetActionCue(label, AttackHint(record), BossPresentationState.Windup, duration);
         if (record.Kind == BossAttackKind.Dash) warning.SetDirection(owner.Facing);
         else if (record.Kind == BossAttackKind.Projectile) warning.SetDirection();
+        Vector2 previousBossPosition = owner.transform.position;
         float elapsed = 0f;
         while (elapsed < duration && owner.IsAttackValid(record) && owner.CanStartNextHit)
         {
+            Vector2 currentBossPosition = owner.transform.position;
+            record.TranslateWarning(currentBossPosition - previousBossPosition);
+            previousBossPosition = currentBossPosition;
             owner.Observe(record, record.Geometry);
             warning.SetProgress(elapsed / duration);
             warning.SetCue(label, duration - elapsed, elapsed / duration, owner);
             yield return PhysicsTick;
             elapsed += Time.fixedDeltaTime;
+        }
+        if (owner.IsAttackValid(record))
+        {
+            Vector2 currentBossPosition = owner.transform.position;
+            record.TranslateWarning(currentBossPosition - previousBossPosition);
+            owner.Observe(record, record.Geometry);
         }
         owner.DestroyEffect(warning != null ? warning.gameObject : null);
         if (owner.IsAttackValid(record) && !owner.CanStartNextHit)
@@ -156,6 +166,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
         var record = owner.CreateAttack(BossAttackKind.Projectile, 0, geometry, Data.ProjectileDamage, owner.RegularAttackBelief, true);
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
         if (!owner.IsAttackValid(record)) yield break;
+        origin = owner.ProjectileOrigin;
+        length = BossCombatPhysics.ClearDistance(origin, Vector2.one * Data.ProjectileDiameter, direction,
+            maxDistance, owner, true, out endBlocked);
         record.Activate();
         owner.SetActionCue("투사체", AttackHint(record), BossPresentationState.Active, lifetime);
         var projectile = owner.SpawnEffect(Data.ProjectilePrefab);
