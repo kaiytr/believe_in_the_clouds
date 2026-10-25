@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16a99fb5896c99941af64d516cb18d85, type: 3}
+  m_Name: BossCombatSettings
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatSettings
+  MaxHp: 500
+  PhaseTwoHealthRatio: 0.5
+  MaxBelief: 100
+  BeliefReduction: 20
+  VulnerableDuration: 5
+  BeliefRecoveryRatio: 1
+  MaintainedDamageMultiplier: 0.6
+  VulnerableDamageMultiplier: 2
+  AttackSignalMode: 0
+  PhaseOnePool:
+  - pattern: 0
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 1
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 2
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 3
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 4
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 5
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  PhaseTwoPool:
+  - pattern: 0
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 1
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 2
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 6
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 7
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  - pattern: 8
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
+  PatternRecovery: 0.65
+  Windup: 0.65
+  Recovery: 0.45
+  PhaseTwoSpeedMultiplier: 1
+  PhaseTwoDamageMultiplier: 1
+  StareDuration: 3
+  SurpriseWindup: 0.18
+  MeleeSize: {x: 2.6, y: 3}
+  MeleeActiveTime: 0.12
+  MeleeDamage: 14
+  DashDistance: 4.5
+  DashSpeed: 10
+  DashDamage: 18
+  ProjectileDiameter: 0.38
+  ProjectileSpeed: 8
+  ProjectileDistance: 24
+  ProjectileLifetime: 3
+  ProjectileDamage: 12
+  CloudWarning: 0.5
+  CloudDuration: 4
+  CloudTopHeight: 1.5
+  CloudSpacing: 2
+  CloudSize: {x: 2.8, y: 0.7}
+  SpikeWarning: 3
+  SpikeDuration: 2
+  SpikeSize: {x: 1.25, y: 0.8}
+  SpikeDamage: 18
+  WaveDistance: 7
+  WaveSpeed: 6
+  WaveSize: {x: 0.6, y: 0.6}
+  WaveDamage: 16
+  MaximumGroundStep: 0.3
+  GroundMask:
+    serializedVersion: 2
+    m_Bits: 64
+  ObstacleMask:
+    serializedVersion: 2
+    m_Bits: 64
+  PlatformLayer: 6
+  ArenaX: {x: -17, y: 17}
+  BurnPreparation: 5
+  BurnWindow: 10
+  BurnDuration: 5
+  BurnTickInterval: 1
+  BurnTickDamage: 2
+  WarningPrefab: {fileID: 7974138022104141716, guid: 75531ece87ceb084494566b55cd4be71, type: 3}
+  SlashPrefab: {fileID: 3408263434703289205, guid: 3aa34e3cf226904479764a4aac3e2b33, type: 3}
+  DashPrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
+  ImpactPrefab: {fileID: 3647020436006901317, guid: 9fad02a6536b97a4a914731a0e6e688a, type: 3}
+  ProjectilePrefab: {fileID: 8998454255553982694, guid: 280e0166d9b857543bc5f1416178a9d5, type: 3}
+  WavePrefab: {fileID: 4984771641606881301, guid: 17324334cb4107b4aaa78df51daea5cb, type: 3}
+  WhiteCloudPrefab: {fileID: 3440444722778949156, guid: d68a53c9112b3f04fba21a7667844567, type: 3}
+  BlackCloudPrefab: {fileID: 7742617690646464762, guid: 8b864fc88520e9e46ac54cfd2bacfc86, type: 3}
+  SpikePrefab: {fileID: 7277133656842401280, guid: a06d5809f97d3214fb2b71271bb03f3d, type: 3}
+  BurnSprite: {fileID: 21300000, guid: 1448fd79057ae464c9b0227d9fd1ebc5, type: 3}
+  EffectMaterial: {fileID: 2100000, guid: 1d315a27cd0606c4aa48028539218aa5, type: 2}
+  WarningOrder: 20
+  AttackOrder: 24

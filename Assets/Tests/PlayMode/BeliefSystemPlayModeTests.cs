@@ -104,7 +104,7 @@ public sealed class BeliefSystemPlayModeTests
         Assert.That(beliefPhrase, Is.Not.Null);
         Assert.That(beliefPhrase.text, Is.EqualTo(dogUnit.Belief.Profile.Phrase));
         Transform gaugeFillTransform = dog.transform.Find(
-            "BeliefUIAnchor/WorldSpaceBeliefUI/BeliefSpeechBubble/BeliefGaugeBackground/BeliefGaugeFill");
+            "BeliefUIAnchor/WorldSpaceBeliefUI/BeliefGaugeBackground/BeliefGaugeFill");
         Assert.That(gaugeFillTransform, Is.Not.Null);
         Assert.That(gaugeFillTransform.GetComponent<UnityEngine.UI.Image>().fillAmount,
             Is.EqualTo(dogUnit.Belief.NormalizedBelief).Within(0.001f));
@@ -189,6 +189,25 @@ public sealed class BeliefSystemPlayModeTests
         yield return null;
     }
 
+    [UnityTest]
+    public IEnumerator RandomBeliefIsSelectedOnceAndKeptForTheEnemyLifetime()
+    {
+        BeliefProfile rear=CreateProfile(BeliefType.RearPosition,25f,0f);
+        BeliefProfile dodge=CreateProfile(BeliefType.DodgeAttack,0f,25f);
+        var catalog=ScriptableObject.CreateInstance<BeliefProfileCatalog>(); createdObjects.Add(catalog);
+        SetField(catalog,"rearPositionProfile",rear); SetField(catalog,"dodgeAttackProfile",dodge);
+        var actor=new GameObject("Lifetime belief test"); actor.SetActive(false); createdObjects.Add(actor);
+        var controller=actor.AddComponent<BeliefController>();
+        SetField(controller,"profileCatalog",catalog);
+        SetField(controller,"beliefTypeCandidates",new List<BeliefType>{BeliefType.RearPosition,BeliefType.DodgeAttack});
+        actor.SetActive(true); yield return null;
+        BeliefType selected=controller.Type;
+        Assert.That(selected==BeliefType.RearPosition || selected==BeliefType.DodgeAttack,Is.True);
+        controller.ReduceBelief(20f);
+        actor.SetActive(false); actor.SetActive(true); yield return null;
+        Assert.That(controller.Type,Is.EqualTo(selected)); Assert.That(controller.CurrentBelief,Is.EqualTo(80f));
+    }
+
     private void CacheAndPauseEnemyAI(Scene scene, LoadSceneMode mode)
     {
         if (scene.name != "BeliefTest")
@@ -202,6 +221,12 @@ public sealed class BeliefSystemPlayModeTests
                 EnemyUnit enemy = root.GetComponent<EnemyUnit>();
                 if (enemy != null)
                     enemy.enabled = false;
+                // This scenario tests specific attack/belief pairings. Production scenes choose
+                // a random lifetime belief, so pin only these test instances before EnemyUnit.Start.
+                BeliefController belief = root.GetComponent<BeliefController>();
+                BeliefType required = root.name == "Dog" ? BeliefType.RearPosition : BeliefType.DodgeAttack;
+                SetField(belief, "beliefTypeCandidates", new List<BeliefType> { required });
+                typeof(BeliefController).GetMethod("ConfigureProfile", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(belief, null);
             }
         }
     }

@@ -10,10 +10,17 @@ public class DangerIndicator : MonoBehaviour
     public void Setup(Vector2 center, float angle, Vector2 size, float duration)
     {
         followTargetEnabled = false;
+        Present(center, angle, size);
+        Destroy(gameObject, duration);
+    }
+
+    // Boss attacks own cancellation/lifetime; ordinary enemy Setup behavior stays the same.
+    public void Present(Vector2 center, float angle, Vector2 size)
+    {
+        followTargetEnabled = false;
         transform.position = center;
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
         transform.localScale = new Vector3(size.x, size.y, 1f);
-        Destroy(gameObject, duration);
     }
 
     public void SetupFollowing(Transform followTarget, Vector2 direction, Vector2 size, float duration)

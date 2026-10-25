@@ -43,8 +43,12 @@ public enum BossAttackKind
     Melee,
     Dash,
     Projectile,
-    Shockwave
+    Shockwave,
+    Spike
 }
+
+public enum BossAttackEndReason { Completed, Contact, Wall, Cancelled, TargetLost }
+public enum BossPresentationState { Idle, Stare, Windup, Active, Recovery, Charging, Vulnerable, Dead }
 
 [Serializable]
 public struct BossPlayerCombatSignal
