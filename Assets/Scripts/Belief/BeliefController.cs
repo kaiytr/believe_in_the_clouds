@@ -17,12 +17,14 @@ public sealed class BeliefController : MonoBehaviour
     private float currentBelief;
     private BeliefState currentState = BeliefState.Maintained;
     private bool stopped;
+    private float vulnerabilityRemaining;
 
     public event Action<BeliefController, float, float> BeliefChanged;
     public event Action<BeliefController, BeliefState> StateChanged;
 
     public BeliefType Type => profile != null ? profile.Type : selectedBeliefType;
     public bool UsesRandomCandidate => beliefTypeCandidates != null && beliefTypeCandidates.Count > 0;
+    public IReadOnlyList<BeliefType> CandidateTypes => beliefTypeCandidates;
     public BeliefProfile Profile => profile;
     public float CurrentBelief => currentBelief;
     public float MaxBelief => profile != null ? profile.MaxBelief : 0f;
@@ -36,6 +38,14 @@ public sealed class BeliefController : MonoBehaviour
     {
         owner = GetComponent<EnemyUnit>();
         ConfigureProfile();
+    }
+
+    private void OnEnable()
+    {
+        if (profile == null || owner != null && owner.IsDead) return;
+        stopped = false;
+        if (IsVulnerable && vulnerabilityRoutine == null)
+            vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
     }
 
     private void ConfigureProfile()
@@ -82,6 +92,13 @@ public sealed class BeliefController : MonoBehaviour
             return;
         }
 
+        if (!BeliefRules.IsCompatible(profile.Type, owner))
+        {
+            Debug.LogError($"{name}: Belief {profile.Type} belongs to a different enemy kind.", this);
+            profile = null;
+            return;
+        }
+
         currentBelief = profile.MaxBelief;
         currentState = BeliefState.Maintained;
     }
@@ -94,8 +111,12 @@ public sealed class BeliefController : MonoBehaviour
         List<BeliefType> validCandidates = new List<BeliefType>();
         foreach (BeliefType candidate in beliefTypeCandidates)
         {
+            if (!BeliefRules.IsCompatible(candidate, owner) || profileCatalog.Resolve(candidate) == null)
+            {
+                Debug.LogError($"{name}: Invalid or incompatible random belief candidate {candidate}.", this);
+                return BeliefType.Unassigned;
+            }
             if (candidate == BeliefType.Unassigned ||
-                profileCatalog.Resolve(candidate) == null ||
                 validCandidates.Contains(candidate))
             {
                 continue;
@@ -115,7 +136,7 @@ public sealed class BeliefController : MonoBehaviour
 
     public bool ReduceBelief(float amount)
     {
-        if (stopped || IsVulnerable || profile == null || amount <= 0f)
+        if (stopped || IsVulnerable || profile == null || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
             return false;
 
         float previousBelief = currentBelief;
@@ -166,12 +187,17 @@ public sealed class BeliefController : MonoBehaviour
         LogState("Vulnerable started");
         StateChanged?.Invoke(this, currentState);
         RaiseBeliefChanged();
+        vulnerabilityRemaining = profile.VulnerableDuration;
         vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
     }
 
     private IEnumerator VulnerabilityRoutine()
     {
-        yield return new WaitForSeconds(profile.VulnerableDuration);
+        while (vulnerabilityRemaining > 0f)
+        {
+            yield return null;
+            vulnerabilityRemaining = Mathf.Max(0f, vulnerabilityRemaining - Time.deltaTime);
+        }
         vulnerabilityRoutine = null;
 
         if (stopped || owner != null && owner.IsDead)

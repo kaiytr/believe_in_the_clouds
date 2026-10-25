@@ -13,6 +13,8 @@ public class BelieverEnemy : EnemyUnit
     private ThrowStoneAttack stoneAttack;
 
     private bool retreatAfterAttack;
+    public float RetreatTriggerDistance => preferredMinDistance;
+    public bool IsRetreating => CurrentState == EnemyState.Retreat;
 
     protected override void Awake()
     {
@@ -31,7 +33,7 @@ public class BelieverEnemy : EnemyUnit
         }
 
         /*
-         * °ø°Ý Áß¿¡´Â ÀÌµ¿ÇÏÁö ¾Ê´Â´Ù.
+         * ê³µê²© ì¤‘ì—ëŠ” ì´ë™í•˜ì§€ ì•ŠëŠ”ë‹¤.
          */
         if (stoneAttack.IsAttacking)
         {
@@ -43,8 +45,8 @@ public class BelieverEnemy : EnemyUnit
             GetHorizontalDistanceToTarget();
 
         /*
-         * °¡±îÀÌ ºÙÀº »óÅÂ¿¡¼­ °ø°ÝÇß´Ù¸é
-         * °ø°Ý Á¾·á ÈÄ ¼±È£ °Å¸®±îÁö ÈÄÅðÇÑ´Ù.
+         * ê°€ê¹Œì´ ë¶™ì€ ìƒíƒœì—ì„œ ê³µê²©í–ˆë‹¤ë©´
+         * ê³µê²© ì¢…ë£Œ í›„ ì„ í˜¸ ê±°ë¦¬ê¹Œì§€ í›„í‡´í•œë‹¤.
          */
         if (retreatAfterAttack)
         {
@@ -64,9 +66,9 @@ public class BelieverEnemy : EnemyUnit
         }
 
         /*
-         * ³Ê¹« ¸Ö´Ù.
+         * ë„ˆë¬´ ë©€ë‹¤.
          *
-         * °ø°Ý »ç°Å¸® ¾ÈÂÊÀÇ ¼±È£ °Å¸®±îÁö Á¢±ÙÇÑ´Ù.
+         * ê³µê²© ì‚¬ê±°ë¦¬ ì•ˆìª½ì˜ ì„ í˜¸ ê±°ë¦¬ê¹Œì§€ ì ‘ê·¼í•œë‹¤.
          */
         if (horizontalDistance >
             preferredMaxDistance)
@@ -81,18 +83,18 @@ public class BelieverEnemy : EnemyUnit
         }
 
         /*
-         * ³Ê¹« °¡±î¿ò.
+         * ë„ˆë¬´ ê°€ê¹Œì›€.
          */
         if (horizontalDistance <
             preferredMinDistance)
         {
             /*
-             * °ø°Ý ÁØºñ°¡ µÇ¾î ÀÖ´Ù¸é
-             * ¹Ù·Î µµ¸ÁÄ¡Áö ¾Ê°í ¸ÕÀú °ø°ÝÇÑ´Ù.
+             * ê³µê²© ì¤€ë¹„ê°€ ë˜ì–´ ìžˆë‹¤ë©´
+             * ë°”ë¡œ ë„ë§ì¹˜ì§€ ì•Šê³  ë¨¼ì € ê³µê²©í•œë‹¤.
              *
-             * ±âÈ¹:
-             * "°¡±îÀÌ Á¢±ÙÇÏ¸é µµ¸ÁÄ¡±âº¸´Ù
-             * Àá½Ã ¸ØÃç °ø°ÝÇÑ µÚ ´Ù½Ã °Å¸®¸¦ ¹ú¸°´Ù."
+             * ê¸°íš:
+             * "ê°€ê¹Œì´ ì ‘ê·¼í•˜ë©´ ë„ë§ì¹˜ê¸°ë³´ë‹¤
+             * ìž ì‹œ ë©ˆì¶° ê³µê²©í•œ ë’¤ ë‹¤ì‹œ ê±°ë¦¬ë¥¼ ë²Œë¦°ë‹¤."
              */
             if (stoneAttack.IsReady)
             {
@@ -113,8 +115,8 @@ public class BelieverEnemy : EnemyUnit
             }
 
             /*
-             * °ø°Ý ÄðÅ¸ÀÓ ÁßÀÌ¶ó¸é
-             * ±×³É ÈÄÅðÇØ¼­ °Å¸® È®º¸.
+             * ê³µê²© ì¿¨íƒ€ìž„ ì¤‘ì´ë¼ë©´
+             * ê·¸ëƒ¥ í›„í‡´í•´ì„œ ê±°ë¦¬ í™•ë³´.
              */
             ChangeState(
                 EnemyState.Retreat
@@ -126,9 +128,9 @@ public class BelieverEnemy : EnemyUnit
         }
 
         /*
-         * ¼±È£ °Å¸® ¾È.
+         * ì„ í˜¸ ê±°ë¦¬ ì•ˆ.
          *
-         * ÀÌµ¿ÇÏÁö ¾Ê°í °ø°ÝÇÑ´Ù.
+         * ì´ë™í•˜ì§€ ì•Šê³  ê³µê²©í•œë‹¤.
          */
         StopMovement();
         FaceTarget();

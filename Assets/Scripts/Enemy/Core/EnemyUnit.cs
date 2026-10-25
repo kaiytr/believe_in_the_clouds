@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -28,10 +30,15 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     private EnemyContactDamage[] contactDamageComponents;
     private BeliefView beliefView;
     private Collider2D targetBodyCollider;
+    private PlayerHealth targetHealth;
     private float moveInput;
     private bool movementLocked;
     private bool configurationValid;
     private float nextTargetSearchTime;
+    // Local to this enemy's lifetime; not cleared when vulnerability ends.
+    private readonly HashSet<(long attack, int hit)> receivedPlayerHits = new HashSet<(long, int)>();
+
+    public event Action<PlayerHitResult> PlayerHitReceived;
 
     public bool IsDead => currentState == EnemyState.Dead;
     public bool IsVulnerable => beliefController != null && beliefController.IsVulnerable;
@@ -44,6 +51,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
     public float FacingDirection => GetActiveAttackDirection();
+    public bool HasCombatTarget => HasValidTarget();
 
     protected virtual void Awake()
     {
@@ -127,7 +135,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         BeliefCondition matchingCondition = null;
         foreach (BeliefCondition condition in conditions)
         {
-            if (condition.SupportedType == beliefController.Type)
+            if (condition.Supports(beliefController.Type))
             {
                 if (matchingCondition != null)
                     return FailConfiguration($"Multiple belief conditions match {beliefController.Type}.");
@@ -149,6 +157,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             {
                 BeliefType.RearPosition => gameObject.AddComponent<RearPositionBeliefCondition>(),
                 BeliefType.DodgeAttack => gameObject.AddComponent<DodgeAttackBeliefCondition>(),
+                _ when BeliefRules.IsExpanded(beliefController.Type) => gameObject.AddComponent<ExpandedBeliefCondition>(),
                 _ => null
             };
         }
@@ -208,7 +217,8 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     private bool HasValidTarget()
     {
         return target != null && target.gameObject.activeInHierarchy &&
-               targetBodyCollider != null && targetBodyCollider.enabled;
+               targetBodyCollider != null && targetBodyCollider.enabled &&
+               targetHealth != null && !targetHealth.IsDead;
     }
 
     protected bool TryAcquirePlayer()
@@ -222,6 +232,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             return false;
 
         PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+        targetHealth = playerHealth;
         if (playerHealth == null || playerHealth.BodyCollider == null || playerHealth.BodyCollider.isTrigger)
         {
             target = player.transform;
@@ -336,7 +347,14 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     public bool TakeDamage(DamageInfo damageInfo)
     {
-        if (IsDead || damageInfo.Amount <= 0f)
+        if (!gameObject.activeInHierarchy || IsDead || damageInfo.Amount <= 0f ||
+            float.IsNaN(damageInfo.Amount) || float.IsInfinity(damageInfo.Amount))
+            return false;
+
+        PlayerAttackContext playerAttack = damageInfo.PlayerAttack;
+        if (playerAttack != null &&
+            (playerAttack.Actor == null || target == null || playerAttack.Actor != target.gameObject ||
+             damageInfo.HitIndex < 0 || receivedPlayerHits.Contains((playerAttack.Id, damageInfo.HitIndex))))
             return false;
 
         float finalDamage = beliefController != null
@@ -345,10 +363,19 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (finalDamage <= 0f)
             return false;
 
+        if (playerAttack != null)
+            receivedPlayerHits.Add((playerAttack.Id, damageInfo.HitIndex));
+        float previousHp = currentHp;
+        Bounds enemyBounds = bodyCollider != null ? bodyCollider.bounds : default;
+        Bounds playerBounds = targetBodyCollider != null ? targetBodyCollider.bounds : default;
+        float facing = FacingDirection;
         currentHp = Mathf.Max(0f, currentHp - finalDamage);
         beliefView?.UpdateHealth(currentHp, maxHp);
         if (currentHp <= 0f)
             Die();
+        else if (playerAttack != null && playerAttack.CountsForBelief && targetBodyCollider != null)
+            PlayerHitReceived?.Invoke(new PlayerHitResult(playerAttack.Id, damageInfo.HitIndex,
+                previousHp - currentHp, Time.time, enemyBounds, playerBounds, facing));
         return true;
     }
 

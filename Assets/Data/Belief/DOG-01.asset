@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9614eba3a6969144385b1cab57b0ea5a, type: 3}
+  m_Name: DOG-01
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BeliefProfile
+  type: 3
+  phrase: "\uB3C4\uB9DD\uCE58\uB294 \uC0AC\uB0E5\uAC10\uC740 \uC57D\uD558\uB2E4."
+  maxBelief: 100
+  maintainedPlayerDamageMultiplier: 0.6
+  vulnerablePlayerDamageMultiplier: 2
+  vulnerableDuration: 5
+  recoveryRatio: 1
+  reductionPerSecond: 0
+  reductionPerEvade: 0
+  reductionPerSuccess: 100
+  timeWindow: 2
+  rearInterval: 2

@@ -65,7 +65,7 @@ public class DogChargeAttack : EnemyAttack
             transform,
             new Vector2(lockedDirectionX, 0f),
             new Vector2(chargeDistance, indicatorHeight),
-            windupTime);
+            WindupDuration);
         return indicator;
     }
 
@@ -116,11 +116,11 @@ public class DogChargeAttack : EnemyAttack
 
         if (playerContactAppliedHarm)
         {
-            ReportOutcome(AttackOutcome.Hit);
+            ReportOutcome(AttackOutcome.Hit, completedNormally: true);
         }
         else if (hasResolvedPlayerContact)
         {
-            ReportOutcome(AttackOutcome.Missed);
+            ReportOutcome(AttackOutcome.Missed, completedNormally: true);
         }
         else if (blockedByObstacle)
         {
@@ -133,7 +133,7 @@ public class DogChargeAttack : EnemyAttack
                                            !IsBodyInChargeCorridor(playerBody, chargeStartPosition);
             ReportOutcome(WasPlayerThreatenedDuringWarning && outsideOriginalCorridor
                 ? AttackOutcome.EvadedByPlayer
-                : AttackOutcome.Missed);
+                : AttackOutcome.Missed, completedNormally: true);
         }
         else
         {
@@ -210,6 +210,7 @@ public class DogChargeAttack : EnemyAttack
             damageable = player.GetComponentInChildren<IDamageable>();
         playerContactAppliedHarm = damageable != null &&
                                    damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+        if (playerContactAppliedHarm) RecordPlayerHpDamage(CurrentAttackId);
     }
 
     private bool IsObstacle(int layer)
