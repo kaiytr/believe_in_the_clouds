@@ -7,9 +7,12 @@ using UnityEngine.UI;
 
 // 교리 HUD를 프로젝트에 세팅하는 에디터 도구.
 //
+// HUD는 DoctrineHudBoot가 플레이 모드에서 자동으로 만들기 때문에
+// 이 메뉴는 "씬마다 인스펙터 값/프리팹을 미리 맞춰두고 싶을 때"만 쓰는 선택 도구다.
+//
 // 메뉴
 //   Tools/Doctrine/Create Slot Prefab   : 슬롯 프리팹만 생성
-//   Tools/Doctrine/Setup HUD In Scene   : 슬롯 프리팹 + 확인용 교리 + HUD 오브젝트 배치
+//   Tools/Doctrine/Setup HUD In Scene   : 슬롯 프리팹 + 확인용 교리 + HUD 오브젝트 배치(선택)
 //
 // YAML을 직접 쓰지 않고 Unity API로만 생성하므로 씬/프리팹이 깨지지 않는다.
 public static class DoctrineHudSetup
@@ -87,6 +90,14 @@ public static class DoctrineHudSetup
             hud = hudObject.AddComponent<DoctrineHud>();
             hudObject.AddComponent<Canvas>();
             hudObject.AddComponent<CanvasScaler>();
+
+            // Canvas 루트는 화면 전체를 덮어야 한다. (스케일 0으로 저장되면 아무것도 안 보인다)
+            RectTransform rect = hudObject.GetComponent<RectTransform>();
+            rect.localScale = Vector3.one;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
 
             Canvas canvas = hudObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

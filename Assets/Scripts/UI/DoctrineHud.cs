@@ -47,6 +47,30 @@ public class DoctrineHud : MonoBehaviour
     private Text portraitFallback;
     private bool built;
 
+    private static DoctrineHud instance;
+
+    // PlayerHealth/초상 스프라이트 탐색은 매 프레임 하면 비싸므로 간격을 둔다.
+    private float nextPlayerSearchTime;
+    private bool portraitResolved;
+
+    [Header("확인용 (자동 표시)")]
+    [Tooltip("활성 교리도, 연결된 확인용 목록도 없을 때 내장된 예시 3개를 보여준다. 끄면 비어 있을 때 아무 칸도 그리지 않는다.")]
+    [SerializeField] private bool useBuiltInPreview = true;
+
+    private void Awake()
+    {
+        // 자동 부팅으로 만들어진 HUD와 씬에 직접 둔 HUD가 겹치면 하나만 남긴다.
+        // (도메인 리로드를 끈 상태에서는 파괴된 객체가 static에 남을 수 있어 null 검사를 먼저 한다.)
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
     private void Start()
     {
         BuildIfNeeded();
@@ -76,8 +100,12 @@ public class DoctrineHud : MonoBehaviour
         if (!built)
             BuildIfNeeded();
 
-        if (player == null)
+        // 씬이 바뀌면 플레이어/초상/매니저 참조가 끊긴다. 0.5초 간격으로 다시 찾는다.
+        if (Time.unscaledTime >= nextPlayerSearchTime && (player == null || !portraitResolved))
+        {
+            nextPlayerSearchTime = Time.unscaledTime + 0.5f;
             ResolvePlayer();
+        }
 
         if (manager == null)
         {
@@ -92,7 +120,10 @@ public class DoctrineHud : MonoBehaviour
     private void ResolvePlayer()
     {
         if (player == null)
+        {
             player = FindFirstObjectByType<PlayerHealth>();
+            portraitResolved = false;
+        }
 
         if (player == null)
             return;
@@ -102,6 +133,7 @@ public class DoctrineHud : MonoBehaviour
         {
             portraitImage.sprite = renderer.sprite;
             portraitImage.color = Color.white;
+            portraitResolved = true;
             if (portraitFallback != null)
                 portraitFallback.gameObject.SetActive(false);
         }
@@ -118,10 +150,6 @@ public class DoctrineHud : MonoBehaviour
                 ? Mathf.Clamp01(player.CurrentHp / player.MaxHp)
                 : 0f;
         }
-
-        // SpriteRenderer may be assigned after this HUD starts.
-        if (portraitImage != null && portraitImage.sprite == null)
-            ResolvePlayer();
     }
 
     private void TryBindManager()
@@ -245,6 +273,15 @@ public class DoctrineHud : MonoBehaviour
                 result.Add(previewDoctrines[i].ToRuntime());
         }
 
+        // 인스펙터에 아무것도 연결하지 않아도 빈 칸이 보이지 않도록
+        // 내장된 예시 3개를 쓴다. (Setup 메뉴가 만들던 SampleDoctrine1~3과 같은 조합)
+        if (result.Count == 0 && useBuiltInPreview)
+        {
+            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal, 30f));
+            result.Add(new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.IncreaseAttack, 1.3f, 5f));
+            result.Add(new Doctrine(SubjectType.Enemy, ConditionType.OnDeath, ResultType.Explode, 40f));
+        }
+
         return result;
     }
 
@@ -285,17 +322,25 @@ public class DoctrineHud : MonoBehaviour
         canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
         {
-            GameObject canvasObject = new GameObject("PlayerHudCanvas",
-                typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            canvas = canvasObject.GetComponent<Canvas>();
+            // Canvas를 별도 오브젝트로 만들면 씬 전환 시 HUD만 남고 캔버스가 사라진다.
+            // DontDestroyOnLoad 대상인 자기 자신에 붙여 함께 유지되게 한다.
+            canvas = GetComponent<Canvas>();
+            if (canvas == null)
+                canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
 
-            CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+            CanvasScaler scaler = GetComponent<CanvasScaler>();
+            if (scaler == null)
+                scaler = gameObject.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
         }
+
+        // 씬에 저장된 HUD의 스케일이 0이면 아무것도 보이지 않으므로 바로잡는다.
+        if (transform.localScale == Vector3.zero)
+            transform.localScale = Vector3.one;
 
         BuildBottomBand();
         BuildPortrait();
