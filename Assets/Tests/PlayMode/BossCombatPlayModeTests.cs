@@ -468,7 +468,8 @@ public sealed class BossCombatPlayModeTests
         tools.ShowDebugPanel=true; yield return null;
         Assert.That(hud.DebugVisible,Is.True); Assert.That(hud.DebugCanvas.gameObject.activeInHierarchy,Is.True);
         Assert.That(hud.GameplayHud.HealthCanvas.enabled,Is.False,"Debug mode avoids duplicate gameplay bars.");
-        Assert.That(hud.GameplayHud.PlayerCanvas.enabled,Is.False);
+        Assert.That(boss.transform.Find("Gameplay HUD/Player gameplay HUD"),Is.Null);
+        Assert.That(Object.FindFirstObjectByType<DoctrineHud>(),Is.Not.Null);
         var visibleCues=Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None);
         Assert.That(visibleCues.Length,Is.GreaterThanOrEqualTo(3));
         foreach(var cue in visibleCues) Assert.That(cue.GetComponent<Canvas>().enabled,Is.True);

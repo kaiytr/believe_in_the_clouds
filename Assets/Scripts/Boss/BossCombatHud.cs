@@ -79,7 +79,7 @@ public sealed class BossCombatHud : MonoBehaviour
         PlayerHealth player = owner.PlayerHealth;
         BossBurnEffect burn = player != null ? player.GetComponent<BossBurnEffect>() : null;
         playerStatus.text = player == null ? "" : player.IsDead ? "플레이어 쓰러짐 · R 재시작" :
-            $"플레이어 HP {player.CurrentHp:0} / {player.MaxHp:0}" + (burn != null && burn.IsBurning ? $"    화상 {burn.Remaining:0.0}초" : "");
+            (burn != null && burn.IsBurning ? $"화상 {burn.Remaining:0.0}초" : "");
         playerStatus.color = burn != null && burn.IsBurning ? new Color(1f, .65f, .4f) : Color.white;
     }
     private void OnDisable() { SetDebugVisible(false); }

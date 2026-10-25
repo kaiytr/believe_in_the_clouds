@@ -165,6 +165,7 @@ public class PlayerAttack : MonoBehaviour
     private Animator animator;
     private DoctrineStats stats;
     private PlayerHealth health;
+    private PlayerDash dash;
 
     private int currentCombo; // 다음에 나갈 타수 (0~3)
     private bool isAttacking;
@@ -193,6 +194,7 @@ public class PlayerAttack : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
         stats = GetComponent<DoctrineStats>();
         health = GetComponent<PlayerHealth>();
+        dash = GetComponent<PlayerDash>();
         baseScale = transform.localScale;
         hitboxVisual = GetComponentInChildren<PlayerAttackHitbox>(true);
         if (hitboxVisual == null)
@@ -227,6 +229,8 @@ public class PlayerAttack : MonoBehaviour
 
     private void OnAttackInput()
     {
+        if (!isActiveAndEnabled || UiModal.IsOpen || dash != null && dash.IsDashing)
+            return;
         if (health != null && health.IsDead)
             return;
 

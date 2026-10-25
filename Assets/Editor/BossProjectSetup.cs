@@ -301,26 +301,8 @@ public static class BossProjectSetup
         var group = new GameObject("Gameplay HUD").transform; group.SetParent(parent, false);
         var sharedPrefab = CommonCombatProjectSetup.EnsureHudPrefab();
         var worldView = ((GameObject)PrefabUtility.InstantiatePrefab(sharedPrefab.gameObject, group)).GetComponent<CombatantHudView>();
-        var playerObject = new GameObject("Player gameplay HUD",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler));
-        playerObject.transform.SetParent(group,false);
-        var playerCanvas = playerObject.GetComponent<Canvas>(); playerCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        playerCanvas.sortingOrder = 80; playerCanvas.enabled = false;
-        playerObject.GetComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-        var playerPanel = Image("Player health panel",playerObject.transform,new Color(.84f,.84f,.84f,.94f));
-        playerPanel.rectTransform.anchorMin = playerPanel.rectTransform.anchorMax = playerPanel.rectTransform.pivot = Vector2.zero;
-        playerPanel.rectTransform.sizeDelta = new Vector2(228f,32f); playerPanel.rectTransform.anchoredPosition = new Vector2(24f,24f);
-        var hpLabel = Label("HP label",playerPanel.transform,new Vector2(-91f,-16f),new Vector2(36f,28f),16);
-        hpLabel.text = "HP"; hpLabel.color = new Color(.08f,.08f,.08f);
-        var playerBackground = Image("Player health background",playerPanel.transform,new Color(.72f,.72f,.72f));
-        Anchors(playerBackground.rectTransform,new Vector2(.24f,.34f),new Vector2(.93f,.66f));
-        var playerFill = GaugeFill("Player health fill",playerBackground.transform);
-        var playerState = Label("Player state",playerObject.transform,new Vector2(266f,40f),new Vector2(74f,26f),16);
-        playerState.rectTransform.anchorMin = playerState.rectTransform.anchorMax = new Vector2(0f,0f);
-        playerState.rectTransform.pivot = new Vector2(0f,.5f); playerState.alignment = TextAnchor.MiddleLeft;
-        playerState.color = new Color(1f,.62f,.38f);
         var hud = parent.GetComponent<BossGameplayHud>(); if (hud == null) hud = parent.gameObject.AddComponent<BossGameplayHud>();
-        Set(hud,"worldView",worldView); Set(hud,"playerCanvas",playerCanvas);
-        Set(hud,"playerHealthFill",playerFill); Set(hud,"playerState",playerState);
+        Set(hud,"worldView",worldView);
         return hud;
     }
 
