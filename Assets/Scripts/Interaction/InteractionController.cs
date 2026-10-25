@@ -32,6 +32,9 @@ public class InteractionController : MonoBehaviour
     [Tooltip("씬 로드 시 이름에 이 문자열이 들어간 오브젝트를 상점으로 자동 등록한다.")]
     [SerializeField] private string autoRegisterShopHint = "Shop";
 
+    [Tooltip("씬 로드 시 이름에 이 문자열이 들어간 오브젝트를 재단으로 자동 등록한다.")]
+    [SerializeField] private string autoRegisterFoundationHint = "Foundation";
+
     [Header("진단")]
     [Tooltip("플레이 중 상태를 콘솔에 남긴다.")]
     [SerializeField] private bool logDiagnostics = false;
@@ -94,7 +97,7 @@ public class InteractionController : MonoBehaviour
     private void Start()
     {
         EnsurePrompt();
-        AutoRegisterShops();
+        AutoRegisterInteractables();
         ResolvePlayer();
         LogSceneSummary("Start");
     }
@@ -105,7 +108,7 @@ public class InteractionController : MonoBehaviour
         player = null;
         current = null;
         EnsurePrompt();
-        AutoRegisterShops();
+        AutoRegisterInteractables();
         LogSceneSummary($"씬 로드({scene.name})");
     }
 
@@ -118,10 +121,17 @@ public class InteractionController : MonoBehaviour
         }
     }
 
-    // 씬에 "Shop" 이름으로 배치된 오브젝트를 상점으로 승격한다.
-    private void AutoRegisterShops()
+    // 씬에 이름으로 배치된 오브젝트를 상호작용 지점으로 승격한다.
+    // 상점("Shop")과 재단("Foundation")을 자동 등록한다.
+    private void AutoRegisterInteractables()
     {
-        if (string.IsNullOrEmpty(autoRegisterShopHint))
+        AutoRegisterByHint(autoRegisterShopHint, typeof(ShopInteractable), "상점");
+        AutoRegisterByHint(autoRegisterFoundationHint, typeof(FoundationInteractable), "재단");
+    }
+
+    private void AutoRegisterByHint(string hint, System.Type componentType, string label)
+    {
+        if (string.IsNullOrEmpty(hint) || componentType == null)
         {
             return;
         }
@@ -137,13 +147,13 @@ public class InteractionController : MonoBehaviour
                 continue;
             }
 
-            // 런타임 UI([...])는 이름에 Shop이 들어가도 제외한다.
+            // 런타임 UI([...])는 이름에 힌트가 들어가도 제외한다.
             if (t.name.Length > 0 && t.name[0] == '[')
             {
                 continue;
             }
 
-            if (t.name.IndexOf(autoRegisterShopHint, System.StringComparison.OrdinalIgnoreCase) < 0)
+            if (t.name.IndexOf(hint, System.StringComparison.OrdinalIgnoreCase) < 0)
             {
                 continue;
             }
@@ -156,12 +166,19 @@ public class InteractionController : MonoBehaviour
                 continue;
             }
 
-            if (t.GetComponent<ShopInteractable>() == null)
+            if (t.GetComponent(componentType) == null)
             {
-                t.gameObject.AddComponent<ShopInteractable>();
-                Debug.Log($"[상호작용] '{t.name}' 오브젝트를 상점으로 자동 등록했습니다.");
+                t.gameObject.AddComponent(componentType);
+                Debug.Log($"[상호작용] '{t.name}' 오브젝트를 {label}으로 자동 등록했습니다.");
             }
         }
+    }
+
+    // 씬에 "Shop" 이름으로 배치된 오브젝트를 상점으로 승격한다.
+    // (구버전 호환: 내부적으로 AutoRegisterByHint를 쓴다)
+    private void AutoRegisterShops()
+    {
+        AutoRegisterByHint(autoRegisterShopHint, typeof(ShopInteractable), "상점");
     }
 
     private void Update()
