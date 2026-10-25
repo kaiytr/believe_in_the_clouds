@@ -228,7 +228,7 @@ public class DogChargeAttack : EnemyAttack
             damageable = player.GetComponentInChildren<IDamageable>();
         playerContactAppliedHarm = damageable != null &&
                                    damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
-        if (playerContactAppliedHarm) RecordPlayerHpDamage(CurrentAttackId);
+        if (playerContactAppliedHarm) NotifyPlayerHpDamageApplied(CurrentAttackId);
     }
 
     private bool IsObstacle(int layer)

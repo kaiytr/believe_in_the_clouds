@@ -599,6 +599,147 @@ public sealed class BossCombatPlayModeTests
         yield return Capture("11-debug-details-1024x576",1024,576);
     }
 
+    private PlayerAttack CreateRealPlayerAttack(int steps = 1, float windup = .12f, float lunge = 0f)
+    {
+        var attack = player.gameObject.AddComponent<PlayerAttack>();
+        var combo = new PlayerAttack.ComboStep[steps];
+        for (int i = 0; i < steps; i++) combo[i] = new PlayerAttack.ComboStep
+        {
+            name = "Integration swing " + i, damage = 2f,
+            hitboxSize = new Vector2(1.5f, 1.5f), hitboxOffset = Vector2.right,
+            windupTime = windup, recoveryTime = .04f, comboWindow = .2f, lungeDistance = lunge
+        };
+        Set(attack, "comboSteps", combo);
+        Set(attack, "finishHitStop", 0f);
+        Set(player.GetComponent<PlayerMove>(), "isGrounded", true);
+        return attack;
+    }
+
+    private static void AttackInput(PlayerAttack attack) => typeof(PlayerAttack)
+        .GetMethod("OnAttackInput", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(attack, null);
+
+    private void FacePlayer(float direction)
+    {
+        Vector3 scale = player.transform.localScale;
+        scale.x = Mathf.Abs(scale.x) * direction;
+        player.transform.localScale = scale;
+    }
+
+    [UnityTest]
+    public IEnumerator RealPlayerAttackAttemptsRequireStartingRangeAndDirectionEvenWhenTheSwingMisses()
+    {
+        var attack = CreateRealPlayerAttack();
+        var signals = new List<PlayerCombatSignal>();
+        player.GetComponent<PlayerCombatEvents>().SignalPublished += value =>
+        { if (value.Target == boss.gameObject) signals.Add(value); };
+        float hp = boss.CurrentHp;
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 10f); FacePlayer(1f);
+        AttackInput(attack); yield return Until(() => !attack.IsAttacking);
+        Assert.That(signals, Is.Empty, "A distant swing must not count as attacking this boss.");
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 1.2f); FacePlayer(-1f);
+        AttackInput(attack); yield return Until(() => !attack.IsAttacking);
+        Assert.That(signals, Is.Empty, "A swing facing away must not count as attacking this boss.");
+
+        data.StareDuration = 2f; data.AttackSignalMode = BossAttackSignalMode.Attempt;
+        boss.ForcePatternForTest(BossPatternKind.NoAttackBelief);
+        yield return Until(() => boss.ConditionRemaining > 0f);
+        hp = boss.CurrentHp; // This phase-two pattern moves the fixture to its phase threshold.
+        FacePlayer(1f); AttackInput(attack);
+        yield return Until(() => signals.Count > 0);
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 10f);
+        yield return Until(() => !attack.IsAttacking);
+        Assert.That(signals.Count, Is.EqualTo(1));
+        Assert.That(signals[0].Type, Is.EqualTo(PlayerCombatSignalType.AttackAttempt));
+        Assert.That(boss.CurrentHp, Is.EqualTo(hp));
+        Assert.That(boss.CurrentBelief, Is.EqualTo(data.MaxBelief - data.BeliefReduction));
+    }
+
+    [UnityTest]
+    public IEnumerator RealPlayerHitOnALateEntrantDoesNotInventAStartingAttackAttempt()
+    {
+        var attack = CreateRealPlayerAttack(windup: .25f);
+        var signals = new List<PlayerCombatSignal>();
+        player.GetComponent<PlayerCombatEvents>().SignalPublished += value =>
+        { if (value.Target == boss.gameObject) signals.Add(value); };
+        data.StareDuration = 2f; data.AttackSignalMode = BossAttackSignalMode.Attempt;
+        boss.ForcePatternForTest(BossPatternKind.NoAttackBelief);
+        yield return Until(() => boss.ConditionRemaining > 0f);
+        float hp = boss.CurrentHp;
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 10f); FacePlayer(1f);
+        AttackInput(attack); yield return null;
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 1.2f);
+        yield return Until(() => !attack.IsAttacking);
+        Assert.That(signals.Count, Is.EqualTo(1));
+        Assert.That(signals[0].Type, Is.EqualTo(PlayerCombatSignalType.HitConfirmed));
+        Assert.That(boss.CurrentHp, Is.EqualTo(hp - 2f * data.MaintainedDamageMultiplier).Within(.001f));
+        Assert.That(boss.CurrentBelief, Is.EqualTo(data.MaxBelief));
+    }
+
+    [UnityTest]
+    public IEnumerator RealFourHitComboUsesFourIdsAndDeduplicatesMultipleBossColliders()
+    {
+        var extra = new GameObject("Additional boss hit collider");
+        extra.transform.SetParent(boss.transform, false);
+        extra.layer = boss.gameObject.layer; extra.AddComponent<BoxCollider2D>().isTrigger = true;
+        var attack = CreateRealPlayerAttack(steps: 4, windup: .04f);
+        var attempts = new HashSet<long>(); var hits = new HashSet<long>();
+        int confirmed = 0, doctrines = 0;
+        player.GetComponent<PlayerCombatEvents>().SignalPublished += value =>
+        {
+            if (value.Target != boss.gameObject) return;
+            if (value.Type == PlayerCombatSignalType.AttackAttempt) attempts.Add(value.AttackId);
+            if (value.Type == PlayerCombatSignalType.HitConfirmed) { hits.Add(value.AttackId); confirmed++; }
+        };
+        Action<DoctrineEventData> listener = evt =>
+        { if (evt.Condition == ConditionType.OnAttack && evt.SubjectObject == player.gameObject) doctrines++; };
+        DoctrineEventBus.EventRaised += listener;
+        try
+        {
+            PutPlayer((Vector2)boss.transform.position + Vector2.left * 1.2f); FacePlayer(1f);
+            float hp = boss.CurrentHp;
+            AttackInput(attack);
+            float deadline = Time.time + 3f;
+            while (attack.IsAttacking && Time.time < deadline) { AttackInput(attack); yield return null; }
+            Assert.That(attack.IsAttacking, Is.False);
+            Assert.That(attempts.Count, Is.EqualTo(4)); Assert.That(hits.Count, Is.EqualTo(4));
+            CollectionAssert.AreEquivalent(attempts, hits);
+            Assert.That(confirmed, Is.EqualTo(4)); Assert.That(doctrines, Is.EqualTo(4));
+            Assert.That(boss.CurrentHp, Is.EqualTo(hp - 8f * data.MaintainedDamageMultiplier).Within(.001f));
+        }
+        finally { DoctrineEventBus.EventRaised -= listener; Object.Destroy(extra); }
+    }
+
+    [UnityTest]
+    public IEnumerator PlayerSwingCancellationDisposesTheAttackAndNeverAppliesItsPendingHit()
+    {
+        var attack = CreateRealPlayerAttack(windup: .3f);
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 1.2f); FacePlayer(1f);
+        float hp = boss.CurrentHp;
+        AttackInput(attack); yield return null;
+        var context = (PlayerAttackContext)typeof(PlayerAttack).GetField("activeSwing",
+            BindingFlags.Instance | BindingFlags.NonPublic).GetValue(attack);
+        Assert.That(context, Is.Not.Null);
+        attack.enabled = false;
+        Assert.That(context.TryHit(boss, 100f), Is.False);
+        Assert.That(player.GetComponent<PlayerMove>().ControlLocked, Is.False);
+        yield return new WaitForSeconds(.35f);
+        Assert.That(boss.CurrentHp, Is.EqualTo(hp));
+        Assert.That(attack.IsAttacking, Is.False);
+    }
+
+    [UnityTest]
+    public IEnumerator PlayerSwingAttemptIncludesItsLungeReachAtTheStart()
+    {
+        var attack = CreateRealPlayerAttack(windup: .2f, lunge: 2f);
+        int attempts = 0;
+        player.GetComponent<PlayerCombatEvents>().SignalPublished += value =>
+        { if (value.Target == boss.gameObject && value.Type == PlayerCombatSignalType.AttackAttempt) attempts++; };
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 3f); FacePlayer(1f);
+        AttackInput(attack); yield return null;
+        Assert.That(attempts, Is.EqualTo(1), "The windup's reachable forward sweep belongs to this attack.");
+        attack.CancelAttack();
+    }
+
     private IEnumerator Capture(string filename,int width=1600,int height=900)
     {
         yield return null;
