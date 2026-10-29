@@ -99,6 +99,74 @@ public class DoctrineInventory : MonoBehaviour
         }
     }
 
+    /// <summary>합성 시 조각 1개를 소모한다. 없으면 false.</summary>
+    public bool ConsumeEntry(ShopEntry entry)
+    {
+        if (entry == null)
+        {
+            return false;
+        }
+
+        switch (entry.Column)
+        {
+            case ShopColumn.Subject: return ConsumeSubject(entry.Subject);
+            case ShopColumn.Condition: return ConsumeCondition(entry.Condition);
+            case ShopColumn.Result: return ConsumeResult(entry.Result);
+            default: return false;
+        }
+    }
+
+    public bool ConsumeSubject(SubjectType subject)
+    {
+        if (subject == SubjectType.None)
+        {
+            return false;
+        }
+
+        if (!subjects.TryGetValue(subject, out int count) || count <= 0)
+        {
+            return false;
+        }
+
+        subjects[subject] = count - 1;
+        Changed?.Invoke();
+        return true;
+    }
+
+    public bool ConsumeCondition(ConditionType condition)
+    {
+        if (condition == ConditionType.None)
+        {
+            return false;
+        }
+
+        if (!conditions.TryGetValue(condition, out int count) || count <= 0)
+        {
+            return false;
+        }
+
+        conditions[condition] = count - 1;
+        Changed?.Invoke();
+        return true;
+    }
+
+    public bool ConsumeResult(ResultType result)
+    {
+        if (result == ResultType.None)
+        {
+            return false;
+        }
+
+        if (!results.TryGetValue(result, out int count) || count <= 0)
+        {
+            return false;
+        }
+
+        results[result] = count - 1;
+        Changed?.Invoke();
+        return true;
+    }
+
     public int CountSubject(SubjectType subject)
     {
         return subjects.TryGetValue(subject, out int count) ? count : 0;

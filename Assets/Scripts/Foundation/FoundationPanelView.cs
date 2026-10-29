@@ -9,12 +9,12 @@ using UnityEngine.UI;
 //   ┌ 왼쪽 ──────────┬ 오른쪽 ─────────────────────┐
 //   │ [주어][조건][결과] │ 교리1 [주어][조건][결과]        │
 //   │ ┌ 교리 카드 ┐     │       [발동 효과 설명]          │
-//   │ ├ 교리 카드 ┤     │ 교리2 ...                       │
-//   │ └ 교리 카드 ┘     │ 교리3 ...                       │
+//   │ ├ 교리 카드 ┤     │ 교리2 (틀만)                   │
+//   │ └ 교리 카드 ┘     │ 교리3 (틀만)                   │
 //   └───────────────┴──────────────────────────────┘
 //
-// 왼쪽: 탭으로 주어/조건/결과를 골라 보고, 카드를 눌러 선택한다. (기능 있음)
-// 오른쪽: 교리 조합 슬롯 틀만 있다. (아직 동작 없음)
+// 왼쪽: 탭(주어/조건/결과)으로 인벤토리 조각을 골라 보고, 카드를 눌러 선택한다. (기능 있음)
+// 오른쪽: 교리1만 슬롯 배치 + 합성 버튼이 동작한다. 교리2·3은 틀만 있다.
 // 표시만 담당하고, 어떤 카드를 보일지는 FoundationScreen이 정한다.
 public class FoundationPanelView : MonoBehaviour
 {
@@ -40,7 +40,7 @@ public class FoundationPanelView : MonoBehaviour
     private static readonly Color SlotBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
     private static readonly Color DescriptionBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
 
-    private const int DoctrineGroupCount = 3;
+    private const int DoctrineGroupCount = 3; // 오른쪽 교리1~3 그룹 수
 
     private Canvas canvas;
     private GameObject content;
@@ -55,6 +55,15 @@ public class FoundationPanelView : MonoBehaviour
     private readonly List<Image> itemImages = new List<Image>();
     private readonly List<int> itemEntryIndices = new List<int>();
 
+    // 오른쪽 교리1 슬롯 (클릭 가능).
+    private readonly Dictionary<ShopColumn, Text> slotTexts = new Dictionary<ShopColumn, Text>();
+    private readonly Dictionary<ShopColumn, Image> slotImages = new Dictionary<ShopColumn, Image>();
+
+    // 교리1 설명 줄 + 합성 버튼.
+    private Text doctrine1Description;
+    private Button combineButton;
+    private Text combineButtonText;
+
     public bool IsOpen => isOpen;
 
     /// <summary>탭을 눌렀을 때.</summary>
@@ -62,6 +71,12 @@ public class FoundationPanelView : MonoBehaviour
 
     /// <summary>목록 카드를 눌렀을 때. (EntryIndex)</summary>
     public event Action<int> ItemClicked;
+
+    /// <summary>교리1의 슬롯을 눌렀을 때. (Subject/Condition/Result)</summary>
+    public event Action<ShopColumn> SlotClicked;
+
+    /// <summary>교리1 합성 버튼을 눌렀을 때.</summary>
+    public event Action CombineClicked;
 
     public static FoundationPanelView BuildRuntime()
     {
@@ -292,7 +307,56 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    // ---------------- 오른쪽: 교리 조합 틀 (아직 동작 없음) ----------------
+    /// <summary>교리1 슬롯 3개의 표시를 갱신한다. 비어 있으면 기본 라벨(주어/조건/결과).</summary>
+    public void SetDoctrine1Slots(string subjectLabel, string conditionLabel, string resultLabel)
+    {
+        SetSlotLabel(ShopColumn.Subject, subjectLabel, "주어");
+        SetSlotLabel(ShopColumn.Condition, conditionLabel, "조건");
+        SetSlotLabel(ShopColumn.Result, resultLabel, "결과");
+    }
+
+    private void SetSlotLabel(ShopColumn column, string label, string fallback)
+    {
+        if (!slotTexts.TryGetValue(column, out Text text) || text == null)
+        {
+            return;
+        }
+
+        text.font = UiTheme.GetFont();
+        text.text = string.IsNullOrEmpty(label) ? fallback : label;
+
+        if (slotImages.TryGetValue(column, out Image image) && image != null)
+        {
+            image.color = string.IsNullOrEmpty(label) ? SlotBackground : CardSelected;
+        }
+    }
+
+    /// <summary>교리1 설명 줄을 갱신한다.</summary>
+    public void SetDoctrine1Description(string description)
+    {
+        if (doctrine1Description != null)
+        {
+            doctrine1Description.font = UiTheme.GetFont();
+            doctrine1Description.text = description ?? string.Empty;
+        }
+    }
+
+    /// <summary>합성 버튼 활성/라벨을 바꾼다.</summary>
+    public void SetCombineEnabled(bool enabled, string label)
+    {
+        if (combineButton != null)
+        {
+            combineButton.interactable = enabled;
+        }
+
+        if (combineButtonText != null)
+        {
+            combineButtonText.font = UiTheme.GetFont();
+            combineButtonText.text = label ?? (enabled ? "합성" : "합성");
+        }
+    }
+
+    // ---------------- 오른쪽: 교리1 조합 (동작) + 교리2·3 틀 ----------------
 
     private void BuildRight(Transform parent)
     {
@@ -311,14 +375,13 @@ public class FoundationPanelView : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = true;
 
-        for (int i = 0; i < DoctrineGroupCount; i++)
-        {
-            BuildDoctrineGroup(right.transform, i + 1);
-        }
+        BuildDoctrineGroup(right.transform, 1, true);
+        BuildDoctrineGroup(right.transform, 2, false);
+        BuildDoctrineGroup(right.transform, 3, false);
     }
 
-    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄.
-    private void BuildDoctrineGroup(Transform parent, int number)
+    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄 (+ 교리1만 합성 버튼).
+    private void BuildDoctrineGroup(Transform parent, int number, bool interactive)
     {
         GameObject group = UiTheme.CreateImage("Doctrine" + number, parent, GroupBackground);
 
@@ -343,9 +406,9 @@ public class FoundationPanelView : MonoBehaviour
         slotLayout.childForceExpandWidth = true;
         slotLayout.childForceExpandHeight = true;
 
-        BuildSlot(slotRow.transform, "주어");
-        BuildSlot(slotRow.transform, "조건");
-        BuildSlot(slotRow.transform, "결과");
+        BuildSlot(slotRow.transform, ShopColumn.Subject, "주어", interactive);
+        BuildSlot(slotRow.transform, ShopColumn.Condition, "조건", interactive);
+        BuildSlot(slotRow.transform, ShopColumn.Result, "결과", interactive);
 
         // 설명 줄.
         GameObject description = UiTheme.CreateImage("Description", group.transform, DescriptionBackground);
@@ -357,14 +420,55 @@ public class FoundationPanelView : MonoBehaviour
             $"교리{number}  ·  발동되면 무슨 일이 벌어지는지", 17,
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform, 6f);
+
+        if (interactive)
+        {
+            doctrine1Description = text;
+
+            // 합성 버튼: 설명 줄 아래에 둔다.
+            GameObject buttonGo = UiTheme.CreateImage("CombineButton", group.transform,
+                new Color(0.45f, 0.5f, 0.62f, 1f));
+            LayoutElement buttonLayout = buttonGo.AddComponent<LayoutElement>();
+            buttonLayout.preferredHeight = 52f;
+            buttonLayout.minHeight = 44f;
+
+            Image buttonImage = buttonGo.GetComponent<Image>();
+            buttonImage.raycastTarget = true;
+
+            combineButtonText = UiTheme.CreateText("Label", buttonGo.transform,
+                "합성", 20, Color.white, TextAnchor.MiddleCenter);
+            UiTheme.Stretch(combineButtonText.rectTransform);
+
+            combineButton = buttonGo.AddComponent<Button>();
+            combineButton.targetGraphic = buttonImage;
+            combineButton.navigation = new Navigation { mode = Navigation.Mode.None };
+            combineButton.onClick.AddListener(() => CombineClicked?.Invoke());
+            combineButton.interactable = false;
+        }
     }
 
-    private static void BuildSlot(Transform parent, string label)
+    private void BuildSlot(Transform parent, ShopColumn column, string defaultLabel, bool interactive)
     {
-        GameObject slot = UiTheme.CreateImage("Slot_" + label, parent, SlotBackground);
-        Text text = UiTheme.CreateText("Label", slot.transform, label, 20,
+        GameObject slot = UiTheme.CreateImage("Slot_" + defaultLabel, parent, SlotBackground);
+        Image image = slot.GetComponent<Image>();
+
+        Text text = UiTheme.CreateText("Label", slot.transform, defaultLabel, 20,
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform);
+
+        if (!interactive)
+        {
+            return;
+        }
+
+        image.raycastTarget = true;
+        slotTexts[column] = text;
+        slotImages[column] = image;
+
+        Button button = slot.AddComponent<Button>();
+        button.targetGraphic = image;
+        button.navigation = new Navigation { mode = Navigation.Mode.None };
+        button.onClick.AddListener(() => SlotClicked?.Invoke(column));
     }
 
     // ---------------- 열기/닫기 ----------------
