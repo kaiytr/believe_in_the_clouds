@@ -1,13 +1,13 @@
 # 재화 시스템 개발명세서
 
 - 작성일: 2026-10-31
-- 상태: **현재 범위의 게임 규칙 확정. 코드·API·테스트는 아직 구현하지 않는다.**
+- 상태: **2026-11-01 사용자 지시로 구현 시작.** 최신 검증 결과는 [구현 결과서](CurrencySystem_ImplementationStatus.md)를 따른다.
 - 확정 범위: **재화 시스템을 테스트 씬에서 독립 검증. 메인 플레이 루프 연동은 후속 작업.**
 - 메인 플레이 루프 상태: **미구현. 로비·분기·스테이지 진행·보스·엔딩 전체 흐름은 향후 구현 대상.**
 - 초기 자산: **0코인·0조각·초기 교리 지급 없음·장착 없음.**
 - 사망 규칙: **전부 미장착 → 보유 조각 목록 확정 → 그 목록의 30%를 버림해 무작위 소실.**
 - [상세기획](CurrencySystem_Design.md) / [개발자·AI 가이드](CurrencySystem_Guide.md)
-- 구현 시작은 사용자 별도 지시 이후다.
+- 공통 API와 테스트 씬 사용법은 [가이드](CurrencySystem_Guide.md), [테스트 가이드](CurrencySystem_TestGuide.md)에 있다.
 
 ## 1. 기존 프로젝트와 변경 예정 지점
 
@@ -62,7 +62,7 @@ Unity 메인 스레드에서 호출하는 안이다. 백그라운드 작업 결�
 | CurrencyResult Currency.TryGrantWithEffect(int amount, Vector3 position, string reason, string transactionId = null, Camera sourceCamera = null) | 예약·저장 후 드롭/비행 연출 |
 | CurrencyResult Currency.TrySpend(int amount, string reason, string transactionId = null) | 잔액 검사 후 소비 |
 | event Action&lt;CurrencyChange&gt; Currency.Changed | 커밋된 변경 알림 |
-| EconomyResult EconomyService.TryPurchase(PurchaseRequest request) | 비용과 조각을 원자적으로 변경 |
+| CurrencyResult EconomyService.TryPurchase(PurchaseRequest request) | 비용과 조각을 원자적으로 변경 |
 
 TryGrantWithEffect 성공은 보상 권리의 접수·저장 성공이며 도착 완료를 뜻하지 않는다. 실제 도착 정산은 서비스 내부가 처리한다.
 
@@ -199,7 +199,7 @@ Load 결과: Missing/Loaded/RecoveredBackup/Invalid/FutureVersion. Missing만 �
 
 ## 9. 검증 계획
 
-아직 구현/테스트 실행은 하지 않는다. 후속 구현 지시를 받은 뒤 테스트 씬과 EditMode/PlayMode에서 다음을 검증한다.
+테스트 씬과 EditMode/PlayMode에서 아래 항목을 검증한다. 실행 결과와 남은 제한은 [구현 결과서](CurrencySystem_ImplementationStatus.md)에 기록한다.
 
 | 범위 | 검증 |
 | --- | --- |
@@ -234,4 +234,4 @@ Unity 테스트는 설치된 6000.3.5f2를 사용한다. [Unity 공식 명령행
 6. 테스트 씬의 경제 저장/복원, 중복·실패 시나리오.
 7. 자동 테스트·화면 검증·구현 결과서.
 
-결과서에는 재화 독립 검증 범위와 메인 루프 미연동 상태를 명시한다. 실제 메인 루프 구현은 후속 별도 작업이다. 현재는 문서만 수정하며 코드·프리팹·씬을 변경하지 않는다.
+결과서에는 재화 독립 검증 범위와 메인 루프 미연동 상태를 명시한다. 실제 메인 루프 구현은 후속 별도 작업이다.

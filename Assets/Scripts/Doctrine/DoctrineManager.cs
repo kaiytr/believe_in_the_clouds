@@ -155,6 +155,21 @@ public class DoctrineManager : MonoBehaviour
         return true;
     }
 
+    public void ClearForOwner(GameObject owner)
+    {
+        if (owner == null) return;
+        // Remove by entry/owner, not by rule: an enemy can share the same rule.
+        for (int i = activeDoctrines.Count - 1; i >= 0; i--)
+        {
+            ActiveDoctrine entry = activeDoctrines[i];
+            if (entry.Owner != owner) continue;
+            activeDoctrines.RemoveAt(i);
+            RemoveCooldownsFor(entry);
+            Deactivated?.Invoke(entry);
+        }
+        owner.GetComponent<DoctrineStats>()?.ClearAllBuffs();
+    }
+
     public void Clear()
     {
         // Reset persistent speed buffs held by owners.

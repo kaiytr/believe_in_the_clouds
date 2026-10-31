@@ -21,6 +21,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     private Coroutine invulnerabilityRoutine;
     private SpriteRenderer[] spriteRenderers;
     private bool[] originalRendererStates;
+    private PlayerDeathCoordinator deathCoordinator;
 
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
@@ -35,6 +36,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     private void Awake()
     {
         currentHp = maxHp;
+        deathCoordinator = GetComponent<PlayerDeathCoordinator>();
+        if (deathCoordinator == null) deathCoordinator = gameObject.AddComponent<PlayerDeathCoordinator>();
 
         if (bodyCollider == null)
             bodyCollider = GetComponent<Collider2D>();
@@ -46,6 +49,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         for (int i = 0; i < spriteRenderers.Length; i++)
             originalRendererStates[i] = spriteRenderers[i].enabled;
     }
+
+    private void Start() { deathCoordinator.BeginLife(); }
 
     public bool TakeDamage(DamageInfo damageInfo)
     {
@@ -68,6 +73,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             return false;
 
         currentHp = Mathf.Max(0f, currentHp - damage);
+        if (currentHp <= 0f) Currency.Service?.BlockDefeatRewards();
         Debug.Log($"[Player] Damage: {damage} / HP: {currentHp}/{maxHp}");
 
         if (DoctrineEventBus.HasListeners)
@@ -102,6 +108,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     public void ResetHealth()
     {
+        if (Currency.Service != null && Currency.Service.HasPendingDeath) return;
         if (invulnerabilityRoutine != null)
         {
             StopCoroutine(invulnerabilityRoutine);
@@ -112,6 +119,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         isInvulnerable = false;
         lowHealthNotified = false;
         RestoreRenderers();
+        deathCoordinator?.BeginLife();
     }
 
     private void StartInvulnerability()
@@ -163,12 +171,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         RestoreRenderers();
         Debug.Log("[Player] Dead");
 
-        if (DoctrineEventBus.HasListeners)
-            DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
+        deathCoordinator.CaptureDeath(() =>
+        {
+            if (DoctrineEventBus.HasListeners)
+                DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
+        });
     }
 
     private void OnDisable()
     {
         RestoreRenderers();
     }
+
+    private void OnDestroy() { DoctrineManager.Instance?.ClearForOwner(gameObject); }
 }

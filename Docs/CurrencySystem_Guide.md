@@ -4,13 +4,13 @@
 
 다른 로컬에서 이어받는 경우 [개발 인수인계](CurrencySystem_Handoff.md)의 현재 상태·이동 파일·시작 절차부터 확인한다.
 
-**확정 범위: 재화 시스템을 테스트 씬에서 독립 검증한다. 메인 플레이 루프 연동은 나중에 진행한다. 현재는 문서만 수정하며 구현을 시작하지 않는다.**
+**확정 범위: 재화 시스템을 테스트 씬에서 독립 검증한다. 메인 플레이 루프 연동은 나중에 진행한다. 2026-11-01 사용자 지시로 구현을 시작했다.**
 
-**이 문서는 향후 구현할 API의 사용 계약이다. 현재 공통 API는 구현되지 않았다. 아래 예제를 기존 프로젝트에서 실행할 수 있다고 가정하지 않는다.**
+**공통 API는 Assets/Scripts/Economy/에 구현했다. 아래 예제의 Show 계열은 호출 측에서 제공하는 UI 예시다.** 최신 검증 상태는 [구현 결과서](CurrencySystem_ImplementationStatus.md)를 확인한다.
 
 **메인 플레이 루프도 아직 구현되지 않았다.** 로비 → 분기 선택 → 스테이지 역할 수행 → 로비 복귀 → 다음 분기 → 보스 → 엔딩은 목표 흐름이다. 실제 로비·분기·이어 하기·엔딩 연동은 후속 작업이며 이번 재화 검증에 포함하지 않는다. 테스트 어댑터가 필요한 처치·사망·장착 상태를 제공한다.
 
-규칙의 근거는 [상세기획](CurrencySystem_Design.md), 내부 구조는 [개발명세서](CurrencySystem_TechnicalSpec.md)를 따른다. 지금은 문서 검토 단계이며 사용자 구현 지시 전에는 게임 코드를 작성하지 않는다.
+규칙의 근거는 [상세기획](CurrencySystem_Design.md), 내부 구조는 [개발명세서](CurrencySystem_TechnicalSpec.md)를 따른다.
 
 현재 재화 검증 범위의 게임 규칙은 모두 확정됐다. 연출 수치는 테스트에서 조정할 초기값이며, 후속 콘텐츠 관련 결정은 나중에 진행한다.
 
@@ -27,7 +27,7 @@
 - 저장 실패 거래는 공개 자산에 반영하지 않는다.
 - 지급 상한 때문에 실제 처리량이 요청량보다 작을 수 있으므로 결과를 확인한다.
 
-## 2. 계획된 공통 API 빠른 참조
+## 2. 공통 API 빠른 참조
 
 | 필요 | 호출 |
 | --- | --- |
@@ -45,7 +45,7 @@
 
 ## 3. 사용 예제
 
-다음 코드는 **제안 API를 설명하는 예시**다. 최종 구현에서 이름이 달라지면 이 문서도 같이 갱신한다.
+다음 코드는 구현된 공통 API의 사용 예시다. Unity 메인 스레드에서 호출한다.
 
 ### 3.1 연출 없는 일회성 보상
 
@@ -210,8 +210,8 @@ void HandleCurrencyChanged(CurrencyChange change)
 
 기존 코드: Assets/Scripts/UI/DoctrineHud.cs, Assets/Scripts/Shop/, Assets/Scripts/Doctrine/DoctrineInventory.cs, Assets/Scripts/Doctrine/DoctrineManager.cs, Assets/Scripts/Enemy/Core/EnemyUnit.cs, Assets/Scripts/Combat/PlayerHealth.cs.
 
-예정 신규 경제 코드 위치는 Assets/Scripts/Economy/이며 아직 구현하지 않았다. 상세 책임·테스트 어댑터·범위는 [개발명세서](CurrencySystem_TechnicalSpec.md)를 따른다.
+경제 코드 위치는 Assets/Scripts/Economy/다. Currency.Service.TryPurchase(new PurchaseRequest(cardIds, transactionId))는 CurrencyResult를 반환한다. 조각 지급에는 Currency.Service.TryGrantPiece(cardId, amount, reason, transactionId)를 사용한다. DoctrineInventory의 기존 Add/Count/Describe는 같은 원장에 연결한 호환 파사드다.
 
 사망 효과와 처치 보상(P03), 상점 재고·반복 구매(P04), 드롭 분포·환경 처치 보상·상한과 초과분 처리는 사용자 제안 채택으로 모두 확정됐다. [상세기획 10장](CurrencySystem_Design.md#10-규칙-확정과-후속-검토)에 확정 상태, 연출 테스트 초기값, 후속 콘텐츠 결정 보류를 구분해 기록한다.
 
-초기 지급 없음, 전체 미장착 후 단일 조각 목록에서 30% 손실, 테스트 씬 한정 검증, 메인 루프 후속 연동은 사용자 확정 사항이다. 이 항목들을 미결정으로 되돌리거나 작업 범위를 확대하지 않는다. **별도 지시 전에는 구현을 시작하지 않는다.**
+초기 지급 없음, 전체 미장착 후 단일 조각 목록에서 30% 손실, 테스트 씬 한정 검증, 메인 루프 후속 연동은 사용자 확정 사항이다. 이 항목들을 미결정으로 되돌리거나 작업 범위를 확대하지 않는다.

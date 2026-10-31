@@ -1,325 +1,133 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 상점 화면 모듈.
-//
-// - 상점 상호작용이 발생하면 사진과 같은 3열(주어/조건/결과) × 4행 패널을 연다.
-// - 각 열에서 카드 하나씩 고르는 강제 조합이 아니다. 한 장만 골라도 구매된다.
-// - 구매한 조각(주어/조건/결과)은 교리로 바로 활성화되지 않고
-//   DoctrineInventory(가상 인벤토리)에 쌓인다.
-// - 실제 교리 조합/장착은 나중에 재단(Altar)에서 한다.
-// - 상점 규칙(선택/장바구니)만 담당하고, UI 그리기는 ShopPanelView가 한다.
 public class ShopScreen : MonoBehaviour
 {
     public static ShopScreen Instance { get; private set; }
-
     private ShopPanelView panel;
     private ShopInteractable openShop;
-
-    // 열 제한 없이 여러 장을 고를 수 있다 (장바구니).
-    private readonly HashSet<int> selectedSubjects = new HashSet<int>();
-    private readonly HashSet<int> selectedConditions = new HashSet<int>();
-    private readonly HashSet<int> selectedResults = new HashSet<int>();
-
+    private readonly HashSet<string> selected = new HashSet<string>(StringComparer.Ordinal);
+    private string purchaseId;
     public bool IsOpen => panel != null && panel.IsOpen;
     public ShopInteractable OpenShop => openShop;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoBoot()
     {
-        if (Instance != null)
-        {
-            return;
-        }
-
-        GameObject go = new GameObject("[ShopScreen]");
-        DontDestroyOnLoad(go);
-        go.AddComponent<ShopScreen>();
+        if (Instance == null) new GameObject("[ShopScreen]").AddComponent<ShopScreen>();
     }
-
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
         EnsurePanel();
     }
-
-    private void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-    }
-
     private void OnEnable()
     {
         InteractableBehaviour.Interacted += HandleInteracted;
         UiModal.CloseRequested += HandleCloseRequested;
+        Currency.Changed += HandleCurrencyChanged;
     }
-
     private void OnDisable()
     {
         InteractableBehaviour.Interacted -= HandleInteracted;
         UiModal.CloseRequested -= HandleCloseRequested;
+        Currency.Changed -= HandleCurrencyChanged;
+        Close();
     }
-
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        Instance = null;
+        if (panel != null) Destroy(panel.gameObject);
+    }
     private void EnsurePanel()
     {
-        if (panel != null)
-        {
-            return;
-        }
-
+        if (panel != null) return;
         panel = ShopPanelView.BuildRuntime();
         panel.CardClicked += HandleCardClicked;
         panel.BuyClicked += HandleBuyClicked;
         DontDestroyOnLoad(panel.gameObject);
-
-        // uGUI 버튼은 EventSystem이 없으면 클릭을 못 받는다.
         UiEventSystemBoot.Ensure();
     }
-
     private void HandleInteracted(InteractableBehaviour target, GameObject interactor)
     {
-        if (target is not ShopInteractable shop)
-        {
-            return;
-        }
-
-        if (openShop == shop && IsOpen)
-        {
-            Close();
-            return;
-        }
-
-        Open(shop, interactor);
+        if (target is not ShopInteractable shop) return;
+        if (openShop == shop && IsOpen) Close();
+        else Open(shop, interactor);
     }
-
-    private void HandleCloseRequested()
-    {
-        if (IsOpen)
-        {
-            Close();
-        }
-    }
+    private void HandleCloseRequested() { if (IsOpen) Close(); }
+    private void HandleCurrencyChanged(CurrencyChange change) { if (IsOpen) RefreshSummary(); }
 
     public void Open(ShopInteractable shop, GameObject interactor)
     {
-        if (shop == null)
-        {
-            return;
-        }
-
+        if (shop == null) return;
         EnsurePanel();
         openShop = shop;
-
-        // 씬에 EventSystem이 없으면 클릭이 전달되지 않는다.
         UiEventSystemBoot.Ensure();
-
-        ClearSelection();
+        selected.Clear(); purchaseId = null;
         panel.Open(shop.ShopName);
+        RefreshSummary();
         UiModal.Push(this);
-        Debug.Log($"[상점] {shop.ShopName} 열림 ({interactor?.name})");
     }
-
     public void Close()
     {
-        if (!IsOpen)
-        {
-            return;
-        }
-
-        panel.Close();
-        UiModal.Pop(this);
-
-        ShopInteractable closed = openShop;
-        openShop = null;
-        Debug.Log($"[상점] {closed?.ShopName} 닫힘");
+        if (!IsOpen) return;
+        panel.Close(); UiModal.Pop(this); openShop = null;
     }
 
-    private void ClearSelection()
-    {
-        selectedSubjects.Clear();
-        selectedConditions.Clear();
-        selectedResults.Clear();
-        panel.ClearSelection();
-        RefreshSummary();
-    }
-
-    // 각 열 제한 없이 여러 장을 고를 수 있다. 같은 카드를 다시 누르면 해제.
-    // 한 장만 골라도 구매된다 (예: 주어 '일반 적' 하나만).
     private void HandleCardClicked(ShopColumn column, int index)
     {
-        HashSet<int> bucket = Bucket(column);
-        if (bucket.Contains(index))
-        {
-            bucket.Remove(index);
-        }
-        else
-        {
-            bucket.Add(index);
-        }
-
-        Debug.Log($"[상점] 카드 클릭: {column} #{index} → 선택 {DescribeSelection()}");
-
-        SyncSelection(column);
+        var entries = ShopCatalog.GetColumn(column);
+        if (index < 0 || index >= entries.Count) return;
+        string id = entries[index].Id;
+        if (!selected.Remove(id)) selected.Add(id);
+        purchaseId = null;
         RefreshSummary();
     }
 
-    // 구매: 고른 조각들을 교리로 활성화하지 않고 인벤토리에 쌓는다.
-    // 재화 시스템이 아직 없으므로 지금은 "구매 = 즉시 획득"이다.
-    // 한 장만 골라도 구매된다.
     private void HandleBuyClicked()
     {
-        DoctrineInventory inventory = DoctrineInventory.Instance;
-        if (inventory == null)
+        if (selected.Count == 0) return;
+        purchaseId = purchaseId ?? "shop:" + Guid.NewGuid().ToString("N");
+        var result = Currency.Service?.TryPurchase(new PurchaseRequest(selected, purchaseId));
+        if (result == null || !result.Success)
         {
-            panel.SetFooter("인벤토리를 찾을 수 없습니다.");
+            panel.SetFooter(result?.Error == EconomyError.InsufficientFunds ? "코인이 부족합니다. 선택은 유지됩니다." :
+                $"구매 실패: {result?.Error ?? EconomyError.NotReady} · 선택은 유지됩니다.");
             return;
         }
-
-        int bought = 0;
-        bought += BuyBucket(inventory, ShopColumn.Subject, selectedSubjects);
-        bought += BuyBucket(inventory, ShopColumn.Condition, selectedConditions);
-        bought += BuyBucket(inventory, ShopColumn.Result, selectedResults);
-
-        if (bought == 0)
-        {
-            panel.SetFooter("카드를 한 장 이상 고르세요.");
-            panel.SetBuyEnabled(false);
-            return;
-        }
-
-        selectedSubjects.Clear();
-        selectedConditions.Clear();
-        selectedResults.Clear();
-        panel.ClearSelection();
+        int count = selected.Count;
+        selected.Clear(); purchaseId = null;
         RefreshSummary();
-
-        panel.SetFooter($"{inventory.Describe()} · 재단에서 조합하세요.");
-        panel.SetBuyEnabled(false);
-        Debug.Log($"[상점] 조각 구매 {bought}장 → {inventory.Describe()}");
-    }
-
-    private int BuyBucket(DoctrineInventory inventory, ShopColumn column, HashSet<int> bucket)
-    {
-        if (bucket.Count == 0)
-        {
-            return 0;
-        }
-
-        var entries = ShopCatalog.GetColumn(column);
-        int bought = 0;
-        foreach (int index in bucket)
-        {
-            if (index < 0 || index >= entries.Count)
-            {
-                continue;
-            }
-
-            inventory.AddEntry(entries[index]);
-            bought++;
-        }
-
-        return bought;
+        panel.SetFooter($"{count}장 구매 · {result.AppliedAmount:N0}코인 결제 · 보유 {Currency.Balance:N0}");
     }
 
     private void RefreshSummary()
     {
-        SyncAllSelections();
-
-        int total = selectedSubjects.Count + selectedConditions.Count + selectedResults.Count;
-        if (total == 0)
-        {
-            panel.SetSelectionSummary(null, null, null);
-            panel.SetFooter("카드를 한 장 이상 고르세요.");
-            panel.SetBuyEnabled(false);
-            return;
-        }
-
-        panel.SetSelectionSummary(
-            JoinLabels(ShopColumn.Subject, selectedSubjects),
-            JoinLabels(ShopColumn.Condition, selectedConditions),
-            JoinLabels(ShopColumn.Result, selectedResults));
-
-        panel.SetFooter($"선택 {total}장  ·  구매를 누르면 인벤토리에 들어갑니다.");
-        panel.SetBuyEnabled(true);
-    }
-
-    private void SyncAllSelections()
-    {
-        ApplyBucket(ShopColumn.Subject, selectedSubjects);
-        ApplyBucket(ShopColumn.Condition, selectedConditions);
-        ApplyBucket(ShopColumn.Result, selectedResults);
-    }
-
-    private void SyncSelection(ShopColumn column)
-    {
         panel.ClearSelection();
-        ApplyBucket(ShopColumn.Subject, selectedSubjects);
-        ApplyBucket(ShopColumn.Condition, selectedConditions);
-        ApplyBucket(ShopColumn.Result, selectedResults);
-    }
-
-    private void ApplyBucket(ShopColumn column, HashSet<int> bucket)
-    {
-        var entries = ShopCatalog.GetColumn(column);
-        foreach (int index in bucket)
+        long price = 0;
+        var labels = new string[3];
+        foreach (ShopColumn column in Enum.GetValues(typeof(ShopColumn)))
         {
-            if (index >= 0 && index < entries.Count)
+            var entries = ShopCatalog.GetColumn(column);
+            var names = new List<string>();
+            for (int i = 0; i < entries.Count; i++)
             {
-                panel.AddSelection(column, index);
+                if (!selected.Contains(entries[i].Id)) continue;
+                panel.AddSelection(column, i);
+                price += entries[i].Price;
+                names.Add(entries[i].Label);
             }
+            labels[(int)column] = string.Join(", ", names);
         }
-    }
-    private HashSet<int> Bucket(ShopColumn column)
-    {
-        switch (column)
-        {
-            case ShopColumn.Subject: return selectedSubjects;
-            case ShopColumn.Condition: return selectedConditions;
-            default: return selectedResults;
-        }
-    }
-
-    private static string JoinLabels(ShopColumn column, HashSet<int> bucket)
-    {
-        if (bucket.Count == 0)
-        {
-            return null;
-        }
-
-        var entries = ShopCatalog.GetColumn(column);
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        foreach (int index in bucket)
-        {
-            if (index < 0 || index >= entries.Count)
-            {
-                continue;
-            }
-
-            if (sb.Length > 0)
-            {
-                sb.Append(", ");
-            }
-
-            sb.Append(entries[index].Label);
-        }
-
-        return sb.Length > 0 ? sb.ToString() : null;
-    }
-
-    private string DescribeSelection()
-    {
-        return $"주어=[{JoinLabels(ShopColumn.Subject, selectedSubjects) ?? "-"}], " +
-               $"조건=[{JoinLabels(ShopColumn.Condition, selectedConditions) ?? "-"}], " +
-               $"결과=[{JoinLabels(ShopColumn.Result, selectedResults) ?? "-"}]";
+        panel.SetSelectionSummary(labels[0], labels[1], labels[2]);
+        if (!Currency.IsReady)
+            panel.SetFooter("재화 확인 중 · 저장 또는 사망 처리를 완료한 뒤 구매할 수 있습니다.");
+        else
+            panel.SetFooter($"보유 {Currency.Balance:N0} · 선택 {selected.Count}장 · 합계 {price:N0} · 부족 {Math.Max(0, price - Currency.Balance):N0}");
+        panel.SetBuyEnabled(Currency.IsReady && selected.Count > 0 && price <= Currency.Balance);
     }
 }

@@ -35,7 +35,10 @@ public class DoctrineHud : MonoBehaviour
     [Header("재화 표시")]
     [SerializeField] private Vector2 currencyMargin = new Vector2(34f, 22f);
     [SerializeField] private Vector2 currencySize = new Vector2(230f, 44f);
-    [SerializeField] private string currencyLabel = "재화";
+    private Text currencyText;
+    private RectTransform currencyTarget;
+    private float currencyFlashUntil;
+    public static RectTransform CurrencyTarget => instance != null ? instance.currencyTarget : null;
 
     private readonly List<DoctrineSlotView> slots = new List<DoctrineSlotView>();
     private DoctrineManager manager;
@@ -55,7 +58,7 @@ public class DoctrineHud : MonoBehaviour
 
     [Header("확인용 (자동 표시)")]
     [Tooltip("활성 교리도, 연결된 확인용 목록도 없을 때 내장된 예시 3개를 보여준다. 끄면 비어 있을 때 아무 칸도 그리지 않는다.")]
-    [SerializeField] private bool useBuiltInPreview = true;
+    [SerializeField] private bool useBuiltInPreview = false;
 
     private void Awake()
     {
@@ -68,6 +71,9 @@ public class DoctrineHud : MonoBehaviour
         }
 
         instance = this;
+        // New profiles must display their actual empty equipment state.
+        useBuiltInPreview = false;
+        previewDoctrines.Clear();
         DontDestroyOnLoad(gameObject);
     }
 
@@ -82,16 +88,20 @@ public class DoctrineHud : MonoBehaviour
 
     private void OnEnable()
     {
+        Currency.Changed += HandleCurrencyChanged;
         TryBindManager();
     }
 
     private void OnDisable()
     {
+        Currency.Changed -= HandleCurrencyChanged;
         Unbind();
     }
 
     private void OnDestroy()
     {
+        Currency.Changed -= HandleCurrencyChanged;
+        if (instance == this) instance = null;
         Unbind();
     }
 
@@ -115,6 +125,20 @@ public class DoctrineHud : MonoBehaviour
         }
 
         RefreshPlayerHud();
+        RefreshCurrency();
+    }
+
+    private void HandleCurrencyChanged(CurrencyChange change)
+    {
+        if (change.ActualDelta > 0) currencyFlashUntil = Time.unscaledTime + .3f;
+        RefreshCurrency();
+    }
+
+    private void RefreshCurrency()
+    {
+        if (currencyText == null) return;
+        currencyText.text = Currency.IsReady ? $"코인 {Currency.Balance:N0}" : "재화 확인 중";
+        currencyText.color = Time.unscaledTime < currencyFlashUntil ? new Color(1f, .88f, .35f) : Color.white;
     }
 
     private void ResolvePlayer()
@@ -261,8 +285,11 @@ public class DoctrineHud : MonoBehaviour
         {
             for (int i = 0; i < active.Count; i++)
             {
-                if (active[i] != null && active[i].Doctrine != null)
-                    result.Add(active[i].Doctrine);
+                DoctrineManager.ActiveDoctrine entry = active[i];
+                if (entry == null || entry.Doctrine == null) continue;
+                if (entry.Owner != null && entry.Owner != player) continue;
+                if (entry.Owner == null && entry.Doctrine.Subject != SubjectType.Player && entry.Doctrine.Subject != SubjectType.All) continue;
+                result.Add(entry.Doctrine);
             }
             return result;
         }
@@ -434,13 +461,14 @@ public class DoctrineHud : MonoBehaviour
         GameObject badge = UiTheme.CreateImage("CurrencyBadge", bandRect,
             new Color(0.57f, 0.57f, 0.57f, 1f));
         RectTransform rect = badge.GetComponent<RectTransform>();
+        currencyTarget = rect;
         rect.anchorMin = new Vector2(1f, 0f);
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
         rect.anchoredPosition = new Vector2(-currencyMargin.x, currencyMargin.y);
         rect.sizeDelta = currencySize;
 
-        UiTheme.CreateText("CurrencyLabel", badge.transform, currencyLabel, 18,
+        currencyText = UiTheme.CreateText("CurrencyLabel", badge.transform, "코인 0", 18,
             Color.white, TextAnchor.MiddleCenter);
         RectTransform textRect = badge.transform.Find("CurrencyLabel").GetComponent<RectTransform>();
         UiTheme.Stretch(textRect);

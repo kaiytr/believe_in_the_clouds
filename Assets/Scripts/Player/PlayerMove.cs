@@ -21,6 +21,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private float speedMultiplier = 1f;
     private float slowEndTime;
     private DoctrineStats doctrineStats;
+    private PlayerHealth health;
 
     /// <summary>
     /// true면 이동 입력/방향 전환을 잠그고 Rigidbody 속도를 덮어쓰지 않는다.
@@ -37,11 +38,18 @@ public class PlayerMove : MonoBehaviour, ISlowable
     {
         rb = GetComponent<Rigidbody2D>();
         doctrineStats = GetComponent<DoctrineStats>();
+        health = GetComponent<PlayerHealth>();
     }
 
     private void Update()
     {
         UpdateSlow();
+        if (health != null && health.IsDead)
+        {
+            moveInput = 0f;
+            jumpRequested = false;
+            return;
+        }
 
         // 모달 UI가 열려 있는 동안은 이동 입력을 읽지 않는다.
         if (!ControlLocked && !UiModal.IsOpen)
@@ -70,6 +78,11 @@ public class PlayerMove : MonoBehaviour, ISlowable
     {
         if (rb == null)
         {
+            return;
+        }
+        if (health != null && health.IsDead)
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             return;
         }
 

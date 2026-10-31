@@ -149,6 +149,10 @@ public sealed class BossCombatPlayModeTests
     public IEnumerator DistantAttackAndDodgeUsesProjectileAndCountsMovementEvade()
     {
         data.StareDuration=.15f;
+        // The follow-up now samples the regular attack pool at every distance.
+        // Keep this projectile-evade test deterministic instead of waiting for a
+        // projectile after a randomly selected melee or dash follow-up.
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.Projectile,1f,.5f) };
         boss.ForcePhaseTwoForTest();
         PutPlayer((Vector2)boss.transform.position+Vector2.right*2f);
         Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.True);

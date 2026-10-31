@@ -36,6 +36,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     private bool movementLocked;
     private bool configurationValid;
     private float nextTargetSearchTime;
+    private readonly string defeatId = "enemy:" + Guid.NewGuid().ToString("N") + "/defeat";
+
+    public string DefeatId => defeatId;
 
     public event Action<PlayerHitResult> PlayerHitReceived;
 
@@ -364,6 +367,12 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     protected virtual void Die()
     {
+        if (IsDead) return;
+        EnemyRewardKind kind = this is DogEnemy ? EnemyRewardKind.Dog :
+            this is BelieverEnemy ? EnemyRewardKind.Believer : EnemyRewardKind.Executive;
+        Vector3 origin = bodyCollider != null ? bodyCollider.bounds.center : transform.position;
+        if (EconomyRuntime.Instance != null) EconomyRuntime.Instance.RewardDefeat(kind, defeatId, origin);
+        else Currency.Service?.TryRewardDefeat(kind, defeatId, origin);
         if (beliefController != null)
         {
             beliefController.StateChanged -= HandleBeliefStateChanged;

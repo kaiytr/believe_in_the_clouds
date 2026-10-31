@@ -65,6 +65,15 @@ public class DoctrineStats : MonoBehaviour
         RefreshSpeedMultiplier();
     }
 
+    public void ClearAllBuffs()
+    {
+        StopAllCoroutines();
+        AttackMultiplier = 1f;
+        persistentSpeedBonus = 0f;
+        timedSpeedMultiplier = 1f;
+        RefreshSpeedMultiplier();
+    }
+
     private void RefreshSpeedMultiplier()
     {
         float persistent = persistentSpeedBonus > 0f ? persistentSpeedBonus : 1f;
