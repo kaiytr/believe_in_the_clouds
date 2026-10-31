@@ -13,7 +13,6 @@ public sealed class BossDebugPanel : MonoBehaviour
     private RectTransform canvasRect, panel;
     private Font font;
     private Text automaticLabel, status, latest, diagnostics, detailsLabel, manualLabel;
-    private Button[] comboButtons;
     private GameObject manualButton;
     private bool showDetails;
     private readonly StringBuilder details = new StringBuilder();
@@ -79,13 +78,8 @@ public sealed class BossDebugPanel : MonoBehaviour
                 Button(row, names[pattern], () => boss.ForcePatternForTest((BossPatternKind)pattern));
             }
         }
-        Section(content, "콤보 타수");
-        Transform combos = Row(content);
-        comboButtons = new[] {
-            Button(combos, "무작위", () => boss.ForcedComboHits = 0),
-            Button(combos, "2타", () => boss.ForcedComboHits = 2),
-            Button(combos, "3타", () => boss.ForcedComboHits = 3)
-        };
+        Section(content, "연속 베기");
+        Label("Combo info", content, "플레이어 콤보를 따라 4타 자동 실행", 13, new Color(.75f, .81f, .9f));
         Transform health = Row(content);
         Button(health, "HP -50", () => boss.SetHpForTest(boss.CurrentHp - 50f));
         Button(health, "HP 회복", () => boss.SetHpForTest(boss.MaxHp));
@@ -137,8 +131,6 @@ public sealed class BossDebugPanel : MonoBehaviour
         status.text = "패턴: " + boss.ActivePatternName + "\n" +
             (boss.StatusMessage.StartsWith("패턴:") ? "단계: " + boss.CueTitle : boss.StatusMessage);
         latest.text = tools.LatestSignal;
-        for (int i = 0; i < comboButtons.Length; i++)
-            comboButtons[i].image.color = boss.ForcedComboHits == (i == 0 ? 0 : i + 1) ? new Color(.22f, .4f, .57f) : new Color(.14f, .18f, .25f);
         if (!showDetails) return;
         details.Clear().Append("세대 ").Append(boss.Generation).Append(" / 패턴 ").Append(boss.PatternId);
         foreach (var record in boss.ActiveAttacks)

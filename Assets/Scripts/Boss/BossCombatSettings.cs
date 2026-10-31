@@ -30,6 +30,9 @@ public sealed class BossCombatSettings : ScriptableObject
     public Vector2 MeleeSize = new Vector2(2.6f, 3f);
     public float MeleeActiveTime = 0.12f;
     public float MeleeDamage = 14f;
+    public float[] MeleeComboDamage = { 6f, 7f, 8f, 14f };
+    public float MeleeComboFirstWarning = 0.65f;
+    public float MeleeComboFollowupWarning = 0.35f;
     public float DashDistance = 4.5f;
     public float DashSpeed = 10f;
     public float DashDamage = 18f;
@@ -101,8 +104,15 @@ public sealed class BossCombatSettings : ScriptableObject
         if (PhaseTwoHealthRatio <= 0f || PhaseTwoHealthRatio >= 1f || MaintainedDamageMultiplier < 0f || VulnerableDamageMultiplier < 0f)
             errors.Add("Health/phase: invalid phase threshold or incoming damage multiplier.");
         if (Windup <= 0f || Recovery < 0f || PatternRecovery < 0f || MeleeActiveTime <= 0f || SurpriseWindup <= 0f || StareDuration <= 0f ||
-            PhaseTwoSpeedMultiplier <= 0f || PhaseTwoDamageMultiplier < 0f)
+            PhaseTwoSpeedMultiplier <= 0f || PhaseTwoDamageMultiplier < 0f ||
+            MeleeComboFirstWarning <= 0f || MeleeComboFollowupWarning <= 0f)
             errors.Add("Attack timing: windup/active/speed must be positive and recovery/damage multipliers non-negative.");
+        if (MeleeComboDamage == null || MeleeComboDamage.Length != 4)
+            errors.Add("Melee combo: exactly four damage values are required.");
+        else
+            for (int i = 0; i < MeleeComboDamage.Length; i++)
+                if (MeleeComboDamage[i] < 0f)
+                    errors.Add("Melee combo: damage values must be non-negative.");
         if (!Positive(MeleeSize) || !Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
             DashDistance <= 0f || DashSpeed <= 0f || ProjectileDiameter <= 0f || ProjectileSpeed <= 0f ||
             ProjectileDistance <= 0f || ProjectileLifetime <= 0f || WaveSpeed <= 0f || WaveDistance <= 0f)

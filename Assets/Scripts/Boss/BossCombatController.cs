@@ -24,12 +24,13 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private readonly HashSet<long> windowAttackIds = new HashSet<long>();
     private readonly List<GameObject> effects = new List<GameObject>();
     private readonly List<float> candidateWeights = new List<float>(9);
-    private System.Predicate<BossPatternKind> eligibleAny, eligibleRegular, eligibleConnected;
+    private System.Predicate<BossPatternKind> eligibleAny, eligibleRegular;
     private float nextPatternSearchAt;
     private static readonly WaitForSeconds SelectionRetry = new WaitForSeconds(.1f);
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
     private PlayerHealth playerHealth;
+    private PlayerAttack playerAttack;
     private PlayerCombatEvents playerEvents;
     private EnemyContactDamage[] contactDamageComponents;
     private BossSharedBelief belief;
@@ -40,6 +41,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private bool patternRunning, signalWindow, playerActed, cloudTouched, initialized;
     private float windowStartedAt, encounterStartedAt, burnEndsAt, conditionEndsAt, conditionDuration;
     private int generation = 1, patternId, nextAttackId = 1, facing = 1, initialFacing;
+    private int lastAcceptedComboPatternId = -1;
     private float currentHp;
     private Vector3 spawnPosition, playerSpawnPosition, playerSpawnScale;
     private bool savedPlayerSpawn;
@@ -55,6 +57,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public Collider2D BodyCollider => bodyCollider;
     public SpriteRenderer BodyRenderer => presentation != null ? presentation.BodyRenderer : null;
     public PlayerHealth PlayerHealth => playerHealth;
+    public PlayerAttack PlayerAttack => playerAttack;
     public Collider2D PlayerCollider => playerHealth != null ? playerHealth.BodyCollider : null;
     public BossPhase Phase { get; private set; }
     public bool IsDead { get; private set; }
@@ -63,7 +66,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public bool IsPatternRunning => patternRunning;
     public bool AutomaticPatterns { get => automaticPatterns; set { automaticPatterns = value; Notify(); } }
     public bool AllowManualEvadeInjection { get => allowManualEvadeInjection; set => allowManualEvadeInjection = value; }
-    public int ForcedComboHits { get; set; }
     public int Generation => generation;
     public int CombatGeneration => generation;
     public int PatternId => patternId;
@@ -108,9 +110,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
 
     private void Awake()
     {
-        eligibleAny = candidate => IsPatternEligible(candidate, true);
-        eligibleRegular = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate, true);
-        eligibleConnected = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate, false);
+        eligibleAny = IsPatternEligible;
+        eligibleRegular = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate);
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
         contactDamageComponents = GetComponentsInChildren<EnemyContactDamage>(true);
@@ -175,8 +176,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         }
         if (!BindPlayer())
         {
-            SetStatus("PlayerHealth와 유효한 몸체 콜라이더 필요");
-            Debug.LogError(name + ": tagged Player requires PlayerHealth, a non-trigger body Collider2D and PlayerCombatEvents.", this);
+            SetStatus("PlayerHealth, 4타 콤보 데이터, 몸체 콜라이더 필요");
+            Debug.LogError(name + ": tagged Player requires PlayerHealth, a four-step PlayerAttack, a non-trigger body Collider2D and PlayerCombatEvents.", this);
             return;
         }
         attacks.Initialize(this);
@@ -195,8 +196,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         if (actor == null) return false;
         if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
         playerHealth = actor.GetComponent<PlayerHealth>();
+        playerAttack = actor.GetComponent<PlayerAttack>();
         playerEvents = actor.GetComponent<PlayerCombatEvents>();
-        if (playerHealth == null || PlayerCollider == null || PlayerCollider.isTrigger || playerEvents == null) return false;
+        if (playerHealth == null || playerAttack == null || playerAttack.ComboCount < 4 ||
+            PlayerCollider == null || PlayerCollider.isTrigger || playerEvents == null) return false;
         playerEvents.SignalPublished += HandlePlayerSignal;
         Physics2D.IgnoreCollision(bodyCollider, PlayerCollider, true);
         if (!savedPlayerSpawn)
@@ -363,9 +366,9 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
                 yield return Stare(settings.StareDuration);
                 while (token == generation && CanContinue)
                 {
-                    if (ChoosePattern(true, out BossPatternKind followup, allowApproachDash: false))
+                    if (ChoosePattern(true, out BossPatternKind followup))
                     { yield return attacks.Regular(followup); break; }
-                    SetStatus("응시 완료 · 연결 공격을 실행할 수 있는 대상/경로 대기");
+                    SetStatus("응시 완료 · 실행 가능한 일반 공격 대기");
                     yield return SelectionRetry;
                 }
                 break;
@@ -445,39 +448,13 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         if (activeBelief == BossBeliefKind.NoAttack && windowAttackIds.Count == 1)
             ReduceBelief(settings.BeliefReduction, "응시 중 공격함");
     }
-    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern, bool allowApproachDash = true) => BossPatternSelection.TryChoose(
+    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern) => BossPatternSelection.TryChoose(
         Phase == BossPhase.One ? settings.PhaseOnePool : settings.PhaseTwoPool, patternUses,
-        !regularOnly ? eligibleAny : allowApproachDash ? eligibleRegular : eligibleConnected,
+        regularOnly ? eligibleRegular : eligibleAny,
         UnityEngine.Random.value, out pattern, candidateWeights);
-    public bool IsPatternEligible(BossPatternKind candidate) => IsPatternEligible(candidate, true);
-    private bool IsPatternEligible(BossPatternKind candidate, bool allowApproachDash)
+    public bool IsPatternEligible(BossPatternKind candidate)
     {
         if (!TargetValid || !BossPatternSelection.AllowedInPhase(candidate, Phase)) return false;
-        int direction = PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1;
-        if (candidate == BossPatternKind.MeleeCombo)
-        {
-            Vector3 offset = attackOrigin.localPosition; offset.x = Mathf.Abs(offset.x) * direction;
-            Vector2 origin = transform.TransformPoint(offset);
-            return new AttackGeometry(origin + Vector2.right * direction * settings.MeleeSize.x * .5f, settings.MeleeSize).Overlaps(PlayerCollider);
-        }
-        if (candidate == BossPatternKind.Projectile)
-        {
-            Vector3 offset = projectileOrigin.localPosition; offset.x = Mathf.Abs(offset.x) * direction;
-            Vector2 origin = transform.TransformPoint(offset);
-            Vector2 aim = ((Vector2)PlayerCollider.bounds.center - origin).normalized;
-            float distance = BossCombatPhysics.ClearDistance(origin, Vector2.one * settings.ProjectileDiameter, aim,
-                Mathf.Min(settings.ProjectileDistance, settings.ProjectileSpeed * settings.ProjectileLifetime), this, true, out _);
-            return BossCombatPhysics.SweptTarget(origin, Vector2.one * settings.ProjectileDiameter, aim, distance, this, true);
-        }
-        if (candidate == BossPatternKind.Dash)
-        {
-            Vector2 size = bodyCollider.bounds.size;
-            Vector2 origin = bodyCollider.bounds.center;
-            Vector2 dashDirection = Vector2.right * direction;
-            float distance = BossCombatPhysics.ClearDistance(origin, size, dashDirection, settings.DashDistance, this, false, out bool blocked);
-            bool reachesPlayer = BossCombatPhysics.SweptTarget(origin, size, dashDirection, distance, this, false);
-            return reachesPlayer || (allowApproachDash && !blocked && distance > 0.01f);
-        }
         if (candidate == BossPatternKind.CloudBelief || candidate == BossPatternKind.ShockwaveBelief)
             return BossCombatPhysics.FindGround(candidate == BossPatternKind.CloudBelief ? (Vector2)PlayerCollider.bounds.min : (Vector2)bodyCollider.bounds.center,
                 0.1f, 8f, this, out _);
@@ -502,11 +479,16 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         record.Observe(overlaps, PlayerCollider.bounds.center);
         return overlaps;
     }
-    public void TryHit(BossAttackRecord record)
+    public bool TryHit(BossAttackRecord record)
     {
-        if (!IsAttackValid(record) || !record.TryContact()) return;
-        bool accepted = playerHealth.TakeDamage(new DamageInfo(record.Damage, DamageSource.Enemy));
-        if (!accepted) return;
+        if (!IsAttackValid(record) || !record.TryContact()) return false;
+        var damage = new DamageInfo(record.Damage, DamageSource.Enemy);
+        bool isComboHit = record.Kind == BossAttackKind.Melee && record.HitIndex > 0;
+        bool accepted = isComboHit && record.HitIndex > 1 && lastAcceptedComboPatternId == record.PatternId
+            ? playerHealth.TakeDamageFromBossCombo(damage)
+            : playerHealth.TakeDamage(damage);
+        if (!accepted) return false;
+        if (isComboHit) lastAcceptedComboPatternId = record.PatternId;
         record.AcceptDamage();
         ShowFeedback($"피격 -{record.Damage:0}" + (record.AllowsBurn && IsBurning ? " · 화상 발생" : ""), new Color(1f, .5f, .42f));
         attacks.Impact(PlayerCollider.bounds.center, false);
@@ -517,6 +499,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
             burn.Apply(this, settings);
         }
         Notify();
+        return true;
     }
     public void CompleteAttack(BossAttackRecord record, BossAttackEndReason reason)
     {
