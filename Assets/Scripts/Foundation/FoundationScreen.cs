@@ -4,15 +4,20 @@ using UnityEngine;
 // 재단 화면 모듈.
 //
 // - 재단 상호작용이 발생하면 패널을 열고, E/ESC로 닫는다.
-// - 왼쪽: 탭(주어/조건/결과)으로 인벤토리에 있는 조각만 골라 본다. 카드를 누르면
-//   교리1의 해당 슬롯에 배치된다 (같은 카드를 다시 누르면 해제).
-// - 오른쪽: 교리1 슬롯 3개 + 합성 버튼이 동작한다. 교리2·3은 아직 틀만 있다.
-//   3칸이 다 차면 합성 → ShopCatalog.Compose → DoctrineManager.TryActivate →
-//   조각 3장 소모 → HUD 교리1에 반영.
+// - 왼쪽: 탭(주어/조건/결과)으로 인벤토리에 있는 조각만 골라 본다.
+//   카드를 교리1 슬롯에 드래그 앤 드롭하거나 클릭해서 꽂는다.
+// - 오른쪽: 교리1·2·3 슬롯 모두 언제든 끼고 뺄 수 있다.
+//   한 교리의 3칸이 다 차면 자동으로 장착(Compose → TryActivate)하고,
+//   하나라도 빠지면 그 교리만 해제된다. 조각 소모 없음.
 // - 상점과 마찬가지로 InteractableBehaviour.Interacted 이벤트를 듣고 스스로 연다.
 //   공통 상호작용 코드는 재단을 모른다.
 public class FoundationScreen : MonoBehaviour
 {
+    // 교리 슬롯 수 (교리1·2·3).
+    public const int DoctrineCount = 3;
+
+    private const int ColumnCount = 3;
+
     public static FoundationScreen Instance { get; private set; }
 
     private FoundationPanelView panel;
@@ -20,27 +25,21 @@ public class FoundationScreen : MonoBehaviour
 
     private ShopColumn currentTab = ShopColumn.Subject;
 
-    // 교리1 슬롯: 열마다 하나씩 기억한다. 탭을 바꿔도 유지된다.
-    private ShopEntry slotSubject;
-    private ShopEntry slotCondition;
-    private ShopEntry slotResult;
+    // 교리별 슬롯: [교리 index, 열 index]. 탭을 바꿔도 유지된다.
+    private readonly ShopEntry[,] slots = new ShopEntry[DoctrineCount, ColumnCount];
+
+    // 교리별로 현재 장착 중인 조합. 슬롯과 1:1로 동기화한다.
+    private readonly Doctrine[] equipped = new Doctrine[DoctrineCount];
+
+    // 클릭 배치 대상이 되는 교리 (0 = 교리1). 슬롯을 누르면 그 교리로 바뀐다.
+    private int activeDoctrine;
 
     public bool IsOpen => panel != null && panel.IsOpen;
     public ShopColumn CurrentTab => currentTab;
+    public int ActiveDoctrine => activeDoctrine;
 
-    /// <summary>현재 탭의 슬롯에 들어 있는 조각. 없으면 null.</summary>
-    public ShopEntry SelectedEntry
-    {
-        get
-        {
-            switch (currentTab)
-            {
-                case ShopColumn.Subject: return slotSubject;
-                case ShopColumn.Condition: return slotCondition;
-                default: return slotResult;
-            }
-        }
-    }
+    /// <summary>현재 탭의 활성 교리 슬롯에 들어 있는 조각. 없으면 null.</summary>
+    public ShopEntry SelectedEntry => GetSlot(activeDoctrine, currentTab);
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoBoot()
@@ -98,10 +97,9 @@ public class FoundationScreen : MonoBehaviour
         panel = FoundationPanelView.BuildRuntime();
         panel.TabClicked += HandleTabClicked;
         panel.ItemClicked += HandleItemClicked;
+        panel.ItemDroppedOnSlot += HandleItemDroppedOnSlot;
         panel.SlotClicked += HandleSlotClicked;
-        panel.CombineClicked += HandleCombineClicked;
         DontDestroyOnLoad(panel.gameObject);
-
         // uGUI 버튼은 EventSystem이 없으면 클릭을 못 받는다.
         UiEventSystemBoot.Ensure();
     }
@@ -142,9 +140,9 @@ public class FoundationScreen : MonoBehaviour
 
         openFoundation = foundation;
         currentTab = ShopColumn.Subject;
-        ClearSlots();
 
         panel.Open();
+        SyncAllDoctrines();
         Refresh();
 
         UiModal.Push(this);
@@ -192,7 +190,7 @@ public class FoundationScreen : MonoBehaviour
         Refresh();
     }
 
-    // 왼쪽 카드를 누르면 현재 탭의 슬롯에 배치한다.
+    // 왼쪽 카드를 누르면 활성 교리(기본 교리1)의 현재 탭 슬롯에 배치한다.
     // 이미 같은 카드가 들어 있으면 해제한다.
     private void HandleItemClicked(int entryIndex)
     {
@@ -203,12 +201,12 @@ public class FoundationScreen : MonoBehaviour
         }
 
         ShopEntry picked = entries[entryIndex];
-        ShopEntry current = GetSlot(currentTab);
+        ShopEntry current = GetSlot(activeDoctrine, currentTab);
 
         if (current == picked)
         {
-            SetSlot(currentTab, null);
-            Debug.Log($"[재단] 슬롯 해제: {TabName(currentTab)}");
+            SetSlot(activeDoctrine, currentTab, null);
+            Debug.Log($"[재단] 교리{activeDoctrine + 1} 슬롯 해제: {TabName(currentTab)}");
         }
         else
         {
@@ -220,84 +218,69 @@ public class FoundationScreen : MonoBehaviour
                 return;
             }
 
-            SetSlot(currentTab, picked);
-            Debug.Log($"[재단] 슬롯 배치: {TabName(currentTab)} → {picked.Label}");
+            SetSlot(activeDoctrine, currentTab, picked);
+            Debug.Log($"[재단] 교리{activeDoctrine + 1} 배치: {TabName(currentTab)} → {picked.Label}");
         }
 
+        SyncAllDoctrines();
         Refresh();
     }
 
-    // 오른쪽 슬롯을 직접 누르면 해당 슬롯을 비운다.
-    private void HandleSlotClicked(ShopColumn column)
+    // 드래그 앤 드롭: 왼쪽 카드를 교리 슬롯에 놓으면 그 교리의 해당 슬롯에 배치한다.
+    // 드래그한 카드의 열과 슬롯 열이 다르면 무시한다.
+    private void HandleItemDroppedOnSlot(int entryIndex, int doctrineIndex, ShopColumn targetColumn)
     {
-        if (GetSlot(column) == null)
+        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
         {
             return;
         }
 
-        SetSlot(column, null);
-        Debug.Log($"[재단] 슬롯 해제: {TabName(column)}");
+        IReadOnlyList<ShopEntry> columnEntries = ShopCatalog.GetColumn(currentTab);
+        if (entryIndex < 0 || entryIndex >= columnEntries.Count)
+        {
+            return;
+        }
+
+        ShopEntry picked = columnEntries[entryIndex];
+
+        if (picked.Column != targetColumn)
+        {
+            Debug.Log($"[재단] 드롭 무시: {picked.Label}({TabName(picked.Column)}) → {TabName(targetColumn)} 슬롯 불가");
+            return;
+        }
+
+        int count = CountOf(DoctrineInventory.Instance, picked);
+        if (count <= 0)
+        {
+            Debug.Log($"[재단] 조각 부족: {picked.Label} (보유 0)");
+            return;
+        }
+
+        activeDoctrine = doctrineIndex;
+        SetSlot(doctrineIndex, targetColumn, picked);
+        Debug.Log($"[재단] 교리{doctrineIndex + 1} 드롭 배치: {TabName(targetColumn)} → {picked.Label}");
+        SyncAllDoctrines();
         Refresh();
     }
 
-    // 합성: 3칸이 다 차면 Compose → TryActivate → 조각 3장 소모.
-    private void HandleCombineClicked()
+    // 오른쪽 슬롯을 직접 누르면 그 슬롯을 비우고, 클릭 배치 대상 교리를 그 교리로 바꾼다.
+    private void HandleSlotClicked(int doctrineIndex, ShopColumn column)
     {
-        if (slotSubject == null || slotCondition == null || slotResult == null)
+        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
         {
-            Debug.Log("[재단] 합성 불가: 슬롯 3개를 모두 채우세요.");
             return;
         }
 
-        Doctrine doctrine = ShopCatalog.Compose(slotSubject, slotCondition, slotResult);
-        if (doctrine == null)
+        bool hadEntry = GetSlot(doctrineIndex, column) != null;
+        activeDoctrine = doctrineIndex;
+
+        if (hadEntry)
         {
-            Debug.LogWarning("[재단] 합성 실패: 교리를 만들 수 없습니다.");
-            return;
+            SetSlot(doctrineIndex, column, null);
+            Debug.Log($"[재단] 교리{doctrineIndex + 1} 슬롯 해제: {TabName(column)}");
+            SyncAllDoctrines();
         }
 
-        DoctrineManager manager = DoctrineManager.Instance;
-        if (manager == null)
-        {
-            manager = DoctrineHudBoot.EnsureManagerExists();
-        }
-
-        if (manager == null)
-        {
-            Debug.LogWarning("[재단] 합성 실패: 교리 엔진을 찾을 수 없습니다.");
-            return;
-        }
-
-        // 이미 같은 교리를 갖고 있으면 중복 장착하지 않는다.
-        foreach (DoctrineManager.ActiveDoctrine active in manager.ActiveDoctrines)
-        {
-            if (active?.Doctrine != null && active.Doctrine.HasSameRule(doctrine))
-            {
-                panel.SetDoctrine1Description($"{DoctrineText.Describe(doctrine)}  ·  이미 보유한 교리입니다.");
-                Debug.Log($"[재단] 합성 생략: 이미 보유 → {DoctrineText.ShortName(doctrine)}");
-                return;
-            }
-        }
-
-        // 씬을 옮겨도 유지되도록 owner 없이 전역 등록한다.
-        if (!manager.TryActivate(doctrine, out string reason))
-        {
-            panel.SetDoctrine1Description($"합성 실패: {reason}");
-            Debug.LogWarning($"[재단] 합성 실패: {reason}");
-            return;
-        }
-
-        // 장착 성공 → 조각 3장 소모.
-        DoctrineInventory inventory = DoctrineInventory.Instance;
-        if (inventory != null)
-        {
-            inventory.ConsumeEntry(slotSubject);
-            inventory.ConsumeEntry(slotCondition);
-            inventory.ConsumeEntry(slotResult);
-        }
-
-        Debug.Log($"[재단] 합성 완료: {DoctrineText.Describe(doctrine)} → 교리1 ({manager.ActiveCount}개 보유)");
-        ClearSlots();
         Refresh();
     }
 
@@ -315,8 +298,8 @@ public class FoundationScreen : MonoBehaviour
         IReadOnlyList<ShopEntry> entries = ShopCatalog.GetColumn(currentTab);
         List<FoundationPanelView.ItemData> items = new List<FoundationPanelView.ItemData>();
 
-        // 왼쪽에서 고른(현재 탭 슬롯) 조각의 EntryIndex. 없으면 -1.
-        ShopEntry current = GetSlot(currentTab);
+        // 왼쪽에서 고른(활성 교리의 현재 탭 슬롯) 조각의 EntryIndex. 없으면 -1.
+        ShopEntry current = GetSlot(activeDoctrine, currentTab);
         int currentIndex = -1;
         if (current != null)
         {
@@ -351,32 +334,128 @@ public class FoundationScreen : MonoBehaviour
             $"보유한 {TabName(currentTab)} 교리가 없습니다.\n상점에서 구매해 보세요.");
         panel.SetCountSummary(inventory != null ? inventory.Describe() : "인벤토리 없음");
 
-        panel.SetDoctrine1Slots(
-            slotSubject?.Label,
-            slotCondition?.Label,
-            slotResult?.Label);
+        // 세 교리의 슬롯 라벨 + 설명 줄을 모두 갱신한다.
+        for (int d = 0; d < DoctrineCount; d++)
+        {
+            panel.SetSlots(d, GetLabel(d, ShopColumn.Subject), GetLabel(d, ShopColumn.Condition),
+                GetLabel(d, ShopColumn.Result));
+            panel.SetDescription(d, DescribeDoctrine(d));
+        }
 
-        UpdateCombineButton();
+        panel.SetActiveDoctrine(activeDoctrine);
+        panel.SetActiveTab(currentTab);
     }
 
-    private void UpdateCombineButton()
+    private string GetLabel(int doctrineIndex, ShopColumn column)
     {
-        if (slotSubject != null && slotCondition != null && slotResult != null)
+        return GetSlot(doctrineIndex, column)?.Label;
+    }
+
+    /// <summary>슬롯 3칸 상태에 맞춘 설명 줄 문구.</summary>
+    private string DescribeDoctrine(int doctrineIndex)
+    {
+        string name = $"교리{doctrineIndex + 1}";
+        Doctrine composed = ComposeDoctrine(doctrineIndex);
+
+        if (composed != null)
         {
-            Doctrine preview = ShopCatalog.Compose(slotSubject, slotCondition, slotResult);
-            panel.SetDoctrine1Description(preview != null
-                ? $"교리1  ·  {DoctrineText.Describe(preview)}"
-                : "교리1  ·  합성할 수 없습니다.");
-            panel.SetCombineEnabled(true, "합성");
+            bool isActive = equipped[doctrineIndex] != null
+                && equipped[doctrineIndex].HasSameRule(composed);
+            return $"{name}  ·  {DoctrineText.Describe(composed)}{(isActive ? "  (장착 중)" : string.Empty)}";
         }
-        else
+
+        int filled = 0;
+        for (int c = 0; c < ColumnCount; c++)
         {
-            int filled = (slotSubject != null ? 1 : 0)
-                + (slotCondition != null ? 1 : 0)
-                + (slotResult != null ? 1 : 0);
-            panel.SetDoctrine1Description($"교리1  ·  슬롯 {filled}/3 — 왼쪽에서 조각을 고르세요.");
-            panel.SetCombineEnabled(false, $"합성 ({filled}/3)");
+            if (slots[doctrineIndex, c] != null)
+            {
+                filled++;
+            }
         }
+
+        return $"{name}  ·  슬롯 {filled}/3 — 왼쪽에서 조각을 고르세요.";
+    }
+
+    // 슬롯 3칸이 다 차면 조합된 교리, 아니면 null.
+    private Doctrine ComposeDoctrine(int doctrineIndex)
+    {
+        return ShopCatalog.Compose(
+            GetSlot(doctrineIndex, ShopColumn.Subject),
+            GetSlot(doctrineIndex, ShopColumn.Condition),
+            GetSlot(doctrineIndex, ShopColumn.Result));
+    }
+
+    private void SyncAllDoctrines()
+    {
+        for (int d = 0; d < DoctrineCount; d++)
+        {
+            SyncDoctrine(d);
+        }
+    }
+
+    /// <summary>
+    /// 한 교리의 슬롯 3칸이 다 차면 자동으로 장착하고, 하나라도 비면 장착 해제한다.
+    /// 조각 소모 없음 — 꽂았다 뺐다 자유.
+    /// </summary>
+    private void SyncDoctrine(int doctrineIndex)
+    {
+        DoctrineManager manager = DoctrineManager.Instance;
+        if (manager == null)
+        {
+            manager = DoctrineHudBoot.EnsureManagerExists();
+        }
+
+        if (manager == null)
+        {
+            return;
+        }
+
+        Doctrine wanted = ComposeDoctrine(doctrineIndex);
+
+        // 하나라도 비면 그 교리만 장착 해제.
+        if (wanted == null)
+        {
+            if (equipped[doctrineIndex] != null)
+            {
+                manager.Deactivate(equipped[doctrineIndex]);
+                Debug.Log($"[재단] 교리{doctrineIndex + 1} 해제: 슬롯이 비었음");
+                equipped[doctrineIndex] = null;
+            }
+
+            return;
+        }
+
+        // 이미 같은 조합이 장착 중이면 그대로 둔다.
+        if (equipped[doctrineIndex] != null && equipped[doctrineIndex].HasSameRule(wanted))
+        {
+            return;
+        }
+
+        // 조합이 바뀌면 기존 것을 먼저 해제한다.
+        if (equipped[doctrineIndex] != null)
+        {
+            manager.Deactivate(equipped[doctrineIndex]);
+            equipped[doctrineIndex] = null;
+        }
+
+        // 다른 교리 칸에 같은 조합이 이미 장착돼 있으면 중복 등록하지 않는다.
+        for (int other = 0; other < DoctrineCount; other++)
+        {
+            if (other != doctrineIndex && equipped[other] != null && equipped[other].HasSameRule(wanted))
+            {
+                Debug.Log($"[재단] 교리{doctrineIndex + 1} 생략: 교리{other + 1}와 같은 조합");
+                return;
+            }
+        }
+
+        if (!manager.TryActivate(wanted, out string reason))
+        {
+            Debug.LogWarning($"[재단] 교리{doctrineIndex + 1} 장착 실패: {reason}");
+            return;
+        }
+
+        equipped[doctrineIndex] = wanted;
+        Debug.Log($"[재단] 교리{doctrineIndex + 1} 장착: {DoctrineText.Describe(wanted)}");
     }
 
     private static int CountOf(DoctrineInventory inventory, ShopEntry entry)
@@ -405,30 +484,23 @@ public class FoundationScreen : MonoBehaviour
         }
     }
 
-    private ShopEntry GetSlot(ShopColumn column)
+    private ShopEntry GetSlot(int doctrineIndex, ShopColumn column)
     {
-        switch (column)
+        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
         {
-            case ShopColumn.Subject: return slotSubject;
-            case ShopColumn.Condition: return slotCondition;
-            default: return slotResult;
+            return null;
         }
+
+        return slots[doctrineIndex, (int)column];
     }
 
-    private void SetSlot(ShopColumn column, ShopEntry entry)
+    private void SetSlot(int doctrineIndex, ShopColumn column, ShopEntry entry)
     {
-        switch (column)
+        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
         {
-            case ShopColumn.Subject: slotSubject = entry; break;
-            case ShopColumn.Condition: slotCondition = entry; break;
-            default: slotResult = entry; break;
+            return;
         }
-    }
 
-    private void ClearSlots()
-    {
-        slotSubject = null;
-        slotCondition = null;
-        slotResult = null;
+        slots[doctrineIndex, (int)column] = entry;
     }
 }

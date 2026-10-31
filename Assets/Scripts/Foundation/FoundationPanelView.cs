@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 재단 패널.
@@ -13,8 +14,10 @@ using UnityEngine.UI;
 //   │ └ 교리 카드 ┘     │ 교리3 (틀만)                   │
 //   └───────────────┴──────────────────────────────┘
 //
-// 왼쪽: 탭(주어/조건/결과)으로 인벤토리 조각을 골라 보고, 카드를 눌러 선택한다. (기능 있음)
-// 오른쪽: 교리1만 슬롯 배치 + 합성 버튼이 동작한다. 교리2·3은 틀만 있다.
+// 왼쪽: 탭(주어/조건/결과)으로 인벤토리 조각을 골라 보고,
+//   카드를 교리1 슬롯으로 드래그 앤 드롭해서 배치한다. (클릭 배치도 그대로 됨)
+// 오른쪽: 교리1 슬롯 3개는 언제든 끼고 뺄 수 있고, 3칸이 차면 자동 장착된다.
+// 교리2·3은 틀만 있다.
 // 표시만 담당하고, 어떤 카드를 보일지는 FoundationScreen이 정한다.
 public class FoundationPanelView : MonoBehaviour
 {
@@ -41,6 +44,7 @@ public class FoundationPanelView : MonoBehaviour
     private static readonly Color DescriptionBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
 
     private const int DoctrineGroupCount = 3; // 오른쪽 교리1~3 그룹 수
+    private const int DoctrineCount = 3;      // 슬롯/설명 배열 크기
 
     private Canvas canvas;
     private GameObject content;
@@ -55,14 +59,19 @@ public class FoundationPanelView : MonoBehaviour
     private readonly List<Image> itemImages = new List<Image>();
     private readonly List<int> itemEntryIndices = new List<int>();
 
-    // 오른쪽 교리1 슬롯 (클릭 가능).
-    private readonly Dictionary<ShopColumn, Text> slotTexts = new Dictionary<ShopColumn, Text>();
-    private readonly Dictionary<ShopColumn, Image> slotImages = new Dictionary<ShopColumn, Image>();
+    // 오른쪽 교리 슬롯 (드래그 앤 드롭 + 클릭). 교리 번호(0-based)별로 보관한다.
+    private readonly Dictionary<ShopColumn, Text>[] slotTexts =
+        new Dictionary<ShopColumn, Text>[DoctrineCount];
+    private readonly Dictionary<ShopColumn, Image>[] slotImages =
+        new Dictionary<ShopColumn, Image>[DoctrineCount];
+    private readonly Dictionary<ShopColumn, GameObject>[] slotObjects =
+        new Dictionary<ShopColumn, GameObject>[DoctrineCount];
 
-    // 교리1 설명 줄 + 합성 버튼.
-    private Text doctrine1Description;
-    private Button combineButton;
-    private Text combineButtonText;
+    // 교리별 설명 줄.
+    private readonly Text[] doctrineDescriptions = new Text[DoctrineCount];
+
+    // 왼쪽 카드 오브젝트 → EntryIndex. 드래그 시작 시 어느 조각인지 찾는다.
+    private readonly Dictionary<GameObject, int> itemObjectToEntry = new Dictionary<GameObject, int>();
 
     public bool IsOpen => isOpen;
 
@@ -72,11 +81,11 @@ public class FoundationPanelView : MonoBehaviour
     /// <summary>목록 카드를 눌렀을 때. (EntryIndex)</summary>
     public event Action<int> ItemClicked;
 
-    /// <summary>교리1의 슬롯을 눌렀을 때. (Subject/Condition/Result)</summary>
-    public event Action<ShopColumn> SlotClicked;
+    // 왼쪽 카드를 교리 슬롯에 드래그해서 놓았을 때. (EntryIndex, 교리 index, 슬롯 열)
+    public event Action<int, int, ShopColumn> ItemDroppedOnSlot;
 
-    /// <summary>교리1 합성 버튼을 눌렀을 때.</summary>
-    public event Action CombineClicked;
+    // 교리 슬롯을 눌렀을 때. (교리 index, Subject/Condition/Result)
+    public event Action<int, ShopColumn> SlotClicked;
 
     public static FoundationPanelView BuildRuntime()
     {
@@ -235,6 +244,7 @@ public class FoundationPanelView : MonoBehaviour
         itemObjects.Clear();
         itemImages.Clear();
         itemEntryIndices.Clear();
+        itemObjectToEntry.Clear();
 
         bool empty = items == null || items.Count == 0;
         if (emptyText != null)
@@ -293,10 +303,67 @@ public class FoundationPanelView : MonoBehaviour
         int entryIndex = data.EntryIndex;
         button.onClick.AddListener(() => ItemClicked?.Invoke(entryIndex));
 
+        // 드래그: 카드를 누른 채로 교리1 슬롯까지 끌면 배치된다.
+        itemDragHandler = card.AddComponent<ItemDragHandler>();
+        itemDragHandler.Initialize(this, card);
+
         itemObjects.Add(card);
         itemImages.Add(image);
         itemEntryIndices.Add(entryIndex);
+        itemObjectToEntry[card] = entryIndex;
     }
+
+    /// <summary>드래그 중인 카드의 EntryIndex. 모르면 -1.</summary>
+    public int GetEntryIndex(GameObject cardObject)
+    {
+        if (cardObject == null)
+        {
+            return -1;
+        }
+
+        return itemObjectToEntry.TryGetValue(cardObject, out int entryIndex) ? entryIndex : -1;
+    }
+
+    /// <summary>드래그 종료 지점에 있는 교리 슬롯. 슬롯 위가 아니면 false.</summary>
+    public bool TryGetSlotAt(Vector2 screenPosition, out int doctrineIndex, out ShopColumn column)
+    {
+        for (int d = 0; d < DoctrineCount; d++)
+        {
+            Dictionary<ShopColumn, GameObject> slots = slotObjects[d];
+            if (slots == null)
+            {
+                continue;
+            }
+
+            foreach (KeyValuePair<ShopColumn, GameObject> pair in slots)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                RectTransform rect = pair.Value.GetComponent<RectTransform>();
+                if (rect == null)
+                {
+                    continue;
+                }
+
+                // ScreenSpaceOverlay라 카메라는 null로 넘긴다.
+                if (RectTransformUtility.RectangleContainsScreenPoint(rect, screenPosition, null))
+                {
+                    doctrineIndex = d;
+                    column = pair.Key;
+                    return true;
+                }
+            }
+        }
+
+        doctrineIndex = -1;
+        column = ShopColumn.Subject;
+        return false;
+    }
+
+    private ItemDragHandler itemDragHandler;
 
     public void SetCountSummary(string summary)
     {
@@ -307,56 +374,100 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    /// <summary>교리1 슬롯 3개의 표시를 갱신한다. 비어 있으면 기본 라벨(주어/조건/결과).</summary>
-    public void SetDoctrine1Slots(string subjectLabel, string conditionLabel, string resultLabel)
+    // 슬롯에 실제 조각이 들어 있는지 (강조색 계산용).
+    private readonly bool[,] slotFilled = new bool[DoctrineCount, 3];
+
+    /// <summary>교리 하나의 슬롯 3개 표시를 갱신한다. 비어 있으면 기본 라벨(주어/조건/결과).</summary>
+    public void SetSlots(int doctrineIndex, string subjectLabel, string conditionLabel, string resultLabel)
     {
-        SetSlotLabel(ShopColumn.Subject, subjectLabel, "주어");
-        SetSlotLabel(ShopColumn.Condition, conditionLabel, "조건");
-        SetSlotLabel(ShopColumn.Result, resultLabel, "결과");
+        SetSlotLabel(doctrineIndex, ShopColumn.Subject, subjectLabel, "주어");
+        SetSlotLabel(doctrineIndex, ShopColumn.Condition, conditionLabel, "조건");
+        SetSlotLabel(doctrineIndex, ShopColumn.Result, resultLabel, "결과");
     }
 
-    private void SetSlotLabel(ShopColumn column, string label, string fallback)
+    private void SetSlotLabel(int doctrineIndex, ShopColumn column, string label, string fallback)
     {
-        if (!slotTexts.TryGetValue(column, out Text text) || text == null)
+        Dictionary<ShopColumn, Text> texts = GetSlotTexts(doctrineIndex);
+        if (texts == null || !texts.TryGetValue(column, out Text text) || text == null)
         {
             return;
         }
 
+        bool filled = !string.IsNullOrEmpty(label);
         text.font = UiTheme.GetFont();
-        text.text = string.IsNullOrEmpty(label) ? fallback : label;
+        text.text = filled ? label : fallback;
 
-        if (slotImages.TryGetValue(column, out Image image) && image != null)
+        if (doctrineIndex >= 0 && doctrineIndex < DoctrineCount)
         {
-            image.color = string.IsNullOrEmpty(label) ? SlotBackground : CardSelected;
+            slotFilled[doctrineIndex, (int)column] = filled;
+        }
+
+        Dictionary<ShopColumn, Image> images = GetSlotImages(doctrineIndex);
+        if (images != null && images.TryGetValue(column, out Image image) && image != null)
+        {
+            image.color = filled ? CardSelected : SlotBackground;
         }
     }
 
-    /// <summary>교리1 설명 줄을 갱신한다.</summary>
-    public void SetDoctrine1Description(string description)
+    private Dictionary<ShopColumn, Text> GetSlotTexts(int doctrineIndex)
     {
-        if (doctrine1Description != null)
-        {
-            doctrine1Description.font = UiTheme.GetFont();
-            doctrine1Description.text = description ?? string.Empty;
-        }
+        return doctrineIndex >= 0 && doctrineIndex < DoctrineCount ? slotTexts[doctrineIndex] : null;
     }
 
-    /// <summary>합성 버튼 활성/라벨을 바꾼다.</summary>
-    public void SetCombineEnabled(bool enabled, string label)
+    private Dictionary<ShopColumn, Image> GetSlotImages(int doctrineIndex)
     {
-        if (combineButton != null)
+        return doctrineIndex >= 0 && doctrineIndex < DoctrineCount ? slotImages[doctrineIndex] : null;
+    }
+
+    /// <summary>교리 하나의 설명 줄을 갱신한다.</summary>
+    public void SetDescription(int doctrineIndex, string description)
+    {
+        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
         {
-            combineButton.interactable = enabled;
+            return;
         }
 
-        if (combineButtonText != null)
+        Text target = doctrineDescriptions[doctrineIndex];
+        if (target != null)
         {
-            combineButtonText.font = UiTheme.GetFont();
-            combineButtonText.text = label ?? (enabled ? "합성" : "합성");
+            target.font = UiTheme.GetFont();
+            target.text = description ?? string.Empty;
         }
     }
 
-    // ---------------- 오른쪽: 교리1 조합 (동작) + 교리2·3 틀 ----------------
+    /// <summary>클릭 배치 대상 교리를 강조 표시한다. (빈 슬롯 테두리 톤으로 구분)</summary>
+    public void SetActiveDoctrine(int doctrineIndex)
+    {
+        for (int d = 0; d < DoctrineCount; d++)
+        {
+            Dictionary<ShopColumn, Image> images = GetSlotImages(d);
+            if (images == null)
+            {
+                continue;
+            }
+
+            bool active = d == doctrineIndex;
+            foreach (KeyValuePair<ShopColumn, Image> pair in images)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                bool filled = slotFilled[d, (int)pair.Key];
+                if (filled)
+                {
+                    pair.Value.color = CardSelected;
+                }
+                else
+                {
+                    pair.Value.color = active ? TabActive : SlotBackground;
+                }
+            }
+        }
+    }
+
+    // ---------------- 오른쪽: 교리1·2·3 조합 (자동 장착) ----------------
 
     private void BuildRight(Transform parent)
     {
@@ -375,14 +486,16 @@ public class FoundationPanelView : MonoBehaviour
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = true;
 
-        BuildDoctrineGroup(right.transform, 1, true);
-        BuildDoctrineGroup(right.transform, 2, false);
-        BuildDoctrineGroup(right.transform, 3, false);
+        for (int i = 0; i < DoctrineGroupCount; i++)
+        {
+            BuildDoctrineGroup(right.transform, i);
+        }
     }
 
-    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄 (+ 교리1만 합성 버튼).
-    private void BuildDoctrineGroup(Transform parent, int number, bool interactive)
+    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄. 세 교리 모두 동일하게 동작한다.
+    private void BuildDoctrineGroup(Transform parent, int doctrineIndex)
     {
+        int number = doctrineIndex + 1;
         GameObject group = UiTheme.CreateImage("Doctrine" + number, parent, GroupBackground);
 
         VerticalLayoutGroup groupLayout = group.AddComponent<VerticalLayoutGroup>();
@@ -406,9 +519,13 @@ public class FoundationPanelView : MonoBehaviour
         slotLayout.childForceExpandWidth = true;
         slotLayout.childForceExpandHeight = true;
 
-        BuildSlot(slotRow.transform, ShopColumn.Subject, "주어", interactive);
-        BuildSlot(slotRow.transform, ShopColumn.Condition, "조건", interactive);
-        BuildSlot(slotRow.transform, ShopColumn.Result, "결과", interactive);
+        slotTexts[doctrineIndex] = new Dictionary<ShopColumn, Text>();
+        slotImages[doctrineIndex] = new Dictionary<ShopColumn, Image>();
+        slotObjects[doctrineIndex] = new Dictionary<ShopColumn, GameObject>();
+
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Subject, "주어");
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Condition, "조건");
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Result, "결과");
 
         // 설명 줄.
         GameObject description = UiTheme.CreateImage("Description", group.transform, DescriptionBackground);
@@ -421,33 +538,10 @@ public class FoundationPanelView : MonoBehaviour
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform, 6f);
 
-        if (interactive)
-        {
-            doctrine1Description = text;
-
-            // 합성 버튼: 설명 줄 아래에 둔다.
-            GameObject buttonGo = UiTheme.CreateImage("CombineButton", group.transform,
-                new Color(0.45f, 0.5f, 0.62f, 1f));
-            LayoutElement buttonLayout = buttonGo.AddComponent<LayoutElement>();
-            buttonLayout.preferredHeight = 52f;
-            buttonLayout.minHeight = 44f;
-
-            Image buttonImage = buttonGo.GetComponent<Image>();
-            buttonImage.raycastTarget = true;
-
-            combineButtonText = UiTheme.CreateText("Label", buttonGo.transform,
-                "합성", 20, Color.white, TextAnchor.MiddleCenter);
-            UiTheme.Stretch(combineButtonText.rectTransform);
-
-            combineButton = buttonGo.AddComponent<Button>();
-            combineButton.targetGraphic = buttonImage;
-            combineButton.navigation = new Navigation { mode = Navigation.Mode.None };
-            combineButton.onClick.AddListener(() => CombineClicked?.Invoke());
-            combineButton.interactable = false;
-        }
+        doctrineDescriptions[doctrineIndex] = text;
     }
 
-    private void BuildSlot(Transform parent, ShopColumn column, string defaultLabel, bool interactive)
+    private void BuildSlot(int doctrineIndex, Transform parent, ShopColumn column, string defaultLabel)
     {
         GameObject slot = UiTheme.CreateImage("Slot_" + defaultLabel, parent, SlotBackground);
         Image image = slot.GetComponent<Image>();
@@ -456,19 +550,16 @@ public class FoundationPanelView : MonoBehaviour
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform);
 
-        if (!interactive)
-        {
-            return;
-        }
-
         image.raycastTarget = true;
-        slotTexts[column] = text;
-        slotImages[column] = image;
+        slotTexts[doctrineIndex][column] = text;
+        slotImages[doctrineIndex][column] = image;
+        slotObjects[doctrineIndex][column] = slot;
 
         Button button = slot.AddComponent<Button>();
         button.targetGraphic = image;
         button.navigation = new Navigation { mode = Navigation.Mode.None };
-        button.onClick.AddListener(() => SlotClicked?.Invoke(column));
+        int capturedDoctrine = doctrineIndex;
+        button.onClick.AddListener(() => SlotClicked?.Invoke(capturedDoctrine, column));
     }
 
     // ---------------- 열기/닫기 ----------------
@@ -508,6 +599,138 @@ public class FoundationPanelView : MonoBehaviour
         if (canvas != null && canvas.gameObject != null)
         {
             Destroy(canvas.gameObject);
+        }
+    }
+
+    // 왼쪽 카드 드래그 처리. 캔버스 스케일러를 타지 않도록 최상위로 띄운다.
+    private sealed class ItemDragHandler : MonoBehaviour,
+        IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        private FoundationPanelView view;
+        private GameObject cardObject;
+        private Transform originalParent;
+        private int originalSibling;
+        private Vector2 originalAnchoredPos;
+
+        public void Initialize(FoundationPanelView panelView, GameObject card)
+        {
+            view = panelView;
+            cardObject = card;
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            if (view == null || cardObject == null)
+            {
+                return;
+            }
+
+            RectTransform rect = cardObject.GetComponent<RectTransform>();
+            if (rect == null)
+            {
+                return;
+            }
+
+            originalParent = cardObject.transform.parent;
+            originalSibling = cardObject.transform.GetSiblingIndex();
+            originalAnchoredPos = rect.anchoredPosition;
+
+            // 레이아웃에서 빼서 드래그 중 크기가 안 바뀌게 한다.
+            LayoutElement layout = cardObject.GetComponent<LayoutElement>();
+            if (layout != null)
+            {
+                layout.ignoreLayout = true;
+            }
+
+            cardObject.transform.SetParent(view.canvas.transform, true);
+            cardObject.transform.SetAsLastSibling();
+
+            Image image = cardObject.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = false;
+            }
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (cardObject == null)
+            {
+                return;
+            }
+
+            RectTransform rect = cardObject.GetComponent<RectTransform>();
+            if (rect == null)
+            {
+                return;
+            }
+
+            rect.position = eventData.position;
+
+            // 슬롯 위에 있으면 밝게 표시한다.
+            int overDoctrine = -1;
+            ShopColumn overColumn = ShopColumn.Subject;
+            bool over = view != null
+                && view.TryGetSlotAt(eventData.position, out overDoctrine, out overColumn);
+
+            for (int d = 0; d < DoctrineCount; d++)
+            {
+                Dictionary<ShopColumn, Image> images = view.GetSlotImages(d);
+                if (images == null)
+                {
+                    continue;
+                }
+
+                foreach (KeyValuePair<ShopColumn, Image> pair in images)
+                {
+                    if (pair.Value == null)
+                    {
+                        continue;
+                    }
+
+                    pair.Value.color = view.slotFilled[d, (int)pair.Key]
+                        ? CardSelected
+                        : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
+                }
+            }
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (view == null || cardObject == null)
+            {
+                return;
+            }
+
+            bool hasTarget = view.TryGetSlotAt(
+                eventData.position, out int targetDoctrine, out ShopColumn targetColumn);
+            int entryIndex = view.GetEntryIndex(cardObject);
+
+            // 카드를 원래 자리로 되돌린다. 목록은 Refresh에서 다시 그린다.
+            cardObject.transform.SetParent(originalParent, false);
+            cardObject.transform.SetSiblingIndex(originalSibling);
+            RectTransform rect = cardObject.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.anchoredPosition = originalAnchoredPos;
+            }
+
+            LayoutElement layout = cardObject.GetComponent<LayoutElement>();
+            if (layout != null)
+            {
+                layout.ignoreLayout = false;
+            }
+
+            Image image = cardObject.GetComponent<Image>();
+            if (image != null)
+            {
+                image.raycastTarget = true;
+            }
+
+            if (hasTarget && entryIndex >= 0)
+            {
+                view.ItemDroppedOnSlot?.Invoke(entryIndex, targetDoctrine, targetColumn);
+            }
         }
     }
 }
