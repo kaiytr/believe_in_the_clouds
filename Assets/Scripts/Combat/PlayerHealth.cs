@@ -52,14 +52,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         return ApplyDamage(damageInfo.Amount, null);
     }
 
+    internal bool TakeDamageFromBossCombo(DamageInfo damageInfo)
+    {
+        return ApplyDamage(damageInfo.Amount, null, allowDuringInvulnerability: true);
+    }
+
     public void TakeDamage(float damage, GameObject source = null)
     {
         ApplyDamage(damage, source);
     }
 
-    private bool ApplyDamage(float damage, GameObject source)
+    private bool ApplyDamage(float damage, GameObject source, bool allowDuringInvulnerability = false)
     {
-        if (damage <= 0f || isInvulnerable || currentHp <= 0f)
+        if (damage <= 0f || (isInvulnerable && !allowDuringInvulnerability) || currentHp <= 0f)
             return false;
 
         currentHp = Mathf.Max(0f, currentHp - damage);

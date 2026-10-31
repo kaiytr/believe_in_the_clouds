@@ -184,6 +184,19 @@ public class PlayerAttack : MonoBehaviour
     public int CurrentCombo => currentCombo;
     public int ComboCount => comboSteps != null ? comboSteps.Length : 0;
 
+    /// <summary>Exposes the ground combo definition so the boss can mirror the player's four-hit sequence.</summary>
+    public bool TryGetComboStep(int index, out ComboStep step)
+    {
+        if (comboSteps == null || index < 0 || index >= comboSteps.Length)
+        {
+            step = default;
+            return false;
+        }
+
+        step = comboSteps[index];
+        return true;
+    }
+
     private void Awake()
     {
         // Existing serialized players also need the signal component after this integration.

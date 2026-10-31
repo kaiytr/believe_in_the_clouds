@@ -69,6 +69,13 @@ MonoBehaviour:
   MeleeSize: {x: 2.6, y: 3}
   MeleeActiveTime: 0.12
   MeleeDamage: 14
+  MeleeComboDamage:
+  - 6
+  - 7
+  - 8
+  - 14
+  MeleeComboFirstWarning: 0.65
+  MeleeComboFollowupWarning: 0.35
   DashDistance: 4.5
   DashSpeed: 10
   DashDamage: 18
