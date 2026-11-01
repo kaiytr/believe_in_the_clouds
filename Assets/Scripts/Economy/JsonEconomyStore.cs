@@ -69,9 +69,7 @@ public sealed class JsonEconomyStore : IEconomyStore
                 !json.Contains("\"pendingGrants\"") || !json.Contains("\"processedTransactions\""))
                 return new EconomyLoadResult(EconomyLoadStatus.Invalid);
             var data = JsonUtility.FromJson<EconomyProfileData>(json);
-            if (data != null && !data.hasDeath) data.death = null;
-            if (data != null && !data.hasRun) data.run = null;
-            else data?.run?.Normalize();
+            data?.Normalize();
             if (data != null && data.schemaVersion > EconomyProfileData.CurrentSchemaVersion)
                 return new EconomyLoadResult(EconomyLoadStatus.FutureVersion);
             // v1 had only economic assets. The optional run domain starts empty;
@@ -79,8 +77,10 @@ public sealed class JsonEconomyStore : IEconomyStore
             if (data != null && data.schemaVersion == 1)
             {
                 if (data.hasRun) return new EconomyLoadResult(EconomyLoadStatus.Invalid);
-                data.schemaVersion = EconomyProfileData.CurrentSchemaVersion;
+                data.schemaVersion = 2;
             }
+            if (data != null && data.schemaVersion == 2)
+                data.schemaVersion = EconomyProfileData.CurrentSchemaVersion;
             return EconomyLedger.Validate(data)
                 ? new EconomyLoadResult(EconomyLoadStatus.Loaded, data)
                 : new EconomyLoadResult(EconomyLoadStatus.Invalid);

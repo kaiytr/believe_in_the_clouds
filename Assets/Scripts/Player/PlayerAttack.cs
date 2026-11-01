@@ -63,6 +63,7 @@ public class PlayerAttack : MonoBehaviour
     [Header("입력")]
     [Tooltip("공격에 쓸 마우스 버튼. 0 = 좌클릭.")]
     [SerializeField] private int attackMouseButton = 0;
+    public int AttackMouseButton => attackMouseButton;
 
     [Header("콤보 (1~4타)")]
     [SerializeField] private ComboStep[] comboSteps = new ComboStep[]

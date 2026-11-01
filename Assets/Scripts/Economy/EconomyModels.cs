@@ -79,6 +79,8 @@ public sealed class EconomyReceipt
     public string id;
     public string requestKey;
     public CurrencyResult result;
+    public bool hasChestReward;
+    public ChestRewardReceipt chestReward;
 }
 
 public enum EconomyDeathPhase { Captured, LossPrepared, Committed }
@@ -100,7 +102,7 @@ public sealed class EconomyDeathRecord
 [Serializable]
 public sealed class EconomyProfileData
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
     public int schemaVersion = CurrentSchemaVersion;
     public long revision;
     public string profileId = Guid.NewGuid().ToString("N");
@@ -119,10 +121,18 @@ public sealed class EconomyProfileData
     public EconomyProfileData Copy()
     {
         var copy = JsonUtility.FromJson<EconomyProfileData>(JsonUtility.ToJson(this));
-        if (!copy.hasDeath) copy.death = null;
-        if (!copy.hasRun) copy.run = null;
-        else copy.run?.Normalize();
+        copy.Normalize();
         return copy;
+    }
+
+    public void Normalize()
+    {
+        if (!hasDeath) death = null;
+        if (!hasRun) run = null;
+        else run?.Normalize();
+        if (processedTransactions != null)
+            foreach (EconomyReceipt receipt in processedTransactions)
+                if (receipt != null && !receipt.hasChestReward) receipt.chestReward = null;
     }
 }
 

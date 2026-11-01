@@ -25,3 +25,14 @@ Unity에서 `Assets/Scenes/EconomyTest.unity`를 열고 Play하면 격리된 테
 
 - [로비 테스트 가이드](Docs/LobbySystem_TestGuide.md): 실행 방법, 테스트 도구, 직접 확인할 항목
 - [로비 구현 결과](Docs/LobbySystem_ImplementationStatus.md): 저장 구조, 자동 검증 결과와 후속 범위
+
+## 상자 시스템
+
+사각형 임시 상자에 접근해 **상자 위의 E 안내를 보고 1.5초 유지**하면 사각 키캡의 외곽선이 한 바퀴 그려지고 개방한다. 안내는 상자·카메라 이동을 따라간다. 중단하면 진행률은 0으로 초기화된다. 교리 조각은 1개 보장하며 일반 65%·고급 25%·희귀 10%다. 코인은 별도로 7~17개를 드롭한 뒤 기존 재화 HUD로 이동한다.
+
+Unity에서 **`Assets/Scenes/ChestTest.unity`를 열고 Play**하면 상자 4개와 저장 실패·재로드·피해 테스트 도구로 확인할 수 있다. 실제 사용자 저장과 분리된 메모리 프로필을 사용한다. 실제 스테이지별 상자 배치는 후속 작업이다.
+
+- [상자 상세기획](Docs/ChestSystem_Design.md): 요청 사항, 권장 플레이 규칙, 사각 진행 UI, 보상과 예외 처리
+- [상자 개발명세서](Docs/ChestSystem_TechnicalSpec.md): 기존 구조 재사용, 홀드 입력, 단일 보상 거래·저장, 검증 계획
+- [상자 테스트 가이드](Docs/ChestSystem_TestGuide.md): 실행·조작·테스트 도구와 직접 확인할 항목
+- [상자 구현 결과](Docs/ChestSystem_ImplementationStatus.md): 구현 범위·저장 호환·검증 결과와 기존 실패 구분

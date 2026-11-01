@@ -92,6 +92,7 @@ public static class EconomyLedger
         if (pending + data.balance > EconomySettings.MaxCoins) return false;
         if (data.hasRun != (data.run != null) || (data.hasRun && !LobbyRules.Validate(data.run,
             data.hasDeath && data.death != null && data.death.phase != EconomyDeathPhase.Committed))) return false;
+        if (!ChestRules.ValidateProfile(data)) return false;
         EconomyDeathRecord death = data.death;
         if (data.hasDeath != (death != null)) return false;
         if (death == null) return true;

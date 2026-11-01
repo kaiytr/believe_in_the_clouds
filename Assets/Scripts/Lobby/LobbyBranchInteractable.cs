@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryInteractable
+public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryInteractable, IWorldInteractionPrompt
 {
     public string BranchId { get; private set; }
     public SpriteRenderer Body => body;
@@ -8,7 +8,12 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private SpriteRenderer border;
     [SerializeField] private TextMesh label;
     [SerializeField] private BoxCollider2D trigger;
+    [Tooltip("분기 위 안내와 콜라이더 윗면 사이의 월드 거리.")]
+    [SerializeField, Min(0f)] private float promptGap = .8f;
     private Color displayed;
+
+    public Transform PromptAnchor => transform;
+    public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
 
     private void Awake()
     {

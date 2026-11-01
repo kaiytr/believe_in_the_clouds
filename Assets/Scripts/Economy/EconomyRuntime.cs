@@ -110,8 +110,10 @@ public sealed class EconomyRuntime : MonoBehaviour
     {
         defeatRetries.Clear();
         flightView?.CancelFlights();
-        flushRequested = true;
-        Currency.Service?.SettleAllPending();
+        // A successful flush completes this scene transition's obligation.
+        // Keeping this flag set could flush a NEW flight on the next retry tick.
+        CurrencyResult flush = Currency.Service?.SettleAllPending();
+        flushRequested = flush != null && !flush.Success;
 
         if (next.name == FoundationTestSceneName)
         {
@@ -145,8 +147,8 @@ public sealed class EconomyRuntime : MonoBehaviour
     {
         if (!paused) return;
         flightView?.CancelFlights();
-        flushRequested = true;
-        Currency.Service?.SettleAllPending();
+        CurrencyResult flush = Currency.Service?.SettleAllPending();
+        flushRequested = flush != null && !flush.Success;
     }
 
     private void OnApplicationQuit() => Currency.Service?.SettleAllPending();

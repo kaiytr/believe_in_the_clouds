@@ -23,6 +23,8 @@ public sealed class TemporaryStageData
     public string branchId;
     public BranchRole role;
     public bool completed;
+    public bool hasChestState;
+    public ChestStageState chestState;
 }
 
 [Serializable]
@@ -48,7 +50,11 @@ public sealed class LobbyRunData
         copy.Normalize();
         return copy;
     }
-    public void Normalize() { if (!hasStage) stage = null; }
+    public void Normalize()
+    {
+        if (!hasStage) stage = null;
+        else if (stage != null && !stage.hasChestState) stage.chestState = null;
+    }
 }
 
 // Seeded, pure rules. Failed saves reuse the same plan rather than rerolling.

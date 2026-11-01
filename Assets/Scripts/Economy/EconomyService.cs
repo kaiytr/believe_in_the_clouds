@@ -168,7 +168,8 @@ public sealed partial class EconomyService
         }, () => { retryDrops.Remove(defeatId); retryDropKinds.Remove(defeatId); RequestFlight(defeatId, position, sourceCamera); });
     }
 
-    private CurrencyResult Execute(string id, string key, string reason, Func<EconomyProfileData, CurrencyResult> mutate, Action afterCommit = null)
+    private CurrencyResult Execute(string id, string key, string reason, Func<EconomyProfileData, CurrencyResult> mutate,
+        Action afterCommit = null, Action<EconomyProfileData, EconomyReceipt> decorateReceipt = null)
     {
         if (busy || deathWork != null) return Fail(EconomyError.Busy, id);
         if (!initialized) return Fail(EconomyError.NotReady, id);
@@ -183,7 +184,9 @@ public sealed partial class EconomyService
             CurrencyResult result = mutate(work);
             if (!result.Success) return result;
             work.revision++;
-            work.processedTransactions.Add(new EconomyReceipt { id = id, requestKey = key, result = result.Copy() });
+            var receipt = new EconomyReceipt { id = id, requestKey = key, result = result.Copy() };
+            decorateReceipt?.Invoke(work, receipt);
+            work.processedTransactions.Add(receipt);
             if (!Save(work)) return Fail(EconomyError.SaveFailed, id);
             Publish(work, reason, id);
             if (afterCommit != null) SafeInvoke(afterCommit);

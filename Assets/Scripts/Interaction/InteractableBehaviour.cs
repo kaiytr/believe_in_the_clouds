@@ -68,6 +68,16 @@ public abstract class InteractableBehaviour : MonoBehaviour, IInteractable
         }
     }
 
+    // Keep the prompt above the object even when a scene scales its collider.
+    // Return local coordinates for InteractionPrompt.Follow; the gap is in world units.
+    protected Vector3 GetPromptOffsetAboveCollider(float gap)
+    {
+        Collider2D collider2D = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>();
+        Collider collider3D = collider2D == null ? GetComponent<Collider>() ?? GetComponentInChildren<Collider>() : null;
+        Bounds bounds = collider2D != null ? collider2D.bounds : collider3D != null ? collider3D.bounds : new Bounds(transform.position, Vector3.zero);
+        return transform.InverseTransformPoint(new Vector3(bounds.center.x, bounds.max.y + Mathf.Max(0, gap), transform.position.z));
+    }
+
     public virtual bool CanInteract(GameObject interactor)
     {
         return isActiveAndEnabled && interactor != null;
