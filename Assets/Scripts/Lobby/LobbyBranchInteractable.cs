@@ -3,29 +3,49 @@ using UnityEngine;
 public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryInteractable
 {
     public string BranchId { get; private set; }
-    public SpriteRenderer Body { get; private set; }
-    private SpriteRenderer border;
-    private TextMesh label;
+    public SpriteRenderer Body => body;
+    [SerializeField] private SpriteRenderer body;
+    [SerializeField] private SpriteRenderer border;
+    [SerializeField] private TextMesh label;
+    [SerializeField] private BoxCollider2D trigger;
     private Color displayed;
 
-    public void Initialize(string id, Sprite sprite, Material material)
+    private void Awake()
     {
-        BranchId = id; interactRadius = 1.4f;
+        ResolvePrefabReferences();
+        interactRadius = 1.4f;
         displayName = "분기";
-        var trigger = gameObject.AddComponent<BoxCollider2D>();
-        trigger.isTrigger = true; trigger.size = new Vector2(2.8f, 4.6f);
-        Body = CreatePanel("Panel", sprite, material, new Vector2(2.8f, 4.6f), -8);
-        border = CreatePanel("Frame", sprite, material, new Vector2(3f, 4.8f), -9);
-        label = LobbySceneController.WorldLabel(transform, "Role", "?", new Vector2(0, 2.8f), Color.white);
+
+        if (trigger == null)
+        {
+            trigger = GetComponent<BoxCollider2D>();
+        }
+        if (trigger == null)
+        {
+            trigger = gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        trigger.isTrigger = true;
+        trigger.size = new Vector2(2.8f, 4.6f);
+
+        if (label != null && label.font == null)
+        {
+            label.font = UiTheme.GetFont();
+            if (label.font != null && label.TryGetComponent(out MeshRenderer textRenderer))
+            {
+                textRenderer.sharedMaterial = label.font.material;
+            }
+        }
     }
 
-    private SpriteRenderer CreatePanel(string name, Sprite sprite, Material material, Vector2 size, int order)
+    public void Initialize(string id)
     {
-        var panel = new GameObject(name); panel.transform.SetParent(transform, false);
-        panel.transform.localScale = new Vector3(size.x, size.y, 1);
-        var renderer = panel.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite; renderer.sharedMaterial = material; renderer.sortingOrder = order;
-        return renderer;
+        ResolvePrefabReferences();
+        BranchId = id;
+        if (label != null)
+        {
+            label.text = "?";
+        }
     }
 
     private BranchCandidate Candidate => LobbyFlowRuntime.Instance?.State?.candidates.Find(item => item.id == BranchId);
@@ -53,16 +73,39 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     private void Update()
     {
         BranchCandidate candidate = Candidate;
-        if (candidate == null || Body == null) return;
+        if (candidate == null || body == null) return;
         Color color = candidate.revealed ? RoleColor(candidate.role) : new Color(.36f, .39f, .45f);
         if (displayed != color)
         {
-            displayed = color; Body.color = color;
-            label.text = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
+            displayed = color;
+            body.color = color;
+            if (label != null)
+            {
+                label.text = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
+            }
         }
         bool selected = InteractionController.Instance != null && InteractionController.Instance.Current == this &&
             LobbyFlowRuntime.Instance.InputReady && IsInRange(LobbyFlowRuntime.Instance.Scene.Player.transform.position);
-        border.color = selected ? new Color(1f, .9f, .55f) : new Color(.19f, .23f, .3f);
+        if (border != null)
+        {
+            border.color = selected ? new Color(1f, .9f, .55f) : new Color(.19f, .23f, .3f);
+        }
+    }
+
+    private void ResolvePrefabReferences()
+    {
+        if (body == null)
+        {
+            body = transform.Find("Panel")?.GetComponent<SpriteRenderer>();
+        }
+        if (border == null)
+        {
+            border = transform.Find("Frame")?.GetComponent<SpriteRenderer>();
+        }
+        if (label == null)
+        {
+            label = transform.Find("Role")?.GetComponent<TextMesh>();
+        }
     }
 
     public static Color RoleColor(BranchRole role)

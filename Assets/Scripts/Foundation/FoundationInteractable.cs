@@ -6,6 +6,25 @@ using UnityEngine;
 // 조합 화면은 나중에 붙인다.
 public class FoundationInteractable : InteractableBehaviour
 {
+    private void Awake()
+    {
+        SetInteractionCollidersToTriggers();
+
+        TextMesh[] labels = GetComponentsInChildren<TextMesh>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            if (labels[i].font == null)
+            {
+                labels[i].font = UiTheme.GetFont();
+            }
+
+            if (labels[i].font != null && labels[i].TryGetComponent(out MeshRenderer textRenderer))
+            {
+                textRenderer.sharedMaterial = labels[i].font.material;
+            }
+        }
+    }
+
     [Header("재단")]
     [Tooltip("로그/UI에 표시할 재단 이름.")]
     [SerializeField] private string foundationName = "재단";

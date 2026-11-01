@@ -52,6 +52,22 @@ public abstract class InteractableBehaviour : MonoBehaviour, IInteractable
         All.Remove(this);
     }
 
+    /// <summary>
+    /// 상점·재단처럼 통과 가능한 상호작용 지점의 루트 콜라이더를 Trigger로 만든다.
+    /// 실제 구조물을 막히게 하려면 별도 자식 오브젝트에 물리 콜라이더를 둔다.
+    /// </summary>
+    protected void SetInteractionCollidersToTriggers()
+    {
+        Collider2D[] colliders = GetComponents<Collider2D>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null)
+            {
+                colliders[i].isTrigger = true;
+            }
+        }
+    }
+
     public virtual bool CanInteract(GameObject interactor)
     {
         return isActiveAndEnabled && interactor != null;

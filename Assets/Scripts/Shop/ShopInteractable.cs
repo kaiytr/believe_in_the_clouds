@@ -11,6 +11,11 @@ using UnityEngine;
 // (상호작용 대상은 UI를 직접 알지 않는다)
 public class ShopInteractable : InteractableBehaviour
 {
+    private void Awake()
+    {
+        SetInteractionCollidersToTriggers();
+    }
+
     [Header("상점")]
     [Tooltip("UI 제목으로 쓸 상점 이름.")]
     [SerializeField] private string shopName = "상점";

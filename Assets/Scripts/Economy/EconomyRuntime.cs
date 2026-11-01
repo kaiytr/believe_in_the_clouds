@@ -44,9 +44,15 @@ public sealed class EconomyRuntime : MonoBehaviour
         Settings = Resources.Load<EconomySettings>("EconomySettings");
         if (Settings == null) Settings = ScriptableObject.CreateInstance<EconomySettings>();
         IEconomyStore store;
-        // All editor play sessions are isolated from the released game's profile.
-        // Batch test runs use memory, including the existing combat regressions.
-        if (Array.Exists(Environment.GetCommandLineArgs(), arg => arg.Equals("-runTests", StringComparison.OrdinalIgnoreCase)))
+        string[] arguments = Environment.GetCommandLineArgs();
+        bool testRun = Array.Exists(arguments, arg => arg.Equals("-runTests", StringComparison.OrdinalIgnoreCase));
+        bool usePersistentEditorProfile = Array.Exists(arguments,
+            arg => arg.Equals("-usePersistentEditorProfile", StringComparison.OrdinalIgnoreCase));
+
+        // Each Editor Play starts clean for scene iteration. Pass
+        // -usePersistentEditorProfile only when deliberately testing save/resume in the Editor.
+        // Released builds continue using persistentDataPath.
+        if (testRun || (Application.isEditor && !usePersistentEditorProfile))
             store = new MemoryEconomyStore();
         else
         {

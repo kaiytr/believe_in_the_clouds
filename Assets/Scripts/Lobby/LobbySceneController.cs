@@ -7,6 +7,11 @@ public sealed class LobbySceneController : MonoBehaviour
 {
     [SerializeField] private bool isLobby = true;
     [SerializeField] private PlayerHealth player;
+    [SerializeField] private LobbyBranchInteractable branchPrefab;
+    [SerializeField] private Transform[] twoCandidateSlots = new Transform[2];
+    [SerializeField] private Transform[] threeCandidateSlots = new Transform[3];
+    [SerializeField] private FoundationInteractable foundationPrefab;
+    [SerializeField] private Transform foundationAnchor;
     [SerializeField] private Sprite squareSprite;
     [SerializeField] private Material worldMaterial;
     [SerializeField] private bool showTestTools = true;
@@ -80,14 +85,9 @@ public sealed class LobbySceneController : MonoBehaviour
         generated = new GameObject("Committed run view"); generated.transform.SetParent(transform);
         if (isLobby)
         {
-            foreach (BranchCandidate candidate in run.candidates)
-            {
-                var gate = new GameObject("Branch_" + (candidate.slot + 1)); gate.transform.SetParent(generated.transform);
-                gate.transform.position = new Vector3(run.candidates.Count == 2 ? 10 + candidate.slot * 10 : 7 + candidate.slot * 8, -.7f);
-                gate.AddComponent<LobbyBranchInteractable>().Initialize(candidate.id, squareSprite, worldMaterial);
-            }
+            SpawnFoundation(generated.transform);
+            SpawnBranches(run, generated.transform);
             WorldLabel(generated.transform, "Lobby title", "다음 목적지를 선택하세요", new Vector2(-15, 2.3f), new Color(.75f, .86f, .95f));
-            WorldLabel(generated.transform, "Future altar space", "재단 예정 공간", new Vector2(-7, -1.3f), new Color(.55f, .62f, .7f));
         }
         else
         {
@@ -99,6 +99,46 @@ public sealed class LobbySceneController : MonoBehaviour
             exitBody = panel.AddComponent<SpriteRenderer>(); exitBody.sprite = squareSprite; exitBody.sharedMaterial = worldMaterial; exitBody.sortingOrder = -8;
             exit.AddComponent<TemporaryStageExit>();
             exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용", new Vector2(0, 2.7f), Color.white);
+        }
+    }
+
+    private void SpawnFoundation(Transform parent)
+    {
+        if (foundationPrefab == null || foundationAnchor == null)
+        {
+            Debug.LogError("LobbySceneController needs a Foundation prefab and anchor.", this);
+            return;
+        }
+
+        Instantiate(foundationPrefab, foundationAnchor.position, foundationAnchor.rotation, parent);
+    }
+
+    private void SpawnBranches(LobbyRunData run, Transform parent)
+    {
+        if (branchPrefab == null)
+        {
+            Debug.LogError("LobbySceneController needs a Branch prefab.", this);
+            return;
+        }
+
+        Transform[] slots = run.candidates.Count == 2 ? twoCandidateSlots : threeCandidateSlots;
+        if (slots == null || slots.Length < run.candidates.Count)
+        {
+            Debug.LogError($"LobbySceneController has too few branch anchors for {run.candidates.Count} candidates.", this);
+            return;
+        }
+
+        foreach (BranchCandidate candidate in run.candidates)
+        {
+            if (candidate.slot < 0 || candidate.slot >= slots.Length || slots[candidate.slot] == null)
+            {
+                Debug.LogError($"LobbySceneController is missing branch anchor {candidate.slot}.", this);
+                continue;
+            }
+
+            Transform anchor = slots[candidate.slot];
+            LobbyBranchInteractable branch = Instantiate(branchPrefab, anchor.position, anchor.rotation, parent);
+            branch.Initialize(candidate.id);
         }
     }
 
@@ -144,6 +184,9 @@ public sealed class LobbySceneController : MonoBehaviour
         rect.anchoredPosition = new Vector2(16 + index % 2 * 255, -52 - index / 2 * 40); rect.sizeDelta = new Vector2(243, 34);
         Image image = root.GetComponent<Image>(); image.raycastTarget = true;
         Button button = root.AddComponent<Button>(); button.targetGraphic = image; button.onClick.AddListener(() => action());
+        Navigation navigation = button.navigation;
+        navigation.mode = Navigation.Mode.None;
+        button.navigation = navigation;
         Text label = UiTheme.CreateText("Label", root.transform, text, 16, Color.white); UiTheme.Stretch(label.rectTransform, 3);
         return button;
     }
