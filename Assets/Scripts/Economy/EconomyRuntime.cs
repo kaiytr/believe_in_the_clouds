@@ -11,6 +11,9 @@ public sealed class EconomyRuntime : MonoBehaviour
     private CoinFlightView flightView;
     private float retryAt;
     private bool flushRequested;
+    private const string FoundationTestSceneName = "FoundationTest";
+    private IEconomyStore persistentStore;
+    private bool foundationTestProfileActive;
     private sealed class DefeatRetry
     {
         public EnemyRewardKind Kind;
@@ -51,6 +54,7 @@ public sealed class EconomyRuntime : MonoBehaviour
                 : Application.persistentDataPath;
             store = new JsonEconomyStore(Path.Combine(directory, "economy-save-v1.json"));
         }
+        persistentStore = store;
         SetService(new EconomyService(store));
         SceneManager.activeSceneChanged += HandleSceneChanged;
     }
@@ -72,12 +76,45 @@ public sealed class EconomyRuntime : MonoBehaviour
         flushRequested = false;
     }
 
+    public void UseFoundationTestProfile()
+    {
+        if (foundationTestProfileActive || persistentStore == null)
+        {
+            return;
+        }
+
+        foundationTestProfileActive = true;
+        SetService(new EconomyService(new MemoryEconomyStore()));
+        Debug.Log("[Economy] FoundationTest에서 격리된 메모리 프로필을 사용합니다.");
+    }
+
+    private void RestorePersistentProfile()
+    {
+        if (!foundationTestProfileActive || persistentStore == null)
+        {
+            return;
+        }
+
+        foundationTestProfileActive = false;
+        SetService(new EconomyService(persistentStore));
+        Debug.Log("[Economy] 저장된 재화 프로필을 다시 불러왔습니다.");
+    }
+
     private void HandleSceneChanged(Scene previous, Scene next)
     {
         defeatRetries.Clear();
         flightView?.CancelFlights();
         flushRequested = true;
         Currency.Service?.SettleAllPending();
+
+        if (next.name == FoundationTestSceneName)
+        {
+            UseFoundationTestProfile();
+        }
+        else
+        {
+            RestorePersistentProfile();
+        }
     }
 
     private void Update()
