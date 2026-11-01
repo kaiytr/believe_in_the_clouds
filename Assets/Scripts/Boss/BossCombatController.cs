@@ -39,7 +39,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private Transform effectRoot;
     private BossBeliefKind activeBelief;
     private BossPatternKind activePattern;
-    private bool patternRunning, signalWindow, playerActed, cloudTouched, initialized;
+    private bool patternRunning, signalWindow, playerActed, initialized;
     private float windowStartedAt, encounterStartedAt, burnEndsAt, conditionEndsAt, conditionDuration;
     private int generation = 1, patternId, nextAttackId = 1, facing = 1, initialFacing;
     private int lastAcceptedComboPatternId = -1;
@@ -404,10 +404,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
                 break;
             case BossPatternKind.CloudBelief:
                 activeBelief = BossBeliefKind.Cloud;
-                cloudTouched = false;
                 yield return hazards.Clouds();
-                if (token == generation && CanContinue && !cloudTouched) ReduceBelief(settings.BeliefReduction, "구름에 올라가지 않음");
-                else if (token == generation && CanContinue) ShowFeedback("구름을 밟았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
                 break;
             case BossPatternKind.BurnBelief:
                 activeBelief = BossBeliefKind.Burn;
@@ -593,14 +590,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         Notify();
     }
     public BossBeliefKind RegularAttackBelief => activeBelief == BossBeliefKind.Burn || activeBelief == BossBeliefKind.AttackAndDodge ? activeBelief : BossBeliefKind.None;
-    public void OnCloudInteraction(bool white, Vector2 feet, int cloudGeneration, int cloudPattern)
+    public void ResolveCloudShelter(bool sheltered)
     {
-        if (!CanContinue || activeBelief != BossBeliefKind.Cloud || cloudGeneration != generation || cloudPattern != patternId) return;
-        cloudTouched = true;
-        if (white) ShowFeedback("흰 구름 착지 · 발판에서 다시 점프할 수 있습니다", new Color(.65f, .95f, 1f));
-        else if (hazards.ScheduleSpike(feet))
-            ShowFeedback($"먹구름 통과 · {settings.SpikeWarning:0.0}초 후 발밑 가시", new Color(1f, .68f, .45f));
-        Notify();
+        if (!CanContinue || activeBelief != BossBeliefKind.Cloud) return;
+        if (sheltered) ReduceBelief(settings.BeliefReduction, "흰 구름 아래 대피 성공");
+        else ShowFeedback("보호 범위 밖 · 번개 발동 · 믿음 유지", new Color(1f, .68f, .45f));
     }
     public T SpawnEffect<T>(T prefab) where T : Component
     {
@@ -682,6 +676,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
             case BossAttackKind.Projectile: return "투사체";
             case BossAttackKind.Shockwave: return "지면 충격파";
             case BossAttackKind.Spike: return "가시";
+            case BossAttackKind.Lightning: return "먹구름 번개";
             default: return "공격";
         }
     }
@@ -693,7 +688,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
             case BossPatternKind.Dash: return "돌진";
             case BossPatternKind.Projectile: return "투사체";
             case BossPatternKind.AttackIntentBelief: return "공격 예언 · 응시";
-            case BossPatternKind.CloudBelief: return "구름 시험";
+            case BossPatternKind.CloudBelief: return "먹구름 · 번개 대피";
             case BossPatternKind.BurnBelief: return "화상 강화";
             case BossPatternKind.AttackAndDodgeBelief: return "응시 후 공격";
             case BossPatternKind.NoAttackBelief: return "공격 금지 예언";
@@ -741,7 +736,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         switch (kind)
         {
             case BossBeliefKind.AttackIntent: case BossBeliefKind.AttackAndDodge: return "너는 날 공격할 것이다.";
-            case BossBeliefKind.Cloud: return "너는 구름 위에 올라갈 것이다.";
+            case BossBeliefKind.Cloud: return "너는 번개를 피하지 못할 것이다.";
             case BossBeliefKind.Burn: return "너는 불타게 될 것이다.";
             case BossBeliefKind.NoAttack: return "너는 날 공격하지 않을 것이다.";
             case BossBeliefKind.Shockwave: return "너는 피하지 못할 것이다.";

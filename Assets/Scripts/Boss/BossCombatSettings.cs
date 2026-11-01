@@ -41,18 +41,30 @@ public sealed class BossCombatSettings : ScriptableObject
     public float ProjectileLifetime = 3f;
     public float ProjectileDamage = 12f;
 
-    [Header("Cloud / spike / ground waves")]
+    [Header("Cloud lightning (world units / seconds)")]
+    [Tooltip("Seconds of cloud formation before the shelter countdown.")]
     public float CloudWarning = 0.5f;
-    public float CloudDuration = 4f;
-    public float CloudTopHeight = 1.5f;
+    // Shelter deadline after clouds appear; independent of phase attack speed.
+    public float CloudDuration = 3f;
+    [Tooltip("Storm cloud top above the locked ground position, in world units.")]
+    public float CloudTopHeight = 6f;
+    [Tooltip("Signed horizontal offset of the white cloud from the storm center.")]
     public float CloudSpacing = 2f;
-    public Vector2 CloudSize = new Vector2(2.8f, 0.7f);
+    public Vector2 CloudSize = new Vector2(3f, 0.7f);
+    public Vector2 StormCloudSize = new Vector2(12f, 1.4f);
+    public float ShelterHeight = 2.8f;
+    public float LightningDuration = 0.45f;
+    public float LightningDamage = 18f;
+    public float LightningSpacing = 0.8f;
+    public float LightningWidth = 0.08f;
+
+    [Header("Legacy spike / ground waves")]
     public float SpikeWarning = 3f;
     public float SpikeDuration = 2f;
     public Vector2 SpikeSize = new Vector2(1.25f, 0.8f);
     public float SpikeDamage = 18f;
     public float WaveDistance = 7f;
-    public float WaveSpeed = 6f;
+    public float WaveSpeed = 9f;
     public Vector2 WaveSize = new Vector2(0.6f, 0.6f);
     public float WaveDamage = 16f;
     public float MaximumGroundStep = 0.3f;
@@ -112,11 +124,15 @@ public sealed class BossCombatSettings : ScriptableObject
             for (int i = 0; i < MeleeComboDamage.Length; i++)
                 if (MeleeComboDamage[i] < 0f)
                     errors.Add("Melee combo: damage values must be non-negative.");
-        if (!Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
+        if (!Positive(StormCloudSize) || !Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
             DashDistance <= 0f || DashSpeed <= 0f || ProjectileDiameter <= 0f || ProjectileSpeed <= 0f ||
             ProjectileDistance <= 0f || ProjectileLifetime <= 0f || WaveSpeed <= 0f || WaveDistance <= 0f)
             errors.Add("Attack geometry/travel: every size, speed, distance and projectile lifetime must be positive.");
-        if (CloudWarning <= 0f || CloudDuration <= 0f || CloudTopHeight <= 0f || CloudSpacing <= 0f || SpikeWarning <= 0f || SpikeDuration <= 0f ||
+        if (ShelterHeight <= 0f || ShelterHeight + CloudSize.y >= CloudTopHeight - StormCloudSize.y ||
+            CloudSize.x >= StormCloudSize.x || Mathf.Abs(CloudSpacing) + CloudSize.x * .5f > StormCloudSize.x * .5f ||
+            LightningDuration <= 0f || LightningDamage < 0f || LightningSpacing <= 0f || LightningWidth <= 0f)
+            errors.Add("Cloud lightning: shelter must fit below and inside the storm; lightning timing/geometry must be positive.");
+        if (CloudWarning <= 0f || CloudDuration <= 0f || CloudTopHeight <= 0f || SpikeWarning <= 0f || SpikeDuration <= 0f ||
             BurnPreparation <= 0f || BurnWindow <= 0f || BurnDuration <= 0f || BurnTickInterval <= 0f || BurnTickDamage < 0f ||
             MeleeDamage < 0f || DashDamage < 0f || ProjectileDamage < 0f || SpikeDamage < 0f || WaveDamage < 0f)
             errors.Add("Belief hazards: invalid duration, placement or damage.");
@@ -146,17 +162,12 @@ public sealed class BossCombatSettings : ScriptableObject
         }
         if (WarningPrefab != null && WarningPrefab.GetComponent<DangerIndicator>() == null)
             errors.Add("WarningPrefab requires the shared DangerIndicator component.");
-        if (WhiteCloudPrefab != null)
+        foreach (var cloud in new[] { WhiteCloudPrefab, BlackCloudPrefab })
         {
-            var surface = WhiteCloudPrefab.GetComponent<BoxCollider2D>();
-            var effector = WhiteCloudPrefab.GetComponent<PlatformEffector2D>();
-            if (surface == null || surface.isTrigger || !surface.usedByEffector || effector == null || !effector.useOneWay)
-                errors.Add("WhiteCloudPrefab requires a one-way PlatformEffector2D surface.");
-        }
-        if (BlackCloudPrefab != null)
-        {
-            var surface = BlackCloudPrefab.GetComponent<BoxCollider2D>();
-            if (surface == null || !surface.isTrigger) errors.Add("BlackCloudPrefab requires a pass-through trigger.");
+            if (cloud == null) continue;
+            var surface = cloud.GetComponent<BoxCollider2D>();
+            if (surface == null || !surface.isTrigger || surface.usedByEffector || cloud.GetComponent<PlatformEffector2D>() != null)
+                errors.Add("Cloud prefabs must be pass-through decorations without a landing surface.");
         }
         ValidatePool(PhaseOnePool, BossPhase.One, "PhaseOnePool", errors);
         ValidatePool(PhaseTwoPool, BossPhase.Two, "PhaseTwoPool", errors);

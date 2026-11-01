@@ -116,12 +116,52 @@ public sealed class BossCombatEditModeTests
         Assert.That(afterimageRenderer.sprite.bounds.size.y, Is.EqualTo(1f).Within(.001f));
         Assert.That(afterimageRenderer.sharedMaterial, Is.Not.Null);
         Assert.That(data.ProjectilePrefab.GetComponent<CircleCollider2D>().radius * 2f, Is.EqualTo(1f));
-        Assert.That(data.WhiteCloudPrefab.GetComponent<BoxCollider2D>().usedByEffector, Is.True);
-        Assert.That(data.WhiteCloudPrefab.GetComponent<PlatformEffector2D>().useOneWay, Is.True);
+        Assert.That(data.WhiteCloudPrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
+        Assert.That(data.WhiteCloudPrefab.GetComponent<PlatformEffector2D>(), Is.Null);
         Assert.That(data.BlackCloudPrefab.GetComponent<BoxCollider2D>().isTrigger, Is.True);
         var invalid = Object.Instantiate(data);
         try { invalid.WarningPrefab = null; invalid.BeliefRecoveryRatio = 0f; Assert.That(invalid.ValidateSettings(), Has.Some.Contains("WarningPrefab")); Assert.That(invalid.ValidateSettings().Count, Is.GreaterThanOrEqualTo(2)); }
         finally { Object.DestroyImmediate(invalid); }
+    }
+
+    [TestCase(-1f, 1f, true)]
+    [TestCase(1f, 1f, true)]
+    [TestCase(0f, .5f, true)]
+    [TestCase(0f, 2.5f, true)]
+    [TestCase(-1.02f, 1f, false)]
+    [TestCase(1.02f, 1f, false)]
+    [TestCase(0f, .48f, false)]
+    [TestCase(0f, 2.52f, false)]
+    [TestCase(0f, 3.6f, false)]
+    public void ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(float x, float y, bool expected)
+    {
+        var target = new GameObject("Offset body");
+        try
+        {
+            target.transform.position = new Vector2(40f, -20f);
+            var body = target.AddComponent<BoxCollider2D>(); body.size = Vector2.one;
+            body.offset = new Vector2(x - 40f, y + 20f);
+            Physics2D.SyncTransforms();
+            Assert.That(BossCloudLightning.Contains(new AttackGeometry(new Vector2(0f,1.5f),new Vector2(3f,3f)), body), Is.EqualTo(expected));
+            body.enabled = false;
+            Assert.That(BossCloudLightning.Contains(new AttackGeometry(new Vector2(0f,1.5f),new Vector2(3f,3f)), body), Is.False);
+        }
+        finally { Object.DestroyImmediate(target); }
+    }
+
+    [Test]
+    public void CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave()
+    {
+        var data = AssetDatabase.LoadAssetAtPath<BossCombatSettings>("Assets/Data/Boss/BossCombatSettings.asset");
+        Assert.That(data.WaveSpeed, Is.EqualTo(9f));
+        var copy = Object.Instantiate(data);
+        try
+        {
+            copy.ShelterHeight = copy.CloudTopHeight;
+            copy.LightningDuration = 0f;
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
+        }
+        finally { Object.DestroyImmediate(copy); }
     }
 
     [Test]

@@ -21,6 +21,7 @@ public sealed class BossAttackRecord
     public bool IsComplete { get; private set; }
     public AttackOutcome Outcome { get; private set; }
     public BossAttackEndReason EndReason { get; private set; }
+    private bool shelteredFromLightning;
     private Vector2 threatenedPosition;
     private readonly List<AttackGeometry> warningGeometry = new List<AttackGeometry>();
     public IReadOnlyList<AttackGeometry> WarningGeometry => warningGeometry;
@@ -68,6 +69,8 @@ public sealed class BossAttackRecord
         Contacted = true;
         return true;
     }
+    public void ProtectFromLightning()
+    { if (Kind == BossAttackKind.Lightning && Activated && !IsComplete && !Contacted) shelteredFromLightning = true; }
     public void AcceptDamage() { if (Contacted && !IsComplete) DamageAccepted = true; }
 
     public bool Finish(BossAttackEndReason reason)
@@ -77,7 +80,7 @@ public sealed class BossAttackRecord
         EndReason = reason;
         Outcome = reason == BossAttackEndReason.Cancelled || reason == BossAttackEndReason.TargetLost ? AttackOutcome.Cancelled :
             DamageAccepted ? AttackOutcome.Hit :
-            Activated && WasThreatened && EscapedByMovement && !Contacted ? AttackOutcome.EvadedByPlayer :
+            Activated && !Contacted && (shelteredFromLightning || WasThreatened && EscapedByMovement) ? AttackOutcome.EvadedByPlayer :
             reason == BossAttackEndReason.Wall ? AttackOutcome.Blocked : AttackOutcome.Missed;
         return true;
     }

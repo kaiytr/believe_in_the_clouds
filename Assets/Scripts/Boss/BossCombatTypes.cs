@@ -44,7 +44,8 @@ public enum BossAttackKind
     Dash,
     Projectile,
     Shockwave,
-    Spike
+    Spike,
+    Lightning
 }
 
 public enum BossAttackEndReason { Completed, Contact, Wall, Cancelled, TargetLost }

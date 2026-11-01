@@ -322,52 +322,171 @@ public sealed class BossCombatPlayModeTests
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
 
-    [UnityTest]
-    public IEnumerator CloudOneWayPlatformSupportsLandingAndJumpWithExistingGroundCheck()
+    private void PutBodyCenter(Vector2 center)
     {
-        PutPlayer(new Vector2(-4f,-2.33f),false);
+        Vector2 offset = (Vector2)player.BodyCollider.bounds.center - (Vector2)player.transform.position;
+        PutPlayer(center - offset);
+    }
+    private IEnumerator BeginCloud(float deadline = .4f)
+    {
+        data.CloudWarning = .1f; data.CloudDuration = deadline; data.LightningDuration = .3f;
+        PutPlayer(new Vector2(-4f,-2.33f));
         boss.ForcePatternForTest(BossPatternKind.CloudBelief);
-        yield return Until(()=>Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None).Length==2);
-        BossCloudPlatform white=null;
-        foreach(var c in Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None)) if(c.IsWhite) white=c;
-        Assert.That(white,Is.Not.Null); var collider=white.GetComponent<BoxCollider2D>();
-        Assert.That(white.gameObject.layer,Is.EqualTo(6));
-        Assert.That(white.GetComponent<SpriteRenderer>().bounds.size.x,Is.EqualTo(collider.bounds.size.x).Within(.01f));
-        // Use the unchanged 14 jump velocity from PlayerTEST to cross upward through the platform.
-        PutPlayer(new Vector2(white.transform.position.x,-2.33f),false); playerBody.linearVelocity=Vector2.up*14f;
-        yield return Until(()=>player.BodyCollider.bounds.min.y>collider.bounds.max.y+.05f,2f);
-        Assert.That(white.Reported,Is.False,"Rising contact is not a landing.");
-        yield return Until(()=>white.Reported,2f);
-        Assert.That(player.BodyCollider.bounds.min.y,Is.EqualTo(collider.bounds.max.y).Within(.12f));
-        var move=player.GetComponent<PlayerMove>(); move.enabled=true;
-        yield return new WaitForFixedUpdate(); yield return new WaitForFixedUpdate();
-        Assert.That((bool)typeof(PlayerMove).GetField("isGrounded",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(move),Is.True);
-        Set(move,"jumpRequested",true); yield return new WaitForFixedUpdate(); yield return new WaitForFixedUpdate();
-        Assert.That(playerBody.linearVelocity.y,Is.GreaterThan(10f));
+        yield return Until(()=>Object.FindFirstObjectByType<BossCloudLightning>() != null);
     }
 
     [UnityTest]
-    public IEnumerator DarkCloudOnlyCountsDescendingFeetAndSpikeWarnsAtFixedGroundBeforeDamage()
+    public IEnumerator CloudShelterProtectsWholeBodyAtDeadlineAndMatchesVisibleBounds()
     {
-        PutPlayer(new Vector2(-4f,-2.33f),false);
-        boss.ForcePatternForTest(BossPatternKind.CloudBelief);
-        yield return Until(()=>Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None).Length==2);
-        BossCloudPlatform black=null;
-        foreach(var c in Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None)) if(!c.IsWhite) black=c;
-        float top=black.GetComponent<BoxCollider2D>().bounds.max.y;
-        PutPlayer(new Vector2(black.transform.position.x,top+.8f),false); playerBody.linearVelocity=Vector2.up*14f;
-        yield return new WaitForFixedUpdate(); Assert.That(black.Reported,Is.False);
-        yield return Until(()=>black.Reported,2f);
-        var spike=Object.FindFirstObjectByType<BossTimedDamageHazard>(); Assert.That(spike,Is.Not.Null);
-        Vector2 locked=spike.Record.Geometry.Center;
-        Assert.That(spike.Active,Is.False); Assert.That(spike.GetComponent<SpriteRenderer>().enabled,Is.False);
-        PutPlayer(new Vector2(locked.x,-2.33f),false);
-        float hp=player.CurrentHp;
-        yield return new WaitForSeconds(data.SpikeWarning-.2f); Assert.That(player.CurrentHp,Is.EqualTo(hp));
-        yield return Until(()=>spike.Active,1f); yield return new WaitForFixedUpdate();
-        Assert.That(player.CurrentHp,Is.EqualTo(hp-18f)); Assert.That(spike.Record.Geometry.Center,Is.EqualTo(locked));
-        yield return Until(()=>spike==null,3f);
-        Assert.That(player.CurrentHp,Is.EqualTo(hp-18f));
+        yield return BeginCloud();
+        var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        Assert.That(Vector3.Distance(lightning.ProtectionRenderer.bounds.center, lightning.Shelter.Center), Is.LessThan(.0001f));
+        Assert.That(lightning.ProtectionRenderer.bounds.size.x, Is.EqualTo(lightning.Shelter.Size.x).Within(.001f));
+        Assert.That(lightning.ProtectionRenderer.bounds.size.y, Is.EqualTo(lightning.Shelter.Size.y).Within(.001f));
+        var clouds = Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None);
+        Assert.That(clouds.Length, Is.EqualTo(2));
+        foreach (var cloud in clouds)
+        {
+            Assert.That(cloud.GetComponent<BoxCollider2D>().isTrigger, Is.True);
+            Assert.That(cloud.GetComponent<PlatformEffector2D>(), Is.Null);
+            Assert.That(cloud.GetComponent<SpriteRenderer>().bounds.size.x,
+                Is.EqualTo(cloud.IsWhite ? data.CloudSize.x : data.StormCloudSize.x).Within(.001f));
+        }
+        PutBodyCenter(lightning.Shelter.Center);
+        yield return new WaitForSeconds(.15f);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f)); Assert.That(lightning.HasStruck, Is.False);
+        Assert.That(boss.CueHint, Does.Contain("흰 구름 아래"));
+        yield return Until(()=>Count(BossAttackKind.Lightning)>0);
+        Assert.That(lightning.HasStruck, Is.True);
+        Assert.That(Last.Outcome, Is.EqualTo(AttackOutcome.EvadedByPlayer));
+        Assert.That(boss.CurrentBelief, Is.EqualTo(80f)); Assert.That(player.CurrentHp, Is.EqualTo(100f));
+        Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(), Is.Null);
+        yield return Until(()=>!boss.IsPatternRunning);
+        Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
+        Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+    }
+
+    [UnityTest]
+    public IEnumerator LeavingShelterBeforeDeadlineHitsOnceAndLateEntryDoesNotUndoStrike()
+    {
+        yield return BeginCloud();
+        var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        PutBodyCenter(lightning.Shelter.Center);
+        yield return new WaitForSeconds(.15f);
+        PutBodyCenter(lightning.Shelter.Center + Vector2.left * 2f);
+        Assert.That(lightning.ContainsPlayer(), Is.False);
+        yield return Until(()=>Count(BossAttackKind.Lightning)>0);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f-data.LightningDamage));
+        Assert.That(Last.Outcome, Is.EqualTo(AttackOutcome.Hit));
+        Assert.That(boss.CurrentBelief, Is.EqualTo(100f));
+        PutBodyCenter(lightning.Shelter.Center);
+        yield return Until(()=>!boss.IsPatternRunning);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f-data.LightningDamage));
+        Assert.That(Count(BossAttackKind.Lightning), Is.EqualTo(1));
+    }
+
+    [UnityTest]
+    public IEnumerator ShelterSideBoundaryUsesColliderEdgeRatherThanTransformCenter()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            yield return BeginCloud(.25f);
+            var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+            float centerX = lightning.Shelter.Center.x + lightning.Shelter.Size.x*.5f - player.BodyCollider.bounds.extents.x;
+            PutBodyCenter(new Vector2(centerX + (i == 0 ? 0f : .02f),lightning.Shelter.Center.y));
+            Assert.That(lightning.ContainsPlayer(), Is.EqualTo(i == 0));
+            int before = Count(BossAttackKind.Lightning);
+            yield return Until(()=>Count(BossAttackKind.Lightning)>before);
+            Assert.That(player.CurrentHp, Is.EqualTo(i == 0 ? 100f : 100f-data.LightningDamage));
+            yield return Until(()=>!boss.IsPatternRunning);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator OutsideStormAndAboveWhiteCloudAreNotShelterSuccesses()
+    {
+        yield return BeginCloud(.25f);
+        var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        PutBodyCenter(lightning.Shelter.Center + Vector2.left * data.StormCloudSize.x);
+        yield return Until(()=>Count(BossAttackKind.Lightning)>0);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f)); Assert.That(boss.CurrentBelief, Is.EqualTo(100f));
+        yield return Until(()=>!boss.IsPatternRunning);
+        yield return BeginCloud(.25f);
+        lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        PutBodyCenter(new Vector2(lightning.Shelter.Center.x,lightning.Shelter.Center.y + lightning.Shelter.Size.y*.5f + .9f));
+        int before = Count(BossAttackKind.Lightning);
+        yield return Until(()=>Count(BossAttackKind.Lightning)>before);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f-data.LightningDamage));
+        Assert.That(boss.CurrentBelief, Is.EqualTo(100f));
+    }
+
+    private IEnumerator AssertCloudCancellation(Action cancel)
+    {
+        yield return BeginCloud(.25f);
+        var record = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
+        cancel();
+        float hp = player.CurrentHp;
+        yield return new WaitForSeconds(.8f);
+        Assert.That(record.Outcome, Is.EqualTo(AttackOutcome.Cancelled));
+        Assert.That(player.CurrentHp, Is.EqualTo(hp));
+        Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
+        Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(), Is.Null);
+    }
+    [UnityTest] public IEnumerator CloudPatternCancelHasNoDelayedStrike() { yield return AssertCloudCancellation(()=>boss.PauseAndCancelForTest()); }
+    [UnityTest] public IEnumerator CloudBossDisableHasNoDelayedStrike() { yield return AssertCloudCancellation(()=>boss.gameObject.SetActive(false)); }
+    [UnityTest] public IEnumerator CloudPhaseChangeHasNoDelayedStrike() { yield return AssertCloudCancellation(()=>boss.ForcePhaseTwoForTest()); }
+    [UnityTest] public IEnumerator CloudVulnerabilityHasNoDelayedStrike() { yield return AssertCloudCancellation(()=>boss.ReduceBeliefForTest(100f)); }
+    [UnityTest] public IEnumerator CloudPlayerDeathHasNoDelayedStrike() { yield return AssertCloudCancellation(()=>player.TakeDamage(new DamageInfo(1000f,DamageSource.Environment))); }
+    [UnityTest] public IEnumerator CloudBossDeathHasNoDelayedStrike()
+    {
+        yield return AssertCloudCancellation(()=>{ boss.ForcePhaseTwoForTest(); boss.TakeDamage(new DamageInfo(10000f,DamageSource.PlayerOwned)); });
+    }
+    [UnityTest] public IEnumerator CloudSceneUnloadRemovesOwnedEffectsBeforeDeadline()
+    {
+        yield return BeginCloud(.25f);
+        Scene scene = boss.gameObject.scene;
+        Scene replacement = SceneManager.CreateScene("Cloud unload destination");
+        SceneManager.SetActiveScene(replacement);
+        yield return SceneManager.UnloadSceneAsync(scene);
+        yield return new WaitForSeconds(.8f);
+        Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
+        Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(), Is.Null);
+        boss = null; player = null;
+    }
+
+    [UnityTest]
+    public IEnumerator CancellingVisibleLightningRejectsOldRecordAndHasNoResidualDamage()
+    {
+        yield return BeginCloud(.25f);
+        var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        yield return Until(()=>lightning.HasStruck);
+        var record = Last;
+        boss.PauseAndCancelForTest();
+        float hp = player.CurrentHp;
+        Assert.That(boss.TryHit(record), Is.False);
+        yield return new WaitForSeconds(.8f);
+        Assert.That(player.CurrentHp, Is.EqualTo(hp));
+        Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(), Is.Null);
+    }
+
+    [UnityTest]
+    public IEnumerator VeryFastGroundWaveSweepsThinPlayerAndSharedRecordPreventsDoubleDamage()
+    {
+        data.WaveSpeed = 200f;
+        PutPlayer(new Vector2(-2f,-2.33f));
+        var body = (CapsuleCollider2D)player.BodyCollider;
+        body.size = new Vector2(.08f,body.size.y);
+        Physics2D.SyncTransforms();
+        boss.ForcePatternForTest(BossPatternKind.ShockwaveBelief);
+        yield return Until(()=>Count(BossAttackKind.Shockwave)>0,5f);
+        Assert.That(Last.Outcome, Is.EqualTo(AttackOutcome.Hit));
+        Assert.That(player.CurrentHp, Is.EqualTo(100f-data.WaveDamage));
+        Assert.That(boss.TryHit(Last), Is.False);
+        yield return Until(()=>!boss.IsPatternRunning);
+        Assert.That(player.CurrentHp, Is.EqualTo(100f-data.WaveDamage));
     }
 
     [UnityTest]
@@ -383,7 +502,7 @@ public sealed class BossCombatPlayModeTests
         boss.ForcePatternForTest(BossPatternKind.ShockwaveBelief);
         yield return Until(()=>Object.FindObjectsByType<BossGroundWave>(FindObjectsSortMode.None).Length==2);
         // Wait until the wave is close enough to require the existing jump, then leave its shown height.
-        yield return new WaitForSeconds(.22f); playerBody.linearVelocity=Vector2.up*14f;
+        yield return new WaitForSeconds(.08f); playerBody.linearVelocity=Vector2.up*14f;
         int before=Count(BossAttackKind.Shockwave);
         yield return Until(()=>Count(BossAttackKind.Shockwave)>before,4f);
         Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.EvadedByPlayer));
@@ -611,13 +730,11 @@ public sealed class BossCombatPlayModeTests
         Object.FindFirstObjectByType<BossTestBootstrap>().ShowDebugPanel=true;
         yield return Capture("18-debug-cloud-details");
         Object.FindFirstObjectByType<BossTestBootstrap>().ShowDebugPanel=false;
-        boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-4f,-1f));
-        yield return Capture("04-spike-warning");
-        Object.FindFirstObjectByType<BossTestBootstrap>().ShowDebugPanel=true;
-        yield return Capture("19-debug-spike-countdown");
-        Object.FindFirstObjectByType<BossTestBootstrap>().ShowDebugPanel=false;
-        yield return Until(()=>Object.FindFirstObjectByType<BossTimedDamageHazard>().Active,4f);
-        yield return Capture("05-spike-active");
+        var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+        PutBodyCenter(lightning.Shelter.Center);
+        yield return Until(()=>lightning.HasStruck,4f);
+        yield return Capture("04-cloud-lightning-sheltered");
+        yield return Capture("05-cloud-lightning-1024x576",1024,576);
         boss.PauseAndCancelForTest(); player.ResetHealth();
         PutPlayer(new Vector2(-3f,-2.33f)); boss.ForcePatternForTest(BossPatternKind.ShockwaveBelief);
         yield return Until(()=>Object.FindObjectsByType<BossGroundWave>(FindObjectsSortMode.None).Length==2);
@@ -816,7 +933,7 @@ public sealed class BossCombatPlayModeTests
         yield return null;
         Canvas.ForceUpdateCanvases(); camera.Render(); RenderTexture.active=texture;
         image.ReadPixels(new Rect(0,0,width,height),0,0); image.Apply();
-        string directory=System.IO.Path.Combine(Application.dataPath,"../Docs/BossCombatVerification");
+        string directory=System.IO.Path.Combine(Application.dataPath,"../Logs/BossCombatVerification");
         System.IO.Directory.CreateDirectory(directory); System.IO.File.WriteAllBytes(System.IO.Path.Combine(directory,filename+".png"),image.EncodeToPNG());
         camera.targetTexture=null; RenderTexture.active=previous;
         foreach(var canvas in canvases) { canvas.renderMode=RenderMode.ScreenSpaceOverlay; canvas.worldCamera=null; }

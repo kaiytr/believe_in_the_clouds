@@ -72,6 +72,15 @@ public static class BossProjectSetup
         Debug.Log("Boss assets, encounter prefab and BossTest are ready.");
     }
 
+    [MenuItem("Tools/Boss/Update cloud lightning prefabs only")]
+    public static void UpdateCloudLightningPrefabs()
+    {
+        cloud = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "/Cloud.png");
+        material = AssetDatabase.LoadAssetAtPath<Material>(Art + "/BossUnlit.mat");
+        CloudPrefab(true); CloudPrefab(false);
+        AssetDatabase.SaveAssets();
+    }
+
     private static bool Circle(float x, float y, float cx, float cy, float radius) => (x-cx)*(x-cx)+(y-cy)*(y-cy) <= radius*radius;
     private static Sprite PlatformSprite() => SpriteAsset("Cloud", (x, y) =>
         y >= -.1f || Circle(x, y, -.3f, -.1f, .2f) || Circle(x, y, 0f, -.1f, .4f) || Circle(x, y, .3f, -.1f, .2f));
@@ -143,29 +152,10 @@ public static class BossProjectSetup
 
     private static BossCloudPlatform CloudPrefab(bool white)
     {
-        var root = new GameObject(white ? "WhiteCloud" : "BlackCloud"); root.layer = white ? 6 : 0;
+        var root = new GameObject(white ? "WhiteCloud" : "BlackCloud");
         var renderer = root.AddComponent<SpriteRenderer>(); renderer.sprite = cloud; renderer.sharedMaterial = material;
-        renderer.color = white ? new Color(.82f, .93f, 1f) : new Color(.22f, .25f, .39f); renderer.sortingOrder = 16;
-        var collider = root.AddComponent<BoxCollider2D>(); collider.size = Vector2.one; collider.isTrigger = !white;
-        if (white)
-        {
-            var effector = root.AddComponent<PlatformEffector2D>(); effector.useOneWay = true; effector.useOneWayGrouping = true; effector.surfaceArc = 170f;
-            collider.usedByEffector = true;
-        }
-        // Continuous cyan top = solid one-way platform; broken purple top = pass-through hazard.
-        if (white)
-            Part(root.transform, "Solid landing surface", new Vector2(0f, .44f), new Vector2(1f, .12f), new Color(.5f, .93f, 1f), square, 17);
-        else
-        {
-            for (int i = 0; i < 5; i++)
-                Part(root.transform, "Broken crossing surface " + i, new Vector2(-.4f + i * .2f, .44f),
-                    new Vector2(.13f, .12f), new Color(.85f, .55f, 1f), square, 17);
-            var bolt = new GameObject("Storm mark").AddComponent<LineRenderer>(); bolt.transform.SetParent(root.transform, false);
-            bolt.useWorldSpace = false; bolt.positionCount = 4;
-            bolt.SetPositions(new[] { new Vector3(.01f,.25f),new Vector3(-.07f,-.02f),new Vector3(.06f,.01f),new Vector3(-.01f,-.28f) });
-            bolt.startWidth = bolt.endWidth = .04f; bolt.sharedMaterial = material; bolt.sortingOrder = 18;
-            bolt.startColor = bolt.endColor = new Color(1f, .72f, .45f);
-        }
+        renderer.color = white ? new Color(.92f, .98f, 1f) : new Color(.16f, .18f, .27f); renderer.sortingOrder = 26;
+        var collider = root.AddComponent<BoxCollider2D>(); collider.size = Vector2.one; collider.isTrigger = true;
         root.AddComponent<BossCloudPlatform>();
         var saved = PrefabUtility.SaveAsPrefabAsset(root, Fx + "/" + root.name + ".prefab").GetComponent<BossCloudPlatform>();
         Object.DestroyImmediate(root); return saved;
@@ -224,7 +214,6 @@ public static class BossProjectSetup
         material = AssetDatabase.LoadAssetAtPath<Material>(Art + "/BossUnlit.mat");
         cloud = PlatformSprite();
         var data = AssetDatabase.LoadAssetAtPath<BossCombatSettings>(SettingsPath);
-        data.CloudSize = new Vector2(2.8f, .7f); data.CloudSpacing = 2f; data.SpikeWarning = 3f;
         data.WhiteCloudPrefab = CloudPrefab(true); data.BlackCloudPrefab = CloudPrefab(false);
         EditorUtility.SetDirty(data);
         GameObject root = PrefabUtility.LoadPrefabContents(BossPath);
@@ -237,7 +226,7 @@ public static class BossProjectSetup
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         AssetDatabase.SaveAssets();
-        Debug.Log("Cloud platforms, spike timing and pattern HUD upgraded; BossTest scene preserved.");
+        Debug.Log("Cloud lightning markers and pattern HUD upgraded; BossTest scene preserved.");
     }
 
     [MenuItem("Tools/Boss/Update gameplay and debug UI (preserve BossTest scene)")]

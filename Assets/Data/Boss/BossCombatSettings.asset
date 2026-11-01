@@ -84,16 +84,22 @@ MonoBehaviour:
   ProjectileLifetime: 3
   ProjectileDamage: 12
   CloudWarning: 0.5
-  CloudDuration: 4
-  CloudTopHeight: 1.5
+  CloudDuration: 3
+  CloudTopHeight: 6
   CloudSpacing: 2
-  CloudSize: {x: 2.8, y: 0.7}
+  CloudSize: {x: 3, y: 0.7}
+  StormCloudSize: {x: 12, y: 1.4}
+  ShelterHeight: 2.8
+  LightningDuration: 0.45
+  LightningDamage: 18
+  LightningSpacing: 0.8
+  LightningWidth: 0.08
   SpikeWarning: 3
   SpikeDuration: 2
   SpikeSize: {x: 1.25, y: 0.8}
   SpikeDamage: 18
   WaveDistance: 7
-  WaveSpeed: 6
+  WaveSpeed: 9
   WaveSize: {x: 0.6, y: 0.6}
   WaveDamage: 16
   MaximumGroundStep: 0.3
