@@ -1,6 +1,6 @@
 # 상호작용(E) 사용법
 
-프로젝트 공통 규칙: **월드 상호작용은 모두 E 키**로 한다.
+프로젝트 공통 규칙: **월드 기본 상호작용은 E 키**로 한다. 보조 동작이 필요한 대상은 `ISecondaryInteractable`을 구현하면 같은 대상에서 **F**를 사용한다. 로비 분기는 E 출발·F 역할 공개다.
 특정 대상(상점)에 입력 처리를 묶지 않는다.
 
 ## 구조
@@ -8,10 +8,11 @@
 ```
 Interaction/                      ← 공통 (대상이 무엇인지 모름)
   IInteractable.cs                계약: 이름/문구/반경/CanInteract/Interact
+  ISecondaryInteractable.cs       선택적 F 보조 동작
   InteractableBehaviour.cs        등록·최근접 탐색·표면 기준 거리 판정
-  InteractionController.cs        E 입력 1곳, 가장 가까운 대상 실행, 안내 문구
+  InteractionController.cs        E/F 입력 1곳, 가장 가까운 대상 실행, 안내 문구
   InteractionInput.cs             입력 API 격리 (New Input System 전환 지점)
-  InteractionPrompt.cs            하단 "E : ..." 표시
+  InteractionPrompt.cs            대상 위 또는 하단 "E : ..." 표시
   UiModal.cs                      모달 열림 추적 + 닫기 요청 브로드캐스트
 
 Shop/                             ← 기능 모듈 (상점만 앎)
@@ -55,9 +56,17 @@ public class DoorInteractable : InteractableBehaviour
 - 없으면 중심까지의 거리
 - 기본 반경 `interactRadius = 2.5m` (대상 표면에서)
 
+## 안내 위치
+
+- 상자·상점·재단·로비 분기·스테이지 출구는 `IWorldInteractionPrompt`의 앵커를 사용해 **각 오브젝트 위에 안내를 부착**한다. 카메라 이동 뒤 위치를 갱신하며, 화면 밖 기준점이나 비활성 대상의 안내는 숨긴다.
+- 상점·재단·분기·출구는 콜라이더 윗면에서 기본 0.8 월드 유닛 위에 표시한다. 오브젝트 크기를 바꿔도 같은 간격을 유지하며 Inspector의 `Prompt Gap`으로 조정할 수 있다.
+- 상자는 E 1.5초 유지, 상점·재단·출구는 E 한 번, 분기는 E 출발·F 역할 공개다. 안내 위치와 입력 방식은 독립이다.
+- 앵커를 제공하지 않는 다른 대상은 기존 하단 안내를 사용한다.
+
 ## 모달 UI와 입력
 
 - 모달(상점 패널)이 열려 있으면 월드 상호작용은 실행되지 않는다.
+- E/F는 같은 최근접 대상과 거리 판정을 공유한다. 둘을 같은 프레임에 누르면 E를 우선한다. 보조 동작 구현에서도 범위·상태를 검사한다.
 - 대신 E 또는 ESC가 "닫기 요청"이 된다.
 - 모달이 열린 동안 플레이어 이동/점프/대시/공격은 `UiModal.IsOpen`으로 막힌다.
 

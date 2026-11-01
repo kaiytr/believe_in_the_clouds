@@ -352,9 +352,9 @@ public static class BossProjectSetup
         var root = new GameObject("BossEncounter");
         var boss = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BossPath)); boss.transform.SetParent(root.transform,false);
         var trigger = new GameObject("Final area entry trigger"); trigger.transform.SetParent(root.transform,false);
-        trigger.transform.localPosition = new Vector3(-5f,1f); trigger.AddComponent<BoxCollider2D>().size = new Vector2(18f,8f);
-        trigger.GetComponent<BoxCollider2D>().isTrigger = true;
-        var entry = trigger.AddComponent<BossEncounterTrigger>(); Set(entry,"boss",boss.GetComponent<BossCombatController>());
+        trigger.AddComponent<BoxCollider2D>();
+        var entry = trigger.AddComponent<BossEncounterTrigger>();
+        BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(), -18f, 18f, -3.35f, null);
         PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prefabs/Boss/BossEncounter.prefab"); Object.DestroyImmediate(root);
     }
     private static void BuildScene()
@@ -368,8 +368,12 @@ public static class BossProjectSetup
         Camera camera = Camera.main;
         foreach (MonoBehaviour component in camera.GetComponents<MonoBehaviour>())
             if (component.GetType().Name == "CinemachineBrain") component.enabled = false;
-        camera.transform.position = new Vector3(0f,1f,-10f); camera.orthographicSize = 10.5f; camera.backgroundColor = new Color(.075f,.1f,.17f);
+        camera.transform.position = new Vector3(-6.44f,0f,-10f); camera.orthographicSize = 6.5f; camera.backgroundColor = new Color(.075f,.1f,.17f);
         float floor = -3.35f;
+        player.transform.position = new Vector3(-15f, floor + 1.05f, 0f);
+        LobbyCameraFollow exploration = camera.GetComponent<LobbyCameraFollow>();
+        if (exploration == null) exploration = camera.gameObject.AddComponent<LobbyCameraFollow>();
+        exploration.Target = player.transform; exploration.MinX = -18f; exploration.MaxX = 18f;
         var arena = new GameObject("Arena (36 world units)");
         Solid(arena.transform,"Main ground",new Vector2(0f,floor-.5f),new Vector2(36f,1f));
         Solid(arena.transform,"Left wall",new Vector2(-18.25f,floor+4.5f),new Vector2(.5f,10f));
@@ -378,6 +382,11 @@ public static class BossProjectSetup
         fixture.SetActive(false);
         var boss = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BossPath)); boss.transform.position = new Vector3(2f,floor+.95f);
         var bootstrap = new GameObject("BossTest tools").AddComponent<BossTestBootstrap>(); Set(bootstrap,"boss",boss.GetComponent<BossCombatController>());
+        Set(bootstrap, "startAutomatically", false);
+        var entrance = new GameObject("Boss arena entry");
+        entrance.AddComponent<BoxCollider2D>();
+        BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
+            -12f, 18f, floor, camera, true);
         EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene,ScenePath);
     }
     private static GameObject Solid(Transform parent, string name, Vector2 position, Vector2 size)

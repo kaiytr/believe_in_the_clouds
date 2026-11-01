@@ -52,6 +52,32 @@ public abstract class InteractableBehaviour : MonoBehaviour, IInteractable
         All.Remove(this);
     }
 
+    /// <summary>
+    /// 상점·재단처럼 통과 가능한 상호작용 지점의 루트 콜라이더를 Trigger로 만든다.
+    /// 실제 구조물을 막히게 하려면 별도 자식 오브젝트에 물리 콜라이더를 둔다.
+    /// </summary>
+    protected void SetInteractionCollidersToTriggers()
+    {
+        Collider2D[] colliders = GetComponents<Collider2D>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null)
+            {
+                colliders[i].isTrigger = true;
+            }
+        }
+    }
+
+    // Keep the prompt above the object even when a scene scales its collider.
+    // Return local coordinates for InteractionPrompt.Follow; the gap is in world units.
+    protected Vector3 GetPromptOffsetAboveCollider(float gap)
+    {
+        Collider2D collider2D = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>();
+        Collider collider3D = collider2D == null ? GetComponent<Collider>() ?? GetComponentInChildren<Collider>() : null;
+        Bounds bounds = collider2D != null ? collider2D.bounds : collider3D != null ? collider3D.bounds : new Bounds(transform.position, Vector3.zero);
+        return transform.InverseTransformPoint(new Vector3(bounds.center.x, bounds.max.y + Mathf.Max(0, gap), transform.position.z));
+    }
+
     public virtual bool CanInteract(GameObject interactor)
     {
         return isActiveAndEnabled && interactor != null;

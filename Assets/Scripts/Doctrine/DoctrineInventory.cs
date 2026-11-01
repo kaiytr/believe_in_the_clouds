@@ -2,205 +2,57 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 획득한 교리 조각(주어/조건/결과)을 보관하는 가상 인벤토리.
-// 상점에서 산 부품이 교리로 바로 활성화되지 않고 일단 여기 쌓인다.
-// 나중에 재단(Altar)에서 이 조각들을 조합해 실제 교리로 장착한다.
+// Compatibility facade: the economy ledger is the sole owner of all pieces.
 public class DoctrineInventory : MonoBehaviour
 {
     public static DoctrineInventory Instance { get; private set; }
-
-    private readonly Dictionary<SubjectType, int> subjects = new Dictionary<SubjectType, int>();
-    private readonly Dictionary<ConditionType, int> conditions = new Dictionary<ConditionType, int>();
-    private readonly Dictionary<ResultType, int> results = new Dictionary<ResultType, int>();
-
     public event Action Changed;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoBoot()
     {
-        if (Instance != null)
-        {
-            return;
-        }
-
-        GameObject go = new GameObject("[DoctrineInventory]");
-        DontDestroyOnLoad(go);
-        go.AddComponent<DoctrineInventory>();
+        if (Instance == null) new GameObject("[DoctrineInventory]").AddComponent<DoctrineInventory>();
     }
-
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
+    private void OnEnable() { Currency.Changed += HandleChanged; }
+    private void OnDisable() { Currency.Changed -= HandleChanged; }
+    private void OnDestroy() { if (Instance == this) Instance = null; }
+    private void HandleChanged(CurrencyChange change) { Changed?.Invoke(); }
 
-    private void OnDestroy()
+    public CurrencyResult TryAddEntry(ShopEntry entry, string reason, string transactionId = null) =>
+        Currency.Service?.TryGrantPiece(entry?.Id, 1, reason, transactionId) ?? CurrencyResult.Failed(EconomyError.NotReady);
+    private void Add(string id)
     {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
+        if (id == null) return;
+        var result = Currency.Service?.TryGrantPiece(id, 1, "inventory.legacy-grant");
+        if (result == null || !result.Success) Debug.LogWarning($"[Inventory] Grant failed: {result?.Error ?? EconomyError.NotReady}");
     }
+    public void AddSubject(SubjectType subject) => Add(ShopCatalog.IdFor(subject));
+    public void AddCondition(ConditionType condition) => Add(ShopCatalog.IdFor(condition));
+    public void AddResult(ResultType result) => Add(ShopCatalog.IdFor(result));
+    public void AddEntry(ShopEntry entry) { if (entry != null) Add(entry.Id); }
+    public int CountSubject(SubjectType subject) => Currency.Service?.CountPiece(ShopCatalog.IdFor(subject)) ?? 0;
+    public int CountCondition(ConditionType condition) => Currency.Service?.CountPiece(ShopCatalog.IdFor(condition)) ?? 0;
+    public int CountResult(ResultType result) => Currency.Service?.CountPiece(ShopCatalog.IdFor(result)) ?? 0;
+    public int TotalCount => Currency.Service == null ? 0 : EconomyLedger.Total(Currency.Service.Snapshot().pieces);
 
-    public void AddSubject(SubjectType subject)
-    {
-        if (subject == SubjectType.None)
-        {
-            return;
-        }
-
-        subjects.TryGetValue(subject, out int count);
-        subjects[subject] = count + 1;
-        Changed?.Invoke();
-    }
-
-    public void AddCondition(ConditionType condition)
-    {
-        if (condition == ConditionType.None)
-        {
-            return;
-        }
-
-        conditions.TryGetValue(condition, out int count);
-        conditions[condition] = count + 1;
-        Changed?.Invoke();
-    }
-
-    public void AddResult(ResultType result)
-    {
-        if (result == ResultType.None)
-        {
-            return;
-        }
-
-        results.TryGetValue(result, out int count);
-        results[result] = count + 1;
-        Changed?.Invoke();
-    }
-
-    public void AddEntry(ShopEntry entry)
-    {
-        if (entry == null)
-        {
-            return;
-        }
-
-        switch (entry.Column)
-        {
-            case ShopColumn.Subject: AddSubject(entry.Subject); break;
-            case ShopColumn.Condition: AddCondition(entry.Condition); break;
-            case ShopColumn.Result: AddResult(entry.Result); break;
-        }
-    }
-
-    /// <summary>합성 시 조각 1개를 소모한다. 없으면 false.</summary>
-    public bool ConsumeEntry(ShopEntry entry)
-    {
-        if (entry == null)
-        {
-            return false;
-        }
-
-        switch (entry.Column)
-        {
-            case ShopColumn.Subject: return ConsumeSubject(entry.Subject);
-            case ShopColumn.Condition: return ConsumeCondition(entry.Condition);
-            case ShopColumn.Result: return ConsumeResult(entry.Result);
-            default: return false;
-        }
-    }
-
-    public bool ConsumeSubject(SubjectType subject)
-    {
-        if (subject == SubjectType.None)
-        {
-            return false;
-        }
-
-        if (!subjects.TryGetValue(subject, out int count) || count <= 0)
-        {
-            return false;
-        }
-
-        subjects[subject] = count - 1;
-        Changed?.Invoke();
-        return true;
-    }
-
-    public bool ConsumeCondition(ConditionType condition)
-    {
-        if (condition == ConditionType.None)
-        {
-            return false;
-        }
-
-        if (!conditions.TryGetValue(condition, out int count) || count <= 0)
-        {
-            return false;
-        }
-
-        conditions[condition] = count - 1;
-        Changed?.Invoke();
-        return true;
-    }
-
-    public bool ConsumeResult(ResultType result)
-    {
-        if (result == ResultType.None)
-        {
-            return false;
-        }
-
-        if (!results.TryGetValue(result, out int count) || count <= 0)
-        {
-            return false;
-        }
-
-        results[result] = count - 1;
-        Changed?.Invoke();
-        return true;
-    }
-
-    public int CountSubject(SubjectType subject)
-    {
-        return subjects.TryGetValue(subject, out int count) ? count : 0;
-    }
-
-    public int CountCondition(ConditionType condition)
-    {
-        return conditions.TryGetValue(condition, out int count) ? count : 0;
-    }
-
-    public int CountResult(ResultType result)
-    {
-        return results.TryGetValue(result, out int count) ? count : 0;
-    }
-
-    public int TotalCount
-    {
-        get
-        {
-            int total = 0;
-            foreach (int c in subjects.Values) total += c;
-            foreach (int c in conditions.Values) total += c;
-            foreach (int c in results.Values) total += c;
-            return total;
-        }
-    }
-
-    /// <summary>재단 UI용 요약. 예: "주어 2 · 조건 1 · 결과 3"</summary>
     public string Describe()
     {
         int s = 0, c = 0, r = 0;
-        foreach (int v in subjects.Values) s += v;
-        foreach (int v in conditions.Values) c += v;
-        foreach (int v in results.Values) r += v;
+        IReadOnlyList<PieceCount> pieces = Currency.Service?.Snapshot().pieces;
+        if (pieces != null)
+            foreach (PieceCount piece in pieces)
+            {
+                if (!ShopCatalog.TryGet(piece.id, out ShopEntry entry)) continue;
+                if (entry.Column == ShopColumn.Subject) s += piece.count;
+                else if (entry.Column == ShopColumn.Condition) c += piece.count;
+                else r += piece.count;
+            }
         return $"인벤토리 — 주어 {s} · 조건 {c} · 결과 {r} (총 {s + c + r})";
     }
 }

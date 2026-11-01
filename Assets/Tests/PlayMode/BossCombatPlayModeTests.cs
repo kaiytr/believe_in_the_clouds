@@ -32,9 +32,12 @@ public sealed class BossCombatPlayModeTests
         boss = Object.FindFirstObjectByType<BossCombatController>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerHealth>();
         playerBody = player.GetComponent<Rigidbody2D>();
+        player.GetComponent<PlayerMove>().enabled = false;
+        // BossTest now waits for arena entry; put combat fixtures inside before preparing each case.
+        PutPlayer(new Vector2(-4.21f,-2.33f));
+        yield return Until(() => boss.EncounterStarted);
         Assert.That(boss.EncounterStarted,Is.True,boss.StatusMessage);
         originalData = boss.Settings; data = Object.Instantiate(originalData); Set(boss,"settings",data);
-        player.GetComponent<PlayerMove>().enabled = false;
         yield return new WaitForSeconds(.65f);
         boss.PauseAndCancelForTest(); player.ResetHealth();
     }
@@ -60,26 +63,32 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator MeleeWarningIsHarmlessLocksDirectionAndHitsOncePerSwing()
+    public IEnumerator MeleeComboMirrorsPlayerHitboxesAndAutomaticallyLandsFourHits()
     {
-        boss.ForcedComboHits=2; PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
+        PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
+        var playerAttack=player.GetComponent<PlayerAttack>();
+        Assert.That(playerAttack,Is.Not.Null);
+        Assert.That(playerAttack.ComboCount,Is.GreaterThanOrEqualTo(4));
+        PlayerAttack.ComboStep firstStep;
+        Assert.That(playerAttack.TryGetComboStep(0,out firstStep),Is.True);
         boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
         yield return Until(()=>boss.ActiveBossAttackId>0);
         var warning=Object.FindFirstObjectByType<DangerIndicator>(); Assert.That(warning,Is.Not.Null);
         Assert.That(player.CurrentHp,Is.EqualTo(100f));
         var record = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
-        Bounds bounds=warning.GetComponent<SpriteRenderer>().bounds;
-        Assert.That(bounds.size.x,Is.EqualTo(data.MeleeSize.x).Within(.01f));
-        Assert.That(bounds.size.y,Is.EqualTo(data.MeleeSize.y).Within(.01f));
+        Assert.That(record.Geometry.Size,Is.EqualTo(firstStep.hitboxSize));
+        Assert.That(record.Geometry.Angle,Is.EqualTo(-firstStep.hitboxAngle).Within(.01f));
         Assert.That(record.Geometry.Center.x,Is.LessThan(boss.transform.position.x));
-        yield return new WaitForSeconds(data.Windup*.5f);
+        yield return new WaitForSeconds(data.MeleeComboFirstWarning*.5f);
         Assert.That(player.CurrentHp,Is.EqualTo(100f));
         yield return Until(()=>Count(BossAttackKind.Melee)>=1);
-        Assert.That(player.CurrentHp,Is.EqualTo(86f));
+        Assert.That(player.CurrentHp,Is.EqualTo(100f-data.MeleeComboDamage[0]));
         Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Hit));
         yield return Until(()=>!boss.IsPatternRunning);
-        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(2));
-        Assert.That(player.CurrentHp,Is.EqualTo(72f));
+        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(4));
+        Assert.That(player.CurrentHp,Is.EqualTo(100f-(data.MeleeComboDamage[0]+data.MeleeComboDamage[1]+
+            data.MeleeComboDamage[2]+data.MeleeComboDamage[3])));
+        Assert.That(playerBody.linearVelocity.y,Is.GreaterThan(0f));
         Assert.That(boss.transform.localScale,Is.EqualTo(Vector3.one));
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
@@ -87,7 +96,7 @@ public sealed class BossCombatPlayModeTests
     [UnityTest]
     public IEnumerator LeavingLockedMeleeIsEvadeButInvulnerableContactAndOutsideAreNot()
     {
-        boss.ForcedComboHits=2; PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
+        PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
         boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
         yield return Until(()=>boss.ActiveBossAttackId>0);
         yield return new WaitForFixedUpdate();
@@ -143,12 +152,16 @@ public sealed class BossCombatPlayModeTests
     public IEnumerator DistantAttackAndDodgeUsesProjectileAndCountsMovementEvade()
     {
         data.StareDuration=.15f;
+        // The follow-up now samples the regular attack pool at every distance.
+        // Keep this projectile-evade test deterministic instead of waiting for a
+        // projectile after a randomly selected melee or dash follow-up.
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.Projectile,1f,.5f) };
         boss.ForcePhaseTwoForTest();
         PutPlayer((Vector2)boss.transform.position+Vector2.right*2f);
         Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.True);
         Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
         PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
-        Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.False);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.MeleeCombo),Is.True);
         Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
         Assert.That(boss.IsPatternEligible(BossPatternKind.Projectile),Is.True);
 
@@ -196,11 +209,11 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator DistantDashIsNotCandidateWhenObstacleBlocksApproach()
+    public IEnumerator DistantDashRemainsCandidateWhenObstacleBlocksApproach()
     {
         PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
         Wall(boss.transform.position.x+2f);
-        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.False);
+        Assert.That(boss.IsPatternEligible(BossPatternKind.Dash),Is.True);
         yield return null;
     }
 
@@ -249,14 +262,27 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator PhaseTwoStareAlwaysConnectsARegularComboAndTestHitAppliesOnce()
+    public IEnumerator PhaseTwoStareCompletesTheFourHitFollowupAndTestHitAppliesOnce()
     {
         data.StareDuration=.2f;
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.MeleeCombo,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
         boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
         yield return Until(()=>boss.ActiveBossAttackId>0);
         Assert.That(boss.ActiveBeliefPhrase,Is.Not.Empty);
         yield return Until(()=>!boss.IsPatternRunning);
-        Assert.That(boss.AttackHistory.Count,Is.GreaterThan(0));
+        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(4));
+        var hitIndices = new List<int>();
+        foreach (BossAttackRecord record in boss.AttackHistory)
+            if (record.Kind == BossAttackKind.Melee)
+            {
+                hitIndices.Add(record.HitIndex);
+                Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
+                Assert.That(record.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
+            }
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, hitIndices);
+        Assert.That(boss.ActiveAttacks.Count,Is.Zero);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
         Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
         var events=player.GetComponent<PlayerCombatEvents>(); var id=events.PublishAttackAttempt(boss.gameObject);
         float hp=boss.CurrentHp;
@@ -264,6 +290,36 @@ public sealed class BossCombatPlayModeTests
         events.PublishHitConfirmed(id,boss.gameObject,10f);
         Assert.That(events.TryApplyHitAndPublish(id,boss.gameObject,10f),Is.False);
         Assert.That(boss.CurrentHp,Is.EqualTo(hp-6f));
+    }
+
+    [UnityTest]
+    public IEnumerator RestartingPhaseTwoDuringFirstWarningCancelsOldHitAndCompletesNewCombo()
+    {
+        data.StareDuration=.2f;
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.MeleeCombo,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
+        yield return Until(()=>boss.ActiveBossAttackId>0);
+        var interrupted = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
+        Assert.That(interrupted.HitIndex,Is.EqualTo(1));
+        Assert.That(interrupted.Activated,Is.False);
+
+        boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
+        Assert.That(interrupted.EndReason,Is.EqualTo(BossAttackEndReason.Cancelled));
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
+        int restartedPattern = boss.PatternId;
+        yield return Until(()=>!boss.IsPatternRunning);
+
+        var completedHits = new List<int>();
+        foreach (BossAttackRecord record in boss.AttackHistory)
+            if (record.PatternId == restartedPattern)
+            {
+                Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
+                completedHits.Add(record.HitIndex);
+            }
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, completedHits);
+        Assert.That(boss.ActiveAttacks.Count,Is.Zero);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
 
     [UnityTest]
@@ -386,6 +442,7 @@ public sealed class BossCombatPlayModeTests
     [UnityTest]
     public IEnumerator FinalAreaTriggerStartsOnceAndIgnoresUnrelatedColliders()
     {
+        Object.FindFirstObjectByType<BossEncounterTrigger>().enabled = false;
         boss.gameObject.SetActive(false); boss.gameObject.SetActive(true);
         var root=new GameObject("Final area test trigger"); fixtures.Add(root);
         var trigger=root.AddComponent<BoxCollider2D>(); trigger.isTrigger=true; trigger.size=new Vector2(3f,5f);
@@ -541,7 +598,7 @@ public sealed class BossCombatPlayModeTests
             Assert.Ignore("Run this capture test with graphics enabled.");
         Object.FindFirstObjectByType<BossTestBootstrap>().ShowDebugPanel=false;
         Camera.main.transform.position=new Vector3(0f,.2f,-10f); Camera.main.orthographicSize=5.5f;
-        PutPlayer(new Vector2(-.2f,-2.33f)); boss.ForcedComboHits=2;
+        PutPlayer(new Vector2(-.2f,-2.33f));
         boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
         yield return new WaitForSeconds(.25f); yield return Capture("01-melee-warning");
         yield return Until(()=>Object.FindObjectsByType<BossAttackVisual>(FindObjectsSortMode.None).Length>1,1f);

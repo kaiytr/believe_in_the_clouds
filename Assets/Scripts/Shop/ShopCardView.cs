@@ -175,8 +175,7 @@ public class ShopCardView : MonoBehaviour
         }
 
         // 큰 글씨 = 이름, 작은 글씨 = 표 문장 조각.
-        label.text = string.IsNullOrEmpty(Entry.Detail)
-            ? Entry.Label
-            : $"{Entry.Label}\n<size=11><color=#5A5C60>{Entry.Detail}</color></size>";
+        label.text = $"{Entry.Label}\n<size=11><color=#5A5C60>{Entry.Detail}</color></size>" +
+            $"\n<size=13><b>{Entry.Price}코인 · {Entry.RarityLabel}</b></size>";
     }
 }

@@ -9,13 +9,22 @@ using UnityEngine;
 //
 // 패널을 여는 일은 ShopScreen이 Interacted 이벤트를 듣고 처리한다.
 // (상호작용 대상은 UI를 직접 알지 않는다)
-public class ShopInteractable : InteractableBehaviour
+public class ShopInteractable : InteractableBehaviour, IWorldInteractionPrompt
 {
+    private void Awake()
+    {
+        SetInteractionCollidersToTriggers();
+    }
+
     [Header("상점")]
     [Tooltip("UI 제목으로 쓸 상점 이름.")]
     [SerializeField] private string shopName = "상점";
+    [Tooltip("오브젝트 위 상호작용 안내와 콜라이더 윗면 사이의 월드 거리.")]
+    [SerializeField, Min(0f)] private float promptGap = .8f;
 
     public string ShopName => string.IsNullOrEmpty(shopName) ? InteractionName : shopName;
+    public Transform PromptAnchor => transform;
+    public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
 
     // 문구를 직접 지정하지 않았으면 상점 이름으로 만든다.
     public override string InteractionPrompt

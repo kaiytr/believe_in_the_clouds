@@ -17,6 +17,9 @@ public readonly struct AttackGeometry
             new Vector2(distance, thickness), Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg);
     }
 
+    public AttackGeometry Translated(Vector2 offset) =>
+        new AttackGeometry(Center + offset, Size, Angle, IsCircle);
+
     public bool Overlaps(Collider2D target)
     {
         return IsCircle ? CombatPhysics.OverlapsCircle(target, Center, Size.x * .5f) :

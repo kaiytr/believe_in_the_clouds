@@ -28,6 +28,7 @@ public sealed class BeliefDummyHitTool : MonoBehaviour
     [SerializeField] private bool showPanel = true;
     private int selectedIndex;
     private Coroutine burst;
+    private bool allowDebugPanel = true;
     private PlayerAttackContext lastAttack;
     private EnemyUnit lastTarget;
     private DummyBeliefHitData lastData;
@@ -41,7 +42,17 @@ public sealed class BeliefDummyHitTool : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F2)) showPanel = !showPanel;
+        if (allowDebugPanel && Input.GetKeyDown(KeyCode.F2)) showPanel = !showPanel;
+    }
+
+    private void Start()
+    {
+        LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
+        if (flow != null && flow.IsActiveRunStage(BranchRole.Combat))
+        {
+            allowDebugPanel = false;
+            showPanel = false;
+        }
     }
 
     public bool SelectTarget(int index)

@@ -37,6 +37,7 @@ public class PlayerDash : MonoBehaviour
     private bool isDashing;
 
     public bool IsDashing => isDashing;
+    public KeyCode DashKey => dashKey;
 
     private void Awake()
     {

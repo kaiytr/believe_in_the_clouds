@@ -63,6 +63,7 @@ public class PlayerAttack : MonoBehaviour
     [Header("입력")]
     [Tooltip("공격에 쓸 마우스 버튼. 0 = 좌클릭.")]
     [SerializeField] private int attackMouseButton = 0;
+    public int AttackMouseButton => attackMouseButton;
 
     [Header("콤보 (1~4타)")]
     [SerializeField] private ComboStep[] comboSteps = new ComboStep[]
@@ -183,6 +184,19 @@ public class PlayerAttack : MonoBehaviour
     public bool IsAttacking => isAttacking || isAirAttacking;
     public int CurrentCombo => currentCombo;
     public int ComboCount => comboSteps != null ? comboSteps.Length : 0;
+
+    /// <summary>Exposes the ground combo definition so the boss can mirror the player's four-hit sequence.</summary>
+    public bool TryGetComboStep(int index, out ComboStep step)
+    {
+        if (comboSteps == null || index < 0 || index >= comboSteps.Length)
+        {
+            step = default;
+            return false;
+        }
+
+        step = comboSteps[index];
+        return true;
+    }
 
     private void Awake()
     {

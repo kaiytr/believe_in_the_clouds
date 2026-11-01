@@ -8,6 +8,15 @@ using UnityEngine;
 // New 전용으로 바꾸면 아래 WasPressed 구현만 Input System 버전으로 교체하면 된다.
 public static class InteractionInput
 {
+    public static InteractionFrame Capture(KeyCode interact, KeyCode close, GameObject player)
+    {
+        PlayerAttack attack = player != null ? player.GetComponent<PlayerAttack>() : null;
+        PlayerDash dash = player != null ? player.GetComponent<PlayerDash>() : null;
+        bool action = WasPressed(KeyCode.Space) || WasPressed(dash != null ? dash.DashKey : KeyCode.LeftShift)
+            || Input.GetMouseButtonDown(attack != null ? attack.AttackMouseButton : 0);
+        return new InteractionFrame(WasPressed(interact), IsHeld(interact), WasPressed(KeyCode.F), WasPressed(close), action);
+    }
+
     public static bool WasPressed(KeyCode key)
     {
         return Input.GetKeyDown(key);

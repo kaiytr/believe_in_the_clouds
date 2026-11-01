@@ -1,0 +1,157 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public enum EconomyError
+{
+    None, NotReady, InvalidAmount, InvalidReason, InsufficientFunds, Busy,
+    SaveFailed, InvalidTransaction, StateConflict, InvalidItem, ItemLimit, PlayerDead
+}
+
+[Serializable]
+public class CurrencyResult
+{
+    public bool Success;
+    public EconomyError Error;
+    public int RequestedAmount;
+    public int AppliedAmount;
+    public int BalanceAfter;
+    public string TransactionId;
+
+    public CurrencyResult Copy() => (CurrencyResult)MemberwiseClone();
+    public static CurrencyResult Failed(EconomyError error, int balance = 0, string id = null) =>
+        new CurrencyResult { Error = error, BalanceAfter = balance, TransactionId = id };
+}
+
+public readonly struct CurrencyChange
+{
+    public readonly int BeforeBalance, AfterBalance, BeforePending, AfterPending, ActualDelta;
+    public readonly string Reason, TransactionId;
+
+    public CurrencyChange(int before, int after, int beforePending, int afterPending, string reason, string id)
+    {
+        BeforeBalance = before; AfterBalance = after;
+        BeforePending = beforePending; AfterPending = afterPending;
+        ActualDelta = after - before; Reason = reason; TransactionId = id;
+    }
+}
+
+public sealed class PurchaseRequest
+{
+    public readonly string[] CardIds;
+    public readonly string TransactionId;
+    public PurchaseRequest(IEnumerable<string> cardIds, string transactionId = null)
+    {
+        CardIds = cardIds == null ? null : new List<string>(cardIds).ToArray();
+        TransactionId = transactionId;
+    }
+}
+
+[Serializable]
+public sealed class PieceCount
+{
+    public string id;
+    public int count;
+    public PieceCount() { }
+    public PieceCount(string id, int count) { this.id = id; this.count = count; }
+}
+
+[Serializable]
+public sealed class PendingToken
+{
+    public string tokenId;
+    public int amount;
+    public bool settled;
+}
+
+[Serializable]
+public sealed class PendingGrant
+{
+    public string grantId;
+    public string transactionId;
+    public int remainingAmount;
+    public List<PendingToken> tokens = new List<PendingToken>();
+}
+
+[Serializable]
+public sealed class EconomyReceipt
+{
+    public string id;
+    public string requestKey;
+    public CurrencyResult result;
+    public bool hasChestReward;
+    public ChestRewardReceipt chestReward;
+}
+
+public enum EconomyDeathPhase { Captured, LossPrepared, Committed }
+
+[Serializable]
+public sealed class EconomyDeathRecord
+{
+    public string deathId;
+    public long sourceRevision;
+    public int randomSeed;
+    public EconomyDeathPhase phase;
+    public int lostCoins;
+    public int lostPieces;
+    public List<PieceCount> allPiecesAfterUnequip = new List<PieceCount>();
+    public List<PieceCount> removedPieces = new List<PieceCount>();
+    public List<PieceCount> remainingPieces = new List<PieceCount>();
+}
+
+[Serializable]
+public sealed class EconomyProfileData
+{
+    public const int CurrentSchemaVersion = 3;
+    public int schemaVersion = CurrentSchemaVersion;
+    public long revision;
+    public string profileId = Guid.NewGuid().ToString("N");
+    public int balance;
+    // Includes pieces referenced by equipped doctrines, exactly once.
+    public List<PieceCount> pieces = new List<PieceCount>();
+    public List<PendingGrant> pendingGrants = new List<PendingGrant>();
+    public List<EconomyReceipt> processedTransactions = new List<EconomyReceipt>();
+    // JsonUtility serializes inline custom classes by value, including nulls.
+    // Keep an explicit discriminator so an empty death object is never a death.
+    public bool hasDeath;
+    public EconomyDeathRecord death;
+    public bool hasRun;
+    public LobbyRunData run;
+
+    public EconomyProfileData Copy()
+    {
+        var copy = JsonUtility.FromJson<EconomyProfileData>(JsonUtility.ToJson(this));
+        copy.Normalize();
+        return copy;
+    }
+
+    public void Normalize()
+    {
+        if (!hasDeath) death = null;
+        if (!hasRun) run = null;
+        else run?.Normalize();
+        if (processedTransactions != null)
+            foreach (EconomyReceipt receipt in processedTransactions)
+                if (receipt != null && !receipt.hasChestReward) receipt.chestReward = null;
+    }
+}
+
+public readonly struct CoinFlightRequest
+{
+    public readonly PendingGrant Grant;
+    public readonly Vector3 Position;
+    public readonly Camera SourceCamera;
+    public CoinFlightRequest(PendingGrant grant, Vector3 position, Camera camera)
+    { Grant = grant; Position = position; SourceCamera = camera; }
+}
+
+public enum EnemyRewardKind { Dog, Believer, Executive, Boss }
+
+public interface IEconomyRandom { int Next(int minInclusive, int maxExclusive); }
+public sealed class EconomyRandom : IEconomyRandom
+{
+    private readonly System.Random random;
+    public EconomyRandom() { random = new System.Random(); }
+    public EconomyRandom(int seed) { random = new System.Random(seed); }
+    public int Next(int minInclusive, int maxExclusive) => random.Next(minInclusive, maxExclusive);
+}
