@@ -371,8 +371,11 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         EnemyRewardKind kind = this is DogEnemy ? EnemyRewardKind.Dog :
             this is BelieverEnemy ? EnemyRewardKind.Believer : EnemyRewardKind.Executive;
         Vector3 origin = bodyCollider != null ? bodyCollider.bounds.center : transform.position;
-        if (EconomyRuntime.Instance != null) EconomyRuntime.Instance.RewardDefeat(kind, defeatId, origin);
-        else Currency.Service?.TryRewardDefeat(kind, defeatId, origin);
+        // Coin presentation waits for the death motion to finish; the reward itself
+        // (ledger entry / pending balance) is still recorded immediately below.
+        float deathRaiseDelay = Mathf.Max(0f, destroyDelay - 0.05f);
+        if (EconomyRuntime.Instance != null) EconomyRuntime.Instance.RewardDefeat(kind, defeatId, origin, deathRaiseDelay);
+        else Currency.Service?.TryRewardDefeat(kind, defeatId, origin, presentationDelay: deathRaiseDelay);
         if (beliefController != null)
         {
             beliefController.StateChanged -= HandleBeliefStateChanged;
@@ -401,7 +404,6 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         // PlayerHealth raises at Die() entry (no motion there); enemies raise just
         // before destroy so "explode on death" lands at motion end.
         // (A coroutine on this object cannot run past Destroy, so raise slightly early.)
-        float deathRaiseDelay = Mathf.Max(0f, destroyDelay - 0.05f);
         StartCoroutine(RaiseDeathDoctrineAfterMotion(deathRaiseDelay));
         Destroy(gameObject, destroyDelay);
     }

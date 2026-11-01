@@ -146,7 +146,8 @@ public sealed partial class EconomyService
         });
     }
 
-    public CurrencyResult TryRewardDefeat(EnemyRewardKind kind, string defeatId, Vector3 position, Camera sourceCamera = null)
+    public CurrencyResult TryRewardDefeat(EnemyRewardKind kind, string defeatId, Vector3 position, Camera sourceCamera = null,
+        float presentationDelay = 0f)
     {
         if (busy) return Fail(EconomyError.Busy, defeatId);
         if (!Enum.IsDefined(typeof(EnemyRewardKind), kind)) return Fail(EconomyError.InvalidItem, defeatId);
@@ -165,7 +166,7 @@ public sealed partial class EconomyService
             int applied = Math.Min(rolled, EconomySettings.MaxCoins - data.balance - EconomyLedger.Pending(data));
             if (applied > 0) data.pendingGrants.Add(CreateGrant(activeTransactionId, applied));
             return Success(rolled, applied, data.balance, activeTransactionId);
-        }, () => { retryDrops.Remove(defeatId); retryDropKinds.Remove(defeatId); RequestFlight(defeatId, position, sourceCamera); });
+        }, () => { retryDrops.Remove(defeatId); retryDropKinds.Remove(defeatId); RequestFlight(defeatId, position, sourceCamera, presentationDelay); });
     }
 
     private CurrencyResult Execute(string id, string key, string reason, Func<EconomyProfileData, CurrencyResult> mutate,
@@ -211,13 +212,13 @@ public sealed partial class EconomyService
         return grant;
     }
 
-    private void RequestFlight(string grantId, Vector3 position, Camera camera)
+    private void RequestFlight(string grantId, Vector3 position, Camera camera, float presentationDelay = 0f)
     {
         PendingGrant grant = profile.Copy().pendingGrants.Find(item => item.grantId == grantId);
         if (grant == null) return;
         if (FlightRequested == null) return; // Runtime update/reload safely settles when there is no view.
         foreach (Action<CoinFlightRequest> handler in FlightRequested.GetInvocationList())
-            SafeInvoke(() => handler(new CoinFlightRequest(grant, position, camera)));
+            SafeInvoke(() => handler(new CoinFlightRequest(grant, position, camera, presentationDelay)));
     }
 
     public CurrencyResult TrySettleToken(string grantId, string tokenId)

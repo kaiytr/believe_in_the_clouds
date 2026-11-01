@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: EconomySettings
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::EconomySettings
   scatterSeconds: 0.2
+  groundRestSeconds: 0.4
   flightMinSeconds: 0.45
   flightMaxSeconds: 0.7
   tokenStaggerSeconds: 0.03
   maxVisibleTokens: 64
-  tokenDiameter: 16
+  tokenDiameter: 24
   scatterRadius: 42
   tokenColor: {r: 1, g: 0.76, b: 0.18, a: 1}

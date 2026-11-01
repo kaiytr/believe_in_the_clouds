@@ -141,8 +141,11 @@ public readonly struct CoinFlightRequest
     public readonly PendingGrant Grant;
     public readonly Vector3 Position;
     public readonly Camera SourceCamera;
-    public CoinFlightRequest(PendingGrant grant, Vector3 position, Camera camera)
-    { Grant = grant; Position = position; SourceCamera = camera; }
+    // Time before the visual flight starts, independent of the reward already recorded. Lets
+    // enemy defeats hold the coin presentation until the death motion finishes.
+    public readonly float PresentationDelay;
+    public CoinFlightRequest(PendingGrant grant, Vector3 position, Camera camera, float presentationDelay = 0f)
+    { Grant = grant; Position = position; SourceCamera = camera; PresentationDelay = Mathf.Max(0f, presentationDelay); }
 }
 
 public enum EnemyRewardKind { Dog, Believer, Executive, Boss }
