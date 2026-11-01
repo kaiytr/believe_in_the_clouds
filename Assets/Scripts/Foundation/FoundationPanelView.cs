@@ -181,14 +181,37 @@ public class FoundationPanelView : MonoBehaviour
         BuildTab(tabRow.transform, ShopColumn.Condition, "조건");
         BuildTab(tabRow.transform, ShopColumn.Result, "결과");
 
-        // 목록 영역.
-        GameObject list = UiTheme.CreateImage("List", left.transform, ListBackground);
+        // 목록 영역. 조각을 개수만큼 한 줄씩 나열하므로 많아지면 스크롤된다.
+        GameObject scroll = new GameObject("ListScroll", typeof(RectTransform));
+        scroll.transform.SetParent(left.transform, false);
+        RectTransform scrollRect = scroll.GetComponent<RectTransform>();
+        scrollRect.anchorMin = Vector2.zero;
+        scrollRect.anchorMax = Vector2.one;
+        scrollRect.offsetMin = new Vector2(14f, 14f);
+        scrollRect.offsetMax = new Vector2(-14f, -70f);
+
+        ScrollRect scroller = scroll.AddComponent<ScrollRect>();
+        scroller.horizontal = false;
+        scroller.vertical = true;
+        scroller.movementType = ScrollRect.MovementType.Clamped;
+        scroller.scrollSensitivity = 22f;
+
+        GameObject viewport = UiTheme.CreateImage("Viewport", scroll.transform, ListBackground);
+        RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+        UiTheme.Stretch(viewportRect);
+        viewport.AddComponent<Mask>().showMaskGraphic = true;
+        scroller.viewport = viewportRect;
+
+        GameObject list = new GameObject("List", typeof(RectTransform));
+        list.transform.SetParent(viewport.transform, false);
         RectTransform listRect = list.GetComponent<RectTransform>();
-        listRect.anchorMin = new Vector2(0f, 0f);
+        listRect.anchorMin = new Vector2(0f, 1f);
         listRect.anchorMax = new Vector2(1f, 1f);
-        listRect.offsetMin = new Vector2(14f, 14f);
-        listRect.offsetMax = new Vector2(-14f, -70f);
+        listRect.pivot = new Vector2(0.5f, 1f);
+        listRect.anchoredPosition = Vector2.zero;
+        listRect.sizeDelta = Vector2.zero;
         listRoot = listRect;
+        scroller.content = listRect;
 
         VerticalLayoutGroup listLayout = list.AddComponent<VerticalLayoutGroup>();
         listLayout.padding = new RectOffset(26, 26, 22, 22);
@@ -199,12 +222,15 @@ public class FoundationPanelView : MonoBehaviour
         listLayout.childForceExpandHeight = false;
         listLayout.childAlignment = TextAnchor.UpperCenter;
 
-        // 목록이 비었을 때 안내 문구. 레이아웃에서는 제외한다.
-        emptyText = UiTheme.CreateText("Empty", list.transform, string.Empty, 20,
+        ContentSizeFitter listFitter = list.AddComponent<ContentSizeFitter>();
+        listFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        listFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // 목록이 비었을 때 안내 문구. 스크롤 영역 위에 고정으로 띄운다.
+        // (목록 컨텐츠는 비면 높이가 0이라 그 안에 두면 보이지 않는다.)
+        emptyText = UiTheme.CreateText("Empty", viewport.transform, string.Empty, 20,
             UiTheme.TextMuted, TextAnchor.MiddleCenter);
         UiTheme.Stretch(emptyText.rectTransform, 20f);
-        LayoutElement emptyLayout = emptyText.gameObject.AddComponent<LayoutElement>();
-        emptyLayout.ignoreLayout = true;
         emptyText.gameObject.SetActive(false);
 
         // 인벤토리 개수 요약 (목록 아래쪽).
@@ -277,9 +303,17 @@ public class FoundationPanelView : MonoBehaviour
             return;
         }
 
+        // 같은 조각을 여러 줄 나열하므로, 선택 표시는 첫 줄에만 준다.
+        bool selectedUsed = false;
         for (int i = 0; i < items.Count; i++)
         {
-            BuildItem(items[i], items[i].EntryIndex == selectedEntryIndex);
+            bool selected = !selectedUsed && items[i].EntryIndex == selectedEntryIndex;
+            if (selected)
+            {
+                selectedUsed = true;
+            }
+
+            BuildItem(items[i], selected);
         }
     }
 
@@ -294,7 +328,8 @@ public class FoundationPanelView : MonoBehaviour
         layout.preferredHeight = 104f;
         layout.minHeight = 90f;
 
-        string text = data.Count > 1 ? $"{data.Label}  ×{data.Count}" : data.Label;
+        // 조각은 개수만큼 한 줄씩 따로 표시하므로 "×N"을 붙이지 않는다.
+        string text = data.Label;
         if (!string.IsNullOrEmpty(data.Detail))
         {
             text += $"\n<size=13><color=#3A3C40>{data.Detail}</color></size>";

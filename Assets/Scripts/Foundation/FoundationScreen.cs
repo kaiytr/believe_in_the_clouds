@@ -374,18 +374,18 @@ public class FoundationScreen : MonoBehaviour
         for (int i = 0; i < entries.Count; i++)
         {
             int count = CountOf(inventory, entries[i]);
-            if (count <= 0)
-            {
-                continue;
-            }
 
-            items.Add(new FoundationPanelView.ItemData
+            // 같은 조각을 합쳐서 "×N"으로 보여주지 않고, 보유한 개수만큼 한 줄씩 나열한다.
+            for (int copy = 0; copy < count; copy++)
             {
-                EntryIndex = i,
-                Label = entries[i].Label,
-                Detail = entries[i].Detail,
-                Count = count
-            });
+                items.Add(new FoundationPanelView.ItemData
+                {
+                    EntryIndex = i,
+                    Label = entries[i].Label,
+                    Detail = entries[i].Detail,
+                    Count = 1
+                });
+            }
         }
 
         panel.SetItems(items, currentIndex,

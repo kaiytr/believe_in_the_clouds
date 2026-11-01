@@ -42,6 +42,7 @@ public class DoctrineHud : MonoBehaviour
 
     private readonly List<DoctrineSlotView> slots = new List<DoctrineSlotView>();
     private DoctrineManager manager;
+    private PlayerHealth resolvedPlayer;
     private Canvas canvas;
     private RectTransform doctrineRow;
     private RectTransform bandRect;
@@ -164,6 +165,13 @@ public class DoctrineHud : MonoBehaviour
 
         if (player == null)
             return;
+
+        // 플레이어를 늦게 찾은 경우(씬 전환 등) 오너 기준 표시가 달라질 수 있으니 슬롯을 다시 그린다.
+        if (resolvedPlayer != player)
+        {
+            resolvedPlayer = player;
+            RebuildDoctrineSlots();
+        }
 
         SpriteRenderer renderer = player.GetComponentInChildren<SpriteRenderer>();
         if (portraitImage != null && renderer != null && renderer.sprite != null)
@@ -437,8 +445,11 @@ public class DoctrineHud : MonoBehaviour
             {
                 DoctrineManager.ActiveDoctrine entry = active[i];
                 if (entry == null || entry.Doctrine == null) continue;
+
+                // 다른 존재(적 등)에 묶인 교리는 플레이어 HUD에 표시하지 않는다.
+                // 오너가 없는 교리는 재단에서 조합한 플레이어 교리이므로 주어와 무관하게 모두 표시한다.
                 if (entry.Owner != null && entry.Owner != player) continue;
-                if (entry.Owner == null && entry.Doctrine.Subject != SubjectType.Player && entry.Doctrine.Subject != SubjectType.All) continue;
+
                 result.Add(entry.Doctrine);
             }
             return result;
