@@ -213,6 +213,16 @@ public sealed class EconomyPlayModeTests
     {
         yield return Load("BossTest");
         var boss = Object.FindFirstObjectByType<BossCombatController>(); boss.PauseAndCancelForTest();
+        var player = GameObject.FindGameObjectWithTag("Player");
+        player.GetComponent<PlayerMove>().enabled = false;
+        var body = player.GetComponent<Rigidbody2D>();
+        body.gravityScale = 0f;
+        body.position = new Vector2(-4.21f, -2.33f);
+        body.linearVelocity = Vector2.zero;
+        Physics2D.SyncTransforms();
+        float deadline = Time.time + 2f;
+        while (!boss.EncounterStarted && Time.time < deadline) yield return new WaitForFixedUpdate();
+        Assert.That(boss.EncounterStarted, Is.True, "Enter the authored arena before testing a boss defeat.");
         boss.ForcePhaseTwoForTest();
         int total = Currency.Balance + Currency.PendingBalance;
         boss.TakeDamage(new DamageInfo(100000, DamageSource.Environment));

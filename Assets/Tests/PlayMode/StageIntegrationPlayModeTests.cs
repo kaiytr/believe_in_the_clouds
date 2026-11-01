@@ -8,6 +8,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 public sealed class StageIntegrationPlayModeTests
@@ -170,7 +171,131 @@ public sealed class StageIntegrationPlayModeTests
         Assert.That(boss.gameObject.activeSelf,Is.True);
         Assert.That(boss.EncounterStarted,Is.True,boss.StatusMessage);
         Assert.That(boss.ValidateEncounter(),Is.Empty);
+        Assert.That(boss.Settings.WaveSpeed,Is.EqualTo(9f));
+        Assert.That(boss.Settings.CloudDuration,Is.EqualTo(3f));
         Assert.That(Player.GetComponent<PlayerHealth>().IsDead,Is.False);
+    }
+
+    private static IEnumerator Until(Func<bool> predicate, float timeout = 8f)
+    {
+        float deadline = Time.time + timeout;
+        while (!predicate() && Time.time < deadline) yield return null;
+        Assert.That(predicate(), Is.True, "StageTest integration timed out.");
+    }
+
+    private static void PutPlayer(Vector2 position)
+    {
+        var body = Player.GetComponent<Rigidbody2D>();
+        body.gravityScale = 0f;
+        body.position = position;
+        Player.transform.position = position;
+        body.linearVelocity = Vector2.zero;
+        Physics2D.SyncTransforms();
+    }
+
+    private static IEnumerator EnterStageBoss()
+    {
+        yield return Load("StageTest");
+        Player.GetComponent<PlayerMove>().enabled = false;
+        var boss = Object.FindFirstObjectByType<BossCombatController>(FindObjectsInactive.Include);
+        boss.AutomaticPatterns = false;
+        PutPlayer(new Vector2(-16f, -2.3f));
+        yield return Until(() => boss.EncounterStarted);
+        boss.PauseAndCancelForTest();
+        Player.GetComponent<PlayerHealth>().ResetHealth();
+    }
+
+    [UnityTest]
+    public IEnumerator StageEnemyCoinsWaitForDeathThenRestAtTheWorldPositionAsCameraMoves()
+    {
+        yield return Load("StageTest");
+        EconomyRuntime.Ensure();
+        EconomyService previous = Currency.Service;
+        EconomyRuntime.Instance.SetService(new EconomyService(new MemoryEconomyStore(), new EconomyRandom(18)));
+        try
+        {
+            yield return null;
+            Player.GetComponent<PlayerMove>().enabled = false;
+            PutPlayer(new Vector2(-54f, -2.3f));
+            var enemy = Object.FindObjectsByType<EnemyUnit>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .Single(item => item is DogEnemy);
+            yield return Until(() => enemy.gameObject.activeInHierarchy);
+            enemy.enabled = false;
+            foreach (var attack in enemy.GetComponents<EnemyAttack>()) attack.enabled = false;
+            float deathDuration = (float)typeof(EnemyUnit).GetField("destroyDelay",
+                BindingFlags.Instance | BindingFlags.NonPublic).GetValue(enemy);
+            var service = Currency.Service;
+            Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.True);
+            Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.False);
+            int reward = service.PendingBalance;
+            Assert.That(reward, Is.InRange(5, 7));
+            var view = Object.FindObjectsByType<CoinFlightView>(FindObjectsSortMode.None).Single(item => item.HasFlights);
+            yield return new WaitForSecondsRealtime(deathDuration * .5f);
+            Assert.That(enemy != null, Is.True, "The death motion is still running.");
+            Assert.That(view.GetComponentsInChildren<Image>().Any(item => item.enabled), Is.False);
+            Assert.That(service.Balance, Is.Zero);
+            yield return Until(() => enemy == null);
+            Image coin = null;
+            yield return Until(() => (coin = view.GetComponentsInChildren<Image>().FirstOrDefault(item => item.enabled)) != null);
+            yield return new WaitForSecondsRealtime(EconomyRuntime.Instance.Settings.scatterSeconds + .03f);
+            Assert.That(coin.rectTransform.sizeDelta, Is.EqualTo(Vector2.one * 24f));
+            Assert.That(service.Balance, Is.Zero, "Ground rest precedes HUD settlement.");
+            var camera = Camera.main;
+            foreach (var behaviour in camera.GetComponents<MonoBehaviour>()) behaviour.enabled = false;
+            Vector2 before = RectTransformUtility.WorldToScreenPoint(null, coin.rectTransform.position);
+            Vector3 worldBefore = camera.WorldToScreenPoint(Vector3.zero);
+            camera.transform.position += Vector3.right;
+            Vector3 worldAfter = camera.WorldToScreenPoint(Vector3.zero);
+            yield return null;
+            yield return null;
+            Vector2 after = RectTransformUtility.WorldToScreenPoint(null, coin.rectTransform.position);
+            Assert.That(after.x - before.x, Is.EqualTo(worldAfter.x - worldBefore.x).Within(2f));
+            yield return Until(() => !view.HasFlights, 5f);
+            Assert.That(service.Balance, Is.EqualTo(reward));
+            Assert.That(service.PendingBalance, Is.Zero);
+        }
+        finally { EconomyRuntime.Instance.SetService(previous); }
+    }
+
+    [UnityTest]
+    public IEnumerator StageCloudShelterProtectsThenExposedPlayerIsHitAndCancellationLeavesNoStrike()
+    {
+        yield return EnterStageBoss();
+        var boss = Object.FindFirstObjectByType<BossCombatController>();
+        var player = Player.GetComponent<PlayerHealth>();
+        // Use the actual StageTest settings, prefabs, terrain and collider at their authored values.
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            boss.PauseAndCancelForTest();
+            player.ResetHealth();
+            PutPlayer(new Vector2(-4f, -2.3f));
+            boss.ForcePatternForTest(BossPatternKind.CloudBelief);
+            yield return Until(() => Object.FindFirstObjectByType<BossCloudLightning>() != null);
+            var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+            var clouds = Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None);
+            Assert.That(clouds.Length, Is.EqualTo(2));
+            var white = clouds.Single(item => item.IsWhite).GetComponent<SpriteRenderer>().bounds;
+            Assert.That(white.min.x, Is.EqualTo(lightning.Shelter.Center.x - lightning.Shelter.Size.x * .5f).Within(.001f));
+            Assert.That(white.max.x, Is.EqualTo(lightning.Shelter.Center.x + lightning.Shelter.Size.x * .5f).Within(.001f));
+            Vector2 offset = attempt == 1 ? Vector2.left * (lightning.Shelter.Size.x * .5f + .1f) : Vector2.zero;
+            PutPlayer((Vector2)Player.transform.position + lightning.Shelter.Center + offset - (Vector2)player.BodyCollider.bounds.center);
+            float belief = boss.CurrentBelief;
+            if (attempt == 2)
+            {
+                boss.PauseAndCancelForTest();
+                yield return new WaitForSeconds(boss.Settings.CloudWarning + boss.Settings.CloudDuration + .1f);
+                Assert.That(player.CurrentHp, Is.EqualTo(100f));
+                Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
+                Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+                continue;
+            }
+            yield return Until(() => lightning.HasStruck);
+            Assert.That(Object.FindObjectsByType<DangerIndicator>(FindObjectsSortMode.None), Is.Empty);
+            Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(), Is.Null);
+            Assert.That(player.CurrentHp, Is.EqualTo(attempt == 0 ? 100f : 100f - boss.Settings.LightningDamage));
+            Assert.That(boss.CurrentBelief, Is.EqualTo(attempt == 0 ? belief - boss.Settings.BeliefReduction : belief));
+            yield return Until(() => !boss.IsPatternRunning);
+        }
     }
 
     [UnityTest]
