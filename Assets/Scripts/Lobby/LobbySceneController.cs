@@ -14,6 +14,12 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField] private Transform foundationAnchor;
     [SerializeField] private Sprite squareSprite;
     [SerializeField] private Material worldMaterial;
+    [SerializeField, Tooltip("Only attaches when this scene is the active run stage for its configured role.")]
+    private bool runStageOnly;
+    [SerializeField] private BranchRole runStageRole;
+    [SerializeField, Tooltip("Horizontal player limits for a non-lobby stage.")]
+    private float stageMinX = -10f;
+    [SerializeField] private float stageMaxX = 10f;
     [SerializeField] private bool showTestTools = true;
     public bool IsLobby => isLobby;
     public PlayerHealth Player => player;
@@ -29,11 +35,24 @@ public sealed class LobbySceneController : MonoBehaviour
 
     private void Start()
     {
+        if (!isLobby && runStageOnly)
+        {
+            flow = LobbyFlowRuntime.Instance;
+            if (flow == null || !flow.IsActiveRunStage(runStageRole))
+            {
+                enabled = false;
+                return;
+            }
+        }
+        else
+        {
+            flow = LobbyFlowRuntime.Ensure();
+        }
+
         if (player == null) player = FindFirstObjectByType<PlayerHealth>();
-        flow = LobbyFlowRuntime.Ensure();
         BuildUi(); flow.Attach(this);
     }
-    public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? -23f : -10f, isLobby ? 31f : 10f),
+    public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? -23f : stageMinX, isLobby ? 31f : stageMaxX),
         Mathf.Clamp(position.y, -1.95f, 8f));
 
     public void SetPlayable(bool value)
@@ -49,7 +68,8 @@ public sealed class LobbySceneController : MonoBehaviour
     private void Update()
     {
         if (flow == null || flow.Scene != this) return;
-        if (Input.GetKeyDown(KeyCode.F2)) ShowTestTools = !ShowTestTools;
+        if (Input.GetKeyDown(KeyCode.F2) && (!runStageOnly || flow.IsPlayLoopTestMode))
+            ShowTestTools = !ShowTestTools;
         LobbyRunData run = flow.State;
         if (run == null) { status.text = "저장 확인 중"; message.text = flow.Message; return; }
         bool matches = isLobby ? run.area == RunArea.Lobby : run.area == RunArea.TemporaryStage || run.area == RunArea.Complete;
@@ -60,7 +80,10 @@ public sealed class LobbySceneController : MonoBehaviour
         }
         status.text = isLobby ? $"로비  |  전투 클리어 {run.combatClears}회" + (run.combatClears >= 3 ? " · 보스 후보 해금" : " · 3회부터 보스 후보 등장")
             : run.area == RunArea.Complete ? "임시 보스 완료  |  런 완료 검증 · 정식 엔딩은 후속 연결"
-            : run.hasStage ? $"{LobbyRules.RoleLabel(run.stage.role)} 임시 스테이지  |  " + (run.stage.completed ? "완료 · 출구에서 E로 복귀" : "역할 완료 전에는 복귀할 수 없습니다")
+            : run.hasStage ? $"{LobbyRules.RoleLabel(run.stage.role)} 임시 스테이지  |  " +
+                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : run.stage.role == BranchRole.Event
+                    ? "이벤트 임시 구간 · 출구에서 E로 확인 후 복귀"
+                    : "역할 완료 전에는 복귀할 수 없습니다")
             : "스테이지 확인 중";
         message.text = flow.Message;
         bool ready = flow.InputReady;
@@ -73,9 +96,10 @@ public sealed class LobbySceneController : MonoBehaviour
         fail.interactable = flow.FixtureStore != null;
         if (!isLobby && exitBody != null && run.hasStage)
         {
-            bool available = run.stage.completed && run.stage.role != BranchRole.Boss;
+            bool eventPlaceholder = run.stage.role == BranchRole.Event && !run.stage.completed;
+            bool available = (run.stage.completed && run.stage.role != BranchRole.Boss) || eventPlaceholder;
             exitBody.color = available ? new Color(.27f, .65f, .53f) : new Color(.22f, .25f, .3f);
-            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : available ? "출구 · E" : "완료 후 출구 사용";
+            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : eventPlaceholder ? "이벤트 확인 · E" : available ? "출구 · E" : "완료 후 출구 사용";
         }
     }
 
@@ -98,7 +122,8 @@ public sealed class LobbySceneController : MonoBehaviour
             var panel = new GameObject("Panel"); panel.transform.SetParent(exit.transform, false); panel.transform.localScale = new Vector3(2, 4.6f, 1);
             exitBody = panel.AddComponent<SpriteRenderer>(); exitBody.sprite = squareSprite; exitBody.sharedMaterial = worldMaterial; exitBody.sortingOrder = -8;
             exit.AddComponent<TemporaryStageExit>();
-            exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용", new Vector2(0, 2.7f), Color.white);
+            string initialExitLabel = run.stage.role == BranchRole.Event ? "이벤트 확인 · E" : "완료 후 출구 사용";
+            exitLabel = WorldLabel(exit.transform, "Exit label", initialExitLabel, new Vector2(0, 2.7f), Color.white);
         }
     }
 
@@ -161,7 +186,7 @@ public sealed class LobbySceneController : MonoBehaviour
         status = UiLabel(root.transform, "Progress", "로비 확인 중", 24, new Vector2(24, -20), new Vector2(1750, 42));
         tools = UiTheme.CreateImage("Test tools", root.transform, new Color(.06f, .1f, .17f, .94f));
         var rect = tools.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
-        rect.anchoredPosition = new Vector2(24, -76); rect.sizeDelta = new Vector2(530, 260);
+        rect.anchoredPosition = new Vector2(24, -76); rect.sizeDelta = new Vector2(530, 320);
         UiLabel(tools.transform, "Test title", "테스트 도구  ·  F2 표시/숨기기", 18, new Vector2(16, -12), new Vector2(498, 30));
         fresh = UiButton(0, "새 메모리 테스트", () => flow.StartMemoryFixture());
         grant = UiButton(1, "+100 코인", () => flow.GrantForTest());
@@ -171,10 +196,12 @@ public sealed class LobbySceneController : MonoBehaviour
         reload = UiButton(5, "저장 다시 불러오기", () => flow.ReloadForTest());
         fail = UiButton(6, "저장 실패 켜기/끄기", () => flow.ToggleSaveFailure());
         UiButton(7, "도구 숨기기", () => ShowTestTools = false);
-        UiLabel(tools.transform, "Fixture note", "저장 실패 주입은 새 메모리 테스트에서 사용합니다.", 15, new Vector2(16, -218), new Vector2(498, 30));
+        UiButton(8, "전체 플레이 루프 테스트", () => flow.StartPlayLoopTest());
+        UiLabel(tools.transform, "Fixture note", "루프 테스트는 격리된 메모리 프로필을 사용합니다.", 15, new Vector2(16, -264), new Vector2(498, 30));
         message = UiLabel(root.transform, "Message", "", 18, new Vector2(24, -350), new Vector2(1100, 56));
         message.color = new Color(1, .85f, .5f);
-        ShowTestTools = showTestTools; UiEventSystemBoot.Ensure();
+        ShowTestTools = showTestTools && (!runStageOnly || flow.IsPlayLoopTestMode);
+        UiEventSystemBoot.Ensure();
     }
 
     private Button UiButton(int index, string text, Action action)

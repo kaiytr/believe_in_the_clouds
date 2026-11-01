@@ -209,8 +209,39 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2116135982240745575, guid: 1e84755244ded9644b5566b68794635d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 132853816}
   m_SourcePrefab: {fileID: 100100000, guid: 1e84755244ded9644b5566b68794635d, type: 3}
+--- !u!114 &132853814 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3608538687230886213, guid: 1e84755244ded9644b5566b68794635d, type: 3}
+  m_PrefabInstance: {fileID: 132853813}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 132853815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHealth
+--- !u!1 &132853815 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2116135982240745575, guid: 1e84755244ded9644b5566b68794635d, type: 3}
+  m_PrefabInstance: {fileID: 132853813}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &132853816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 132853815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a981ef409750d42be4083532b9436e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerDeathCoordinator
 --- !u!1 &301792570
 GameObject:
   m_ObjectHideFlags: 0
@@ -238,7 +269,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87ced436d522420c83b716cc2d5d0da2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossTestBootstrap
   boss: {fileID: 1145974078}
   startAutomatically: 1
@@ -500,7 +531,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -544,7 +575,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
@@ -566,6 +597,69 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!1 &985954517
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 985954519}
+  - component: {fileID: 985954518}
+  m_Layer: 0
+  m_Name: '[Play Loop Stage]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &985954518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985954517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec58794297f446d89f8856ea0e590bd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::LobbySceneController
+  isLobby: 0
+  player: {fileID: 132853814}
+  branchPrefab: {fileID: 0}
+  twoCandidateSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  threeCandidateSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  foundationPrefab: {fileID: 0}
+  foundationAnchor: {fileID: 0}
+  squareSprite: {fileID: 21300000, guid: d923fef7a1f10764bb74f97c25d3daac, type: 3}
+  worldMaterial: {fileID: 2100000, guid: 1d315a27cd0606c4aa48028539218aa5, type: 2}
+  runStageOnly: 1
+  runStageRole: 3
+  stageMinX: -10
+  stageMaxX: 10
+  showTestTools: 1
+--- !u!4 &985954519
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985954517}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1090951938
 GameObject:
   m_ObjectHideFlags: 0
@@ -770,7 +864,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 127bfdb724e741d09c9e1768ca8812bc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatController
 --- !u!1 &1502305282
 GameObject:
@@ -910,6 +1004,51 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &1616291558
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1616291560}
+  - component: {fileID: 1616291559}
+  m_Layer: 0
+  m_Name: '[Run Stage Completion]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1616291559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616291558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d69c462a9f710b4a838ba0fece6e43d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::RunStageCompletionWatcher
+  role: 3
+--- !u!4 &1616291560
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1616291558}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1736758528
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1155,3 +1294,5 @@ SceneRoots:
   - {fileID: 301792572}
   - {fileID: 132853813}
   - {fileID: 1736758528}
+  - {fileID: 985954519}
+  - {fileID: 1616291560}

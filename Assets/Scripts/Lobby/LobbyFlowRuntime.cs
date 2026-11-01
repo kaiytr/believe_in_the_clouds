@@ -8,6 +8,9 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
 {
     public const string LobbyScene = "Lobby";
     public const string StageScene = "TemporaryStage";
+    public const string ShopTestScene = "ShopTest";
+    public const string BossTestScene = "BossTest";
+    private static readonly string[] CombatTestScenes = { "DogCombatTest", "BelieverCombatTest", "ExecutiveCombatTest" };
     public static LobbyFlowRuntime Instance { get; private set; }
     public LobbyRunData State { get; private set; }
     public string Message { get; private set; } = "";
@@ -21,7 +24,10 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     private long seenRevision = -1;
     private float nextCheckpoint, nextRetry;
     private bool healthPending, restoring;
+    private bool playLoopTestMode;
     private int inputAfterFrame;
+
+    public bool IsPlayLoopTestMode => playLoopTestMode;
 
     public bool InputReady => Scene != null && player != null && !player.IsDead && !IsTransitioning &&
         !healthPending && Service != null && Service.IsReady && State != null && MatchesScene() &&
@@ -87,6 +93,33 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     private bool MatchesScene() => Scene != null && State != null &&
         (Scene.IsLobby ? State.area == RunArea.Lobby : State.area == RunArea.TemporaryStage || State.area == RunArea.Complete);
 
+    public bool IsActiveRunStage(BranchRole role) => State != null &&
+        State.hasStage && State.stage.role == role &&
+        (State.area == RunArea.TemporaryStage || (role == BranchRole.Boss && State.area == RunArea.Complete));
+
+    private string StageSceneForCurrentRun()
+    {
+        if (State?.stage == null) return StageScene;
+        switch (State.stage.role)
+        {
+            case BranchRole.Combat:
+                int index = playLoopTestMode
+                    ? State.combatClears % CombatTestScenes.Length
+                    : StableCombatSceneIndex(State.stage.id);
+                return CombatTestScenes[index];
+            case BranchRole.Shop: return ShopTestScene;
+            case BranchRole.Event: return StageScene;
+            case BranchRole.Boss: return BossTestScene;
+            default: return StageScene;
+        }
+    }
+
+    private static int StableCombatSceneIndex(string stageId)
+    {
+        byte[] stableId = new System.Guid(LobbyRules.StableId("combat-scene:" + stageId)).ToByteArray();
+        return stableId[0] % CombatTestScenes.Length;
+    }
+
     private void Update()
     {
         if (Scene == null) return;
@@ -112,7 +145,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         // the committed destination has the same scene name.
         if (!MatchesScene() || (State.area == RunArea.Lobby && player != null && player.IsDead))
         {
-            if (!IsTransitioning) StartCoroutine(Route(State.area == RunArea.Lobby ? LobbyScene : StageScene));
+            if (!IsTransitioning) StartCoroutine(Route(State.area == RunArea.Lobby ? LobbyScene : StageSceneForCurrentRun()));
             return;
         }
         if (!IsTransitioning && State.area != RunArea.Complete && player != null && !player.IsDead &&
@@ -156,7 +189,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     {
         if (!InputReady) return Report(CurrencyResult.Failed(EconomyError.Busy));
         CurrencyResult result = Report(Service.TryDepartBranch(branchId, player.CurrentHp));
-        if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(StageScene));
+        if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(StageSceneForCurrentRun()));
         return result;
     }
     public CurrencyResult CompleteStage()
@@ -168,6 +201,12 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     {
         if (!InputReady || !State.hasStage) return Report(CurrencyResult.Failed(EconomyError.StateConflict));
         CurrencyResult result = Report(Service.TryReturnFromStage(State.stage.id, player.CurrentHp));
+        if (result.Success && playLoopTestMode)
+        {
+            CurrencyResult candidates = Service.TryConfigurePlayLoopTestCandidates();
+            if (candidates.Success) Report(candidates);
+            else Debug.LogError("Could not prepare the next play loop test branches: " + candidates.Error, this);
+        }
         if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(LobbyScene));
         return result;
     }
@@ -184,6 +223,26 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         Report(Service.TryInitializeRun(Scene.Player.MaxHp));
         if (Scene.IsLobby) Attach(Scene);
         Message = "빈 메모리 테스트 프로필 · 기존 저장 파일은 유지됩니다.";
+    }
+
+    public void StartPlayLoopTest()
+    {
+        playLoopTestMode = true;
+        StartMemoryFixture();
+        if (Service != null && Service.IsReady)
+        {
+            CurrencyResult candidates = Service.TryConfigurePlayLoopTestCandidates();
+            if (candidates.Success) Report(candidates);
+            else Debug.LogError("Could not prepare the play loop test branches: " + candidates.Error, this);
+
+            if (State != null)
+            {
+                CurrencyResult grant = Service.TryGrant(100, "playloop.test.start", "playloop:coins:" + State.id);
+                if (grant.Success) Report(grant);
+                else Debug.LogError("Could not seed play loop test currency: " + grant.Error, this);
+            }
+        }
+        Message = "전체 플레이 루프 테스트 · 전투/상점/이벤트와 3회 전투 후 보스 분기가 준비됩니다.";
     }
     public void ToggleSaveFailure()
     {

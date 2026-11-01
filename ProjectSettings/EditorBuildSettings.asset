@@ -17,6 +17,21 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TemporaryStage.unity
     guid: 506e24550b3ada0458ba1d63eb95c39f
+  - enabled: 1
+    path: Assets/Scenes/ShopTest.unity
+    guid: e2380cdbfa5db2844955d9b654dd7aa8
+  - enabled: 1
+    path: Assets/Scenes/DogCombatTest.unity
+    guid: a1ed6943e3e501544a9cb55060fa5f8a
+  - enabled: 1
+    path: Assets/Scenes/BelieverCombatTest.unity
+    guid: 1011df90383ba784fb0bd1bc9098eeab
+  - enabled: 1
+    path: Assets/Scenes/ExecutiveCombatTest.unity
+    guid: 001a7dcc5054e39498bd88e513eb6e63
+  - enabled: 1
+    path: Assets/Scenes/BossTest.unity
+    guid: a82bfeb8e9fa4b34a261713ca8c83a10
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

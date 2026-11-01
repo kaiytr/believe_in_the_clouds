@@ -9,6 +9,7 @@ public class ShopScreen : MonoBehaviour
     private ShopInteractable openShop;
     private readonly HashSet<string> selected = new HashSet<string>(StringComparer.Ordinal);
     private string purchaseId;
+    public static event Action<ShopInteractable> ShopClosed;
     public bool IsOpen => panel != null && panel.IsOpen;
     public ShopInteractable OpenShop => openShop;
 
@@ -75,7 +76,9 @@ public class ShopScreen : MonoBehaviour
     public void Close()
     {
         if (!IsOpen) return;
+        ShopInteractable closedShop = openShop;
         panel.Close(); UiModal.Pop(this); openShop = null;
+        if (closedShop != null) ShopClosed?.Invoke(closedShop);
     }
 
     private void HandleCardClicked(ShopColumn column, int index)

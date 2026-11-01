@@ -24,6 +24,41 @@ public sealed partial class EconomyService
         });
     }
 
+    /// <summary>Builds a predictable role set for the isolated end-to-end play loop fixture.</summary>
+    public CurrencyResult TryConfigurePlayLoopTestCandidates()
+    {
+        if (!(store is MemoryEconomyStore)) return Fail(EconomyError.StateConflict);
+        if (!profile.hasRun || profile.run == null) return Fail(EconomyError.StateConflict);
+
+        int visit = profile.run.visit;
+        string runId = profile.run.id;
+        string transactionId = "playloop:candidates:" + runId + ":" + visit;
+        string requestKey = RequestKey("run.playloopTestCandidates", runId, visit.ToString());
+        return Execute(transactionId, requestKey, "run.playloopTestCandidates", data =>
+        {
+            if (!data.hasRun || data.run == null || data.run.area != RunArea.Lobby || data.run.hasStage)
+                return Fail(EconomyError.StateConflict, transactionId);
+
+            data.run.batchId = LobbyRules.StableId("playloop:" + data.run.id + ":" + data.run.visit);
+            data.run.candidates.Clear();
+            BranchRole[] roles = data.run.combatClears >= LobbyRules.BossUnlockClears
+                ? new[] { BranchRole.Combat, BranchRole.Shop, BranchRole.Boss }
+                : new[] { BranchRole.Combat, BranchRole.Shop, BranchRole.Event };
+            for (int i = 0; i < roles.Length; i++)
+            {
+                data.run.candidates.Add(new BranchCandidate
+                {
+                    id = data.run.batchId + ":" + i,
+                    role = roles[i],
+                    slot = i,
+                    revealed = false
+                });
+            }
+
+            return Success(0, 0, data.balance, activeTransactionId);
+        });
+    }
+
     public CurrencyResult TryRevealBranch(string branchId)
     {
         if (string.IsNullOrWhiteSpace(branchId)) return Fail(EconomyError.InvalidTransaction);

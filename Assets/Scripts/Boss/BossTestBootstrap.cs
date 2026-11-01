@@ -9,6 +9,7 @@ public sealed class BossTestBootstrap : MonoBehaviour
     private PlayerCombatEvents playerEvents;
     private BossDebugPanel debugPanel;
     private bool ready;
+    private bool activeRunStage;
     public string LatestSignal { get; private set; } = "테스트 신호 없음";
     public bool ShowDebugPanel
     {
@@ -20,6 +21,10 @@ public sealed class BossTestBootstrap : MonoBehaviour
 
     private void Start()
     {
+        LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
+        activeRunStage = flow != null && flow.IsActiveRunStage(BranchRole.Boss);
+        if (activeRunStage) showDebugPanel = false;
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         playerEvents = player != null ? player.GetComponent<PlayerCombatEvents>() : null;
         if (boss == null || playerEvents == null)
@@ -37,7 +42,7 @@ public sealed class BossTestBootstrap : MonoBehaviour
 
     private void Update()
     {
-        if (!ready) return;
+        if (!ready || activeRunStage) return;
         if (Input.GetKeyDown(KeyCode.F1)) ShowDebugPanel = !ShowDebugPanel;
         if (Input.GetKeyDown(KeyCode.J)) PublishTestAttack(false);
         if (Input.GetKeyDown(KeyCode.K)) PublishTestAttack(true);
