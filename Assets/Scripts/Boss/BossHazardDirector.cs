@@ -14,11 +14,13 @@ public sealed class BossHazardDirector : MonoBehaviour
         Vector2 foot = new Vector2(owner.PlayerCollider.bounds.center.x, owner.PlayerCollider.bounds.min.y);
         if (!BossCombatPhysics.FindGround(foot, .1f, 8f, owner, out Vector2 floor)) yield break;
         float halfWidth = Mathf.Min(data.StormCloudSize.x, owner.PatternXLimits.y - owner.PatternXLimits.x) * .5f;
-        if (halfWidth < Mathf.Abs(data.CloudSpacing) + data.CloudSize.x * .5f) yield break;
+        if (halfWidth < data.CloudEdgePadding + data.CloudSize.x * .5f) yield break;
         float x = Mathf.Clamp(foot.x, owner.PatternXLimits.x + halfWidth, owner.PatternXLimits.y - halfWidth);
         var storm = new AttackGeometry(new Vector2(x, floor.y + data.CloudTopHeight - data.StormCloudSize.y * .5f),
             new Vector2(halfWidth * 2f, data.StormCloudSize.y));
-        var whiteShape = new AttackGeometry(new Vector2(x + data.CloudSpacing, floor.y + data.ShelterHeight + data.CloudSize.y * .5f), data.CloudSize);
+        float shelterTravel = halfWidth - data.CloudSize.x * .5f - data.CloudEdgePadding;
+        float whiteX = x + Random.Range(-shelterTravel, shelterTravel);
+        var whiteShape = new AttackGeometry(new Vector2(whiteX, floor.y + data.ShelterHeight + data.CloudSize.y * .5f), data.CloudSize);
         var shelter = new AttackGeometry(new Vector2(whiteShape.Center.x, floor.y + data.ShelterHeight * .5f),
             new Vector2(data.CloudSize.x, data.ShelterHeight));
         var strike = new AttackGeometry(new Vector2(x, floor.y + (data.CloudTopHeight - data.StormCloudSize.y) * .5f),
@@ -33,15 +35,15 @@ public sealed class BossHazardDirector : MonoBehaviour
         try
         {
             owner.SetConditionTimer(data.CloudWarning);
-            owner.SetActionCue("먹구름 생성", "청록색 보호 범위 안으로 몸 전체를 대피하세요.", BossPresentationState.Charging, data.CloudWarning);
+            owner.SetActionCue("먹구름 생성", "흰 구름 바로 아래로 몸 전체를 대피하세요.", BossPresentationState.Charging, data.CloudWarning);
             while (owner.ConditionRemaining > 0f && token == owner.Generation && owner.CanContinue)
-            { lightning.ShowCountdown(owner.ConditionRemaining + data.CloudDuration); yield return null; }
+            { lightning.UpdateWarning(owner.ConditionRemaining + data.CloudDuration); yield return null; }
             if (token != owner.Generation || !owner.CanContinue) yield break;
             owner.SetConditionTimer(data.CloudDuration);
-            owner.SetActionCue("번개 대피", $"흰 구름 아래 청록색 범위로! 성공 시 믿음 -{data.BeliefReduction:0}", BossPresentationState.Windup, data.CloudDuration);
+            owner.SetActionCue("번개 대피", $"흰 구름 바로 아래로 대피하세요! 성공 시 믿음 -{data.BeliefReduction:0}", BossPresentationState.Windup, data.CloudDuration);
             while (owner.ConditionRemaining > 0f && token == owner.Generation && owner.CanContinue)
             {
-                lightning.ShowCountdown(owner.ConditionRemaining);
+                lightning.UpdateWarning(owner.ConditionRemaining);
                 record.Observe(strike.Overlaps(owner.PlayerCollider) && !lightning.ContainsPlayer(), owner.PlayerCollider.bounds.center);
                 yield return null;
             }

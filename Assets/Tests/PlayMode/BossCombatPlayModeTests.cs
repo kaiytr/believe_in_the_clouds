@@ -336,34 +336,73 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator CloudShelterProtectsWholeBodyAtDeadlineAndMatchesVisibleBounds()
+    public IEnumerator CloudShelterProtectsWholeBodyBelowWhiteCloudWithoutExtraUi()
     {
         yield return BeginCloud();
         var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
-        Assert.That(Vector3.Distance(lightning.ProtectionRenderer.bounds.center, lightning.Shelter.Center), Is.LessThan(.0001f));
-        Assert.That(lightning.ProtectionRenderer.bounds.size.x, Is.EqualTo(lightning.Shelter.Size.x).Within(.001f));
-        Assert.That(lightning.ProtectionRenderer.bounds.size.y, Is.EqualTo(lightning.Shelter.Size.y).Within(.001f));
         var clouds = Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None);
         Assert.That(clouds.Length, Is.EqualTo(2));
         foreach (var cloud in clouds)
         {
             Assert.That(cloud.GetComponent<BoxCollider2D>().isTrigger, Is.True);
             Assert.That(cloud.GetComponent<PlatformEffector2D>(), Is.Null);
-            Assert.That(cloud.GetComponent<SpriteRenderer>().bounds.size.x,
-                Is.EqualTo(cloud.IsWhite ? data.CloudSize.x : data.StormCloudSize.x).Within(.001f));
+            Bounds visible = cloud.GetComponent<SpriteRenderer>().bounds;
+            Assert.That(visible.size.x, Is.EqualTo(cloud.IsWhite ? data.CloudSize.x : data.StormCloudSize.x).Within(.001f));
+            if (cloud.IsWhite)
+            {
+                Assert.That(visible.min.x, Is.EqualTo(lightning.Shelter.Center.x-lightning.Shelter.Size.x*.5f).Within(.001f));
+                Assert.That(visible.max.x, Is.EqualTo(lightning.Shelter.Center.x+lightning.Shelter.Size.x*.5f).Within(.001f));
+                Assert.That(visible.min.y, Is.EqualTo(lightning.Shelter.Center.y+lightning.Shelter.Size.y*.5f).Within(.001f));
+            }
+            Assert.That(cloud.GetComponentsInChildren<Canvas>(true), Is.Empty);
+            Assert.That(cloud.GetComponentsInChildren<LineRenderer>(true), Is.Empty, "No cyan shelter outline before the strike.");
+            Assert.That(cloud.GetComponentsInChildren<SpriteRenderer>(true).Length, Is.EqualTo(1), "Only the cloud sprite; no protection fill.");
         }
+        Assert.That(Object.FindObjectsByType<DangerIndicator>(FindObjectsSortMode.None), Is.Not.Empty);
         PutBodyCenter(lightning.Shelter.Center);
         yield return new WaitForSeconds(.15f);
         Assert.That(player.CurrentHp, Is.EqualTo(100f)); Assert.That(lightning.HasStruck, Is.False);
-        Assert.That(boss.CueHint, Does.Contain("흰 구름 아래"));
+        Assert.That(boss.CueHint, Does.Contain("흰 구름 바로 아래"));
         yield return Until(()=>Count(BossAttackKind.Lightning)>0);
         Assert.That(lightning.HasStruck, Is.True);
+        Assert.That(Object.FindObjectsByType<DangerIndicator>(FindObjectsSortMode.None), Is.Empty, "The warning must disappear on the lightning frame.");
+        Assert.That(lightning.GetComponentsInChildren<LineRenderer>().Length, Is.GreaterThan(0));
+        Assert.That(lightning.GetComponentsInChildren<Canvas>(true), Is.Empty);
         Assert.That(Last.Outcome, Is.EqualTo(AttackOutcome.EvadedByPlayer));
         Assert.That(boss.CurrentBelief, Is.EqualTo(80f)); Assert.That(player.CurrentHp, Is.EqualTo(100f));
         Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(), Is.Null);
         yield return Until(()=>!boss.IsPatternRunning);
         Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
         Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+    }
+
+    [UnityTest]
+    public IEnumerator WhiteCloudRandomizesEachCastInsideStormAndKeepsShelterUnderIt()
+    {
+        var randomState = UnityEngine.Random.state;
+        var positions = new HashSet<int>();
+        try
+        {
+            UnityEngine.Random.InitState(72851);
+            for (int i = 0; i < 12; i++)
+            {
+                yield return BeginCloud();
+                var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
+                BossCloudPlatform white = null, black = null;
+                foreach (var cloud in Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None))
+                    if (cloud.IsWhite) white = cloud; else black = cloud;
+                Bounds storm = black.GetComponent<SpriteRenderer>().bounds;
+                Bounds shelterCloud = white.GetComponent<SpriteRenderer>().bounds;
+                Assert.That(shelterCloud.min.x, Is.GreaterThanOrEqualTo(storm.min.x+data.CloudEdgePadding-.001f));
+                Assert.That(shelterCloud.max.x, Is.LessThanOrEqualTo(storm.max.x-data.CloudEdgePadding+.001f));
+                Assert.That(lightning.Shelter.Center.x, Is.EqualTo(shelterCloud.center.x).Within(.001f));
+                positions.Add(Mathf.RoundToInt(shelterCloud.center.x * 1000f));
+                boss.PauseAndCancelForTest();
+                yield return null;
+            }
+            Assert.That(positions.Count, Is.GreaterThan(4), "Repeated casts must sample new shelter positions.");
+        }
+        finally { UnityEngine.Random.state = randomState; }
     }
 
     [UnityTest]
@@ -647,7 +686,7 @@ public sealed class BossCombatPlayModeTests
         Assert.That(boss.transform.Find("Gameplay HUD/Player gameplay HUD"),Is.Null);
         Assert.That(Object.FindFirstObjectByType<DoctrineHud>(),Is.Not.Null);
         var visibleCues=Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None);
-        Assert.That(visibleCues.Length,Is.GreaterThanOrEqualTo(3));
+        Assert.That(visibleCues.Length,Is.GreaterThanOrEqualTo(1),"Only the independently scheduled spike has debug world text.");
         foreach(var cue in visibleCues) Assert.That(cue.GetComponent<Canvas>().enabled,Is.True);
         tools.ShowDebugPanel=false; yield return null;
         Assert.That(hud.DebugVisible,Is.False); Assert.That(warning.enabled,Is.True);

@@ -86,7 +86,7 @@ MonoBehaviour:
   CloudWarning: 0.5
   CloudDuration: 3
   CloudTopHeight: 6
-  CloudSpacing: 2
+  CloudEdgePadding: 0.25
   CloudSize: {x: 3, y: 0.7}
   StormCloudSize: {x: 12, y: 1.4}
   ShelterHeight: 2.8

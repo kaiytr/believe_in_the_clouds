@@ -157,6 +157,11 @@ public sealed class BossCombatEditModeTests
         var copy = Object.Instantiate(data);
         try
         {
+            copy.CloudEdgePadding = copy.StormCloudSize.x;
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
+            copy.CloudEdgePadding = -.01f;
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
+            copy.CloudEdgePadding = data.CloudEdgePadding;
             copy.ShelterHeight = copy.CloudTopHeight;
             copy.LightningDuration = 0f;
             Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));

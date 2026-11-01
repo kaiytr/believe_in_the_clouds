@@ -42,14 +42,14 @@ public sealed class BossCombatSettings : ScriptableObject
     public float ProjectileDamage = 12f;
 
     [Header("Cloud lightning (world units / seconds)")]
-    [Tooltip("Seconds of cloud formation before the shelter countdown.")]
+    [Tooltip("Seconds of cloud formation before the shelter escape window.")]
     public float CloudWarning = 0.5f;
     // Shelter deadline after clouds appear; independent of phase attack speed.
     public float CloudDuration = 3f;
     [Tooltip("Storm cloud top above the locked ground position, in world units.")]
     public float CloudTopHeight = 6f;
-    [Tooltip("Signed horizontal offset of the white cloud from the storm center.")]
-    public float CloudSpacing = 2f;
+    [Tooltip("Minimum inset from either storm edge when randomly placing the white cloud.")]
+    [Min(0f)] public float CloudEdgePadding = .25f;
     public Vector2 CloudSize = new Vector2(3f, 0.7f);
     public Vector2 StormCloudSize = new Vector2(12f, 1.4f);
     public float ShelterHeight = 2.8f;
@@ -129,7 +129,7 @@ public sealed class BossCombatSettings : ScriptableObject
             ProjectileDistance <= 0f || ProjectileLifetime <= 0f || WaveSpeed <= 0f || WaveDistance <= 0f)
             errors.Add("Attack geometry/travel: every size, speed, distance and projectile lifetime must be positive.");
         if (ShelterHeight <= 0f || ShelterHeight + CloudSize.y >= CloudTopHeight - StormCloudSize.y ||
-            CloudSize.x >= StormCloudSize.x || Mathf.Abs(CloudSpacing) + CloudSize.x * .5f > StormCloudSize.x * .5f ||
+            CloudSize.x >= StormCloudSize.x || CloudEdgePadding < 0f || CloudEdgePadding + CloudSize.x * .5f > StormCloudSize.x * .5f ||
             LightningDuration <= 0f || LightningDamage < 0f || LightningSpacing <= 0f || LightningWidth <= 0f)
             errors.Add("Cloud lightning: shelter must fit below and inside the storm; lightning timing/geometry must be positive.");
         if (CloudWarning <= 0f || CloudDuration <= 0f || CloudTopHeight <= 0f || SpikeWarning <= 0f || SpikeDuration <= 0f ||
