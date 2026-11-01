@@ -8,8 +8,10 @@ public sealed class CoinFlightView : MonoBehaviour
     private sealed class Flight
     {
         public string GrantId, TokenId;
-        public Vector2 Start, Scatter;
-        public float Age, Delay, Duration, NextRetry;
+        public Vector3 WorldPosition;
+        public Camera SourceCamera;
+        public Vector2 ScatterOffset, LaunchPosition;
+        public float Age, Delay, GroundSeconds, Duration, NextRetry;
         public Image Image;
         public bool HasCamera;
     }
@@ -41,23 +43,31 @@ public sealed class CoinFlightView : MonoBehaviour
     private void Enqueue(CoinFlightRequest request)
     {
         Camera source = request.SourceCamera != null ? request.SourceCamera : Camera.main;
-        Vector3 point = source != null ? source.WorldToScreenPoint(request.Position) : Vector3.zero;
-        if (point.z < 0f) { point.x = Screen.width - point.x; point.y = Screen.height - point.y; }
-        point.x = Mathf.Clamp(point.x, 12f, Mathf.Max(12f, Screen.width - 12f));
-        point.y = Mathf.Clamp(point.y, 12f, Mathf.Max(12f, Screen.height - 12f));
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, point, null, out Vector2 start);
         for (int i = 0; i < request.Grant.tokens.Count; i++)
         {
             PendingToken token = request.Grant.tokens[i];
             if (token.settled) continue;
             waiting.Enqueue(new Flight
             {
-                GrantId = request.Grant.grantId, TokenId = token.tokenId, Start = start,
-                Scatter = Random.insideUnitCircle * settings.scatterRadius,
+                GrantId = request.Grant.grantId, TokenId = token.tokenId,
+                WorldPosition = request.Position, SourceCamera = source,
+                ScatterOffset = Random.insideUnitCircle * settings.scatterRadius,
+                GroundSeconds = Mathf.Max(0f, settings.groundRestSeconds),
                 Duration = Random.Range(Mathf.Max(.01f, settings.flightMinSeconds), Mathf.Max(.01f, settings.flightMaxSeconds)),
-                Delay = i * Mathf.Max(0f, settings.tokenStaggerSeconds), HasCamera = source != null
+                Delay = request.PresentationDelay + i * Mathf.Max(0f, settings.tokenStaggerSeconds), HasCamera = source != null
             });
         }
+    }
+
+    // Reprojected every frame (while grounded) so the coin tracks its world position as the camera moves.
+    private Vector2 ProjectToCanvas(Camera camera, Vector3 worldPosition)
+    {
+        Vector3 point = camera != null ? camera.WorldToScreenPoint(worldPosition) : Vector3.zero;
+        if (point.z < 0f) { point.x = Screen.width - point.x; point.y = Screen.height - point.y; }
+        point.x = Mathf.Clamp(point.x, 12f, Mathf.Max(12f, Screen.width - 12f));
+        point.y = Mathf.Clamp(point.y, 12f, Mathf.Max(12f, Screen.height - 12f));
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, point, null, out Vector2 local);
+        return local;
     }
 
     private void Update()
@@ -70,6 +80,7 @@ public sealed class CoinFlightView : MonoBehaviour
             Flight flight = waiting.Dequeue();
             if (!service.IsPendingToken(flight.GrantId, flight.TokenId)) continue;
             flight.Image = Rent();
+            flight.LaunchPosition = ProjectToCanvas(flight.SourceCamera, flight.WorldPosition);
             active.Add(flight);
         }
         RectTransform target = DoctrineHud.CurrencyTarget;
@@ -81,7 +92,8 @@ public sealed class CoinFlightView : MonoBehaviour
             bool noPresentation = target == null || !flight.HasCamera;
             float elapsed = flight.Age - flight.Delay;
             float scatter = Mathf.Max(0f, settings.scatterSeconds);
-            bool arrived = noPresentation || elapsed >= scatter + flight.Duration;
+            float groundEnd = scatter + flight.GroundSeconds;
+            bool arrived = noPresentation || elapsed >= groundEnd + flight.Duration;
             flight.Image.enabled = !noPresentation && elapsed >= 0f && !arrived;
             if (arrived)
             {
@@ -92,16 +104,23 @@ public sealed class CoinFlightView : MonoBehaviour
             }
             if (elapsed < 0f) continue;
             Vector2 position;
-            if (elapsed < scatter)
-                position = Vector2.Lerp(flight.Start, flight.Start + flight.Scatter, Mathf.SmoothStep(0, 1, elapsed / scatter));
+            if (elapsed < groundEnd)
+            {
+                // Scattering and ground-rest both track the world position so panning the
+                // camera never leaves the coin floating apart from where it landed.
+                Vector2 anchor = ProjectToCanvas(flight.SourceCamera, flight.WorldPosition);
+                float scatterT = scatter <= 0f ? 1f : Mathf.Clamp01(elapsed / scatter);
+                position = anchor + flight.ScatterOffset * Mathf.SmoothStep(0, 1, scatterT);
+                flight.LaunchPosition = position;
+            }
             else
             {
                 Canvas targetCanvas = target.GetComponentInParent<Canvas>();
                 Camera uiCamera = targetCanvas != null && targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? targetCanvas.worldCamera : null;
                 Vector2 screen = RectTransformUtility.WorldToScreenPoint(uiCamera, target.TransformPoint(target.rect.center));
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out Vector2 destination);
-                float t = Mathf.SmoothStep(0f, 1f, (elapsed - scatter) / flight.Duration);
-                Vector2 from = flight.Start + flight.Scatter;
+                float t = Mathf.SmoothStep(0f, 1f, (elapsed - groundEnd) / flight.Duration);
+                Vector2 from = flight.LaunchPosition;
                 Vector2 control = (from + destination) * .5f + Vector2.up * 100f;
                 position = (1 - t) * (1 - t) * from + 2 * (1 - t) * t * control + t * t * destination;
             }

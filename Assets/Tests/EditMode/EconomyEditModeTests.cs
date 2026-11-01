@@ -159,6 +159,19 @@ public sealed class EconomyEditModeTests
     }
 
     [Test]
+    public void PresentationDelayIsForwardedToTheFlightRequestButNotToTheLedger()
+    {
+        CoinFlightRequest? captured = null;
+        service.FlightRequested += request => captured = request;
+        var result = service.TryRewardDefeat(EnemyRewardKind.Believer, "delayed", Vector3.one, presentationDelay: 0.8f);
+        Assert.That(result.Success, Is.True);
+        // The reward is already reserved the instant the defeat is reported, independent of presentation.
+        Assert.That(service.PendingBalance, Is.EqualTo(result.AppliedAmount));
+        Assert.That(captured, Is.Not.Null);
+        Assert.That(captured.Value.PresentationDelay, Is.EqualTo(0.8f));
+    }
+
+    [Test]
     public void TokenSettlementRetriesSurvivesExitAndIgnoresStaleCallbacks()
     {
         service.TryGrantWithEffect(12, Vector3.zero, "fixture", "flight:1");

@@ -116,13 +116,34 @@ public sealed class EconomyPlayModeTests
         var flight = Object.FindObjectsByType<CoinFlightView>(FindObjectsSortMode.None).First(item => item.HasFlights);
         Assert.That(flight.ActiveCount, Is.GreaterThan(0));
         foreach (Image image in flight.GetComponentsInChildren<Image>()) Assert.That(image.raycastTarget, Is.False);
-        yield return new WaitForSecondsRealtime(1.5f);
+        yield return new WaitForSecondsRealtime(2.2f);
         Assert.That(service.Balance, Is.EqualTo(7)); Assert.That(service.PendingBalance, Is.Zero);
         int created = flight.CreatedCount;
         service.TryGrantWithEffect(7, new Vector3(10000, 0), "fixture", "offscreen");
-        yield return new WaitForSecondsRealtime(1.5f);
+        yield return new WaitForSecondsRealtime(2.2f);
         Assert.That(service.Balance, Is.EqualTo(14)); Assert.That(flight.CreatedCount, Is.EqualTo(created));
         Assert.That(DoctrineHud.CurrencyTarget.GetComponentInChildren<Text>().text, Does.Contain("14"));
+    }
+
+    [UnityTest]
+    public IEnumerator PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward()
+    {
+        yield return Load("EconomyTest");
+        Object.FindFirstObjectByType<TestEconomyContext>().ResetFixture();
+        yield return null;
+        var service = Currency.Service;
+        var result = service.TryRewardDefeat(EnemyRewardKind.Dog, "delayed-defeat", Vector3.zero, presentationDelay: 0.6f);
+        Assert.That(result.Success, Is.True);
+        // Recorded immediately, before any coin has visually appeared.
+        Assert.That(service.Balance, Is.Zero);
+        Assert.That(service.PendingBalance, Is.EqualTo(result.AppliedAmount));
+        yield return new WaitForSecondsRealtime(.3f);
+        // Still inside the death-motion delay: nothing settled yet, and nothing was lost.
+        Assert.That(service.Balance, Is.Zero);
+        Assert.That(service.PendingBalance, Is.EqualTo(result.AppliedAmount));
+        yield return new WaitForSecondsRealtime(2f);
+        Assert.That(service.Balance, Is.EqualTo(result.AppliedAmount));
+        Assert.That(service.PendingBalance, Is.Zero);
     }
 
     [UnityTest]
@@ -182,7 +203,7 @@ public sealed class EconomyPlayModeTests
         Assert.That(view.ActiveCount, Is.LessThanOrEqualTo(64)); Assert.That(view.CreatedCount, Is.LessThanOrEqualTo(64));
         Assert.That(Currency.Balance, Is.Zero); Assert.That(Currency.PendingBalance, Is.EqualTo(208));
         memory.FailWrites = false;
-        yield return new WaitForSecondsRealtime(2.5f);
+        yield return new WaitForSecondsRealtime(3.5f);
         Assert.That(Currency.Balance, Is.EqualTo(208)); Assert.That(Currency.PendingBalance, Is.Zero);
         Assert.That(view.CreatedCount, Is.LessThanOrEqualTo(64));
     }

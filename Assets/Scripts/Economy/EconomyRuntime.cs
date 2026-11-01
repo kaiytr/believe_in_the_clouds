@@ -19,15 +19,16 @@ public sealed class EconomyRuntime : MonoBehaviour
         public EnemyRewardKind Kind;
         public string Id;
         public Vector3 Position;
+        public float PresentationDelay;
     }
     private readonly System.Collections.Generic.List<DefeatRetry> defeatRetries = new System.Collections.Generic.List<DefeatRetry>();
 
-    public void RewardDefeat(EnemyRewardKind kind, string id, Vector3 position)
+    public void RewardDefeat(EnemyRewardKind kind, string id, Vector3 position, float presentationDelay = 0f)
     {
-        CurrencyResult result = Currency.Service?.TryRewardDefeat(kind, id, position);
+        CurrencyResult result = Currency.Service?.TryRewardDefeat(kind, id, position, presentationDelay: presentationDelay);
         if (result != null && (result.Error == EconomyError.SaveFailed || result.Error == EconomyError.Busy) &&
             !defeatRetries.Exists(item => item.Id == id))
-            defeatRetries.Add(new DefeatRetry { Kind = kind, Id = id, Position = position });
+            defeatRetries.Add(new DefeatRetry { Kind = kind, Id = id, Position = position, PresentationDelay = presentationDelay });
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -135,7 +136,7 @@ public sealed class EconomyRuntime : MonoBehaviour
         {
             DefeatRetry retry = defeatRetries[i];
             if (!service.AcceptsDefeatRewards) { defeatRetries.RemoveAt(i); continue; }
-            CurrencyResult result = service.TryRewardDefeat(retry.Kind, retry.Id, retry.Position);
+            CurrencyResult result = service.TryRewardDefeat(retry.Kind, retry.Id, retry.Position, presentationDelay: retry.PresentationDelay);
             if (result.Success || (result.Error != EconomyError.SaveFailed && result.Error != EconomyError.Busy)) defeatRetries.RemoveAt(i);
         }
         if (service.HasPendingDeath) service.RetryDeath();
