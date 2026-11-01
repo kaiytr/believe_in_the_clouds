@@ -14,7 +14,8 @@ public sealed class BossHazardDirector : MonoBehaviour
         Vector2 foot = new Vector2(owner.PlayerCollider.bounds.center.x, owner.PlayerCollider.bounds.min.y);
         if (!BossCombatPhysics.FindGround(foot, 0.1f, 8f, owner, out Vector2 floor)) yield break;
         float halfWidth = data.CloudSize.x * 0.5f;
-        float x = Mathf.Clamp(foot.x, data.ArenaX.x + data.CloudSpacing + halfWidth, data.ArenaX.y - data.CloudSpacing - halfWidth);
+        Vector2 limits = owner.PatternXLimits;
+        float x = Mathf.Clamp(foot.x, limits.x + data.CloudSpacing + halfWidth, limits.y - data.CloudSpacing - halfWidth);
         float y = floor.y + data.CloudTopHeight - data.CloudSize.y * 0.5f;
         var blackShape = new AttackGeometry(new Vector2(x - data.CloudSpacing, y), data.CloudSize);
         var whiteShape = new AttackGeometry(new Vector2(x + data.CloudSpacing, y), data.CloudSize);

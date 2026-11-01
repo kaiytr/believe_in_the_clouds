@@ -66,7 +66,6 @@ MonoBehaviour:
   PhaseTwoDamageMultiplier: 1
   StareDuration: 3
   SurpriseWindup: 0.18
-  MeleeSize: {x: 2.6, y: 3}
   MeleeActiveTime: 0.12
   MeleeDamage: 14
   MeleeComboDamage:

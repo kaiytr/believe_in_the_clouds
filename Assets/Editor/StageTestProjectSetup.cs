@@ -180,9 +180,8 @@ public static class StageTestProjectSetup
         SceneManager.SetActiveScene(stage);
         GameObject entrance = new GameObject("Boss arena entry");
         entrance.transform.position = new Vector2(0f,2f);
-        entrance.AddComponent<BoxCollider2D>().size = new Vector2(34f,16f);
-        entrance.GetComponent<BoxCollider2D>().isTrigger = true;
-        Set(entrance.AddComponent<BossEncounterTrigger>(),"boss",boss);
+        entrance.AddComponent<BoxCollider2D>();
+        BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss, -18f, 18f, FloorY, camera);
         BuildInstructions(player.GetComponent<PlayerHealth>(),boss);
         EditorSceneManager.SaveScene(stage);
     }

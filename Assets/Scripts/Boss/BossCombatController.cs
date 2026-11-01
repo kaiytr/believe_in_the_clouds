@@ -35,6 +35,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private EnemyContactDamage[] contactDamageComponents;
     private BossSharedBelief belief;
     private Coroutine patternRoutine;
+    private bool advancingPattern;
     private Transform effectRoot;
     private BossBeliefKind activeBelief;
     private BossPatternKind activePattern;
@@ -46,6 +47,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     private Vector3 spawnPosition, playerSpawnPosition, playerSpawnScale;
     private bool savedPlayerSpawn;
     private string statusMessage = "전투 대기";
+    private BossEncounterTrigger arena;
     private float cueEndsAt, cueDuration, feedbackEndsAt;
     private string cueTitle = "전투 대기", cueHint = "공격 예고를 보고 대응하세요.", feedback;
     private Color feedbackColor = Color.white;
@@ -62,6 +64,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public BossPhase Phase { get; private set; }
     public bool IsDead { get; private set; }
     public bool EncounterStarted { get; private set; }
+    public bool WaitingForArenaEntry => arena != null && !arena.HasEntered;
+    public Vector2 PatternXLimits => arena != null ? arena.PatternXLimits : settings.ArenaX;
+    internal void BindArena(BossEncounterTrigger owner) { arena = owner; }
+    internal void UnbindArena(BossEncounterTrigger owner) { if (arena == owner) arena = null; }
     public bool IsVulnerable => belief != null && belief.IsVulnerable;
     public bool IsPatternRunning => patternRunning;
     public bool AutomaticPatterns { get => automaticPatterns; set { automaticPatterns = value; Notify(); } }
@@ -165,7 +171,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     }
     public void BeginEncounter()
     {
-        if (!isActiveAndEnabled || IsDead || EncounterStarted) return;
+        if (!isActiveAndEnabled || IsDead || EncounterStarted || WaitingForArenaEntry) return;
         InitializeState();
         List<string> errors = ValidateEncounter();
         if (errors.Count > 0)
@@ -322,7 +328,64 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         patternId++;
         patternRunning = true;
         if (!BossPatternSelection.IsRegular(pattern)) RecordUse(pattern);
-        patternRoutine = StartCoroutine(RunPattern(pattern, generation));
+        int token = generation;
+        Coroutine routine = StartCoroutine(ExecutePattern(pattern, token));
+        if (token == generation && patternRunning) patternRoutine = routine;
+    }
+    private IEnumerator ExecutePattern(BossPatternKind pattern, int token)
+    {
+        // Advance and dispose nested attack iterators together with their owning pattern.
+        var pending = new Stack<IEnumerator>();
+        pending.Push(RunPattern(pattern, token));
+        Exception failure = null;
+        try
+        {
+            while (pending.Count > 0 && token == generation && CanContinue)
+            {
+                IEnumerator current = pending.Peek();
+                bool moved;
+                object next = null;
+                try
+                {
+                    advancingPattern = true;
+                    moved = current.MoveNext();
+                    if (moved) next = current.Current;
+                }
+                catch (Exception exception) { failure = exception; break; }
+                finally { advancingPattern = false; }
+
+                if (token != generation || !CanContinue) break;
+
+                if (!moved)
+                {
+                    pending.Pop();
+                    DisposePatternIterator(current);
+                }
+                else if (next is IEnumerator child) pending.Push(child);
+                else yield return next;
+            }
+        }
+        finally
+        {
+            while (pending.Count > 0) DisposePatternIterator(pending.Pop());
+            bool ownsPattern = token == generation;
+            if (ownsPattern && patternRunning)
+            {
+                patternRoutine = null;
+                CancelCombat(false);
+            }
+            if (ownsPattern && failure != null)
+            {
+                automaticPatterns = false;
+                SetStatus("패턴 실행 오류 · Console 확인");
+                Debug.LogError($"{name}: {Phase} / {PatternName(pattern)} stopped.\n{failure}", this);
+            }
+        }
+    }
+    private void DisposePatternIterator(IEnumerator iterator)
+    {
+        try { (iterator as IDisposable)?.Dispose(); }
+        catch (Exception exception) { Debug.LogException(exception, this); }
     }
     private IEnumerator RunPattern(BossPatternKind pattern, int token)
     {
@@ -379,7 +442,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
                 break;
             case BossPatternKind.ShockwaveBelief:
                 activeBelief = BossBeliefKind.Shockwave;
-                yield return attacks.Melee(0, settings.Windup, settings.MeleeDamage, BossBeliefKind.None);
+                yield return attacks.Melee(settings.Windup, settings.MeleeDamage, BossBeliefKind.None);
                 if (token == generation && CanContinue) yield return attacks.Shockwave();
                 break;
         }
@@ -406,25 +469,36 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     }
     private IEnumerator StareWithMeleeWarning()
     {
+        if (!attacks.TryGetMeleeGeometry(out AttackGeometry geometry)) yield break;
         int token = generation;
         SetConditionTimer(settings.StareDuration);
         SetActionCue("공격 금지 예언 · 응시", $"지금 공격하면 믿음 -{settings.BeliefReduction:0} · 응시 직후 베기", BossPresentationState.Stare, settings.StareDuration);
-        BossAttackVisual preview = attacks.CreateWarning(attacks.MeleeGeometry(), followOwner: true);
-        while (CanContinue && ConditionRemaining > 0f && token == generation)
+        BossAttackVisual preview = attacks.CreateWarning(geometry, followOwner: true);
+        try
         {
-            FacePlayer();
-            preview.Show(attacks.MeleeGeometry(), settings.WarningOrder, followTarget: transform);
-            preview.SetProgress(ConditionProgress);
-            preview.SetCue("응시 후 베기", ConditionRemaining, ConditionProgress, this);
-            yield return null;
+            while (CanContinue && ConditionRemaining > 0f && token == generation)
+            {
+                FacePlayer();
+                if (attacks.TryGetMeleeGeometry(out geometry))
+                    preview.Show(geometry, settings.WarningOrder, followTarget: transform);
+                preview.SetProgress(ConditionProgress);
+                preview.SetCue("응시 후 베기", ConditionRemaining, ConditionProgress, this);
+                yield return null;
+            }
         }
-        DestroyEffect(preview != null ? preview.gameObject : null);
-        EndSignalWindow();
-        conditionEndsAt = 0f;
+        finally
+        {
+            DestroyEffect(preview != null ? preview.gameObject : null);
+            if (token == generation)
+            {
+                EndSignalWindow();
+                conditionEndsAt = 0f;
+            }
+        }
         if (token == generation && CanContinue && !playerActed)
             ShowFeedback("응시 중 공격하지 않았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
         if (token == generation && CanContinue)
-            yield return attacks.Melee(0, settings.SurpriseWindup, settings.MeleeDamage * 1.15f, BossBeliefKind.None, false);
+            yield return attacks.Melee(settings.SurpriseWindup, settings.MeleeDamage * 1.15f, BossBeliefKind.None, false);
     }
     private void BeginSignalWindow()
     { windowAttackIds.Clear(); playerActed = false; signalWindow = true; windowStartedAt = Time.time; }
@@ -550,9 +624,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     }
     private void CancelCombat(bool removeBurn)
     {
-        if (patternRoutine != null) StopCoroutine(patternRoutine);
+        Coroutine cancelled = patternRoutine;
         patternRoutine = null;
         patternRunning = false;
+        if (cancelled != null && !advancingPattern) StopCoroutine(cancelled);
         EndSignalWindow();
         activeBelief = BossBeliefKind.None;
         burnEndsAt = conditionEndsAt = 0f;

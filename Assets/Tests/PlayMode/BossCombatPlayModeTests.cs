@@ -32,9 +32,12 @@ public sealed class BossCombatPlayModeTests
         boss = Object.FindFirstObjectByType<BossCombatController>();
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerHealth>();
         playerBody = player.GetComponent<Rigidbody2D>();
+        player.GetComponent<PlayerMove>().enabled = false;
+        // BossTest now waits for arena entry; put combat fixtures inside before preparing each case.
+        PutPlayer(new Vector2(-4.21f,-2.33f));
+        yield return Until(() => boss.EncounterStarted);
         Assert.That(boss.EncounterStarted,Is.True,boss.StatusMessage);
         originalData = boss.Settings; data = Object.Instantiate(originalData); Set(boss,"settings",data);
-        player.GetComponent<PlayerMove>().enabled = false;
         yield return new WaitForSeconds(.65f);
         boss.PauseAndCancelForTest(); player.ResetHealth();
     }
@@ -259,14 +262,27 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator PhaseTwoStareAlwaysConnectsARegularComboAndTestHitAppliesOnce()
+    public IEnumerator PhaseTwoStareCompletesTheFourHitFollowupAndTestHitAppliesOnce()
     {
         data.StareDuration=.2f;
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.MeleeCombo,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
         boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
         yield return Until(()=>boss.ActiveBossAttackId>0);
         Assert.That(boss.ActiveBeliefPhrase,Is.Not.Empty);
         yield return Until(()=>!boss.IsPatternRunning);
-        Assert.That(boss.AttackHistory.Count,Is.GreaterThan(0));
+        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(4));
+        var hitIndices = new List<int>();
+        foreach (BossAttackRecord record in boss.AttackHistory)
+            if (record.Kind == BossAttackKind.Melee)
+            {
+                hitIndices.Add(record.HitIndex);
+                Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
+                Assert.That(record.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
+            }
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, hitIndices);
+        Assert.That(boss.ActiveAttacks.Count,Is.Zero);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
         Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
         var events=player.GetComponent<PlayerCombatEvents>(); var id=events.PublishAttackAttempt(boss.gameObject);
         float hp=boss.CurrentHp;
@@ -274,6 +290,36 @@ public sealed class BossCombatPlayModeTests
         events.PublishHitConfirmed(id,boss.gameObject,10f);
         Assert.That(events.TryApplyHitAndPublish(id,boss.gameObject,10f),Is.False);
         Assert.That(boss.CurrentHp,Is.EqualTo(hp-6f));
+    }
+
+    [UnityTest]
+    public IEnumerator RestartingPhaseTwoDuringFirstWarningCancelsOldHitAndCompletesNewCombo()
+    {
+        data.StareDuration=.2f;
+        data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.MeleeCombo,1f,.5f) };
+        PutPlayer((Vector2)boss.transform.position+Vector2.right*8f);
+        boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
+        yield return Until(()=>boss.ActiveBossAttackId>0);
+        var interrupted = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
+        Assert.That(interrupted.HitIndex,Is.EqualTo(1));
+        Assert.That(interrupted.Activated,Is.False);
+
+        boss.ForcePatternForTest(BossPatternKind.AttackAndDodgeBelief);
+        Assert.That(interrupted.EndReason,Is.EqualTo(BossAttackEndReason.Cancelled));
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
+        int restartedPattern = boss.PatternId;
+        yield return Until(()=>!boss.IsPatternRunning);
+
+        var completedHits = new List<int>();
+        foreach (BossAttackRecord record in boss.AttackHistory)
+            if (record.PatternId == restartedPattern)
+            {
+                Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
+                completedHits.Add(record.HitIndex);
+            }
+        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, completedHits);
+        Assert.That(boss.ActiveAttacks.Count,Is.Zero);
+        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
 
     [UnityTest]
@@ -396,6 +442,7 @@ public sealed class BossCombatPlayModeTests
     [UnityTest]
     public IEnumerator FinalAreaTriggerStartsOnceAndIgnoresUnrelatedColliders()
     {
+        Object.FindFirstObjectByType<BossEncounterTrigger>().enabled = false;
         boss.gameObject.SetActive(false); boss.gameObject.SetActive(true);
         var root=new GameObject("Final area test trigger"); fixtures.Add(root);
         var trigger=root.AddComponent<BoxCollider2D>(); trigger.isTrigger=true; trigger.size=new Vector2(3f,5f);

@@ -27,7 +27,6 @@ public sealed class BossCombatSettings : ScriptableObject
     public float SurpriseWindup = 0.18f;
 
     [Header("Melee / dash / projectile")]
-    public Vector2 MeleeSize = new Vector2(2.6f, 3f);
     public float MeleeActiveTime = 0.12f;
     public float MeleeDamage = 14f;
     public float[] MeleeComboDamage = { 6f, 7f, 8f, 14f };
@@ -113,7 +112,7 @@ public sealed class BossCombatSettings : ScriptableObject
             for (int i = 0; i < MeleeComboDamage.Length; i++)
                 if (MeleeComboDamage[i] < 0f)
                     errors.Add("Melee combo: damage values must be non-negative.");
-        if (!Positive(MeleeSize) || !Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
+        if (!Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
             DashDistance <= 0f || DashSpeed <= 0f || ProjectileDiameter <= 0f || ProjectileSpeed <= 0f ||
             ProjectileDistance <= 0f || ProjectileLifetime <= 0f || WaveSpeed <= 0f || WaveDistance <= 0f)
             errors.Add("Attack geometry/travel: every size, speed, distance and projectile lifetime must be positive.");

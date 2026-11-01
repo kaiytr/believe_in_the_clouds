@@ -57,8 +57,8 @@ public static class PlayLoopProjectSetup
         controllerSettings.FindProperty("isLobby").boolValue = false;
         controllerSettings.FindProperty("runStageOnly").boolValue = true;
         controllerSettings.FindProperty("runStageRole").enumValueIndex = (int)role;
-        controllerSettings.FindProperty("stageMinX").floatValue = role == BranchRole.Shop ? -8.5f : -10f;
-        controllerSettings.FindProperty("stageMaxX").floatValue = role == BranchRole.Shop ? 8.5f : 10f;
+        controllerSettings.FindProperty("stageMinX").floatValue = role == BranchRole.Shop ? -8.5f : role == BranchRole.Boss ? -17f : -10f;
+        controllerSettings.FindProperty("stageMaxX").floatValue = role == BranchRole.Shop ? 8.5f : role == BranchRole.Boss ? 17f : 10f;
         controllerSettings.FindProperty("player").objectReferenceValue = player;
         controllerSettings.FindProperty("squareSprite").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Boss/UnitSquare.png");

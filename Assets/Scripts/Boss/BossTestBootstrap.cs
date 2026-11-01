@@ -44,6 +44,7 @@ public sealed class BossTestBootstrap : MonoBehaviour
     {
         if (!ready || activeRunStage) return;
         if (Input.GetKeyDown(KeyCode.F1)) ShowDebugPanel = !ShowDebugPanel;
+        if (boss.WaitingForArenaEntry) return;
         if (Input.GetKeyDown(KeyCode.J)) PublishTestAttack(false);
         if (Input.GetKeyDown(KeyCode.K)) PublishTestAttack(true);
         if (Input.GetKeyDown(KeyCode.L) && boss.AllowManualEvadeInjection && boss.ActiveBossAttackId > 0)
@@ -66,14 +67,14 @@ public sealed class BossTestBootstrap : MonoBehaviour
     }
     public void PublishTestAttack(bool hit)
     {
-        if (!ready) return;
+        if (!ready || boss.WaitingForArenaEntry) return;
         using var attack = playerEvents.PublishAttackAttempt(boss.gameObject);
         if (hit) playerEvents.TryApplyHitAndPublish(attack, boss.gameObject, 10f);
         LatestSignal = hit ? "더미 적중 #" + attack?.Id + " (기본 피해 10)" : "더미 공격 시도 #" + attack?.Id;
     }
     public void RestartForTest()
     {
-        if (!ready) return;
+        if (!ready || boss.WaitingForArenaEntry) return;
         boss.ResetEncounterForTest();
         LatestSignal = "전투 초기화";
     }
