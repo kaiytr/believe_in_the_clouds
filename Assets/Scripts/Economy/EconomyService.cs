@@ -5,7 +5,7 @@ using UnityEngine;
 
 // Main-thread service. Work on a copy, save, then publish; notifications remain
 // inside the transaction gate so event handlers cannot re-enter a transaction.
-public sealed class EconomyService
+public sealed partial class EconomyService
 {
     private readonly IEconomyStore store;
     private readonly IEconomyRandom random;
@@ -30,6 +30,7 @@ public sealed class EconomyService
     }
 
     public int Balance => profile.balance;
+    public long Revision => profile.revision;
     public int PendingBalance => EconomyLedger.Pending(profile);
     public bool IsReady => initialized && deathWork == null;
     public bool HasPendingDeath => deathWork != null;
@@ -284,6 +285,11 @@ public sealed class EconomyService
             deathId = deathId, sourceRevision = profile.revision, phase = EconomyDeathPhase.Captured,
             randomSeed = random.Next(0, int.MaxValue)
         };
+        if (work.hasRun)
+        {
+            work.run.area = RunArea.Dying;
+            work.run.hp = 0;
+        }
         work.revision++;
         deathWork = new DeathWork { Data = work, Adapter = equipment, Effects = processDeathEffects };
         return RetryDeath();
@@ -339,6 +345,9 @@ public sealed class EconomyService
             final.pendingGrants.Clear();
             final.pieces = EconomyLedger.CopyPieces(final.death.remainingPieces);
             final.death.phase = EconomyDeathPhase.Committed;
+            if (final.hasRun)
+                final.run = LobbyRules.NewRun(LobbyRules.StableId(id + ":next-run"),
+                    pending.Data.run.maxHp, pending.Data.death.randomSeed);
             final.revision++;
             var result = Success(beforeTotal, final.death.lostCoins, final.balance, id);
             final.processedTransactions.Add(new EconomyReceipt { id = id, requestKey = "death", result = result.Copy() });

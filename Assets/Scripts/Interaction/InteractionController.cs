@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 공통 상호작용 컨트롤러 (E 키).
+// 공통 상호작용 컨트롤러 (E 기본 동작, 선택적으로 F 보조 동작).
 // 상점 전용이 아니다. 씬의 모든 IInteractable 중 가장 가까운 하나를 대상으로 삼는다.
 //
 // - 자동 부팅: 어떤 씬에서든 스스로 생성되고 DontDestroyOnLoad로 유지된다.
 //   Tools 메뉴도, 씬에 미리 배치할 필요도 없다.
 // - 안내 문구: 대상이 있으면 대상의 InteractionPrompt를 하단에 표시한다.
-// - 입력: E 하나만 쓴다. 모달 UI가 열려 있으면 E/ESC는 "닫기"로 쓰인다.
+// - 입력: E 기본 상호작용, ISecondaryInteractable에는 F. 모달에서는 E/ESC로 닫는다.
 // - 확장: 새 상호작용 대상은 InteractableBehaviour(또는 IInteractable)만 구현하면
 //   이 파일을 고치지 않아도 자동으로 참여한다.
 //
@@ -223,6 +223,8 @@ public class InteractionController : MonoBehaviour
 
         if (!InteractionInput.WasPressed(interactKey))
         {
+            if (InteractionInput.WasPressed(KeyCode.F) && current is ISecondaryInteractable secondary)
+                secondary.InteractSecondary(player);
             return;
         }
 

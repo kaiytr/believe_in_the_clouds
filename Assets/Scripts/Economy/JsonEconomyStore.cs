@@ -70,8 +70,17 @@ public sealed class JsonEconomyStore : IEconomyStore
                 return new EconomyLoadResult(EconomyLoadStatus.Invalid);
             var data = JsonUtility.FromJson<EconomyProfileData>(json);
             if (data != null && !data.hasDeath) data.death = null;
+            if (data != null && !data.hasRun) data.run = null;
+            else data?.run?.Normalize();
             if (data != null && data.schemaVersion > EconomyProfileData.CurrentSchemaVersion)
                 return new EconomyLoadResult(EconomyLoadStatus.FutureVersion);
+            // v1 had only economic assets. The optional run domain starts empty;
+            // no initial grant or asset reset is performed during migration.
+            if (data != null && data.schemaVersion == 1)
+            {
+                if (data.hasRun) return new EconomyLoadResult(EconomyLoadStatus.Invalid);
+                data.schemaVersion = EconomyProfileData.CurrentSchemaVersion;
+            }
             return EconomyLedger.Validate(data)
                 ? new EconomyLoadResult(EconomyLoadStatus.Loaded, data)
                 : new EconomyLoadResult(EconomyLoadStatus.Invalid);

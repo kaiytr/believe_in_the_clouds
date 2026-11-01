@@ -22,6 +22,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     private SpriteRenderer[] spriteRenderers;
     private bool[] originalRendererStates;
     private PlayerDeathCoordinator deathCoordinator;
+    public event System.Action<PlayerHealth> HealthChanged;
 
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
@@ -93,6 +94,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         }
 
         StartInvulnerability();
+        NotifyHealthChanged();
         return true;
     }
 
@@ -104,6 +106,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         currentHp = Mathf.Min(maxHp, currentHp + amount);
         if (!IsLowHealth)
             lowHealthNotified = false;
+        NotifyHealthChanged();
     }
 
     public void ResetHealth()
@@ -120,6 +123,30 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         lowHealthNotified = false;
         RestoreRenderers();
         deathCoordinator?.BeginLife();
+        NotifyHealthChanged();
+    }
+
+    // Restoring a checkpoint must not create a new life or replay damage events.
+    public bool RestoreHealth(float value)
+    {
+        if (float.IsNaN(value) || float.IsInfinity(value) || value <= 0 || value > maxHp) return false;
+        if (invulnerabilityRoutine != null) StopCoroutine(invulnerabilityRoutine);
+        invulnerabilityRoutine = null;
+        currentHp = value; isInvulnerable = false; lowHealthNotified = IsLowHealth;
+        RestoreRenderers();
+        return true;
+    }
+
+    internal void KillForTest() => ApplyDamage(maxHp + currentHp, null, allowDuringInvulnerability: true);
+
+    private void NotifyHealthChanged()
+    {
+        if (HealthChanged == null) return;
+        foreach (System.Action<PlayerHealth> listener in HealthChanged.GetInvocationList())
+        {
+            try { listener(this); }
+            catch (System.Exception ex) { Debug.LogException(ex); }
+        }
     }
 
     private void StartInvulnerability()

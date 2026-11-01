@@ -1,6 +1,6 @@
 # 상호작용(E) 사용법
 
-프로젝트 공통 규칙: **월드 상호작용은 모두 E 키**로 한다.
+프로젝트 공통 규칙: **월드 기본 상호작용은 E 키**로 한다. 보조 동작이 필요한 대상은 `ISecondaryInteractable`을 구현하면 같은 대상에서 **F**를 사용한다. 로비 분기는 E 출발·F 역할 공개다.
 특정 대상(상점)에 입력 처리를 묶지 않는다.
 
 ## 구조
@@ -8,8 +8,9 @@
 ```
 Interaction/                      ← 공통 (대상이 무엇인지 모름)
   IInteractable.cs                계약: 이름/문구/반경/CanInteract/Interact
+  ISecondaryInteractable.cs       선택적 F 보조 동작
   InteractableBehaviour.cs        등록·최근접 탐색·표면 기준 거리 판정
-  InteractionController.cs        E 입력 1곳, 가장 가까운 대상 실행, 안내 문구
+  InteractionController.cs        E/F 입력 1곳, 가장 가까운 대상 실행, 안내 문구
   InteractionInput.cs             입력 API 격리 (New Input System 전환 지점)
   InteractionPrompt.cs            하단 "E : ..." 표시
   UiModal.cs                      모달 열림 추적 + 닫기 요청 브로드캐스트
@@ -58,6 +59,7 @@ public class DoorInteractable : InteractableBehaviour
 ## 모달 UI와 입력
 
 - 모달(상점 패널)이 열려 있으면 월드 상호작용은 실행되지 않는다.
+- E/F는 같은 최근접 대상과 거리 판정을 공유한다. 둘을 같은 프레임에 누르면 E를 우선한다. 보조 동작 구현에서도 범위·상태를 검사한다.
 - 대신 E 또는 ESC가 "닫기 요청"이 된다.
 - 모달이 열린 동안 플레이어 이동/점프/대시/공격은 `UiModal.IsOpen`으로 막힌다.
 

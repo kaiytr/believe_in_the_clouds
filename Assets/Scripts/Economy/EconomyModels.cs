@@ -100,7 +100,7 @@ public sealed class EconomyDeathRecord
 [Serializable]
 public sealed class EconomyProfileData
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public int schemaVersion = CurrentSchemaVersion;
     public long revision;
     public string profileId = Guid.NewGuid().ToString("N");
@@ -113,11 +113,15 @@ public sealed class EconomyProfileData
     // Keep an explicit discriminator so an empty death object is never a death.
     public bool hasDeath;
     public EconomyDeathRecord death;
+    public bool hasRun;
+    public LobbyRunData run;
 
     public EconomyProfileData Copy()
     {
         var copy = JsonUtility.FromJson<EconomyProfileData>(JsonUtility.ToJson(this));
         if (!copy.hasDeath) copy.death = null;
+        if (!copy.hasRun) copy.run = null;
+        else copy.run?.Normalize();
         return copy;
     }
 }
