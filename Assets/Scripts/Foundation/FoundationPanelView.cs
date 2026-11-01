@@ -6,18 +6,18 @@ using UnityEngine.UI;
 
 // 재단 패널.
 //
-// 레이아웃(제공된 사진):
+// 레이아웃:
 //   ┌ 왼쪽 ──────────┬ 오른쪽 ─────────────────────┐
 //   │ [주어][조건][결과] │ 교리1 [주어][조건][결과]        │
 //   │ ┌ 교리 카드 ┐     │       [발동 효과 설명]          │
-//   │ ├ 교리 카드 ┤     │ 교리2 (틀만)                   │
-//   │ └ 교리 카드 ┘     │ 교리3 (틀만)                   │
+//   │ ├ 교리 카드 ┤     │ 교리2 [주어][조건][결과]        │
+//   │ └ 교리 카드 ┘     │       ... (칸 수만큼 스크롤)    │
 //   └───────────────┴──────────────────────────────┘
 //
 // 왼쪽: 탭(주어/조건/결과)으로 인벤토리 조각을 골라 보고,
-//   카드를 교리1 슬롯으로 드래그 앤 드롭해서 배치한다. (클릭 배치도 그대로 됨)
-// 오른쪽: 교리1 슬롯 3개는 언제든 끼고 뺄 수 있고, 3칸이 차면 자동 장착된다.
-// 교리2·3은 틀만 있다.
+//   카드를 교리 슬롯으로 드래그 앤 드롭해서 배치한다. (클릭 배치도 그대로 됨)
+// 오른쪽: 교리 슬롯들은 언제든 끼고 뺄 수 있고, 3칸이 차면 자동 장착된다.
+// 칸 수는 상점 구매에 따라 늘어나고, 많아지면 스크롤된다.
 // 표시만 담당하고, 어떤 카드를 보일지는 FoundationScreen이 정한다.
 public class FoundationPanelView : MonoBehaviour
 {
@@ -43,8 +43,7 @@ public class FoundationPanelView : MonoBehaviour
     private static readonly Color SlotBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
     private static readonly Color DescriptionBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
 
-    private const int DoctrineGroupCount = 3; // 오른쪽 교리1~3 그룹 수
-    private const int DoctrineCount = 3;      // 슬롯/설명 배열 크기
+    private const int InitialDoctrineGroups = 3; // 처음에 보여주는 교리 수
 
     private Canvas canvas;
     private GameObject content;
@@ -53,6 +52,10 @@ public class FoundationPanelView : MonoBehaviour
     private Text countText;
     private bool isOpen;
 
+    // 오른쪽 교리 그룹 컨테이너 (SetDoctrineCount에서 증설).
+    private Transform rightContent;
+    private readonly List<GameObject> doctrineGroups = new List<GameObject>();
+
     private readonly Dictionary<ShopColumn, Image> tabImages = new Dictionary<ShopColumn, Image>();
     private readonly Dictionary<ShopColumn, Button> tabButtons = new Dictionary<ShopColumn, Button>();
     private readonly List<GameObject> itemObjects = new List<GameObject>();
@@ -60,15 +63,12 @@ public class FoundationPanelView : MonoBehaviour
     private readonly List<int> itemEntryIndices = new List<int>();
 
     // 오른쪽 교리 슬롯 (드래그 앤 드롭 + 클릭). 교리 번호(0-based)별로 보관한다.
-    private readonly Dictionary<ShopColumn, Text>[] slotTexts =
-        new Dictionary<ShopColumn, Text>[DoctrineCount];
-    private readonly Dictionary<ShopColumn, Image>[] slotImages =
-        new Dictionary<ShopColumn, Image>[DoctrineCount];
-    private readonly Dictionary<ShopColumn, GameObject>[] slotObjects =
-        new Dictionary<ShopColumn, GameObject>[DoctrineCount];
+    private readonly List<Dictionary<ShopColumn, Text>> slotTexts = new List<Dictionary<ShopColumn, Text>>();
+    private readonly List<Dictionary<ShopColumn, Image>> slotImages = new List<Dictionary<ShopColumn, Image>>();
+    private readonly List<Dictionary<ShopColumn, GameObject>> slotObjects = new List<Dictionary<ShopColumn, GameObject>>();
 
     // 교리별 설명 줄.
-    private readonly Text[] doctrineDescriptions = new Text[DoctrineCount];
+    private readonly List<Text> doctrineDescriptions = new List<Text>();
 
     // 왼쪽 카드 오브젝트 → EntryIndex. 드래그 시작 시 어느 조각인지 찾는다.
     private readonly Dictionary<GameObject, int> itemObjectToEntry = new Dictionary<GameObject, int>();
@@ -87,8 +87,10 @@ public class FoundationPanelView : MonoBehaviour
     // 교리 슬롯을 눌렀을 때. (교리 index, Subject/Condition/Result)
     public event Action<int, ShopColumn> SlotClicked;
 
-    public static FoundationPanelView BuildRuntime()
+    public static FoundationPanelView BuildRuntime(int doctrineCount)
     {
+        doctrineCount = Mathf.Max(1, doctrineCount);
+
         GameObject root = new GameObject("[FoundationPanel]");
         Canvas canvas = root.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -124,10 +126,26 @@ public class FoundationPanelView : MonoBehaviour
         view.content = content;
 
         view.BuildLeft(panel.transform);
-        view.BuildRight(panel.transform);
+        view.BuildRight(panel.transform, doctrineCount);
 
         content.SetActive(false);
         return view;
+    }
+
+    /// <summary>오른쪽 교리 칸 개수를 맞춘다. 늘어난 만큼 뒤에 그룹을 붙인다.</summary>
+    public void SetDoctrineCount(int count)
+    {
+        count = Mathf.Max(1, count);
+
+        if (rightContent == null)
+        {
+            return;
+        }
+
+        while (doctrineGroups.Count < count)
+        {
+            BuildDoctrineGroup(rightContent, doctrineGroups.Count);
+        }
     }
 
     // ---------------- 왼쪽: 탭 + 교리 목록 (기능 있음) ----------------
@@ -327,7 +345,8 @@ public class FoundationPanelView : MonoBehaviour
     /// <summary>드래그 종료 지점에 있는 교리 슬롯. 슬롯 위가 아니면 false.</summary>
     public bool TryGetSlotAt(Vector2 screenPosition, out int doctrineIndex, out ShopColumn column)
     {
-        for (int d = 0; d < DoctrineCount; d++)
+        int count = slotObjects.Count;
+        for (int d = 0; d < count; d++)
         {
             Dictionary<ShopColumn, GameObject> slots = slotObjects[d];
             if (slots == null)
@@ -374,8 +393,28 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    // 슬롯에 실제 조각이 들어 있는지 (강조색 계산용).
-    private readonly bool[,] slotFilled = new bool[DoctrineCount, 3];
+    // 슬롯에 실제 조각이 들어 있는지 (강조색 계산용). 교리 수를 따라 늘어난다.
+    private readonly List<bool[]> slotFilledRows = new List<bool[]>();
+
+    private bool GetSlotFilled(int doctrineIndex, ShopColumn column)
+    {
+        if (doctrineIndex < 0 || doctrineIndex >= slotFilledRows.Count)
+        {
+            return false;
+        }
+
+        return slotFilledRows[doctrineIndex][(int)column];
+    }
+
+    private void SetSlotFilled(int doctrineIndex, ShopColumn column, bool filled)
+    {
+        while (slotFilledRows.Count <= doctrineIndex)
+        {
+            slotFilledRows.Add(new bool[3]);
+        }
+
+        slotFilledRows[doctrineIndex][(int)column] = filled;
+    }
 
     /// <summary>교리 하나의 슬롯 3개 표시를 갱신한다. 비어 있으면 기본 라벨(주어/조건/결과).</summary>
     public void SetSlots(int doctrineIndex, string subjectLabel, string conditionLabel, string resultLabel)
@@ -397,10 +436,7 @@ public class FoundationPanelView : MonoBehaviour
         text.font = UiTheme.GetFont();
         text.text = filled ? label : fallback;
 
-        if (doctrineIndex >= 0 && doctrineIndex < DoctrineCount)
-        {
-            slotFilled[doctrineIndex, (int)column] = filled;
-        }
+        SetSlotFilled(doctrineIndex, column, filled);
 
         Dictionary<ShopColumn, Image> images = GetSlotImages(doctrineIndex);
         if (images != null && images.TryGetValue(column, out Image image) && image != null)
@@ -411,18 +447,18 @@ public class FoundationPanelView : MonoBehaviour
 
     private Dictionary<ShopColumn, Text> GetSlotTexts(int doctrineIndex)
     {
-        return doctrineIndex >= 0 && doctrineIndex < DoctrineCount ? slotTexts[doctrineIndex] : null;
+        return doctrineIndex >= 0 && doctrineIndex < slotTexts.Count ? slotTexts[doctrineIndex] : null;
     }
 
     private Dictionary<ShopColumn, Image> GetSlotImages(int doctrineIndex)
     {
-        return doctrineIndex >= 0 && doctrineIndex < DoctrineCount ? slotImages[doctrineIndex] : null;
+        return doctrineIndex >= 0 && doctrineIndex < slotImages.Count ? slotImages[doctrineIndex] : null;
     }
 
     /// <summary>교리 하나의 설명 줄을 갱신한다.</summary>
     public void SetDescription(int doctrineIndex, string description)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
+        if (doctrineIndex < 0 || doctrineIndex >= doctrineDescriptions.Count)
         {
             return;
         }
@@ -435,10 +471,10 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    /// <summary>클릭 배치 대상 교리를 강조 표시한다. (빈 슬롯 테두리 톤으로 구분)</summary>
+    /// <summary>클릭 배치 대상 교리를 강조 표시한다. (빈 슬롯 색으로 구분)</summary>
     public void SetActiveDoctrine(int doctrineIndex)
     {
-        for (int d = 0; d < DoctrineCount; d++)
+        for (int d = 0; d < slotImages.Count; d++)
         {
             Dictionary<ShopColumn, Image> images = GetSlotImages(d);
             if (images == null)
@@ -454,7 +490,7 @@ public class FoundationPanelView : MonoBehaviour
                     continue;
                 }
 
-                bool filled = slotFilled[d, (int)pair.Key];
+                bool filled = GetSlotFilled(d, pair.Key);
                 if (filled)
                 {
                     pair.Value.color = CardSelected;
@@ -467,44 +503,77 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    // ---------------- 오른쪽: 교리1·2·3 조합 (자동 장착) ----------------
+    // ---------------- 오른쪽: 교리 조합 (자동 장착, 칸 수 가변) ----------------
 
-    private void BuildRight(Transform parent)
+    private void BuildRight(Transform parent, int doctrineCount)
     {
+        // 교리가 많아지면 오른쪽이 스크롤된다.
+        GameObject scroll = new GameObject("RightScroll", typeof(RectTransform));
+        scroll.transform.SetParent(parent, false);
+        RectTransform scrollRect = scroll.GetComponent<RectTransform>();
+        scrollRect.anchorMin = new Vector2(0f, 0f);
+        scrollRect.anchorMax = new Vector2(1f, 1f);
+        scrollRect.offsetMin = new Vector2(390f + 30f, 24f);
+        scrollRect.offsetMax = new Vector2(-30f, -24f);
+
+        ScrollRect scroller = scroll.AddComponent<ScrollRect>();
+        scroller.horizontal = false;
+        scroller.vertical = true;
+        scroller.movementType = ScrollRect.MovementType.Clamped;
+        scroller.scrollSensitivity = 18f;
+
+        GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
+        viewport.transform.SetParent(scroll.transform, false);
+        RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+        UiTheme.Stretch(viewportRect);
+        viewport.AddComponent<Mask>().showMaskGraphic = false;
+        viewport.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
+        scroller.viewport = viewportRect;
+
         GameObject right = new GameObject("Right", typeof(RectTransform));
-        right.transform.SetParent(parent, false);
+        right.transform.SetParent(viewport.transform, false);
         RectTransform rightRect = right.GetComponent<RectTransform>();
-        rightRect.anchorMin = new Vector2(0f, 0f);
+        rightRect.anchorMin = new Vector2(0f, 1f);
         rightRect.anchorMax = new Vector2(1f, 1f);
-        rightRect.offsetMin = new Vector2(390f + 30f, 24f);
-        rightRect.offsetMax = new Vector2(-30f, -24f);
+        rightRect.pivot = new Vector2(0.5f, 1f);
+        rightRect.anchoredPosition = Vector2.zero;
+        rightRect.sizeDelta = new Vector2(0f, 0f);
+        rightContent = right.transform;
+        scroller.content = rightRect;
 
         VerticalLayoutGroup layout = right.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 18;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = true;
+        layout.childForceExpandHeight = false;
 
-        for (int i = 0; i < DoctrineGroupCount; i++)
+        ContentSizeFitter fitter = right.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        for (int i = 0; i < Mathf.Max(1, doctrineCount); i++)
         {
-            BuildDoctrineGroup(right.transform, i);
+            BuildDoctrineGroup(rightContent, i);
         }
     }
 
-    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄. 세 교리 모두 동일하게 동작한다.
+    // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄. 모든 교리 동일하게 동작한다.
     private void BuildDoctrineGroup(Transform parent, int doctrineIndex)
     {
         int number = doctrineIndex + 1;
         GameObject group = UiTheme.CreateImage("Doctrine" + number, parent, GroupBackground);
+        LayoutElement groupLayout = group.AddComponent<LayoutElement>();
+        groupLayout.preferredHeight = 240f;
+        groupLayout.minHeight = 200f;
 
-        VerticalLayoutGroup groupLayout = group.AddComponent<VerticalLayoutGroup>();
-        groupLayout.padding = new RectOffset(28, 28, 22, 22);
-        groupLayout.spacing = 14;
-        groupLayout.childControlWidth = true;
-        groupLayout.childControlHeight = true;
-        groupLayout.childForceExpandWidth = true;
-        groupLayout.childForceExpandHeight = true;
+        VerticalLayoutGroup groupVertical = group.AddComponent<VerticalLayoutGroup>();
+        groupVertical.padding = new RectOffset(28, 28, 22, 22);
+        groupVertical.spacing = 14;
+        groupVertical.childControlWidth = true;
+        groupVertical.childControlHeight = true;
+        groupVertical.childForceExpandWidth = true;
+        groupVertical.childForceExpandHeight = true;
 
         // 슬롯 3개.
         GameObject slotRow = new GameObject("Slots", typeof(RectTransform));
@@ -519,9 +588,13 @@ public class FoundationPanelView : MonoBehaviour
         slotLayout.childForceExpandWidth = true;
         slotLayout.childForceExpandHeight = true;
 
-        slotTexts[doctrineIndex] = new Dictionary<ShopColumn, Text>();
-        slotImages[doctrineIndex] = new Dictionary<ShopColumn, Image>();
-        slotObjects[doctrineIndex] = new Dictionary<ShopColumn, GameObject>();
+        slotTexts.Add(new Dictionary<ShopColumn, Text>());
+        slotImages.Add(new Dictionary<ShopColumn, Image>());
+        slotObjects.Add(new Dictionary<ShopColumn, GameObject>());
+        while (slotFilledRows.Count <= doctrineIndex)
+        {
+            slotFilledRows.Add(new bool[3]);
+        }
 
         BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Subject, "주어");
         BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Condition, "조건");
@@ -538,7 +611,13 @@ public class FoundationPanelView : MonoBehaviour
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform, 6f);
 
+        while (doctrineDescriptions.Count <= doctrineIndex)
+        {
+            doctrineDescriptions.Add(null);
+        }
+
         doctrineDescriptions[doctrineIndex] = text;
+        doctrineGroups.Add(group);
     }
 
     private void BuildSlot(int doctrineIndex, Transform parent, ShopColumn column, string defaultLabel)
@@ -673,7 +752,7 @@ public class FoundationPanelView : MonoBehaviour
             bool over = view != null
                 && view.TryGetSlotAt(eventData.position, out overDoctrine, out overColumn);
 
-            for (int d = 0; d < DoctrineCount; d++)
+            for (int d = 0; d < view.slotObjects.Count; d++)
             {
                 Dictionary<ShopColumn, Image> images = view.GetSlotImages(d);
                 if (images == null)
@@ -688,7 +767,7 @@ public class FoundationPanelView : MonoBehaviour
                         continue;
                     }
 
-                    pair.Value.color = view.slotFilled[d, (int)pair.Key]
+                    pair.Value.color = view.GetSlotFilled(d, pair.Key)
                         ? CardSelected
                         : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
                 }

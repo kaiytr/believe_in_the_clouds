@@ -14,6 +14,12 @@ public static class UiEventSystemBoot
 {
     private static GameObject booted;
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void PreBoot()
+    {
+        Ensure();
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoBoot()
     {
@@ -30,16 +36,45 @@ public static class UiEventSystemBoot
     /// <summary>EventSystem이 없으면 만든다. 이미 있으면 그대로 둔다.</summary>
     public static EventSystem Ensure()
     {
-        EventSystem existing = Object.FindFirstObjectByType<EventSystem>();
-        if (existing != null)
+        // 씬에 이미 있는 EventSystem을 우선 쓴다 (수동 배치 포함).
+        EventSystem existing = null;
+        try
+        {
+            existing = Object.FindFirstObjectByType<EventSystem>();
+        }
+        catch
+        {
+            existing = null;
+        }
+
+        if (existing != null && existing.gameObject != null)
         {
             Object.DontDestroyOnLoad(existing.gameObject);
+            AddInputModule(existing.gameObject);
+            booted = existing.gameObject;
             return existing;
         }
 
         if (booted != null)
         {
-            return booted.GetComponent<EventSystem>();
+            // 도메인 리로드 OFF 상태에서 파괴된 참조가 남을 수 있다.
+            EventSystem kept = null;
+            try
+            {
+                kept = booted.GetComponent<EventSystem>();
+            }
+            catch
+            {
+                kept = null;
+            }
+
+            if (kept != null && kept.gameObject != null)
+            {
+                AddInputModule(booted);
+                return kept;
+            }
+
+            booted = null;
         }
 
         booted = new GameObject("[EventSystem]");

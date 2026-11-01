@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,9 +15,13 @@ public class DoctrineSlotView : MonoBehaviour
     private Doctrine doctrine;
     private Coroutine flashRoutine;
     private Color baseBackground;
+    private Button button;
 
     /// <summary>이 칸이 표시하는 교리. 빈 칸이면 null.</summary>
     public Doctrine Doctrine => doctrine;
+
+    /// <summary>슬롯 타일을 눌렀을 때. HUD 툴팁 표시용.</summary>
+    public event Action<DoctrineSlotView> Clicked;
 
     /// <summary>
     /// 칸을 초기화한다.
@@ -56,6 +61,43 @@ public class DoctrineSlotView : MonoBehaviour
             StopCoroutine(flashRoutine);
             flashRoutine = null;
         }
+
+        EnsureClickable();
+    }
+
+    // 하단 HUD 슬롯에 클릭이 붙어 있지 않아 툴팁이 뜨지 않았다.
+    // 배경 이미지를 버튼 타깃으로 삼아 클릭을 받는다.
+    private void EnsureClickable()
+    {
+        ResolveReferences();
+
+        if (button == null)
+        {
+            button = GetComponent<Button>();
+            if (button == null)
+            {
+                button = gameObject.AddComponent<Button>();
+            }
+        }
+
+        if (button != null)
+        {
+            button.transition = Selectable.Transition.ColorTint;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            button.onClick.RemoveListener(HandleButtonClicked);
+            button.onClick.AddListener(HandleButtonClicked);
+            button.interactable = true;
+            if (background != null)
+            {
+                button.targetGraphic = background;
+                background.raycastTarget = true;
+            }
+        }
+    }
+
+    private void HandleButtonClicked()
+    {
+        Clicked?.Invoke(this);
     }
 
     private void ResolveReferences()
@@ -151,6 +193,7 @@ public class DoctrineSlotView : MonoBehaviour
         slot.background = bgObject.GetComponent<Image>();
         slot.label = label;
         slot.triggerFlash = flashObject.GetComponent<Image>();
+        slot.EnsureClickable();
         return slot;
     }
 }

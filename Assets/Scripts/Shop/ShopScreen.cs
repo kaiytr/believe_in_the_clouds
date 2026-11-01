@@ -79,7 +79,8 @@ public class ShopScreen : MonoBehaviour
 
         panel = ShopPanelView.BuildRuntime();
         panel.CardClicked += HandleCardClicked;
-        panel.BuyClicked += HandleBuyClicked;
+        panel.PieceBuyClicked += HandlePieceBuyClicked;
+        panel.SlotBuyClicked += HandleSlotBuyClicked;
         DontDestroyOnLoad(panel.gameObject);
 
         // uGUI 버튼은 EventSystem이 없으면 클릭을 못 받는다.
@@ -125,6 +126,9 @@ public class ShopScreen : MonoBehaviour
 
         ClearSelection();
         panel.Open(shop.ShopName);
+        panel.SlotBoughtThisOpen = false;
+        RefreshSlotSummary();
+        panel.SetSlotBuyEnabled(true, null);
         UiModal.Push(this);
         Debug.Log($"[상점] {shop.ShopName} 열림 ({interactor?.name})");
     }
@@ -153,8 +157,6 @@ public class ShopScreen : MonoBehaviour
         RefreshSummary();
     }
 
-    // 각 열 제한 없이 여러 장을 고를 수 있다. 같은 카드를 다시 누르면 해제.
-    // 한 장만 골라도 구매된다 (예: 주어 '일반 적' 하나만).
     private void HandleCardClicked(ShopColumn column, int index)
     {
         HashSet<int> bucket = Bucket(column);
@@ -173,10 +175,38 @@ public class ShopScreen : MonoBehaviour
         RefreshSummary();
     }
 
-    // 구매: 고른 조각들을 교리로 활성화하지 않고 인벤토리에 쌓는다.
-    // 재화 시스템이 아직 없으므로 지금은 "구매 = 즉시 획득"이다.
-    // 한 장만 골라도 구매된다.
-    private void HandleBuyClicked()
+    private void RefreshSlotSummary()
+    {
+        DoctrineSlotStore store = DoctrineSlotStore.EnsureExists();
+        int total = store != null ? store.SlotCount : DoctrineSlotStore.DefaultSlots;
+        panel.SetSlotSummary(total);
+        panel.SetSlotBuyEnabled(true, null);
+    }
+
+    /// <summary>조각 구매: 장바구니에 담은 조각을 인벤토리에 쌓는다. 한 장만 골라도 된다.</summary>
+    private void HandlePieceBuyClicked()
+    {
+        BuySelectedPieces();
+    }
+
+    /// <summary>교리 칸 구매: 조각 선택과 무관하게 언제든 1칸씩 늘린다.</summary>
+    private void HandleSlotBuyClicked()
+    {
+        DoctrineSlotStore store = DoctrineSlotStore.EnsureExists();
+        if (store == null)
+        {
+            panel.SetFooter("교리 칸 저장소를 찾을 수 없습니다.");
+            return;
+        }
+
+        int total = store.PurchaseSlot();
+        panel.SlotBoughtThisOpen = true;
+        panel.SetSlotSummary(total);
+        panel.SetFooter($"교리 칸 구매 → 총 {total}칸. 재단에서 확인하세요.");
+        Debug.Log($"[상점] 교리 칸 구매 → 총 {total}칸");
+    }
+
+    private void BuySelectedPieces()
     {
         DoctrineInventory inventory = DoctrineInventory.Instance;
         if (inventory == null)
@@ -193,7 +223,6 @@ public class ShopScreen : MonoBehaviour
         if (bought == 0)
         {
             panel.SetFooter("카드를 한 장 이상 고르세요.");
-            panel.SetBuyEnabled(false);
             return;
         }
 
@@ -202,9 +231,9 @@ public class ShopScreen : MonoBehaviour
         selectedResults.Clear();
         panel.ClearSelection();
         RefreshSummary();
+        RefreshSlotSummary();
 
         panel.SetFooter($"{inventory.Describe()} · 재단에서 조합하세요.");
-        panel.SetBuyEnabled(false);
         Debug.Log($"[상점] 조각 구매 {bought}장 → {inventory.Describe()}");
     }
 
@@ -239,8 +268,8 @@ public class ShopScreen : MonoBehaviour
         if (total == 0)
         {
             panel.SetSelectionSummary(null, null, null);
-            panel.SetFooter("카드를 한 장 이상 고르세요.");
-            panel.SetBuyEnabled(false);
+            panel.SetFooter("카드를 고르면 조각 구매, 교리칸 구매는 언제든 가능합니다.");
+            panel.SetPieceBuyEnabled(false, "조각 구매");
             return;
         }
 
@@ -249,8 +278,8 @@ public class ShopScreen : MonoBehaviour
             JoinLabels(ShopColumn.Condition, selectedConditions),
             JoinLabels(ShopColumn.Result, selectedResults));
 
-        panel.SetFooter($"선택 {total}장  ·  구매를 누르면 인벤토리에 들어갑니다.");
-        panel.SetBuyEnabled(true);
+        panel.SetFooter($"선택 {total}장  ·  조각 구매를 누르면 인벤토리에 들어갑니다.");
+        panel.SetPieceBuyEnabled(true, $"조각 구매 ({total}장)");
     }
 
     private void SyncAllSelections()

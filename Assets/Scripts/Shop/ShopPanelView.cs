@@ -9,11 +9,13 @@ using UnityEngine.UI;
 //   ┌ 3열 × 4행 카드 그리드 ┐
 //   1열 = 주어 / 2열 = 조건 / 3열 = 결과
 //   각 카드 = [왼쪽 회색 아이콘 블록][오른쪽 글 영역]
+//   하단: 교리 슬롯 구매 버튼 (현재 칸 수 + 다음 구매 안내)
 //
 // 동작 규칙:
 // - 열마다 하나씩이 아니라 여러 장을 고를 수 있다 (장바구니).
 // - 한 장만 골라도 구매 버튼이 켜진다.
-// - 구매 시 교리로 활성화하지 않는다. 인벤토리에 쌓기만 한다.
+// - 조각 구매 시 교리로 활성화하지 않는다. 인벤토리에 쌓기만 한다.
+// - 교리 칸 구매 버튼은 조각 장바구니와 별개로 언제든 눌러 1칸씩 늘린다.
 //
 // 표시만 담당한다. 장바구니/구매 요청은 ShopScreen이 한다.
 public class ShopPanelView : MonoBehaviour
@@ -29,8 +31,11 @@ public class ShopPanelView : MonoBehaviour
     private Text titleText;
     private Text footerText;
     private Text selectionText;
-    private Button buyButton;
-    private Text buyLabel;
+    private Button pieceBuyButton;
+    private Text pieceBuyLabel;
+    private Button slotBuyButton;
+    private Text slotBuyLabel;
+    private bool slotBoughtThisOpen;
     private bool isOpen;
 
     private readonly List<ShopCardView> subjectCards = new List<ShopCardView>();
@@ -42,8 +47,11 @@ public class ShopPanelView : MonoBehaviour
     /// <summary>카드를 눌렀을 때. (열, 해당 열 안의 인덱스)</summary>
     public event Action<ShopColumn, int> CardClicked;
 
-    /// <summary>구매 버튼을 눌렀을 때.</summary>
-    public event Action BuyClicked;
+    /// <summary>조각 구매 버튼을 눌렀을 때 (장바구니에 담은 조각).</summary>
+    public event Action PieceBuyClicked;
+
+    /// <summary>교리 칸(재단 슬롯) 구매 버튼을 눌렀을 때.</summary>
+    public event Action SlotBuyClicked;
 
     public static ShopPanelView BuildRuntime()
     {
@@ -161,12 +169,12 @@ public class ShopPanelView : MonoBehaviour
         footerRect.sizeDelta = new Vector2(-36f, 48f);
 
         Text footerText = UiTheme.CreateText("FooterText", footer.transform,
-            "각 열에서 하나씩 선택하세요.", 17, Color.white, TextAnchor.MiddleLeft);
+            "카드를 한 장 이상 고르세요.", 17, Color.white, TextAnchor.MiddleLeft);
         RectTransform textRect = footerText.rectTransform;
         textRect.anchorMin = new Vector2(0f, 0.5f);
         textRect.anchorMax = new Vector2(1f, 1f);
         textRect.offsetMin = new Vector2(16f, 0f);
-        textRect.offsetMax = new Vector2(-136f, -2f);
+        textRect.offsetMax = new Vector2(-260f, -2f);
         footerText.horizontalOverflow = HorizontalWrapMode.Overflow;
         footerText.verticalOverflow = VerticalWrapMode.Truncate;
         this.footerText = footerText;
@@ -178,36 +186,60 @@ public class ShopPanelView : MonoBehaviour
         selectionRect.anchorMin = new Vector2(0f, 0f);
         selectionRect.anchorMax = new Vector2(1f, 0.5f);
         selectionRect.offsetMin = new Vector2(16f, 2f);
-        selectionRect.offsetMax = new Vector2(-136f, 0f);
+        selectionRect.offsetMax = new Vector2(-260f, 0f);
         selectionText.horizontalOverflow = HorizontalWrapMode.Overflow;
         selectionText.verticalOverflow = VerticalWrapMode.Truncate;
         this.selectionText = selectionText;
 
-        // 구매 버튼 (오른쪽).
-        GameObject buyObject = UiTheme.CreateImage("BuyButton", footer.transform, BuyDisabled);
-        buyObject.GetComponent<Image>().raycastTarget = true;
-        RectTransform buyRect = buyObject.GetComponent<RectTransform>();
-        buyRect.anchorMin = new Vector2(1f, 0.5f);
-        buyRect.anchorMax = new Vector2(1f, 0.5f);
-        buyRect.pivot = new Vector2(1f, 0.5f);
-        buyRect.anchoredPosition = new Vector2(-8f, 0f);
-        buyRect.sizeDelta = new Vector2(112f, 36f);
+        // 조각 구매 버튼 (오른쪽에서 두 번째). 장바구니가 비면 꺼진다.
+        GameObject pieceBuyObject = UiTheme.CreateImage("PieceBuyButton", footer.transform, BuyDisabled);
+        pieceBuyObject.GetComponent<Image>().raycastTarget = true;
+        RectTransform pieceBuyRect = pieceBuyObject.GetComponent<RectTransform>();
+        pieceBuyRect.anchorMin = new Vector2(1f, 0.5f);
+        pieceBuyRect.anchorMax = new Vector2(1f, 0.5f);
+        pieceBuyRect.pivot = new Vector2(1f, 0.5f);
+        pieceBuyRect.anchoredPosition = new Vector2(-128f, 0f);
+        pieceBuyRect.sizeDelta = new Vector2(112f, 36f);
 
-        Text buyLabel = UiTheme.CreateText("BuyLabel", buyObject.transform, "구매", 17,
-            Color.white, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(buyLabel.rectTransform, 2f);
+        Text pieceBuyLabel = UiTheme.CreateText("PieceBuyLabel", pieceBuyObject.transform, "조각 구매",
+            15, Color.white, TextAnchor.MiddleCenter);
+        UiTheme.Stretch(pieceBuyLabel.rectTransform, 2f);
 
-        Button buyButton = buyObject.AddComponent<Button>();
-        buyButton.targetGraphic = buyObject.GetComponent<Image>();
-        buyButton.onClick.AddListener(() => BuyClicked?.Invoke());
+        Button pieceBuyButton = pieceBuyObject.AddComponent<Button>();
+        pieceBuyButton.targetGraphic = pieceBuyObject.GetComponent<Image>();
+        pieceBuyButton.navigation = new Navigation { mode = Navigation.Mode.None };
+        pieceBuyButton.onClick.AddListener(() => PieceBuyClicked?.Invoke());
 
-        this.buyButton = buyButton;
-        this.buyLabel = buyLabel;
+        this.pieceBuyButton = pieceBuyButton;
+        this.pieceBuyLabel = pieceBuyLabel;
+
+        // 교리 칸 구매 버튼 (오른쪽 끝). 조각 선택과 무관하게 언제든 눌린다.
+        GameObject slotBuyObject = UiTheme.CreateImage("SlotBuyButton", footer.transform, BuyEnabled);
+        slotBuyObject.GetComponent<Image>().raycastTarget = true;
+        RectTransform slotBuyRect = slotBuyObject.GetComponent<RectTransform>();
+        slotBuyRect.anchorMin = new Vector2(1f, 0.5f);
+        slotBuyRect.anchorMax = new Vector2(1f, 0.5f);
+        slotBuyRect.pivot = new Vector2(1f, 0.5f);
+        slotBuyRect.anchoredPosition = new Vector2(-8f, 0f);
+        slotBuyRect.sizeDelta = new Vector2(112f, 36f);
+
+        Text slotBuyLabel = UiTheme.CreateText("SlotBuyLabel", slotBuyObject.transform, "교리칸 구매",
+            15, Color.white, TextAnchor.MiddleCenter);
+        UiTheme.Stretch(slotBuyLabel.rectTransform, 2f);
+
+        Button slotBuyButton = slotBuyObject.AddComponent<Button>();
+        slotBuyButton.targetGraphic = slotBuyObject.GetComponent<Image>();
+        slotBuyButton.navigation = new Navigation { mode = Navigation.Mode.None };
+        slotBuyButton.onClick.AddListener(() => SlotBuyClicked?.Invoke());
+
+        this.slotBuyButton = slotBuyButton;
+        this.slotBuyLabel = slotBuyLabel;
     }
 
     public void Open(string shopName)
     {
         isOpen = true;
+        slotBoughtThisOpen = false;
 
         if (titleText != null)
         {
@@ -220,9 +252,14 @@ public class ShopPanelView : MonoBehaviour
             footerText.font = UiTheme.GetFont();
         }
 
-        if (buyLabel != null)
+        if (slotBuyLabel != null)
         {
-            buyLabel.font = UiTheme.GetFont();
+            slotBuyLabel.font = UiTheme.GetFont();
+        }
+
+        if (pieceBuyLabel != null)
+        {
+            pieceBuyLabel.font = UiTheme.GetFont();
         }
 
         if (selectionText != null)
@@ -258,7 +295,73 @@ public class ShopPanelView : MonoBehaviour
         ClearCards(resultCards);
         SetFooter("카드를 한 장 이상 고르세요.");
         SetSelectionSummary(null, null, null);
-        SetBuyEnabled(false);
+        SetPieceBuyEnabled(false);
+    }
+
+    /// <summary>조각 구매 버튼 활성/라벨을 바꾼다.</summary>
+    public void SetPieceBuyEnabled(bool value, string label = null)
+    {
+        if (pieceBuyButton != null)
+        {
+            pieceBuyButton.interactable = value;
+
+            if (pieceBuyButton.targetGraphic != null)
+            {
+                pieceBuyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
+            }
+        }
+
+        if (pieceBuyLabel != null)
+        {
+            pieceBuyLabel.font = UiTheme.GetFont();
+            if (label != null)
+            {
+                pieceBuyLabel.text = label;
+            }
+        }
+    }
+
+    /// <summary>현재 교리 칸 수와 다음 구매 안내를 표시한다.</summary>
+    public void SetSlotSummary(int currentCount)
+    {
+        if (slotBuyLabel != null)
+        {
+            slotBuyLabel.font = UiTheme.GetFont();
+            slotBuyLabel.text = $"교리칸 구매\n{currentCount} → {currentCount + 1}칸";
+        }
+    }
+
+    public void SetSlotSummaryText(string message)
+    {
+    }
+
+    /// <summary>이번 열람 중 교리 칸을 이미 샀는지. 호환용으로만 남김.</summary>
+
+    /// <summary>교리 칸 구매 버튼 활성/라벨을 바꾼다. 단독 구매라 항상 켜둔다.</summary>
+    public void SetSlotBuyEnabled(bool value, string label)
+    {
+        if (slotBuyButton != null)
+        {
+            slotBuyButton.interactable = value;
+
+            if (slotBuyButton.targetGraphic != null)
+            {
+                slotBuyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
+            }
+        }
+
+        if (slotBuyLabel != null)
+        {
+            slotBuyLabel.font = UiTheme.GetFont();
+            slotBuyLabel.text = label ?? "교리칸 구매";
+        }
+    }
+
+    /// <summary>이번 열람 중 교리 칸을 이미 샀는지. 조각 안내 문구 분기에 쓴다.</summary>
+    public bool SlotBoughtThisOpen
+    {
+        get => slotBoughtThisOpen;
+        set => slotBoughtThisOpen = value;
     }
 
     /// <summary>지정한 카드만 선택 표시한다. (여러 장 동시 선택용)</summary>
@@ -313,15 +416,7 @@ public class ShopPanelView : MonoBehaviour
 
     public void SetBuyEnabled(bool value)
     {
-        if (buyButton != null)
-        {
-            buyButton.interactable = value;
-
-            if (buyButton.targetGraphic != null)
-            {
-                buyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
-            }
-        }
+        SetPieceBuyEnabled(value, value ? "조각 구매" : "조각 구매");
     }
 
     private List<ShopCardView> GetCards(ShopColumn column)
