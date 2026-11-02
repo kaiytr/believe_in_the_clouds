@@ -28,7 +28,7 @@
 | 수치·패턴 풀·레이어·효과 참조 | `Assets/Data/Boss/BossCombatSettings.asset` |
 | 예고·공격·구름·가시 프리팹 | `Assets/Prefabs/Boss/Effects/` |
 | 1월드 단위 스프라이트·URP 비조명 재질 | `Assets/Art/Boss/` |
-| 실제 프리팹 인스턴스가 배치된 시험 씬 | `Assets/Scenes/BossTest.unity` |
+| 실제 프리팹 인스턴스가 배치된 시험 씬 | `Assets/Scenes/Gameplay/BossTest.unity` |
 | 에셋/시험 씬 재생성 | `Tools > Boss > Rebuild Boss assets and BossTest from PlayerTEST` |
 | 구름/가시/HUD만 갱신 | `Tools > Boss > Upgrade pattern UX (preserve BossTest scene)` |
 | 플레이/디버그 UI만 갱신 | `Tools > Boss > Update gameplay and debug UI (preserve BossTest scene)` |

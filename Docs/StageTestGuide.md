@@ -1,6 +1,6 @@
 # StageTest 통합 테스트
 
-Unity에서 `Assets/Scenes/StageTest.unity`를 열고 Play를 누른다.
+Unity에서 `Assets/Scenes/Tests/StageTest.unity`를 열고 Play를 누른다.
 
 - A/D 또는 좌우 방향키: 이동
 - Space: 점프

@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public static class EconomyTestProjectSetup
 {
-    public const string ScenePath = "Assets/Scenes/EconomyTest.unity";
+    public const string ScenePath = ProjectScenes.EconomyTest;
     [MenuItem("Tools/Economy/Build independent test scene")]
     public static void Build()
     {

@@ -7,8 +7,8 @@ using UnityEngine.SceneManagement;
 
 public static class LobbyProjectSetup
 {
-    public const string LobbyPath = "Assets/Scenes/Lobby.unity";
-    public const string StagePath = "Assets/Scenes/TemporaryStage.unity";
+    public const string LobbyPath = ProjectScenes.Lobby;
+    public const string StagePath = ProjectScenes.TemporaryStage;
     public const string LobbyPrefabFolder = "Assets/Prefabs/Lobby";
     public const string BranchPrefabPath = LobbyPrefabFolder + "/LobbyBranch.prefab";
     public const string FoundationPrefabPath = LobbyPrefabFolder + "/Foundation.prefab";

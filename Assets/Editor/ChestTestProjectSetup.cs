@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public static class ChestTestProjectSetup
 {
-    public const string ScenePath = "Assets/Scenes/ChestTest.unity";
+    public const string ScenePath = ProjectScenes.ChestTest;
     public const string PrefabPath = "Assets/Prefabs/Chest/Chest.prefab";
     private static Sprite Square => AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Boss/UnitSquare.png");
     private static Material Material => AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");

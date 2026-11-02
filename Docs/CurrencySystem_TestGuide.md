@@ -1,8 +1,8 @@
 # 재화 시스템 테스트
 
-Unity **6000.3.5f2**에서 `Assets/Scenes/EconomyTest.unity`를 열고 Play한다. 씬을 다시 만들려면 `Tools > Economy > Build independent test scene`을 실행한다.
+Unity **6000.3.5f2**에서 `Assets/Scenes/Tests/EconomyTest.unity`를 열고 Play한다. 씬을 다시 만들려면 `Tools > Economy > Build independent test scene`을 실행한다.
 
-처음에는 0코인·0조각·장착 없음이다. 왼쪽 패널에서 다음을 확인한다.
+먼저 왼쪽 패널의 `새 빈 테스트 프로필`로 0코인·0조각·장착 없음 상태를 준비한다. 다음을 확인한다.
 
 - `+100 코인`: 공통 즉시 지급 API. 우측 하단 잔액이 갱신된다.
 - `개/신도/간부 처치`: 지정 범위의 코인이 퍼진 뒤 HUD로 날아간다. 도착 전에는 비행 중 금액이며 사용할 수 없다.
@@ -19,6 +19,6 @@ Unity **6000.3.5f2**에서 `Assets/Scenes/EconomyTest.unity`를 열고 Play한�
 
 기존 `StageTest`·`BeliefTest`에서도 실제 일반 적 사망 보상이 연결되어 있다. `R` 씬 재시작은 사망 손실을 추가로 실행하지 않는다. 씬이 다시 생성한 적은 새 처치 ID를 갖는다. 적 생사 전체 저장과 안정적인 스테이지/스폰 ID 연결은 후속 메인 루프 범위다.
 
-Editor 일반 플레이 저장은 `Library/Economy/Editor/economy-save-v1.json`, 빌드 플레이 저장은 `Application.persistentDataPath/economy-save-v1.json`으로 분리한다. 손상본·미지원 버전은 거래를 잠그고 보존하며 정상 백업이 있으면 복구한다.
+일반 Editor Play는 기본적으로 메모리 저장이다. `-usePersistentEditorProfile`을 명시한 Editor의 지속 저장은 `Library/Economy/Editor/economy-save-v1.json`, 빌드 저장은 `Application.persistentDataPath/economy-save-v1.json`을 사용한다. EconomyTest 자체의 fixture 저장은 위 별도 경로를 사용한다. 손상본·미지원 버전은 거래를 잠그고 보존하며 정상 백업이 있으면 복구한다.
 
 자동 테스트는 `EconomyEditModeTests`, `EconomyPlayModeTests`에 있다. 화면 캡처는 그래픽을 켠 `VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios`가 `Logs/EconomyVerification/`에 저장한다. 전체 실행 결과는 [구현 결과서](CurrencySystem_ImplementationStatus.md)에 기록한다.

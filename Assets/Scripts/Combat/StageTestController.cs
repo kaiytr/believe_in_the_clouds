@@ -20,8 +20,7 @@ public sealed class StageTestController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.R) && !UiModal.IsOpen)
         {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(gameObject.scene.name);
+            Restart();
             return;
         }
 
@@ -33,5 +32,16 @@ public sealed class StageTestController : MonoBehaviour
         if (previousMessage == message) return;
         previousMessage = message;
         instructions.text = message;
+    }
+
+    public void Restart()
+    {
+        Time.timeScale = 1f;
+#if UNITY_EDITOR
+        UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+            gameObject.scene.path, new LoadSceneParameters(LoadSceneMode.Single));
+#else
+        SceneManager.LoadScene(gameObject.scene.name);
+#endif
     }
 }

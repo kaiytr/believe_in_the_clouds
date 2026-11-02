@@ -42,7 +42,7 @@
 | `Assets/Scripts/Chest/EconomyService.Chests.cs` | 기존 `EconomyService`의 partial. 등록·개방·중복 방지·단일 저장 |
 | 기존 `EconomyModels.cs`, `EconomyLedger.cs`, `JsonEconomyStore.cs`, `LobbyRunData.cs` | 스키마·깊은 복사·검증·v1/v2 이전 |
 | `Assets/Prefabs/Chest/Chest.prefab` | 사각형 SpriteRenderer·trigger·상자 컴포넌트·드롭 기준점 |
-| `Assets/Scenes/ChestTest.unity`, `Assets/Editor/ChestTestProjectSetup.cs` | 격리된 수동 검증 씬과 재생성 도구 |
+| `Assets/Scenes/Tests/ChestTest.unity`, `Assets/Editor/ChestTestProjectSetup.cs` | 격리된 수동 검증 씬과 재생성 도구 |
 | `Assets/Tests/EditMode/ChestEditModeTests.cs`, `Assets/Tests/PlayMode/ChestPlayModeTests.cs` | 추첨·저장·홀드 통합 검증 |
 
 기존 `Assets/Art/Boss/UnitSquare.png`와 같은 단색 사각형을 재사용할 수 있다. 새 이미지 생성이나 디자인 에셋 확보를 개발 선행 조건으로 두지 않는다. 실제 스테이지 생성기는 상자 배치 명세를 공급하는 후속 연결 지점으로 남긴다.

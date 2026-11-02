@@ -13,9 +13,9 @@ public static class StageTestProjectSetup
 {
     public const string PlayerPath = "Assets/Prefabs/Player/Player.prefab";
     public const string HudPath = "Assets/Prefabs/UI/PlayerHud.prefab";
-    public const string StagePath = "Assets/Scenes/StageTest.unity";
-    private const string PlayerScene = "Assets/Scenes/PlayerTEST.unity";
-    private const string BeliefScene = "Assets/Scenes/BeliefTest.unity";
+    public const string StagePath = ProjectScenes.StageTest;
+    private const string PlayerScene = ProjectScenes.PlayerTEST;
+    private const string BeliefScene = ProjectScenes.BeliefTest;
     private const float FloorY = -3.35f;
 
     [MenuItem("Tools/Stage/Sync test players and build StageTest")]
@@ -27,10 +27,8 @@ public static class StageTestProjectSetup
         SyncTestScene(BeliefScene);
         SyncTestScene(BossProjectSetup.ScenePath);
         BuildStage();
-        var scenes = EditorBuildSettings.scenes.ToList();
-        if (!scenes.Any(scene => scene.path == StagePath))
-            scenes.Add(new EditorBuildSettingsScene(StagePath, true));
-        EditorBuildSettings.scenes = scenes.ToArray();
+        EditorBuildSettings.scenes = EditorBuildSettings.scenes
+            .Where(scene => scene.path != StagePath).ToArray();
         AssetDatabase.SaveAssets();
         Debug.Log("StageTest ready: shared PlayerTEST player/UI, three enemy species, boss and dash afterimages.");
     }

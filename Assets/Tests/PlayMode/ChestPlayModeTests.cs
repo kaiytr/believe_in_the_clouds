@@ -41,7 +41,7 @@ public sealed class ChestPlayModeTests
         Type editor = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("UnityEditor.SceneManagement.EditorSceneManager", false)).First(t => t != null);
         MethodInfo method = editor.GetMethod("LoadSceneAsyncInPlayMode", BindingFlags.Public | BindingFlags.Static,
             null, new[] { typeof(string), typeof(LoadSceneParameters) }, null);
-        var operation = (AsyncOperation)method.Invoke(null, new object[] { "Assets/Scenes/" + name + ".unity", new LoadSceneParameters(LoadSceneMode.Single) });
+        var operation = (AsyncOperation)method.Invoke(null, new object[] { ProjectScenes.ForName(name), new LoadSceneParameters(LoadSceneMode.Single) });
         while (!operation.isDone) yield return null;
         yield return null;
     }
@@ -59,6 +59,13 @@ public sealed class ChestPlayModeTests
     }
     private void Advance(float seconds) => controller.ProcessInput(new InteractionFrame(held: true), seconds);
 
+    private static IEnumerator WaitForCoinSettlement(EconomyService service)
+    {
+        float deadline = Time.realtimeSinceStartup + 4f;
+        while (service.PendingBalance > 0 && Time.realtimeSinceStartup < deadline) yield return null;
+        Assert.That(service.PendingBalance, Is.Zero, "Chest coins did not settle within the presentation deadline.");
+    }
+
     [UnityTest] public IEnumerator HoldOpensOnlyAtThresholdGrantsOnePieceAndFliesToHud()
     {
         chest.Interact(context.Player.gameObject); Assert.That(chest.IsOpened, Is.False);
@@ -71,7 +78,7 @@ public sealed class ChestPlayModeTests
         Advance(10); Assert.That(EconomyLedger.Total(context.Service.Snapshot().pieces), Is.EqualTo(1));
         yield return new WaitForSecondsRealtime(.25f);
         Assert.That(Object.FindObjectsByType<CoinFlightView>(FindObjectsSortMode.None).Any(v => v.HasFlights), Is.True);
-        yield return new WaitForSecondsRealtime(1.2f);
+        yield return WaitForCoinSettlement(context.Service);
         Assert.That(context.Service.Balance, Is.EqualTo(coins)); Assert.That(context.Service.PendingBalance, Is.Zero);
         Assert.That(DoctrineHud.CurrencyTarget.GetComponentInChildren<Text>().text, Does.Contain(coins.ToString()));
         context.Reload(); Assert.That(chest.IsOpened, Is.True);
@@ -169,7 +176,7 @@ public sealed class ChestPlayModeTests
         Advance(.75f); yield return new WaitForSecondsRealtime(.2f);
         controller.ProcessInput(new InteractionFrame(held: true), 0);
         yield return Capture("03-open-and-coins", 1600, 900);
-        yield return new WaitForSecondsRealtime(1.2f); yield return Capture("04-reward-settled", 1600, 900);
+        yield return WaitForCoinSettlement(context.Service); yield return Capture("04-reward-settled", 1600, 900);
     }
     private static IEnumerator Capture(string name, int width, int height)
     {

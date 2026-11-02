@@ -16,7 +16,7 @@ public sealed class BeliefSystemPlayModeTests
     [UnityTest]
     public IEnumerator MergedPlayerAndShopScenesKeepCombatSignalsAndModalInteraction()
     {
-        foreach (string path in new[] { "Assets/Scenes/PlayerTEST.unity", "Assets/Scenes/ShopTest.unity" })
+        foreach (string path in new[] { ProjectScenes.PlayerTEST, ProjectScenes.ShopTest })
         {
             var load = LoadSceneForPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
             while (!load.isDone) yield return null;
@@ -87,7 +87,7 @@ public sealed class BeliefSystemPlayModeTests
         sceneActors.Clear();
         SceneManager.sceneLoaded += CacheAndPauseEnemyAI;
         AsyncOperation load = LoadSceneForPlayMode(
-            "Assets/Scenes/BeliefTest.unity",
+            ProjectScenes.BeliefTest,
             new LoadSceneParameters(LoadSceneMode.Single));
         while (!load.isDone)
             yield return null;

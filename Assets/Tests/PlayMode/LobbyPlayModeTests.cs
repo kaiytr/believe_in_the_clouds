@@ -14,12 +14,14 @@ public sealed class LobbyPlayModeTests
 {
     private EconomyService previous;
     private MemoryEconomyStore store;
+    private static readonly string[] CombatScenes = { "DogCombatTest", "BelieverCombatTest", "ExecutiveCombatTest" };
     private LobbyFlowRuntime Flow => LobbyFlowRuntime.Instance;
     private PlayerHealth Player => Flow.Scene.Player;
 
     [UnitySetUp] public IEnumerator SetUp()
     {
         Time.timeScale = 1; EconomyRuntime.Ensure(); previous = Currency.Service;
+        SceneManager.sceneLoaded += PauseCombatActors;
         store = new MemoryEconomyStore();
         EconomyRuntime.Instance.SetService(new EconomyService(store, new EconomyRandom(43)));
         yield return Load("Lobby"); yield return Ready("Lobby");
@@ -27,6 +29,7 @@ public sealed class LobbyPlayModeTests
 
     [UnityTearDown] public IEnumerator TearDown()
     {
+        SceneManager.sceneLoaded -= PauseCombatActors;
         // A persistent router must not route other suites back into this fixture.
         if (Flow != null) Object.Destroy(Flow.gameObject);
         yield return null;
@@ -39,7 +42,7 @@ public sealed class LobbyPlayModeTests
         Type editor = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("UnityEditor.SceneManagement.EditorSceneManager", false)).First(t => t != null);
         MethodInfo method = editor.GetMethod("LoadSceneAsyncInPlayMode", BindingFlags.Public | BindingFlags.Static,
             null, new[] { typeof(string), typeof(LoadSceneParameters) }, null);
-        var load = (AsyncOperation)method.Invoke(null, new object[] { "Assets/Scenes/" + name + ".unity", new LoadSceneParameters(LoadSceneMode.Single) });
+        var load = (AsyncOperation)method.Invoke(null, new object[] { ProjectScenes.ForName(name), new LoadSceneParameters(LoadSceneMode.Single) });
         while (!load.isDone) yield return null;
         yield return null; yield return new WaitForFixedUpdate();
     }
@@ -51,6 +54,28 @@ public sealed class LobbyPlayModeTests
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(scene));
         Assert.That(Flow.InputReady, Is.True, Flow.Message);
         yield return null;
+    }
+
+    private IEnumerator ReadyCombat()
+    {
+        float until = Time.realtimeSinceStartup + 12f;
+        while ((!CombatScenes.Contains(SceneManager.GetActiveScene().name) || Flow == null || !Flow.InputReady) &&
+            Time.realtimeSinceStartup < until) yield return null;
+        Assert.That(CombatScenes, Does.Contain(SceneManager.GetActiveScene().name));
+        yield return Ready(SceneManager.GetActiveScene().name);
+    }
+
+    private static void PauseCombatActors(Scene scene, LoadSceneMode mode)
+    {
+        if (!CombatScenes.Contains(scene.name)) return;
+        // These cases isolate routing, saved HP and transactions from random combat damage.
+        foreach (var enemy in Object.FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None))
+        {
+            if (enemy.gameObject.scene != scene) continue;
+            enemy.enabled = false;
+            foreach (var attack in enemy.GetComponents<EnemyAttack>()) attack.enabled = false;
+            foreach (var contact in enemy.GetComponentsInChildren<EnemyContactDamage>()) contact.SetSuppressed(true);
+        }
     }
 
     private LobbyBranchInteractable[] Gates() => Object.FindObjectsByType<LobbyBranchInteractable>(FindObjectsSortMode.None).OrderBy(g => g.transform.position.x).ToArray();
@@ -106,20 +131,22 @@ public sealed class LobbyPlayModeTests
         // Quitting during a route must not write lobby coordinates into the stage.
         typeof(LobbyFlowRuntime).GetMethod("OnApplicationPause", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(Flow, new object[] { true });
         Assert.That(Flow.Service.RunSnapshot().hasPosition, Is.False);
-        yield return Ready("TemporaryStage");
+        yield return ReadyCombat();
+        string stageScene = SceneManager.GetActiveScene().name;
         var exit = Object.FindFirstObjectByType<TemporaryStageExit>();
         Assert.That(exit.CanInteract(Player.gameObject), Is.False);
         Assert.That(Flow.ReturnToLobby().Success, Is.False);
         Flow.DamageForTest(); Assert.That(Player.CurrentHp, Is.EqualTo(90));
         Assert.That(Flow.Service.RunSnapshot().hp, Is.EqualTo(90));
         string stageId = Flow.State.stage.id;
-        Flow.ReloadForTest(); yield return Ready("TemporaryStage");
+        Flow.ReloadForTest(); yield return Ready(stageScene);
         Assert.That(Player.CurrentHp, Is.EqualTo(90)); Assert.That(Flow.State.stage.id, Is.EqualTo(stageId));
         Assert.That(Flow.State.stage.completed, Is.False);
         Assert.That(Flow.CompleteStage().Success, Is.True);
-        Flow.ReloadForTest(); yield return Ready("TemporaryStage");
+        Flow.ReloadForTest(); yield return Ready(stageScene);
         Assert.That(Flow.State.stage.completed, Is.True); Assert.That(Flow.State.combatClears, Is.Zero);
-        Move(new Vector2(8, -1.95f)); exit.Interact(Player.gameObject);
+        Move(new Vector2(8, -1.95f));
+        Object.FindFirstObjectByType<TemporaryStageExit>().Interact(Player.gameObject);
         yield return Ready("Lobby");
         Assert.That(Player.CurrentHp, Is.EqualTo(90)); Assert.That(Flow.State.combatClears, Is.EqualTo(1));
         Assert.That(Flow.State.batchId, Is.Not.EqualTo(previousBatch));
@@ -129,9 +156,10 @@ public sealed class LobbyPlayModeTests
 
     [UnityTest] public IEnumerator LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear()
     {
-        Assert.That(Flow.Depart(Combat().BranchId).Success, Is.True); yield return Ready("TemporaryStage");
+        Assert.That(Flow.Depart(Combat().BranchId).Success, Is.True); yield return ReadyCombat();
+        string stageScene = SceneManager.GetActiveScene().name;
         Flow.DamageForTest(); string stage = Flow.State.stage.id;
-        yield return Load("Lobby"); yield return Ready("TemporaryStage");
+        yield return Load("Lobby"); yield return Ready(stageScene);
         Assert.That(Flow.State.stage.id, Is.EqualTo(stage)); Assert.That(Flow.State.combatClears, Is.Zero);
         Assert.That(Flow.State.stage.completed, Is.False); Assert.That(Player.CurrentHp, Is.EqualTo(90));
     }
@@ -140,10 +168,11 @@ public sealed class LobbyPlayModeTests
     {
         Currency.TryGrant(100, "fixture"); Flow.Service.TryGrantPiece("subject.player", 13, "fixture");
         string oldRun = Flow.State.id;
-        Flow.Depart(Combat().BranchId); yield return Ready("TemporaryStage");
+        Flow.Depart(Combat().BranchId); yield return ReadyCombat();
+        string stageScene = SceneManager.GetActiveScene().name;
         string death = Player.GetComponent<PlayerDeathCoordinator>().DeathId;
         store.FailWrites = true; Flow.DieForTest(); yield return new WaitForSecondsRealtime(.65f);
-        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("TemporaryStage"));
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
         Assert.That(Flow.InputReady, Is.False); Assert.That(Currency.Balance, Is.EqualTo(100));
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
         store.FailWrites = false; yield return Ready("Lobby");
@@ -172,7 +201,7 @@ public sealed class LobbyPlayModeTests
         Currency.TryGrant(100, "fixture"); Flow.Reveal(Gates()[0].BranchId); yield return null;
         yield return Capture("02-revealed-16x9", 1600, 900);
         yield return Capture("03-revealed-4x3", 1200, 900);
-        Flow.Depart(Combat().BranchId); yield return Ready("TemporaryStage");
+        Flow.Depart(Combat().BranchId); yield return ReadyCombat();
         Flow.CompleteStage(); Move(new Vector2(5, -1.95f)); yield return new WaitForSecondsRealtime(.5f);
         yield return Capture("04-stage-complete", 1600, 900);
     }

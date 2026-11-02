@@ -61,7 +61,7 @@
 
 ## 실행과 제한
 
-`Assets/Scenes/EconomyTest.unity`를 열어 Play한다. [테스트 가이드](CurrencySystem_TestGuide.md)에 버튼과 저장 경로를 기록했다. 새 씬은 `Tools > Economy > Build independent test scene`으로 재생성할 수 있다.
+`Assets/Scenes/Tests/EconomyTest.unity`를 열어 Play한다. [테스트 가이드](CurrencySystem_TestGuide.md)에 버튼과 저장 경로를 기록했다. 새 씬은 `Tools > Economy > Build independent test scene`으로 재생성할 수 있다.
 
 StageTest의 R 재시작은 씬만 재생성하며 사망 손실을 추가 적용하지 않는다. 현재 실제 적은 생성 시 새 처치 ID를 갖는다. 테스트 API는 안정적인 테스트 ID의 저장·중복 요청을 검증한다. 실제 적 생사·HP·위치·스폰 ID를 경제와 함께 저장하는 전체 이어 하기는 후속 메인 루프 작업이다.
 

@@ -4,7 +4,7 @@
 
 ## 실행
 
-1. Unity에서 `Assets/Scenes/ChestTest.unity`를 연다.
+1. Unity에서 `Assets/Scenes/Tests/ChestTest.unity`를 연다.
 2. Play를 누른다. 상자 4개, 우측 안내 기둥, 기존 플레이어와 HUD가 표시된다.
 3. A/D 또는 방향키로 상자에 접근한다.
 4. **상자 위에 붙은 E 안내**를 보고 **E를 1.5초 유지**한다. 사각 키캡의 위 중앙부터 시계 방향으로 테두리가 완성되면 열린다. 안내는 상자와 카메라의 이동을 따라간다.

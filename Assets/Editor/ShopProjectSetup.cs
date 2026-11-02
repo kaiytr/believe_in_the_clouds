@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 public static class ShopProjectSetup
 {
-    public const string ScenePath = "Assets/Scenes/ShopTest.unity";
+    public const string ScenePath = ProjectScenes.ShopTest;
     public const string PrefabPath = "Assets/Prefabs/Shop/Shop.prefab";
 
     [MenuItem("Tools/Shop/Build Shop prefab and update ShopTest")]

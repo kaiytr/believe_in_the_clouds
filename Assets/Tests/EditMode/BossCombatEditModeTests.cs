@@ -172,8 +172,8 @@ public sealed class BossCombatEditModeTests
     [Test]
     public void BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls()
     {
-        Scene source = EditorSceneManager.OpenScene("Assets/Scenes/PlayerTEST.unity",OpenSceneMode.Additive);
-        Scene test = EditorSceneManager.OpenScene("Assets/Scenes/BossTest.unity",OpenSceneMode.Additive);
+        Scene source = EditorSceneManager.OpenScene(ProjectScenes.PlayerTEST,OpenSceneMode.Additive);
+        Scene test = EditorSceneManager.OpenScene(ProjectScenes.BossTest,OpenSceneMode.Additive);
         try
         {
             GameObject original = Find(source,"Player"), clone = Find(test,"Player");

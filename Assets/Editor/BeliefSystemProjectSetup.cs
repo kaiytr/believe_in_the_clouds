@@ -10,8 +10,8 @@ public static class BeliefSystemProjectSetup
     private const string RearProfilePath = DataFolder + "/RearPositionBeliefProfile.asset";
     private const string DodgeProfilePath = DataFolder + "/DodgeAttackBeliefProfile.asset";
     private const string CatalogPath = DataFolder + "/BeliefProfileCatalog.asset";
-    private const string EnemyScenePath = "Assets/Scenes/EnemyTest.unity";
-    private const string BeliefScenePath = "Assets/Scenes/BeliefTest.unity";
+    private const string EnemyScenePath = ProjectScenes.EnemyTest;
+    private const string BeliefScenePath = ProjectScenes.BeliefTest;
 
     public static void BuildBeliefSystemAssetsAndScenes()
     {

@@ -41,7 +41,7 @@ public sealed class EconomyPlayModeTests
         MethodInfo method = editor.GetMethod("LoadSceneAsyncInPlayMode", BindingFlags.Public | BindingFlags.Static,
             null, new[] { typeof(string), typeof(LoadSceneParameters) }, null);
         var load = (AsyncOperation)method.Invoke(null, new object[] {
-            "Assets/Scenes/" + name + ".unity", new LoadSceneParameters(LoadSceneMode.Single) });
+            ProjectScenes.ForName(name), new LoadSceneParameters(LoadSceneMode.Single) });
         while (!load.isDone) yield return null;
         yield return null; yield return new WaitForFixedUpdate();
     }

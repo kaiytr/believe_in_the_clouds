@@ -43,7 +43,7 @@ public sealed class BeliefExpansionPlayModeTests
         var method = editorManager.GetMethod("LoadSceneAsyncInPlayMode", BindingFlags.Static | BindingFlags.Public,
             null, new[] { typeof(string), typeof(LoadSceneParameters) }, null);
         var operation = (AsyncOperation)method.Invoke(null, new object[] {
-            "Assets/Scenes/BeliefTest.unity", new LoadSceneParameters(LoadSceneMode.Single) });
+            ProjectScenes.BeliefTest, new LoadSceneParameters(LoadSceneMode.Single) });
         while (!operation.isDone) yield return null;
         SceneManager.sceneLoaded -= OnLoaded;
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerHealth>();

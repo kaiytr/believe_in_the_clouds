@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 /// <summary>Editor-only fixtures. Every case starts a fresh, unsaved test scene.</summary>
 public sealed class BeliefManualVerificationWindow : EditorWindow
 {
-    private const string ScenePath = "Assets/Scenes/BeliefTest.unity";
+    private const string ScenePath = ProjectScenes.BeliefTest;
     private const string PendingKey = "BeliefManualVerification.Pending";
     private const string OwnedKey = "BeliefManualVerification.OwnsScene";
     private static readonly string[] Ids = { "DOG-01", "DOG-02", "DOG-03", "BEL-01", "BEL-02", "BEL-03", "EXE-01", "EXE-02", "EXE-03" };

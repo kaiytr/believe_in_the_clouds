@@ -136,7 +136,7 @@ Library, Temp, Logs, obj와 IDE 생성 파일은 프로젝트 소스와 구분�
 - Assets/Scripts/Enemy/Core/EnemyUnit.cs
 - Assets/Scripts/Combat/PlayerHealth.cs
 - Assets/Tests/EditMode, Assets/Tests/PlayMode
-- Assets/Scenes/StageTest.unity, Assets/Scenes/ShopTest.unity
+- Assets/Scenes/Tests/StageTest.unity, Assets/Scenes/Gameplay/ShopTest.unity
 
 기존 HUD의 내장 예시 교리는 실제 초기 자산이 아니다. 실제 빈 상태 검증과 구분한다. 테스트 저장 파일은 사용자 프로필과 분리한다.
 

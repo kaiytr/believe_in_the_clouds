@@ -21,7 +21,7 @@ public sealed class StageIntegrationPlayModeTests
         MethodInfo method = editor.GetMethod("LoadSceneAsyncInPlayMode",BindingFlags.Public | BindingFlags.Static,
             null,new[] { typeof(string),typeof(LoadSceneParameters) },null);
         var load = (AsyncOperation)method.Invoke(null,new object[] {
-            "Assets/Scenes/" + name + ".unity",new LoadSceneParameters(LoadSceneMode.Single) });
+            ProjectScenes.ForName(name),new LoadSceneParameters(LoadSceneMode.Single) });
         while (!load.isDone) yield return null;
         yield return null;
         yield return new WaitForFixedUpdate();
@@ -181,6 +181,23 @@ public sealed class StageIntegrationPlayModeTests
         float deadline = Time.time + timeout;
         while (!predicate() && Time.time < deadline) yield return null;
         Assert.That(predicate(), Is.True, "StageTest integration timed out.");
+    }
+
+    [UnityTest]
+    public IEnumerator DevelopmentStageRestartsWithoutBeingInTheGameplayBuild()
+    {
+        yield return Load("StageTest");
+        Assert.That(SceneUtility.GetBuildIndexByScenePath(ProjectScenes.StageTest), Is.EqualTo(-1));
+        var original = Object.FindFirstObjectByType<StageTestController>();
+        Player.GetComponent<PlayerHealth>().TakeDamage(10f);
+        original.Restart();
+        yield return Until(() => original == null && Object.FindFirstObjectByType<StageTestController>() != null);
+        yield return null;
+        var player = Player.GetComponent<PlayerHealth>();
+        Assert.That(player.CurrentHp, Is.EqualTo(player.MaxHp));
+        Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(ProjectScenes.StageTest));
+        Assert.That(Object.FindObjectsByType<EnemyUnit>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .All(enemy => !enemy.gameObject.activeSelf), Is.True);
     }
 
     private static void PutPlayer(Vector2 position)

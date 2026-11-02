@@ -6,15 +6,14 @@ using UnityEngine.SceneManagement;
 
 public static class PlayLoopProjectSetup
 {
-    private const string SceneFolder = "Assets/Scenes/";
     private static readonly (string path, BranchRole role)[] RunScenes =
     {
-        (SceneFolder + "ShopTest.unity", BranchRole.Shop),
-        (SceneFolder + "DogCombatTest.unity", BranchRole.Combat),
-        (SceneFolder + "BelieverCombatTest.unity", BranchRole.Combat),
-        (SceneFolder + "ExecutiveCombatTest.unity", BranchRole.Combat),
-        (SceneFolder + "TemporaryStage.unity", BranchRole.Event),
-        (SceneFolder + "BossTest.unity", BranchRole.Boss)
+        (ProjectScenes.ShopTest, BranchRole.Shop),
+        (ProjectScenes.DogCombatTest, BranchRole.Combat),
+        (ProjectScenes.BelieverCombatTest, BranchRole.Combat),
+        (ProjectScenes.ExecutiveCombatTest, BranchRole.Combat),
+        (ProjectScenes.TemporaryStage, BranchRole.Event),
+        (ProjectScenes.BossTest, BranchRole.Boss)
     };
 
     [MenuItem("Tools/Lobby/Connect run content scenes")]
@@ -87,12 +86,7 @@ public static class PlayLoopProjectSetup
 
     private static void AddRunScenesToBuildSettings()
     {
-        var scenes = EditorBuildSettings.scenes.ToList();
-        foreach (var entry in RunScenes)
-        {
-            if (scenes.Any(scene => scene.path == entry.path)) continue;
-            scenes.Add(new EditorBuildSettingsScene(entry.path, true));
-        }
-        EditorBuildSettings.scenes = scenes.ToArray();
+        EditorBuildSettings.scenes = ProjectScenes.GameplayPaths
+            .Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
     }
 }

@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 
 public static class EnemyCombatTestSceneSetup
 {
-    private const string SourceScenePath = "Assets/Scenes/EnemyTest.unity";
+    private const string SourceScenePath = ProjectScenes.EnemyTest;
     private const float CombatFloorWidth = 36f;
     private const float CombatWallWidth = 0.5f;
     private const float CombatWallHeight = 10f;
@@ -15,9 +15,9 @@ public static class EnemyCombatTestSceneSetup
     private const string PlayerHudPrefabPath = "Assets/Prefabs/UI/PlayerHud.prefab";
     private static readonly (string enemyName, string scenePath)[] Scenes =
     {
-        ("Dog", "Assets/Scenes/DogCombatTest.unity"),
-        ("Believer", "Assets/Scenes/BelieverCombatTest.unity"),
-        ("Executive", "Assets/Scenes/ExecutiveCombatTest.unity")
+        ("Dog", ProjectScenes.DogCombatTest),
+        ("Believer", ProjectScenes.BelieverCombatTest),
+        ("Executive", ProjectScenes.ExecutiveCombatTest)
     };
     private static readonly string[] EnemyNames = { "Dog", "Believer", "Executive" };
 

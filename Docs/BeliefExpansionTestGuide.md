@@ -3,7 +3,7 @@
 - 작성일: 2026-10-25
 - 프로젝트: `believe_in_the_clouds`
 - Unity 버전: **6000.3.5f2**
-- 기준 씬: [BeliefTest.unity](../Assets/Scenes/BeliefTest.unity)
+- 기준 씬: [BeliefTest.unity](../Assets/Scenes/Sources/BeliefTest.unity)
 - 관련 문서: [확장 명세](../BeliefSystem_ExpansionSpec.md), [구현·검증 기록](../BeliefSystem_ExpansionImplementationStatus.md)
 
 ## 1. 현재 작업 상태
@@ -40,7 +40,7 @@
 
 ## 3. 테스트 준비
 
-1. Play를 종료하고 `Assets/Scenes/BeliefTest.unity`를 연다. 열려 있는 미완성 검증 창은 닫는다.
+1. Play를 종료하고 `Assets/Scenes/Sources/BeliefTest.unity`를 연다. 열려 있는 미완성 검증 창은 닫는다.
 2. Hierarchy에서 확인할 적 하나만 활성화하고 나머지 적 두 개는 비활성화한다.
    - 개: `Dog`
    - 신자: `Believer`

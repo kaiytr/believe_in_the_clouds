@@ -25,7 +25,7 @@ public sealed class BossCombatPlayModeTests
         { editorSceneManager = assembly.GetType("UnityEditor.SceneManagement.EditorSceneManager",false); if (editorSceneManager != null) break; }
         var method = editorSceneManager.GetMethod("LoadSceneAsyncInPlayMode",BindingFlags.Public|BindingFlags.Static,null,
             new[] {typeof(string),typeof(LoadSceneParameters)},null);
-        var load = (AsyncOperation)method.Invoke(null,new object[] {"Assets/Scenes/BossTest.unity",new LoadSceneParameters(LoadSceneMode.Single)});
+        var load = (AsyncOperation)method.Invoke(null,new object[] {ProjectScenes.BossTest,new LoadSceneParameters(LoadSceneMode.Single)});
         while (!load.isDone) yield return null;
         SceneManager.sceneLoaded -= PauseOnLoad;
         yield return null;

@@ -2,7 +2,7 @@
 
 작업일: **2026-11-01 (Asia/Seoul)** · Unity **6000.3.5f2**
 
-사용자가 확정한 **E 1.5초 유지·교리 조각 1개 보장·중단 시 진행률 초기화**를 격리된 테스트 씬에서 구현했다. Unity에서 `Assets/Scenes/ChestTest.unity`를 열고 Play한다. 조작과 테스트 도구는 [테스트 가이드](ChestSystem_TestGuide.md)에 있다.
+사용자가 확정한 **E 1.5초 유지·교리 조각 1개 보장·중단 시 진행률 초기화**를 격리된 테스트 씬에서 구현했다. Unity에서 `Assets/Scenes/Tests/ChestTest.unity`를 열고 Play한다. 조작과 테스트 도구는 [테스트 가이드](ChestSystem_TestGuide.md)에 있다.
 
 ## 구현
 

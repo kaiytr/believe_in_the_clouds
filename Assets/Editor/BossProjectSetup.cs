@@ -12,7 +12,7 @@ public static class BossProjectSetup
 {
     public const string SettingsPath = "Assets/Data/Boss/BossCombatSettings.asset";
     public const string BossPath = "Assets/Prefabs/Boss/Boss.prefab";
-    public const string ScenePath = "Assets/Scenes/BossTest.unity";
+    public const string ScenePath = ProjectScenes.BossTest;
     private const string Art = "Assets/Art/Boss";
     private const string Fx = "Assets/Prefabs/Boss/Effects";
     private static Material material;
@@ -348,7 +348,7 @@ public static class BossProjectSetup
     }
     private static void BuildScene()
     {
-        Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/PlayerTEST.unity",OpenSceneMode.Single);
+        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.PlayerTEST,OpenSceneMode.Single);
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player.GetComponent<PlayerHealth>() == null) player.AddComponent<PlayerHealth>();
         if (player.GetComponent<PlayerCombatEvents>() == null) player.AddComponent<PlayerCombatEvents>();
