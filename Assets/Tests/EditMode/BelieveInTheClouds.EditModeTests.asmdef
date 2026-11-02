@@ -1,7 +1,8 @@
 {
   "name": "BelieveInTheClouds.EditModeTests",
   "references": [
-    "BelieveInTheClouds.Runtime"
+    "BelieveInTheClouds.Runtime",
+    "Unity.Cinemachine"
   ],
   "includePlatforms": [
     "Editor"

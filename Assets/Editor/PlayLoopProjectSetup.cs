@@ -41,6 +41,7 @@ public static class PlayLoopProjectSetup
     private static void ConfigureScene(string path, BranchRole role)
     {
         Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         PlayerHealth player = Object.FindFirstObjectByType<PlayerHealth>();
         if (player == null)
             throw new System.InvalidOperationException(path + " requires a PlayerHealth player.");

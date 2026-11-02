@@ -376,6 +376,7 @@ public static class BossProjectSetup
         entrance.AddComponent<BoxCollider2D>();
         BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
             -12f, 18f, floor, camera, true);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene,ScenePath);
     }
     private static GameObject Solid(Transform parent, string name, Vector2 position, Vector2 size)

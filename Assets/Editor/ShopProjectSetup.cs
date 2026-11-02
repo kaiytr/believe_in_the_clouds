@@ -16,6 +16,7 @@ public static class ShopProjectSetup
         EnsurePrefabFolder();
 
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         GameObject shop = scene.GetRootGameObjects().FirstOrDefault(root => root.name == "Shop");
         if (shop == null)
             throw new System.InvalidOperationException("ShopTest requires a root object named Shop.");

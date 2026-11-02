@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -43,10 +44,11 @@ public sealed class StageIntegrationPlayModeTests
     private static GameObject Player => GameObject.FindGameObjectWithTag("Player");
 
     [UnityTest]
-    public IEnumerator AllTestScenesHaveTheCompletePlayerAndOneSharedHud()
+    public IEnumerator AllProjectScenesHaveTheCompletePlayerAndSharedScreens()
     {
-        foreach (string scene in new[] { "PlayerTEST","BeliefTest","BossTest","StageTest" })
+        foreach (string path in ProjectScenes.AllPaths)
         {
+            string scene = Path.GetFileNameWithoutExtension(path);
             yield return Load(scene);
             GameObject player = Player;
             Assert.That(player.GetComponent<PlayerMove>().BaseMoveSpeed,Is.EqualTo(7f),scene);
@@ -58,8 +60,73 @@ public sealed class StageIntegrationPlayModeTests
             Assert.That(player.GetComponent<PlayerHealth>().BodyCollider,Is.SameAs(player.GetComponent<Collider2D>()),scene);
             Assert.That(player.GetComponent<DoctrineStats>(),Is.Not.Null,scene);
             Assert.That(Object.FindObjectsByType<DoctrineHud>(FindObjectsSortMode.None).Length,Is.EqualTo(1),scene);
+            Assert.That(DoctrineHud.CurrencyTarget, Is.Not.Null, scene);
+            Assert.That(Object.FindObjectsByType<ShopScreen>(FindObjectsSortMode.None).Length, Is.EqualTo(1), scene);
+            Assert.That(Object.FindObjectsByType<FoundationScreen>(FindObjectsSortMode.None).Length, Is.EqualTo(1), scene);
+            Assert.That(Object.FindObjectsByType<DoctrineSlotStore>(FindObjectsSortMode.None).Length, Is.EqualTo(1), scene);
+            var attack = player.GetComponent<PlayerAttack>();
+            Assert.That(typeof(PlayerAttack).GetField("downFanRadius", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(attack), Is.EqualTo(2.6f), scene);
+            Assert.That(typeof(PlayerAttack).GetField("downFanHalfAngle", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(attack), Is.EqualTo(65f), scene);
+            Assert.That(typeof(PlayerAttack).GetField("downFanPlayerBounce", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(attack), Is.EqualTo(8f), scene);
             foreach (BossCombatController boss in Object.FindObjectsByType<BossCombatController>(FindObjectsInactive.Include,FindObjectsSortMode.None))
                 Assert.That(boss.transform.Find("Gameplay HUD/Player gameplay HUD"),Is.Null,scene);
+            yield return CheckHudTooltip(player, scene);
+        }
+    }
+
+    private static IEnumerator CheckHudTooltip(GameObject player, string scene)
+    {
+        var manager = DoctrineManager.Instance;
+        manager.Clear();
+        var rule = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
+        Assert.That(manager.TryActivate(rule, player, out string reason), Is.True, scene + ": " + reason);
+        Transform tooltip = null;
+        try
+        {
+            DoctrineSlotView slot = null;
+            float deadline = Time.realtimeSinceStartup + 1.5f;
+            while (slot == null && Time.realtimeSinceStartup < deadline)
+            {
+                slot = Object.FindObjectsByType<DoctrineSlotView>(FindObjectsSortMode.None)
+                    .FirstOrDefault(item => item.Doctrine != null && item.Doctrine.HasSameRule(rule));
+                if (slot == null) yield return null;
+            }
+            Assert.That(slot, Is.Not.Null, scene + ": owned doctrine did not appear after player rebinding.");
+            yield return null; // Let the new CanvasRenderer enter the frame's pointer-raycast registry.
+            var button = slot.GetComponent<Button>();
+            Assert.That(button, Is.Not.Null, scene);
+            Assert.That(button.targetGraphic.raycastTarget, Is.True, scene);
+            Canvas.ForceUpdateCanvases();
+            var eventSystem = UiEventSystemBoot.Ensure();
+            var slotRect = slot.GetComponent<RectTransform>();
+            var pointer = new PointerEventData(eventSystem) {
+                position = RectTransformUtility.WorldToScreenPoint(null, slotRect.TransformPoint(slotRect.rect.center)),
+                button = PointerEventData.InputButton.Left
+            };
+            var hits = new List<RaycastResult>();
+            eventSystem.RaycastAll(pointer, hits);
+            Assert.That(hits.Count, Is.GreaterThan(0), scene + ": HUD did not receive a pointer raycast.");
+            Assert.That(hits[0].gameObject.transform.IsChildOf(slot.transform), Is.True, scene + ": another UI element blocks the doctrine slot.");
+            ExecuteEvents.ExecuteHierarchy(hits[0].gameObject, pointer, ExecuteEvents.pointerClickHandler);
+            var hud = Object.FindFirstObjectByType<DoctrineHud>();
+            tooltip = hud.GetComponentInParent<Canvas>().transform.Find("DoctrineTooltip");
+            Assert.That(tooltip != null && tooltip.gameObject.activeInHierarchy, Is.True, scene);
+            Assert.That(tooltip.Find("TooltipTexts/TooltipBody").GetComponent<Text>().text, Is.EqualTo(DoctrineText.Describe(rule)), scene);
+            Assert.That(tooltip.GetComponent<Canvas>().overrideSorting, Is.True, scene);
+            Assert.That(tooltip.GetComponent<Canvas>().sortingOrder, Is.GreaterThan(110), "Tooltip must render above scene test panels.");
+            if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null &&
+                (scene == "ShopTest" || scene == "EconomyTest" || scene == "EnemyTest"))
+                yield return Capture("06-shared-tooltip-" + scene);
+            if (scene == "ShopTest")
+            {
+                yield return new WaitForSecondsRealtime(3.7f);
+                Assert.That(tooltip.gameObject.activeSelf, Is.False, "The tooltip must fade out after its display period.");
+            }
+        }
+        finally
+        {
+            manager.Deactivate(rule);
+            if (tooltip != null) tooltip.gameObject.SetActive(false);
         }
     }
 
@@ -111,11 +178,20 @@ public sealed class StageIntegrationPlayModeTests
             enemy.gameObject.SetActive(true);
             foreach (var attack in enemy.GetComponents<EnemyAttack>()) attack.enabled = false;
             foreach (var contact in enemy.GetComponents<EnemyContactDamage>()) contact.SetSuppressed(true);
-            enemy.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
+            var enemyBody = enemy.GetComponent<Rigidbody2D>();
+            enemyBody.bodyType = RigidbodyType2D.Kinematic;
+            enemyBody.position = positions[i];
+            enemyBody.linearVelocity = Vector2.zero;
             enemy.transform.position = positions[i];
         }
+        Physics2D.SyncTransforms();
         yield return null; // Let each newly activated EnemyUnit.Start bind its real player target.
-        foreach (var enemy in enemies) enemy.enabled = false;
+        foreach (var enemy in enemies)
+        {
+            enemy.enabled = false;
+            enemy.LockMovement();
+            enemy.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
+        }
         Physics2D.SyncTransforms();
         float[] hp = enemies.Select(item => item.CurrentHp).ToArray();
         var playerAttack = Player.GetComponent<PlayerAttack>();
@@ -131,9 +207,17 @@ public sealed class StageIntegrationPlayModeTests
         yield return new WaitForSeconds(.15f);
         Assert.That(enemies[0].CurrentHp, Is.EqualTo(afterFirst), "A second air attack needs a landing first.");
         Set(move, "isGrounded", true);
-        yield return null;
+        yield return new WaitForSeconds(.04f);
         Set(move, "isGrounded", false);
         PutPlayer(new Vector2(0f, 4f));
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            var body = enemies[i].GetComponent<Rigidbody2D>();
+            body.position = positions[i];
+            body.linearVelocity = Vector2.zero;
+            enemies[i].transform.position = positions[i];
+        }
+        Physics2D.SyncTransforms();
         Player.transform.localScale = new Vector3(-Mathf.Abs(Player.transform.localScale.x), Player.transform.localScale.y, 1f);
         Attack(playerAttack);
         yield return new WaitForSeconds(.15f);

@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 7302189275933370851}
   - component: {fileID: 3608538687230886213}
   - component: {fileID: 7138799533125009962}
+  - component: {fileID: 6455396816621203815}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -245,7 +246,7 @@ MonoBehaviour:
     knockback: 6
     launchUp: 5
   airAttack:
-    name: "\uACF5\uC911: \uB4A4\uB85C \uAE38\uAC8C \uC0AC\uC120 \uBCA0\uAE30"
+    name: "공중: 아래 부채꼴 내리찍기"
     damage: 14
     hitboxSize: {x: 2.2, y: 1.2}
     hitboxOffset: {x: 0, y: 0}
@@ -369,6 +370,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineStats
   baseAttack: 10
+--- !u!114 &6455396816621203815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b3d67a7fb2386c4b92330c55068b3e9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineSubject
+  Identity: 1
 --- !u!1 &2626817653940688287
 GameObject:
   m_ObjectHideFlags: 0

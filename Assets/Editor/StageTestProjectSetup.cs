@@ -36,6 +36,7 @@ public static class StageTestProjectSetup
     private static void BuildSharedPlayerAndHud()
     {
         Scene scene = EditorSceneManager.OpenScene(PlayerScene, OpenSceneMode.Single);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         GameObject player = Player(scene);
         // The source scene contained two pose owners writing the same transform.
         foreach (PlayerBody duplicate in player.GetComponents<PlayerBody>().Skip(1))
@@ -88,6 +89,7 @@ public static class StageTestProjectSetup
         foreach (DoctrineHud oldHud in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<DoctrineHud>(true)))
             Object.DestroyImmediate(oldHud.gameObject);
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(HudPath), scene);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         EditorSceneManager.SaveScene(scene);
     }
 
@@ -181,6 +183,7 @@ public static class StageTestProjectSetup
         entrance.AddComponent<BoxCollider2D>();
         BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss, -18f, 18f, FloorY, camera);
         BuildInstructions(player.GetComponent<PlayerHealth>(),boss);
+        ProjectSceneSynchronization.SynchronizeScene(stage);
         EditorSceneManager.SaveScene(stage);
     }
 

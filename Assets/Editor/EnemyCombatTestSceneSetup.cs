@@ -86,6 +86,7 @@ public static class EnemyCombatTestSceneSetup
         hitToolSettings.ApplyModifiedPropertiesWithoutUndo();
 
         EditorSceneManager.MarkSceneDirty(scene);
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         EditorSceneManager.SaveScene(scene, outputPath);
     }
 

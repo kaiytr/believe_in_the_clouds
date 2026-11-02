@@ -393,6 +393,9 @@ public class DoctrineHud : MonoBehaviour
 
         GameObject root = new GameObject("DoctrineTooltip", typeof(RectTransform), typeof(CanvasGroup));
         root.transform.SetParent(canvas.transform, false);
+        Canvas tooltipCanvas = root.AddComponent<Canvas>();
+        tooltipCanvas.overrideSorting = true;
+        tooltipCanvas.sortingOrder = 160; // Above HUD/test panels/coin flights, below shop and foundation modals.
         RectTransform rect = root.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(0f, 1f);
@@ -448,7 +451,7 @@ public class DoctrineHud : MonoBehaviour
 
                 // 다른 존재(적 등)에 묶인 교리는 플레이어 HUD에 표시하지 않는다.
                 // 오너가 없는 교리는 재단에서 조합한 플레이어 교리이므로 주어와 무관하게 모두 표시한다.
-                if (entry.Owner != null && entry.Owner != player) continue;
+                if (entry.Owner != null && (player == null || entry.Owner != player.gameObject)) continue;
 
                 result.Add(entry.Doctrine);
             }
@@ -519,13 +522,6 @@ public class DoctrineHud : MonoBehaviour
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
 
-            // GraphicRaycaster가 없으면 버튼이 있어도 클릭을 절대 못 받는다.
-            // 자동 생성 HUD가 이걸 빠뜨리고 있었다.
-            if (GetComponent<GraphicRaycaster>() == null)
-            {
-                gameObject.AddComponent<GraphicRaycaster>();
-            }
-
             CanvasScaler scaler = GetComponent<CanvasScaler>();
             if (scaler == null)
                 scaler = gameObject.AddComponent<CanvasScaler>();
@@ -533,6 +529,10 @@ public class DoctrineHud : MonoBehaviour
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
         }
+
+        // Authored HUD prefabs already have a Canvas and need the same click routing as generated HUDs.
+        if (canvas.GetComponent<GraphicRaycaster>() == null)
+            canvas.gameObject.AddComponent<GraphicRaycaster>();
 
         // 씬에 저장된 HUD의 스케일이 0이면 아무것도 보이지 않으므로 바로잡는다.
         if (transform.localScale == Vector3.zero)

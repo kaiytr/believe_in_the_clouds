@@ -117,6 +117,7 @@ public static class BeliefSystemProjectSetup
 
     private static void ConfigureScene(Scene scene)
     {
+        ProjectSceneSynchronization.SynchronizeScene(scene);
         GameObject player = FindRoot(scene, "TestPlayer");
         GameObject dog = FindRoot(scene, "Dog");
         GameObject believer = FindRoot(scene, "Believer");
