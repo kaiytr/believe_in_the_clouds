@@ -5,16 +5,16 @@ using UnityEngine;
 //
 // - 재단 상호작용이 발생하면 패널을 열고, E/ESC로 닫는다.
 // - 왼쪽: 탭(주어/조건/결과)으로 인벤토리에 있는 조각만 골라 본다.
-//   카드를 교리1 슬롯에 드래그 앤 드롭하거나 클릭해서 꽂는다.
-// - 오른쪽: 교리1·2·3 슬롯 모두 언제든 끼고 뺄 수 있다.
+//   카드를 교리 슬롯에 드래그 앤 드롭하거나 클릭해서 꽂는다.
+// - 오른쪽: 교리 슬롯들은 언제든 끼고 뺄 수 있다. 기본 3칸, 상점 구매로 1칸씩 증가.
 //   한 교리의 3칸이 다 차면 자동으로 장착(Compose → TryActivate)하고,
 //   하나라도 빠지면 그 교리만 해제된다. 조각 소모 없음.
 // - 상점과 마찬가지로 InteractableBehaviour.Interacted 이벤트를 듣고 스스로 연다.
 //   공통 상호작용 코드는 재단을 모른다.
 public class FoundationScreen : MonoBehaviour
 {
-    // 교리 슬롯 수 (교리1·2·3).
-    public const int DoctrineCount = 3;
+    // DoctrineSlotStore.DefaultSlots와 같은 기본값. 저장소가 아직 없을 때의 예비값.
+    private const int FallbackDoctrineCount = 3;
 
     private const int ColumnCount = 3;
 
@@ -26,10 +26,11 @@ public class FoundationScreen : MonoBehaviour
     private ShopColumn currentTab = ShopColumn.Subject;
 
     // 교리별 슬롯: [교리 index, 열 index]. 탭을 바꿔도 유지된다.
-    private readonly ShopEntry[,] slots = new ShopEntry[DoctrineCount, ColumnCount];
+    // 칸이 늘어나면 기존 내용은 유지하고 뒤에 빈 칸을 붙인다.
+    private readonly List<ShopEntry[]> slotRows = new List<ShopEntry[]>();
 
     // 교리별로 현재 장착 중인 조합. 슬롯과 1:1로 동기화한다.
-    private readonly Doctrine[] equipped = new Doctrine[DoctrineCount];
+    private readonly List<Doctrine> equipped = new List<Doctrine>();
 
     // 클릭 배치 대상이 되는 교리 (0 = 교리1). 슬롯을 누르면 그 교리로 바뀐다.
     private int activeDoctrine;
@@ -37,6 +38,9 @@ public class FoundationScreen : MonoBehaviour
     public bool IsOpen => panel != null && panel.IsOpen;
     public ShopColumn CurrentTab => currentTab;
     public int ActiveDoctrine => activeDoctrine;
+
+    /// <summary>현재 교리 칸 수 (재단에 표시되는 교리 개수).</summary>
+    public int DoctrineCount => slotRows.Count;
 
     /// <summary>현재 탭의 활성 교리 슬롯에 들어 있는 조각. 없으면 null.</summary>
     public ShopEntry SelectedEntry => GetSlot(activeDoctrine, currentTab);
@@ -64,7 +68,15 @@ public class FoundationScreen : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        EnsureDoctrineCapacity(DesiredDoctrineCount());
         EnsurePanel();
+
+        DoctrineSlotStore store = DoctrineSlotStore.EnsureExists();
+        if (store != null)
+        {
+            store.Changed -= HandleSlotStoreChanged;
+            store.Changed += HandleSlotStoreChanged;
+        }
     }
 
     private void OnDestroy()
@@ -72,6 +84,50 @@ public class FoundationScreen : MonoBehaviour
         if (Instance == this)
         {
             Instance = null;
+        }
+
+        DoctrineSlotStore store = DoctrineSlotStore.Instance;
+        if (store != null)
+        {
+            store.Changed -= HandleSlotStoreChanged;
+        }
+    }
+
+    // 칸이 늘어나면 기존 내용은 유지하고 뒤에 빈 칸을 붙인다.
+    private void EnsureDoctrineCapacity(int count)
+    {
+        count = Mathf.Max(1, count);
+        while (slotRows.Count < count)
+        {
+            slotRows.Add(new ShopEntry[ColumnCount]);
+            equipped.Add(null);
+        }
+
+        if (activeDoctrine >= slotRows.Count)
+        {
+            activeDoctrine = slotRows.Count - 1;
+        }
+    }
+
+    private static int DesiredDoctrineCount()
+    {
+        DoctrineSlotStore store = DoctrineSlotStore.Instance;
+        if (store != null)
+        {
+            return Mathf.Max(1, store.SlotCount);
+        }
+
+        return FallbackDoctrineCount;
+    }
+
+    private void HandleSlotStoreChanged()
+    {
+        EnsureDoctrineCapacity(DesiredDoctrineCount());
+        if (IsOpen)
+        {
+            panel.SetDoctrineCount(slotRows.Count);
+            SyncAllDoctrines();
+            Refresh();
         }
     }
 
@@ -91,10 +147,11 @@ public class FoundationScreen : MonoBehaviour
     {
         if (panel != null)
         {
+            panel.SetDoctrineCount(slotRows.Count);
             return;
         }
 
-        panel = FoundationPanelView.BuildRuntime();
+        panel = FoundationPanelView.BuildRuntime(slotRows.Count);
         panel.TabClicked += HandleTabClicked;
         panel.ItemClicked += HandleItemClicked;
         panel.ItemDroppedOnSlot += HandleItemDroppedOnSlot;
@@ -135,6 +192,7 @@ public class FoundationScreen : MonoBehaviour
             return;
         }
 
+        EnsureDoctrineCapacity(DesiredDoctrineCount());
         EnsurePanel();
         UiEventSystemBoot.Ensure();
 
@@ -230,7 +288,7 @@ public class FoundationScreen : MonoBehaviour
     // 드래그한 카드의 열과 슬롯 열이 다르면 무시한다.
     private void HandleItemDroppedOnSlot(int entryIndex, int doctrineIndex, ShopColumn targetColumn)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
+        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
         {
             return;
         }
@@ -266,7 +324,7 @@ public class FoundationScreen : MonoBehaviour
     // 오른쪽 슬롯을 직접 누르면 그 슬롯을 비우고, 클릭 배치 대상 교리를 그 교리로 바꾼다.
     private void HandleSlotClicked(int doctrineIndex, ShopColumn column)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
+        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
         {
             return;
         }
@@ -316,26 +374,26 @@ public class FoundationScreen : MonoBehaviour
         for (int i = 0; i < entries.Count; i++)
         {
             int count = CountOf(inventory, entries[i]);
-            if (count <= 0)
-            {
-                continue;
-            }
 
-            items.Add(new FoundationPanelView.ItemData
+            // 같은 조각을 합쳐서 "×N"으로 보여주지 않고, 보유한 개수만큼 한 줄씩 나열한다.
+            for (int copy = 0; copy < count; copy++)
             {
-                EntryIndex = i,
-                Label = entries[i].Label,
-                Detail = entries[i].Detail,
-                Count = count
-            });
+                items.Add(new FoundationPanelView.ItemData
+                {
+                    EntryIndex = i,
+                    Label = entries[i].Label,
+                    Detail = entries[i].Detail,
+                    Count = 1
+                });
+            }
         }
 
         panel.SetItems(items, currentIndex,
             $"보유한 {TabName(currentTab)} 교리가 없습니다.\n상점에서 구매해 보세요.");
         panel.SetCountSummary(inventory != null ? inventory.Describe() : "인벤토리 없음");
 
-        // 세 교리의 슬롯 라벨 + 설명 줄을 모두 갱신한다.
-        for (int d = 0; d < DoctrineCount; d++)
+        // 교리 칸 수만큼 슬롯 라벨 + 설명 줄을 모두 갱신한다.
+        for (int d = 0; d < slotRows.Count; d++)
         {
             panel.SetSlots(d, GetLabel(d, ShopColumn.Subject), GetLabel(d, ShopColumn.Condition),
                 GetLabel(d, ShopColumn.Result));
@@ -367,7 +425,7 @@ public class FoundationScreen : MonoBehaviour
         int filled = 0;
         for (int c = 0; c < ColumnCount; c++)
         {
-            if (slots[doctrineIndex, c] != null)
+            if (slotRows[doctrineIndex][c] != null)
             {
                 filled++;
             }
@@ -387,7 +445,7 @@ public class FoundationScreen : MonoBehaviour
 
     private void SyncAllDoctrines()
     {
-        for (int d = 0; d < DoctrineCount; d++)
+        for (int d = 0; d < slotRows.Count; d++)
         {
             SyncDoctrine(d);
         }
@@ -439,7 +497,7 @@ public class FoundationScreen : MonoBehaviour
         }
 
         // 다른 교리 칸에 같은 조합이 이미 장착돼 있으면 중복 등록하지 않는다.
-        for (int other = 0; other < DoctrineCount; other++)
+        for (int other = 0; other < slotRows.Count; other++)
         {
             if (other != doctrineIndex && equipped[other] != null && equipped[other].HasSameRule(wanted))
             {
@@ -486,21 +544,21 @@ public class FoundationScreen : MonoBehaviour
 
     private ShopEntry GetSlot(int doctrineIndex, ShopColumn column)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
+        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
         {
             return null;
         }
 
-        return slots[doctrineIndex, (int)column];
+        return slotRows[doctrineIndex][(int)column];
     }
 
     private void SetSlot(int doctrineIndex, ShopColumn column, ShopEntry entry)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= DoctrineCount)
+        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
         {
             return;
         }
 
-        slots[doctrineIndex, (int)column] = entry;
+        slotRows[doctrineIndex][(int)column] = entry;
     }
 }

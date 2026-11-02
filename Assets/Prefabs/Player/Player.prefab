@@ -248,14 +248,20 @@ MonoBehaviour:
     name: "\uACF5\uC911: \uB4A4\uB85C \uAE38\uAC8C \uC0AC\uC120 \uBCA0\uAE30"
     damage: 14
     hitboxSize: {x: 2.2, y: 1.2}
-    hitboxOffset: {x: -1.1, y: 0.3}
-    hitboxAngle: -40
+    hitboxOffset: {x: 0, y: 0}
+    hitboxAngle: 0
     windupTime: 0.05
     recoveryTime: 0.22
     comboWindow: 0
     lungeDistance: 0
-    knockback: 3
-    launchUp: 1
+    knockback: 0
+    launchUp: 0
+  downFanRadius: 2.6
+  downFanHalfAngle: 65
+  downFanOriginOffset: {x: 0, y: -0.2}
+  downFanEnemyKnockDown: 4
+  downFanEnemyKnockOut: 2
+  downFanPlayerBounce: 8
   airAttackResetOnLand: 1
   targetLayers:
     serializedVersion: 2

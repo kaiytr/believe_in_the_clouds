@@ -42,6 +42,7 @@ public class DoctrineHud : MonoBehaviour
 
     private readonly List<DoctrineSlotView> slots = new List<DoctrineSlotView>();
     private DoctrineManager manager;
+    private PlayerHealth resolvedPlayer;
     private Canvas canvas;
     private RectTransform doctrineRow;
     private RectTransform bandRect;
@@ -49,6 +50,18 @@ public class DoctrineHud : MonoBehaviour
     private Image hpFill;
     private Text portraitFallback;
     private bool built;
+
+    [Header("교리 효과 툴팁 (좌측 상단)")]
+    [SerializeField] private float tooltipSeconds = 3f;
+    [SerializeField] private Vector2 tooltipMargin = new Vector2(24f, -24f);
+    [SerializeField] private Vector2 tooltipSize = new Vector2(560f, 150f);
+    [SerializeField] private Color tooltipBackground = new Color(0.08f, 0.09f, 0.11f, 0.92f);
+    [SerializeField] private Color tooltipTextColor = new Color(1f, 1f, 1f, 1f);
+
+    private GameObject tooltipObject;
+    private Text tooltipTitle;
+    private Text tooltipBody;
+    private Coroutine tooltipRoutine;
 
     private static DoctrineHud instance;
 
@@ -90,6 +103,7 @@ public class DoctrineHud : MonoBehaviour
     {
         Currency.Changed += HandleCurrencyChanged;
         TryBindManager();
+        UiEventSystemBoot.Ensure();
     }
 
     private void OnDisable()
@@ -151,6 +165,13 @@ public class DoctrineHud : MonoBehaviour
 
         if (player == null)
             return;
+
+        // 플레이어를 늦게 찾은 경우(씬 전환 등) 오너 기준 표시가 달라질 수 있으니 슬롯을 다시 그린다.
+        if (resolvedPlayer != player)
+        {
+            resolvedPlayer = player;
+            RebuildDoctrineSlots();
+        }
 
         SpriteRenderer renderer = player.GetComponentInChildren<SpriteRenderer>();
         if (portraitImage != null && renderer != null && renderer.sprite != null)
@@ -269,10 +290,147 @@ public class DoctrineHud : MonoBehaviour
             // 목업의 "교리1, 교리2..." 이름과 규칙 요약을 함께 표시한다.
             string label = $"교리{i + 1}\n{DoctrineText.ShortName(doctrines[i])}";
             slot.Bind(doctrines[i], label, true);
+            slot.Clicked -= HandleSlotClicked;
+            slot.Clicked += HandleSlotClicked;
             slots.Add(slot);
         }
 
         LayoutSlots();
+    }
+
+    // 슬롯을 누르면 좌측 상단에 효과 텍스트를 3초간 보여준다.
+    private void HandleSlotClicked(DoctrineSlotView slot)
+    {
+        if (slot == null || slot.Doctrine == null)
+        {
+            ShowTooltip("빈 교리", "이 슬롯에는 장착된 교리가 없습니다.", 0);
+            return;
+        }
+
+        int index = slots.IndexOf(slot);
+        string title = index >= 0 ? $"교리{index + 1} · {DoctrineText.ShortName(slot.Doctrine)}" : DoctrineText.ShortName(slot.Doctrine);
+        ShowTooltip(title, DoctrineText.Describe(slot.Doctrine), index);
+    }
+
+    private void ShowTooltip(string title, string body, int slotIndex)
+    {
+        BuildTooltipIfNeeded();
+        UiEventSystemBoot.Ensure();
+
+        if (tooltipObject != null)
+        {
+            tooltipObject.SetActive(true);
+            CanvasGroup group = tooltipObject.GetComponent<CanvasGroup>();
+            if (group != null)
+            {
+                group.alpha = 1f;
+            }
+        }
+
+        if (tooltipTitle != null)
+        {
+            tooltipTitle.font = UiTheme.GetFont();
+            tooltipTitle.text = title ?? string.Empty;
+        }
+
+        if (tooltipBody != null)
+        {
+            tooltipBody.font = UiTheme.GetFont();
+            tooltipBody.text = body ?? string.Empty;
+        }
+
+        Debug.Log($"[교리툴팁] 슬롯 {slotIndex + 1} 선택 → {title} / {body}");
+
+        if (tooltipRoutine != null)
+        {
+            StopCoroutine(tooltipRoutine);
+        }
+
+        tooltipRoutine = StartCoroutine(HideTooltipAfterDelay(Mathf.Max(0.5f, tooltipSeconds)));
+    }
+
+    private System.Collections.IEnumerator HideTooltipAfterDelay(float seconds)
+    {
+        yield return new WaitForSecondsRealtime(seconds);
+
+        // 자연스럽게 사라지도록 마지막 0.5초는 페이드한다.
+        const float fadeSeconds = 0.5f;
+        CanvasGroup group = tooltipObject != null ? tooltipObject.GetComponent<CanvasGroup>() : null;
+        if (group != null)
+        {
+            float elapsed = 0f;
+            while (elapsed < fadeSeconds)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                group.alpha = Mathf.Clamp01(1f - elapsed / fadeSeconds);
+                yield return null;
+            }
+        }
+
+        if (tooltipObject != null)
+        {
+            tooltipObject.SetActive(false);
+            if (group != null)
+            {
+                group.alpha = 1f;
+            }
+        }
+
+        tooltipRoutine = null;
+    }
+
+    private void BuildTooltipIfNeeded()
+    {
+        if (!built)
+        {
+            BuildIfNeeded();
+        }
+
+        if (tooltipObject != null || canvas == null)
+        {
+            return;
+        }
+
+        GameObject root = new GameObject("DoctrineTooltip", typeof(RectTransform), typeof(CanvasGroup));
+        root.transform.SetParent(canvas.transform, false);
+        RectTransform rect = root.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = tooltipMargin;
+        rect.sizeDelta = tooltipSize;
+
+        GameObject background = UiTheme.CreateImage("TooltipBackground", root.transform, tooltipBackground);
+        UiTheme.Stretch(background.GetComponent<RectTransform>());
+        background.GetComponent<Image>().raycastTarget = false;
+
+        GameObject texts = new GameObject("TooltipTexts", typeof(RectTransform));
+        texts.transform.SetParent(root.transform, false);
+        RectTransform textsRect = texts.GetComponent<RectTransform>();
+        textsRect.anchorMin = Vector2.zero;
+        textsRect.anchorMax = Vector2.one;
+        textsRect.offsetMin = new Vector2(18f, 14f);
+        textsRect.offsetMax = new Vector2(-18f, -14f);
+
+        tooltipTitle = UiTheme.CreateText("TooltipTitle", texts.transform, string.Empty,
+            22, tooltipTextColor, TextAnchor.UpperLeft);
+        RectTransform titleRect = tooltipTitle.rectTransform;
+        titleRect.anchorMin = new Vector2(0f, 1f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.pivot = new Vector2(0f, 1f);
+        titleRect.anchoredPosition = Vector2.zero;
+        titleRect.sizeDelta = new Vector2(0f, 34f);
+
+        tooltipBody = UiTheme.CreateText("TooltipBody", texts.transform, string.Empty,
+            18, tooltipTextColor, TextAnchor.UpperLeft);
+        RectTransform bodyRect = tooltipBody.rectTransform;
+        bodyRect.anchorMin = Vector2.zero;
+        bodyRect.anchorMax = Vector2.one;
+        bodyRect.offsetMin = new Vector2(0f, 0f);
+        bodyRect.offsetMax = new Vector2(0f, -40f);
+
+        root.SetActive(false);
+        tooltipObject = root;
     }
 
     private List<Doctrine> CollectDoctrines()
@@ -287,8 +445,11 @@ public class DoctrineHud : MonoBehaviour
             {
                 DoctrineManager.ActiveDoctrine entry = active[i];
                 if (entry == null || entry.Doctrine == null) continue;
+
+                // 다른 존재(적 등)에 묶인 교리는 플레이어 HUD에 표시하지 않는다.
+                // 오너가 없는 교리는 재단에서 조합한 플레이어 교리이므로 주어와 무관하게 모두 표시한다.
                 if (entry.Owner != null && entry.Owner != player) continue;
-                if (entry.Owner == null && entry.Doctrine.Subject != SubjectType.Player && entry.Doctrine.Subject != SubjectType.All) continue;
+
                 result.Add(entry.Doctrine);
             }
             return result;
@@ -319,6 +480,7 @@ public class DoctrineHud : MonoBehaviour
             : DoctrineSlotView.BuildRuntime(doctrineRow);
         slot.name = "DoctrineSlot";
         slot.gameObject.SetActive(true);
+        UiEventSystemBoot.Ensure();
         return slot;
     }
 
@@ -357,6 +519,13 @@ public class DoctrineHud : MonoBehaviour
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
 
+            // GraphicRaycaster가 없으면 버튼이 있어도 클릭을 절대 못 받는다.
+            // 자동 생성 HUD가 이걸 빠뜨리고 있었다.
+            if (GetComponent<GraphicRaycaster>() == null)
+            {
+                gameObject.AddComponent<GraphicRaycaster>();
+            }
+
             CanvasScaler scaler = GetComponent<CanvasScaler>();
             if (scaler == null)
                 scaler = gameObject.AddComponent<CanvasScaler>();
@@ -385,6 +554,8 @@ public class DoctrineHud : MonoBehaviour
         bandRect.pivot = new Vector2(0.5f, 0f);
         bandRect.anchoredPosition = Vector2.zero;
         bandRect.sizeDelta = new Vector2(0f, bandHeight);
+        // 하단 밴드가 레이캐스트를 가로채면 완성된 교리 슬롯 클릭이 안 먹는다.
+        band.GetComponent<Image>().raycastTarget = false;
     }
 
     private void BuildPortrait()

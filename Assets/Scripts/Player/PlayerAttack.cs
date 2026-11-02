@@ -8,9 +8,10 @@ using UnityEngine;
 // 2타: 반대 앞 방향으로 길게 베기
 // 3타: 전진 찌르기
 // 4타: 올려베기 피니쉬
-// 공중(점프 중) 공격: 뒤로 길게 사선 베기 1회. 착지 전까지 1회만 나간다.
+// 공중(점프 중) 공격: 아래쪽 부채꼴 1회. 착지 전까지 1회만 나간다.
 //
-// 판정: 각 타수마다 전방 OverlapBox 1회로 적중을 처리한다.
+// 판정: 지상은 각 타수마다 전방 OverlapBox 1회로 적중을 처리한다.
+//       공중은 플레이어 아래 중심의 부채꼴(원형 범위 + 각도 필터) 1회로 적중을 처리한다.
 // 피해: PlayerAttackContext를 일반 적과 보스의 공통 IDamageable 경로에 전달하므로
 //       EnemyUnit의 신앙치 피해 보정(BeliefController)이 그대로 적용된다.
 // 교리: 피해가 받아들여진 뒤 DoctrineEventBus에 OnAttack을 Raise한다 (주체=플레이어).
@@ -126,22 +127,36 @@ public class PlayerAttack : MonoBehaviour
         },
     };
 
-    [Header("공중 공격 (점프 중)")]
-    [Tooltip("공중에 있을 때 좌클릭하면 나가는 단타.")]
+    [Header("공중 공격 (점프 중 · 아래 부채꼴)")]
+    [Tooltip("공중에 있을 때 좌클릭하면 나가는 단타. 판정은 아래쪽 부채꼴(원형 범위 + 각도 필터). 박스 필드(hitboxSize/Offset/Angle)는 공중 공격에서 쓰지 않는다.")]
     [SerializeField] private ComboStep airAttack = new ComboStep
     {
-        name = "공중: 뒤로 길게 사선 베기",
+        name = "공중: 아래 부채꼴 내리찍기",
         damage = 14f,
         hitboxSize = new Vector2(2.2f, 1.2f),
-        hitboxOffset = new Vector2(-1.1f, 0.3f),
-        hitboxAngle = -40f,
+        hitboxOffset = new Vector2(0f, 0f),
+        hitboxAngle = 0f,
         windupTime = 0.05f,
         recoveryTime = 0.22f,
         comboWindow = 0f,
         lungeDistance = 0f,
-        knockback = 3f,
-        launchUp = 1f,
+        knockback = 0f,
+        launchUp = 0f,
     };
+
+    [Header("아래 부채꼴 판정")]
+    [Tooltip("부채꼴 반경(월드 단위). 플레이어 아래 중심 원에서 이 거리 안이 후보가 된다.")]
+    [SerializeField, Min(0.5f)] private float downFanRadius = 2.6f;
+    [Tooltip("아래 방향(270도) 기준 좌우 퍼짐 각도. 65면 총 130도 부채꼴.")]
+    [SerializeField, Range(10f, 180f)] private float downFanHalfAngle = 65f;
+    [Tooltip("부채꼴 중심(플레이어 기준 오프셋). x는 바라보는 방향으로 뒤집힌다. 기본 0,-0.2.")]
+    [SerializeField] private Vector2 downFanOriginOffset = new Vector2(0f, -0.2f);
+    [Tooltip("적중 시 적을 아래로 미는 힘(충격량).")]
+    [SerializeField, Min(0f)] private float downFanEnemyKnockDown = 4f;
+    [Tooltip("적중 시 적을 바깥(좌우)으로 미는 힘. 중심에서 멀어지는 방향.")]
+    [SerializeField, Min(0f)] private float downFanEnemyKnockOut = 2f;
+    [Tooltip("적중 시 플레이어가 위로 튀어오르는 속도. 0이면 바운스 없음.")]
+    [SerializeField, Min(0f)] private float downFanPlayerBounce = 8f;
 
     [Tooltip("공격 후 착지 전까지 공중 공격을 다시 쓸 수 있게 하는지.")]
     [SerializeField] private bool airAttackResetOnLand = true;
@@ -368,7 +383,7 @@ public class PlayerAttack : MonoBehaviour
 
         try
         {
-            yield return SwingOnce(airAttack, comboIndexForVisual: 0, stopSlide: false);
+            yield return SwingDownFan();
         }
         finally
         {
@@ -388,6 +403,139 @@ public class PlayerAttack : MonoBehaviour
             animator.SetTrigger("Attack" + (index + 1));
         return SwingOnce(comboSteps[index], index, stopSlide: true,
             isFinish: index == comboSteps.Length - 1);
+    }
+
+    /// <summary>
+    /// 공중 아래 부채꼴 공격. 플레이어 아래 중심 원 + 아래 방향 각도 필터로 판정한다.
+    /// </summary>
+    private IEnumerator SwingDownFan()
+    {
+        float facing = transform.localScale.x >= 0f ? 1f : -1f;
+        Vector3 scale = transform.localScale;
+        scale.x = Mathf.Abs(baseScale.x) * facing;
+        transform.localScale = scale;
+
+        var attack = new PlayerAttackContext(gameObject);
+        activeSwing = attack;
+        try
+        {
+            RegisterDownFanAttempts(attack);
+            if (activeSwing != attack || !isActiveAndEnabled)
+                yield break;
+
+            if (airAttack.windupTime > 0f)
+                yield return new WaitForSeconds(airAttack.windupTime);
+
+            if (activeSwing != attack || !isActiveAndEnabled)
+                yield break;
+
+            Vector2 origin = DownFanOrigin(facing);
+            if (hitboxVisual != null)
+                hitboxVisual.ShowDownFan(downFanOriginOffset, Vector2.down,
+                    downFanHalfAngle, downFanRadius, hitboxVisualDuration);
+
+            int hitCount = DoDownFanHit(attack);
+            if (hitCount > 0 && rb != null && downFanPlayerBounce > 0f)
+            {
+                // 아래를 찍고 위로 튀어오른다 (y만 덮어씀).
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, downFanPlayerBounce);
+            }
+
+            if (airAttack.recoveryTime > 0f)
+                yield return new WaitForSeconds(airAttack.recoveryTime);
+        }
+        finally
+        {
+            if (activeSwing == attack) activeSwing = null;
+            attack.Dispose();
+        }
+    }
+
+    private Vector2 DownFanOrigin(float facing) => (Vector2)transform.position +
+        new Vector2(downFanOriginOffset.x * facing, downFanOriginOffset.y);
+
+    private bool IsInDownFan(Vector2 origin, Collider2D hit)
+    {
+        if (!CombatPhysics.IsBodyValid(hit) || hit.transform.IsChildOf(transform))
+            return false;
+        Vector2 closest = hit.ClosestPoint(origin);
+        Vector2 toTarget = closest - origin;
+        float distance = toTarget.magnitude;
+        if (distance > downFanRadius)
+            return false;
+        // 원 중심에 겹쳐 있으면 각도 무관하게 적중.
+        if (distance < 0.001f)
+            return true;
+        float angle = Vector2.Angle(Vector2.down, toTarget / distance);
+        return angle <= downFanHalfAngle;
+    }
+
+    private void RegisterDownFanAttempts(PlayerAttackContext attack)
+    {
+        Vector2 origin = DownFanOrigin(transform.localScale.x >= 0f ? 1f : -1f);
+        CombatPhysics.OverlapCircle(origin, downFanRadius, TargetMask, hitBuffer);
+        for (int i = 0; i < hitBuffer.Count; i++)
+        {
+            if (!IsInDownFan(origin, hitBuffer[i])) continue;
+            if (TryGetTarget(hitBuffer[i], out IDamageable target, out _)) attack.Begin(target);
+        }
+        hitBuffer.Clear();
+    }
+
+    private int DoDownFanHit(PlayerAttackContext attack, float _facing = 1f)
+    {
+        Vector2 origin = DownFanOrigin(transform.localScale.x >= 0f ? 1f : -1f);
+        CombatPhysics.OverlapCircle(origin, downFanRadius, TargetMask, hitBuffer);
+
+        overlapSeen.Clear();
+        int hitCount = 0;
+
+        float multiplier = stats != null ? stats.AttackMultiplier : 1f;
+        float finalDamage = Mathf.Max(0f, airAttack.damage * multiplier);
+        if (finalDamage <= 0f)
+            return 0;
+
+        for (int i = 0; i < hitBuffer.Count; i++)
+        {
+            Collider2D hit = hitBuffer[i];
+            if (!IsInDownFan(origin, hit)) continue;
+            if (!TryGetTarget(hit, out IDamageable damageable, out GameObject targetObject) ||
+                !overlapSeen.Add(damageable)) continue;
+
+            bool applied = attack.Begin(damageable, publishAttempt: false) && attack.TryHit(damageable, finalDamage);
+            if (applied)
+            {
+                if (DoctrineEventBus.HasListeners)
+                    DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
+                hitCount++;
+                ApplyDownFanKnockback(origin, hit);
+            }
+        }
+
+        overlapSeen.Clear();
+        hitBuffer.Clear();
+        return hitCount;
+    }
+
+    private void ApplyDownFanKnockback(Vector2 origin, Collider2D hit)
+    {
+        if (hit == null)
+            return;
+
+        Rigidbody2D enemyRb = hit.attachedRigidbody;
+        if (enemyRb == null)
+            enemyRb = hit.GetComponentInParent<Rigidbody2D>();
+        if (enemyRb == null || enemyRb == rb)
+            return;
+
+        Vector2 targetPos = hit.transform.position;
+        Vector2 outward = targetPos - origin;
+        if (outward.sqrMagnitude < 0.0001f)
+            outward = Vector2.down;
+        outward.Normalize();
+
+        Vector2 force = outward * downFanEnemyKnockOut + Vector2.down * downFanEnemyKnockDown;
+        enemyRb.AddForce(force, ForceMode2D.Impulse);
     }
 
     private IEnumerator SwingOnce(ComboStep step, int comboIndexForVisual, bool stopSlide, bool isFinish = false)
@@ -562,15 +710,19 @@ public class PlayerAttack : MonoBehaviour
             DrawStepGizmo(comboSteps[i], colors[i % colors.Length], facing);
         }
 
-        // 공중 공격 Gizmos (지상 콤보와 겹쳐 보이지 않게 살짝 위로).
-        Gizmos.color = Color.magenta;
-        Vector2 airCenter = (Vector2)transform.position +
-            new Vector2(airAttack.hitboxOffset.x * facing, airAttack.hitboxOffset.y + 0.05f);
-        float airAngle = facing >= 0f ? airAttack.hitboxAngle : -airAttack.hitboxAngle;
-        Matrix4x4 airOld = Gizmos.matrix;
-        Gizmos.matrix = Matrix4x4.TRS(airCenter, Quaternion.Euler(0f, 0f, airAngle), Vector3.one);
-        Gizmos.DrawWireCube(Vector3.zero, airAttack.hitboxSize);
-        Gizmos.matrix = airOld;
+        // 공중 공격 Gizmos (아래쪽 부채꼴 범위 표시).
+        Vector2 downOrigin = (Vector2)transform.position +
+            new Vector2(downFanOriginOffset.x * facing, downFanOriginOffset.y);
+        Gizmos.color = new Color(1f, 0.6f, 0.15f, 0.9f);
+        Gizmos.DrawWireSphere(downOrigin, downFanRadius);
+#if UNITY_EDITOR
+        UnityEditor.Handles.color = new Color(1f, 0.6f, 0.15f, 0.9f);
+        Vector3 downFrom = Vector3.down;
+        Vector3 fanFrom = Quaternion.Euler(0f, 0f, downFanHalfAngle) * downFrom;
+        Vector3 fanTo = Quaternion.Euler(0f, 0f, -downFanHalfAngle) * downFrom;
+        UnityEditor.Handles.DrawLine(downOrigin, downOrigin + (Vector2)(fanFrom * downFanRadius));
+        UnityEditor.Handles.DrawLine(downOrigin, downOrigin + (Vector2)(fanTo * downFanRadius));
+#endif
     }
 
     private void DrawStepGizmo(ComboStep step, Color color, float facing)

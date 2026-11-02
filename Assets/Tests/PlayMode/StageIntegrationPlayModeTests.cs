@@ -94,6 +94,55 @@ public sealed class StageIntegrationPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator DownwardAirAttackHitsBelowBouncesAndRequiresLandingBeforeReuse()
+    {
+        yield return Load("BeliefTest");
+        var move = Player.GetComponent<PlayerMove>();
+        move.enabled = false;
+        Set(move, "isGrounded", false);
+        PutPlayer(new Vector2(0f, 4f));
+        var enemies = Object.FindObjectsByType<EnemyUnit>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(item => item.name).ToArray();
+        Assert.That(enemies.Length, Is.EqualTo(3));
+        var positions = new[] { new Vector2(0f, 2f), new Vector2(4f, 4f), new Vector2(0f, 6f) };
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            var enemy = enemies[i];
+            enemy.enabled = true;
+            enemy.gameObject.SetActive(true);
+            foreach (var attack in enemy.GetComponents<EnemyAttack>()) attack.enabled = false;
+            foreach (var contact in enemy.GetComponents<EnemyContactDamage>()) contact.SetSuppressed(true);
+            enemy.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
+            enemy.transform.position = positions[i];
+        }
+        yield return null; // Let each newly activated EnemyUnit.Start bind its real player target.
+        foreach (var enemy in enemies) enemy.enabled = false;
+        Physics2D.SyncTransforms();
+        float[] hp = enemies.Select(item => item.CurrentHp).ToArray();
+        var playerAttack = Player.GetComponent<PlayerAttack>();
+        Attack(playerAttack);
+        yield return new WaitForSeconds(.15f);
+        Assert.That(enemies[0].CurrentHp, Is.LessThan(hp[0]));
+        Assert.That(enemies[1].CurrentHp, Is.EqualTo(hp[1]));
+        Assert.That(enemies[2].CurrentHp, Is.EqualTo(hp[2]));
+        Assert.That(Player.GetComponent<Rigidbody2D>().linearVelocity.y, Is.GreaterThan(0f));
+        float afterFirst = enemies[0].CurrentHp;
+        yield return new WaitForSeconds(.3f);
+        Attack(playerAttack);
+        yield return new WaitForSeconds(.15f);
+        Assert.That(enemies[0].CurrentHp, Is.EqualTo(afterFirst), "A second air attack needs a landing first.");
+        Set(move, "isGrounded", true);
+        yield return null;
+        Set(move, "isGrounded", false);
+        PutPlayer(new Vector2(0f, 4f));
+        Player.transform.localScale = new Vector3(-Mathf.Abs(Player.transform.localScale.x), Player.transform.localScale.y, 1f);
+        Attack(playerAttack);
+        yield return new WaitForSeconds(.15f);
+        Assert.That(enemies[0].CurrentHp, Is.LessThan(afterFirst), "The downward fan must also hit while facing left.");
+        Assert.That(enemies[1].CurrentHp, Is.EqualTo(hp[1]));
+        Assert.That(enemies[2].CurrentHp, Is.EqualTo(hp[2]));
+    }
+
+    [UnityTest]
     public IEnumerator AuthoredBossPlayerMeleePublishesARealHit()
     {
         yield return Load("BossTest");
