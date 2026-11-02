@@ -18,6 +18,15 @@ public static class CombatPhysics
         Physics2D.OverlapBox(center, size, angle, Filter(mask), results);
     }
 
+    // 부채꼴(원형 범위 + 각도 필터) 판정용 원형 브로드페이즈.
+    public static void OverlapCircle(Vector2 center, float radius, int mask, List<Collider2D> results)
+    {
+        results.Clear();
+        if (radius <= 0f)
+            return;
+        Physics2D.OverlapCircle(center, radius, Filter(mask), results);
+    }
+
     public static void SweepBox(Vector2 center, Vector2 size, float angle, Vector2 direction,
         float distance, int mask, List<RaycastHit2D> results)
     {
