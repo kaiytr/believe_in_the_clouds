@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b451edfa85315a40a14c6aa3b0bbb18, type: 3}
   m_Name: EconomySettings
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::EconomySettings
-  scatterSeconds: 0.2
+  scatterSeconds: 0.4
+  dropArcHeight: 0.8
   groundRestSeconds: 0.4
   flightMinSeconds: 0.45
   flightMaxSeconds: 0.7
   tokenStaggerSeconds: 0.03
   maxVisibleTokens: 64
-  tokenDiameter: 24
+  tokenDiameter: 30
   scatterRadius: 42
   tokenColor: {r: 1, g: 0.76, b: 0.18, a: 1}

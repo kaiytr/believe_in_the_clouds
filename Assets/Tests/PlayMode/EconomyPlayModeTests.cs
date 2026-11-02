@@ -126,6 +126,62 @@ public sealed class EconomyPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud()
+    {
+        yield return Load("EconomyTest");
+        Object.FindFirstObjectByType<TestEconomyContext>().ResetFixture();
+        yield return null;
+        var platform = new GameObject("Raised coin landing surface", typeof(BoxCollider2D));
+        platform.layer = LayerMask.NameToLayer("Ground");
+        platform.transform.position = new Vector3(5f, -1.5f);
+        var floor = platform.GetComponent<BoxCollider2D>();
+        floor.size = new Vector2(4f, .5f);
+        var trigger = new GameObject("Ground trigger is not a landing surface", typeof(BoxCollider2D));
+        trigger.layer = platform.layer;
+        trigger.transform.position = new Vector3(5f, .25f);
+        trigger.GetComponent<BoxCollider2D>().size = new Vector2(4f, .2f);
+        trigger.GetComponent<BoxCollider2D>().isTrigger = true;
+        var blocker = new GameObject("Non-ground collider is not a landing surface", typeof(BoxCollider2D));
+        blocker.transform.position = new Vector3(5f, -.5f);
+        blocker.GetComponent<BoxCollider2D>().size = new Vector2(4f, .2f);
+        try
+        {
+            Physics2D.SyncTransforms();
+            var service = Currency.Service;
+            Vector3 origin = new Vector3(5f, 1f);
+            service.TryGrantWithEffect(1, origin, "fixture", "land-before-hud");
+            yield return null;
+            var view = Object.FindObjectsByType<CoinFlightView>(FindObjectsSortMode.None).Single(item => item.HasFlights);
+            Image coin = view.GetComponentsInChildren<Image>().Single(item => item.enabled);
+            yield return new WaitForSecondsRealtime(EconomyRuntime.Instance.Settings.scatterSeconds + .03f);
+            var corners = new Vector3[4];
+            coin.rectTransform.GetWorldCorners(corners);
+            float bottom = RectTransformUtility.WorldToScreenPoint(null, corners[0]).y;
+            float surface = Camera.main.WorldToScreenPoint(new Vector3(5f, floor.bounds.max.y)).y;
+            Assert.That(bottom, Is.EqualTo(surface).Within(1f), "The coin must touch the raised Ground collider, ignoring triggers and actors.");
+            Assert.That(bottom, Is.LessThan(Camera.main.WorldToScreenPoint(origin).y - 40f));
+            Assert.That(coin.rectTransform.sizeDelta, Is.EqualTo(Vector2.one * 30f));
+            Assert.That(service.Balance, Is.Zero);
+            Assert.That(service.PendingBalance, Is.EqualTo(1));
+            yield return new WaitForSecondsRealtime(.1f);
+            coin.rectTransform.GetWorldCorners(corners);
+            Assert.That(RectTransformUtility.WorldToScreenPoint(null, corners[0]).y, Is.EqualTo(surface).Within(1f));
+            Assert.That(service.Balance, Is.Zero, "The coin must finish its ground rest before flying to the HUD.");
+            float deadline = Time.realtimeSinceStartup + 4f;
+            while (view.HasFlights && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(view.HasFlights, Is.False);
+            Assert.That(service.Balance, Is.EqualTo(1));
+            Assert.That(service.PendingBalance, Is.Zero);
+        }
+        finally
+        {
+            Object.Destroy(platform);
+            Object.Destroy(trigger);
+            Object.Destroy(blocker);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward()
     {
         yield return Load("EconomyTest");
@@ -141,7 +197,8 @@ public sealed class EconomyPlayModeTests
         // Still inside the death-motion delay: nothing settled yet, and nothing was lost.
         Assert.That(service.Balance, Is.Zero);
         Assert.That(service.PendingBalance, Is.EqualTo(result.AppliedAmount));
-        yield return new WaitForSecondsRealtime(2f);
+        float deadline = Time.realtimeSinceStartup + 4f;
+        while (service.PendingBalance > 0 && Time.realtimeSinceStartup < deadline) yield return null;
         Assert.That(service.Balance, Is.EqualTo(result.AppliedAmount));
         Assert.That(service.PendingBalance, Is.Zero);
     }

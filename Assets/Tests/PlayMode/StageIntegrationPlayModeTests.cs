@@ -255,8 +255,12 @@ public sealed class StageIntegrationPlayModeTests
             Image coin = null;
             yield return Until(() => (coin = view.GetComponentsInChildren<Image>().FirstOrDefault(item => item.enabled)) != null);
             yield return new WaitForSecondsRealtime(EconomyRuntime.Instance.Settings.scatterSeconds + .03f);
-            Assert.That(coin.rectTransform.sizeDelta, Is.EqualTo(Vector2.one * 24f));
+            Assert.That(coin.rectTransform.sizeDelta, Is.EqualTo(Vector2.one * 30f));
             Assert.That(service.Balance, Is.Zero, "Ground rest precedes HUD settlement.");
+            var corners = new Vector3[4];
+            coin.rectTransform.GetWorldCorners(corners);
+            float groundScreenY = Camera.main.WorldToScreenPoint(new Vector3(0f, -3.35f)).y;
+            Assert.That(RectTransformUtility.WorldToScreenPoint(null, corners[0]).y, Is.EqualTo(groundScreenY).Within(2f));
             var camera = Camera.main;
             foreach (var behaviour in camera.GetComponents<MonoBehaviour>()) behaviour.enabled = false;
             Vector2 before = RectTransformUtility.WorldToScreenPoint(null, coin.rectTransform.position);
@@ -267,6 +271,8 @@ public sealed class StageIntegrationPlayModeTests
             yield return null;
             Vector2 after = RectTransformUtility.WorldToScreenPoint(null, coin.rectTransform.position);
             Assert.That(after.x - before.x, Is.EqualTo(worldAfter.x - worldBefore.x).Within(2f));
+            if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
+                yield return Capture("05-coins-resting-on-ground");
             yield return Until(() => !view.HasFlights, 5f);
             Assert.That(service.Balance, Is.EqualTo(reward));
             Assert.That(service.PendingBalance, Is.Zero);

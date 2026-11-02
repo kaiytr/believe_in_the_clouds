@@ -1,7 +1,8 @@
 {
   "name": "BelieveInTheClouds.Runtime",
   "references": [
-    "Unity.ugui"
+    "Unity.ugui",
+    "Unity.Cinemachine"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

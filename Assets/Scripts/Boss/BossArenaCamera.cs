@@ -20,7 +20,7 @@ public sealed class BossArenaCamera : MonoBehaviour
     private readonly List<Behaviour> suspended = new List<Behaviour>();
     private Transform player;
     private bool controlling, fighting;
-    private float explorationSize, returnElapsed;
+    private float explorationSize, explorationY, returnElapsed;
     private Vector3 returnPosition;
     private Quaternion explorationRotation;
     private float returnSize;
@@ -33,6 +33,7 @@ public sealed class BossArenaCamera : MonoBehaviour
         if (!controlling)
         {
             explorationSize = view.orthographicSize;
+            explorationY = view.transform.position.y;
             explorationRotation = view.transform.rotation;
             suspended.Clear();
             foreach (Behaviour controller in explorationControllers) Suspend(controller);
@@ -84,7 +85,7 @@ public sealed class BossArenaCamera : MonoBehaviour
             returnElapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(returnElapsed / blendDuration));
             Vector3 position = player != null ? player.position + explorationOffset : returnPosition;
-            if (explorationFixedY) position.y = explorationOffset.y;
+            if (explorationFixedY) position.y = explorationY;
             if (clampExplorationX)
                 position.x = ConfineX(position.x, explorationXLimits.x, explorationXLimits.y, explorationSize * view.aspect);
             view.transform.SetPositionAndRotation(Vector3.Lerp(returnPosition, position, t),

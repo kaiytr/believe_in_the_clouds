@@ -1120,6 +1120,7 @@ GameObject:
   - component: {fileID: 3500000003}
   - component: {fileID: 3500000002}
   - component: {fileID: 3500000001}
+  - component: {fileID: 991000001}
   m_Layer: 0
   m_Name: CinemachineCamera
   m_TagString: Untagged
@@ -1558,6 +1559,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
 
+--- !u!114 &991000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3500000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edb1522ca6c341069d614d4b71c0aa70, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CinemachineHorizontalFollow
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

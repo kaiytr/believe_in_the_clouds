@@ -8,12 +8,12 @@ public sealed class CoinFlightView : MonoBehaviour
     private sealed class Flight
     {
         public string GrantId, TokenId;
-        public Vector3 WorldPosition;
+        public Vector3 WorldPosition, LandingPosition;
         public Camera SourceCamera;
-        public Vector2 ScatterOffset, LaunchPosition;
-        public float Age, Delay, GroundSeconds, Duration, NextRetry;
+        public Vector2 LaunchPosition;
+        public float HorizontalScatter, ArcHeight, Age, Delay, GroundSeconds, Duration, NextRetry;
         public Image Image;
-        public bool HasCamera;
+        public bool DropInitialized, HudFlightStarted;
     }
     private EconomyService service;
     private EconomySettings settings;
@@ -22,9 +22,11 @@ public sealed class CoinFlightView : MonoBehaviour
     private readonly Queue<Flight> waiting = new Queue<Flight>();
     private readonly List<Flight> active = new List<Flight>();
     private readonly Stack<Image> pool = new Stack<Image>();
+    private readonly RaycastHit2D[] groundHits = new RaycastHit2D[16];
     public int ActiveCount => active.Count;
     public int CreatedCount { get; private set; }
     public bool HasFlights => active.Count > 0 || waiting.Count > 0;
+    private Camera CanvasCamera => canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
     public void Initialize(EconomyService economy, EconomySettings presentationSettings)
     {
@@ -51,22 +53,51 @@ public sealed class CoinFlightView : MonoBehaviour
             {
                 GrantId = request.Grant.grantId, TokenId = token.tokenId,
                 WorldPosition = request.Position, SourceCamera = source,
-                ScatterOffset = Random.insideUnitCircle * settings.scatterRadius,
+                HorizontalScatter = Random.insideUnitCircle.x * Mathf.Max(0f, settings.scatterRadius),
+                ArcHeight = Mathf.Max(0f, settings.dropArcHeight) * Random.Range(.75f, 1.25f),
                 GroundSeconds = Mathf.Max(0f, settings.groundRestSeconds),
                 Duration = Random.Range(Mathf.Max(.01f, settings.flightMinSeconds), Mathf.Max(.01f, settings.flightMaxSeconds)),
-                Delay = request.PresentationDelay + i * Mathf.Max(0f, settings.tokenStaggerSeconds), HasCamera = source != null
+                Delay = request.PresentationDelay + i * Mathf.Max(0f, settings.tokenStaggerSeconds)
             });
         }
     }
 
-    // Reprojected every frame (while grounded) so the coin tracks its world position as the camera moves.
+    private Vector3 FindLandingPosition(Flight flight)
+    {
+        Vector3 screen = flight.SourceCamera.WorldToScreenPoint(flight.WorldPosition);
+        screen.x += flight.HorizontalScatter * canvas.scaleFactor;
+        Vector3 scattered = flight.SourceCamera.ScreenToWorldPoint(screen);
+        Vector3 probe = new Vector3(scattered.x, flight.WorldPosition.y + .1f, flight.WorldPosition.z);
+        if (TryFindGround(probe, out Vector3 landing)) return landing;
+        // Keep drops on a narrow ledge when the scattered position would fall off its edge.
+        if (TryFindGround(flight.WorldPosition + Vector3.up * .1f, out landing)) return landing;
+        // Diagnostic rewards can originate outside the terrain. They must still finish and settle.
+        return new Vector3(scattered.x, flight.WorldPosition.y - .75f, flight.WorldPosition.z);
+    }
+
+    private bool TryFindGround(Vector3 origin, out Vector3 landing)
+    {
+        var filter = new ContactFilter2D { useLayerMask = true, layerMask = LayerMask.GetMask("Ground"), useTriggers = false };
+        int count = Physics2D.Raycast(origin, Vector2.down, filter, groundHits, 100f);
+        for (int i = 0; i < count; i++)
+        {
+            RaycastHit2D hit = groundHits[i];
+            if (hit.distance <= 0f || hit.normal.y < .5f) continue;
+            landing = new Vector3(hit.point.x, hit.point.y, origin.z);
+            return true;
+        }
+        landing = default;
+        return false;
+    }
+
+    // Drop and rest positions are reprojected every frame as the camera moves.
     private Vector2 ProjectToCanvas(Camera camera, Vector3 worldPosition)
     {
         Vector3 point = camera != null ? camera.WorldToScreenPoint(worldPosition) : Vector3.zero;
         if (point.z < 0f) { point.x = Screen.width - point.x; point.y = Screen.height - point.y; }
         point.x = Mathf.Clamp(point.x, 12f, Mathf.Max(12f, Screen.width - 12f));
         point.y = Mathf.Clamp(point.y, 12f, Mathf.Max(12f, Screen.height - 12f));
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, point, null, out Vector2 local);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, point, CanvasCamera, out Vector2 local);
         return local;
     }
 
@@ -80,7 +111,6 @@ public sealed class CoinFlightView : MonoBehaviour
             Flight flight = waiting.Dequeue();
             if (!service.IsPendingToken(flight.GrantId, flight.TokenId)) continue;
             flight.Image = Rent();
-            flight.LaunchPosition = ProjectToCanvas(flight.SourceCamera, flight.WorldPosition);
             active.Add(flight);
         }
         RectTransform target = DoctrineHud.CurrencyTarget;
@@ -89,7 +119,7 @@ public sealed class CoinFlightView : MonoBehaviour
             Flight flight = active[i];
             if (!service.IsPendingToken(flight.GrantId, flight.TokenId)) { Release(i); continue; }
             flight.Age += Time.unscaledDeltaTime;
-            bool noPresentation = target == null || !flight.HasCamera;
+            bool noPresentation = target == null || flight.SourceCamera == null;
             float elapsed = flight.Age - flight.Delay;
             float scatter = Mathf.Max(0f, settings.scatterSeconds);
             float groundEnd = scatter + flight.GroundSeconds;
@@ -103,23 +133,34 @@ public sealed class CoinFlightView : MonoBehaviour
                 continue;
             }
             if (elapsed < 0f) continue;
+            if (!flight.DropInitialized)
+            {
+                flight.LandingPosition = FindLandingPosition(flight);
+                flight.DropInitialized = true;
+            }
             Vector2 position;
+            float radius = flight.Image.rectTransform.rect.height * .5f;
             if (elapsed < groundEnd)
             {
-                // Scattering and ground-rest both track the world position so panning the
-                // camera never leaves the coin floating apart from where it landed.
-                Vector2 anchor = ProjectToCanvas(flight.SourceCamera, flight.WorldPosition);
-                float scatterT = scatter <= 0f ? 1f : Mathf.Clamp01(elapsed / scatter);
-                position = anchor + flight.ScatterOffset * Mathf.SmoothStep(0, 1, scatterT);
-                flight.LaunchPosition = position;
+                float t = scatter <= 0f ? 1f : Mathf.Clamp01(elapsed / scatter);
+                Vector3 world = Vector3.Lerp(flight.WorldPosition, flight.LandingPosition, t);
+                world.y += 4f * flight.ArcHeight * t * (1f - t);
+                // The landing point is the surface; lift the icon's centre by its visual radius.
+                position = ProjectToCanvas(flight.SourceCamera, world) + Vector2.up * (radius * t);
             }
             else
             {
+                if (!flight.HudFlightStarted)
+                {
+                    flight.LaunchPosition = ProjectToCanvas(flight.SourceCamera, flight.LandingPosition) + Vector2.up * radius;
+                    flight.HudFlightStarted = true;
+                }
                 Canvas targetCanvas = target.GetComponentInParent<Canvas>();
                 Camera uiCamera = targetCanvas != null && targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? targetCanvas.worldCamera : null;
                 Vector2 screen = RectTransformUtility.WorldToScreenPoint(uiCamera, target.TransformPoint(target.rect.center));
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out Vector2 destination);
-                float t = Mathf.SmoothStep(0f, 1f, (elapsed - groundEnd) / flight.Duration);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, CanvasCamera, out Vector2 destination);
+                float t = Mathf.Clamp01((elapsed - groundEnd) / flight.Duration);
+                t *= t; // Accelerate into the HUD after resting on the ground.
                 Vector2 from = flight.LaunchPosition;
                 Vector2 control = (from + destination) * .5f + Vector2.up * 100f;
                 position = (1 - t) * (1 - t) * from + 2 * (1 - t) * t * control + t * t * destination;

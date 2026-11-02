@@ -22,6 +22,7 @@ public static class EconomyTestProjectSetup
         var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.PlayerPath));
         player.transform.position = new Vector3(1.5f, -1.5f, 0);
         var floor = new GameObject("Test Floor", typeof(BoxCollider2D));
+        floor.layer = LayerMask.NameToLayer("Ground");
         floor.transform.position = new Vector3(0, -3.5f, 0); floor.GetComponent<BoxCollider2D>().size = new Vector2(200, 1);
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.HudPath));
         new GameObject("Economy Test Fixture").AddComponent<TestEconomyContext>();
