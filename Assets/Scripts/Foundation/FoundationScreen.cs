@@ -5,10 +5,11 @@ using UnityEngine;
 //
 // - 재단 상호작용이 발생하면 패널을 열고, E/ESC로 닫는다.
 // - 왼쪽: 탭(주어/조건/결과)으로 인벤토리에 있는 조각만 골라 본다.
-//   카드를 교리 슬롯에 드래그 앤 드롭하거나 클릭해서 꽂는다.
+//   장착은 왼쪽 카드를 슬롯에 드래그 앤 드롭으로만 된다. 클릭 배치 없음.
 // - 오른쪽: 교리 슬롯들은 언제든 끼고 뺄 수 있다. 기본 3칸, 상점 구매로 1칸씩 증가.
 //   한 교리의 3칸이 다 차면 자동으로 장착(Compose → TryActivate)하고,
-//   하나라도 빠지면 그 교리만 해제된다. 조각 소모 없음.
+//   하나라도 빠지면 그 교리만 해제된다. 조각은 참조 방식이라 소모 없음 —
+//   같은 조각을 교리1·교리2 등 여러 교리에 동시에 배치할 수 있다.
 // - 상점과 마찬가지로 InteractableBehaviour.Interacted 이벤트를 듣고 스스로 연다.
 //   공통 상호작용 코드는 재단을 모른다.
 public class FoundationScreen : MonoBehaviour
@@ -32,7 +33,7 @@ public class FoundationScreen : MonoBehaviour
     // 교리별로 현재 장착 중인 조합. 슬롯과 1:1로 동기화한다.
     private readonly List<Doctrine> equipped = new List<Doctrine>();
 
-    // 클릭 배치 대상이 되는 교리 (0 = 교리1). 슬롯을 누르면 그 교리로 바뀐다.
+    // 마지막으로 드롭된 교리 (0 = 교리1). 로그/선택 표기용. 클릭으로 바뀌지 않는다.
     private int activeDoctrine;
 
     public bool IsOpen => panel != null && panel.IsOpen;
@@ -153,11 +154,11 @@ public class FoundationScreen : MonoBehaviour
 
         panel = FoundationPanelView.BuildRuntime(slotRows.Count);
         panel.TabClicked += HandleTabClicked;
-        panel.ItemClicked += HandleItemClicked;
         panel.ItemDroppedOnSlot += HandleItemDroppedOnSlot;
-        panel.SlotClicked += HandleSlotClicked;
+        panel.SlotDroppedOnSlot += HandleSlotDroppedOnSlot;
+        panel.SlotDroppedOutside += HandleSlotDroppedOutside;
         DontDestroyOnLoad(panel.gameObject);
-        // uGUI 버튼은 EventSystem이 없으면 클릭을 못 받는다.
+        // uGUI 드래그는 EventSystem이 없으면 동작하지 않는다.
         UiEventSystemBoot.Ensure();
     }
 
@@ -248,44 +249,10 @@ public class FoundationScreen : MonoBehaviour
         Refresh();
     }
 
-    // 왼쪽 카드를 누르면 활성 교리(기본 교리1)의 현재 탭 슬롯에 배치한다.
-    // 이미 같은 카드가 들어 있으면 해제한다.
-    private void HandleItemClicked(int entryIndex)
-    {
-        IReadOnlyList<ShopEntry> entries = ShopCatalog.GetColumn(currentTab);
-        if (entryIndex < 0 || entryIndex >= entries.Count)
-        {
-            return;
-        }
-
-        ShopEntry picked = entries[entryIndex];
-        ShopEntry current = GetSlot(activeDoctrine, currentTab);
-
-        if (current == picked)
-        {
-            SetSlot(activeDoctrine, currentTab, null);
-            Debug.Log($"[재단] 교리{activeDoctrine + 1} 슬롯 해제: {TabName(currentTab)}");
-        }
-        else
-        {
-            // 인벤토리에 1개라도 있어야 배치할 수 있다.
-            int count = CountOf(DoctrineInventory.Instance, picked);
-            if (count <= 0)
-            {
-                Debug.Log($"[재단] 조각 부족: {picked.Label} (보유 0)");
-                return;
-            }
-
-            SetSlot(activeDoctrine, currentTab, picked);
-            Debug.Log($"[재단] 교리{activeDoctrine + 1} 배치: {TabName(currentTab)} → {picked.Label}");
-        }
-
-        SyncAllDoctrines();
-        Refresh();
-    }
-
     // 드래그 앤 드롭: 왼쪽 카드를 교리 슬롯에 놓으면 그 교리의 해당 슬롯에 배치한다.
     // 드래그한 카드의 열과 슬롯 열이 다르면 무시한다.
+    // 같은 조각을 여러 교리에 동시에 배치 가능. 단, 보유 개수를 초과할 수는 없다.
+    // (가용 = 보유 - 슬롯 사용중)
     private void HandleItemDroppedOnSlot(int entryIndex, int doctrineIndex, ShopColumn targetColumn)
     {
         if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
@@ -307,10 +274,19 @@ public class FoundationScreen : MonoBehaviour
             return;
         }
 
-        int count = CountOf(DoctrineInventory.Instance, picked);
-        if (count <= 0)
+        ShopEntry existing = GetSlot(doctrineIndex, targetColumn);
+        if (existing == picked)
         {
-            Debug.Log($"[재단] 조각 부족: {picked.Label} (보유 0)");
+            return;
+        }
+
+        // 참조 방식: 같은 조각을 여러 교리에 동시에 배치 가능.
+        // 단, 보유 개수를 초과할 수는 없다(가용 = 보유 - 슬롯 사용중).
+        int owned = CountOf(DoctrineInventory.Instance, picked);
+        int used = CountUsed(picked);
+        if (owned - used <= 0)
+        {
+            Debug.Log($"[재단] 조각 부족: {picked.Label} (보유 {owned} · 사용중 {used})");
             return;
         }
 
@@ -321,28 +297,34 @@ public class FoundationScreen : MonoBehaviour
         Refresh();
     }
 
-    // 오른쪽 슬롯을 직접 누르면 그 슬롯을 비우고, 클릭 배치 대상 교리를 그 교리로 바꾼다.
-    private void HandleSlotClicked(int doctrineIndex, ShopColumn column)
+    private void HandleSlotDroppedOnSlot(int fromDoctrine, ShopColumn fromColumn, int toDoctrine, ShopColumn toColumn)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
-        {
-            return;
-        }
-
-        bool hadEntry = GetSlot(doctrineIndex, column) != null;
-        activeDoctrine = doctrineIndex;
-
-        if (hadEntry)
-        {
-            SetSlot(doctrineIndex, column, null);
-            Debug.Log($"[재단] 교리{doctrineIndex + 1} 슬롯 해제: {TabName(column)}");
-            SyncAllDoctrines();
-        }
-
+        if (fromDoctrine < 0 || fromDoctrine >= slotRows.Count) return;
+        if (toDoctrine < 0 || toDoctrine >= slotRows.Count) return;
+        if (fromColumn != toColumn) return;
+        if (fromDoctrine == toDoctrine && fromColumn == toColumn) return;
+        ShopEntry moving = GetSlot(fromDoctrine, fromColumn);
+        if (moving == null) return;
+        ShopEntry target = GetSlot(toDoctrine, toColumn);
+        SetSlot(toDoctrine, toColumn, moving);
+        SetSlot(fromDoctrine, fromColumn, target);
+        activeDoctrine = toDoctrine;
+        SyncAllDoctrines();
         Refresh();
     }
 
-    // 현재 탭에서 인벤토리에 1개 이상 있는 조각만 목록으로 만든다.
+    private void HandleSlotDroppedOutside(int fromDoctrine, ShopColumn fromColumn)
+    {
+        if (fromDoctrine < 0 || fromDoctrine >= slotRows.Count) return;
+        if (GetSlot(fromDoctrine, fromColumn) == null) return;
+        SetSlot(fromDoctrine, fromColumn, null);
+        activeDoctrine = fromDoctrine;
+        SyncAllDoctrines();
+        Refresh();
+    }
+
+    // 현재 탭에서 가용 개수(보유 - 슬롯 사용중)가 1개 이상인 조각만 목록으로 만든다.
+    // 같은 조각은 가용 개수만큼 한 줄씩 나열한다("×N" 표기 없음).
     private void Refresh()
     {
         if (panel == null)
@@ -356,27 +338,13 @@ public class FoundationScreen : MonoBehaviour
         IReadOnlyList<ShopEntry> entries = ShopCatalog.GetColumn(currentTab);
         List<FoundationPanelView.ItemData> items = new List<FoundationPanelView.ItemData>();
 
-        // 왼쪽에서 고른(활성 교리의 현재 탭 슬롯) 조각의 EntryIndex. 없으면 -1.
-        ShopEntry current = GetSlot(activeDoctrine, currentTab);
-        int currentIndex = -1;
-        if (current != null)
-        {
-            for (int i = 0; i < entries.Count; i++)
-            {
-                if (entries[i] == current)
-                {
-                    currentIndex = i;
-                    break;
-                }
-            }
-        }
-
         for (int i = 0; i < entries.Count; i++)
         {
-            int count = CountOf(inventory, entries[i]);
+            // 가용 = 보유 - 슬롯 사용중. 꽉 찬 조각은 목록에서 숨긴다.
+            int available = CountOf(inventory, entries[i]) - CountUsed(entries[i]);
 
-            // 같은 조각을 합쳐서 "×N"으로 보여주지 않고, 보유한 개수만큼 한 줄씩 나열한다.
-            for (int copy = 0; copy < count; copy++)
+            // 같은 조각을 합쳐서 "×N"으로 보여주지 않고, 가용 개수만큼 한 줄씩 나열한다.
+            for (int copy = 0; copy < available; copy++)
             {
                 items.Add(new FoundationPanelView.ItemData
                 {
@@ -388,7 +356,7 @@ public class FoundationScreen : MonoBehaviour
             }
         }
 
-        panel.SetItems(items, currentIndex,
+        panel.SetItems(items,
             $"보유한 {TabName(currentTab)} 교리가 없습니다.\n상점에서 구매해 보세요.");
         panel.SetCountSummary(inventory != null ? inventory.Describe() : "인벤토리 없음");
 
@@ -400,7 +368,6 @@ public class FoundationScreen : MonoBehaviour
             panel.SetDescription(d, DescribeDoctrine(d));
         }
 
-        panel.SetActiveDoctrine(activeDoctrine);
         panel.SetActiveTab(currentTab);
     }
 
@@ -431,7 +398,7 @@ public class FoundationScreen : MonoBehaviour
             }
         }
 
-        return $"{name}  ·  슬롯 {filled}/3 — 왼쪽에서 조각을 고르세요.";
+        return $"{name}  ·  슬롯 {filled}/3 — 왼쪽 조각을 드래그해서 놓으세요.";
     }
 
     // 슬롯 3칸이 다 차면 조합된 교리, 아니면 null.
@@ -451,10 +418,8 @@ public class FoundationScreen : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 한 교리의 슬롯 3칸이 다 차면 자동으로 장착하고, 하나라도 비면 장착 해제한다.
-    /// 조각 소모 없음 — 꽂았다 뺐다 자유.
-    /// </summary>
+    // 한 교리의 슬롯 3칸이 다 차면 자동으로 장착하고, 하나라도 비면 장착 해제한다.
+    // 조각 소모 없음(참조 방식) — 보유 1개면 여러 교리에 동시 배치 가능.
     private void SyncDoctrine(int doctrineIndex)
     {
         DoctrineManager manager = DoctrineManager.Instance;
@@ -496,15 +461,8 @@ public class FoundationScreen : MonoBehaviour
             equipped[doctrineIndex] = null;
         }
 
-        // 다른 교리 칸에 같은 조합이 이미 장착돼 있으면 중복 등록하지 않는다.
-        for (int other = 0; other < slotRows.Count; other++)
-        {
-            if (other != doctrineIndex && equipped[other] != null && equipped[other].HasSameRule(wanted))
-            {
-                Debug.Log($"[재단] 교리{doctrineIndex + 1} 생략: 교리{other + 1}와 같은 조합");
-                return;
-            }
-        }
+        // 같은 조합이 다른 교리에 있어도 각각 장착한다.
+        // 같은 조각을 여러 교리에 동시에 배치하는 2번 케이스 허용.
 
         if (!manager.TryActivate(wanted, out string reason))
         {
@@ -530,6 +488,35 @@ public class FoundationScreen : MonoBehaviour
             case ShopColumn.Result: return inventory.CountResult(entry.Result);
             default: return 0;
         }
+    }
+
+    // 슬롯에 이미 들어간 조각 개수(교리 무관 합산). 참조 방식이라 이동/교환 시 그대로 유지.
+    private int CountUsed(ShopEntry entry)
+    {
+        if (entry == null)
+        {
+            return 0;
+        }
+
+        int used = 0;
+        for (int d = 0; d < slotRows.Count; d++)
+        {
+            ShopEntry[] row = slotRows[d];
+            if (row == null)
+            {
+                continue;
+            }
+
+            for (int c = 0; c < row.Length; c++)
+            {
+                if (row[c] == entry)
+                {
+                    used++;
+                }
+            }
+        }
+
+        return used;
     }
 
     private static string TabName(ShopColumn column)

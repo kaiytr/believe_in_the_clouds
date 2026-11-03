@@ -15,7 +15,7 @@ using UnityEngine.UI;
 //   └───────────────┴──────────────────────────────┘
 //
 // 왼쪽: 탭(주어/조건/결과)으로 인벤토리 조각을 골라 보고,
-//   카드를 교리 슬롯으로 드래그 앤 드롭해서 배치한다. (클릭 배치도 그대로 됨)
+//   카드를 교리 슬롯으로 드래그 앤 드롭해서 배치한다. 장착은 드래그로만 된다.
 // 오른쪽: 교리 슬롯들은 언제든 끼고 뺄 수 있고, 3칸이 차면 자동 장착된다.
 // 칸 수는 상점 구매에 따라 늘어나고, 많아지면 스크롤된다.
 // 표시만 담당하고, 어떤 카드를 보일지는 FoundationScreen이 정한다.
@@ -59,10 +59,8 @@ public class FoundationPanelView : MonoBehaviour
     private readonly Dictionary<ShopColumn, Image> tabImages = new Dictionary<ShopColumn, Image>();
     private readonly Dictionary<ShopColumn, Button> tabButtons = new Dictionary<ShopColumn, Button>();
     private readonly List<GameObject> itemObjects = new List<GameObject>();
-    private readonly List<Image> itemImages = new List<Image>();
-    private readonly List<int> itemEntryIndices = new List<int>();
 
-    // 오른쪽 교리 슬롯 (드래그 앤 드롭 + 클릭). 교리 번호(0-based)별로 보관한다.
+    // 오른쪽 교리 슬롯 (드래그 앤 드롭 전용). 교리 번호(0-based)별로 보관한다.
     private readonly List<Dictionary<ShopColumn, Text>> slotTexts = new List<Dictionary<ShopColumn, Text>>();
     private readonly List<Dictionary<ShopColumn, Image>> slotImages = new List<Dictionary<ShopColumn, Image>>();
     private readonly List<Dictionary<ShopColumn, GameObject>> slotObjects = new List<Dictionary<ShopColumn, GameObject>>();
@@ -78,14 +76,13 @@ public class FoundationPanelView : MonoBehaviour
     /// <summary>탭을 눌렀을 때.</summary>
     public event Action<ShopColumn> TabClicked;
 
-    /// <summary>목록 카드를 눌렀을 때. (EntryIndex)</summary>
-    public event Action<int> ItemClicked;
 
     // 왼쪽 카드를 교리 슬롯에 드래그해서 놓았을 때. (EntryIndex, 교리 index, 슬롯 열)
     public event Action<int, int, ShopColumn> ItemDroppedOnSlot;
 
-    // 교리 슬롯을 눌렀을 때. (교리 index, Subject/Condition/Result)
-    public event Action<int, ShopColumn> SlotClicked;
+    public event Action<int, ShopColumn, int, ShopColumn> SlotDroppedOnSlot;
+
+    public event Action<int, ShopColumn> SlotDroppedOutside;
 
     public static FoundationPanelView BuildRuntime(int doctrineCount)
     {
@@ -273,8 +270,8 @@ public class FoundationPanelView : MonoBehaviour
         }
     }
 
-    /// <summary>왼쪽 목록을 통째로 바꾼다. selectedEntryIndex는 선택 표시할 카드(없으면 -1).</summary>
-    public void SetItems(IReadOnlyList<ItemData> items, int selectedEntryIndex, string emptyMessage)
+    /// <summary>왼쪽 목록을 통째로 바꾼다. 드래그 전용이라 선택 표시는 없다.</summary>
+    public void SetItems(IReadOnlyList<ItemData> items, string emptyMessage)
     {
         for (int i = 0; i < itemObjects.Count; i++)
         {
@@ -286,8 +283,6 @@ public class FoundationPanelView : MonoBehaviour
         }
 
         itemObjects.Clear();
-        itemImages.Clear();
-        itemEntryIndices.Clear();
         itemObjectToEntry.Clear();
 
         bool empty = items == null || items.Count == 0;
@@ -303,24 +298,16 @@ public class FoundationPanelView : MonoBehaviour
             return;
         }
 
-        // 같은 조각을 여러 줄 나열하므로, 선택 표시는 첫 줄에만 준다.
-        bool selectedUsed = false;
+        // 같은 조각을 여러 줄 나열한다. 드래그 전용이라 선택 표시 없이 동일하게 그린다.
         for (int i = 0; i < items.Count; i++)
         {
-            bool selected = !selectedUsed && items[i].EntryIndex == selectedEntryIndex;
-            if (selected)
-            {
-                selectedUsed = true;
-            }
-
-            BuildItem(items[i], selected);
+            BuildItem(items[i]);
         }
     }
 
-    private void BuildItem(ItemData data, bool selected)
+    private void BuildItem(ItemData data)
     {
-        GameObject card = UiTheme.CreateImage("Item_" + data.Label, listRoot,
-            selected ? CardSelected : CardNormal);
+        GameObject card = UiTheme.CreateImage("Item_" + data.Label, listRoot, CardNormal);
         Image image = card.GetComponent<Image>();
         image.raycastTarget = true;
 
@@ -338,32 +325,101 @@ public class FoundationPanelView : MonoBehaviour
         Text label = UiTheme.CreateText("Label", card.transform, text, 21,
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         label.font = UiTheme.GetFont();
-        label.fontStyle = selected ? FontStyle.Bold : FontStyle.Normal;
+        label.fontStyle = FontStyle.Normal;
         UiTheme.Stretch(label.rectTransform, 8f);
 
-        Button button = card.AddComponent<Button>();
-        button.targetGraphic = image;
-        button.navigation = new Navigation { mode = Navigation.Mode.None };
-
-        ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = selected ? Color.white : new Color(1.12f, 1.12f, 1.12f, 1f);
-        colors.pressedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-        colors.selectedColor = Color.white;
-        colors.fadeDuration = 0.05f;
-        button.colors = colors;
-
-        int entryIndex = data.EntryIndex;
-        button.onClick.AddListener(() => ItemClicked?.Invoke(entryIndex));
-
-        // 드래그: 카드를 누른 채로 교리1 슬롯까지 끌면 배치된다.
-        itemDragHandler = card.AddComponent<ItemDragHandler>();
-        itemDragHandler.Initialize(this, card);
+        card.AddComponent<ItemDragHandler>().Initialize(this, card);
 
         itemObjects.Add(card);
-        itemImages.Add(image);
-        itemEntryIndices.Add(entryIndex);
-        itemObjectToEntry[card] = entryIndex;
+        itemObjectToEntry[card] = data.EntryIndex;
+    }
+
+    /// <summary>슬롯 오브젝트의 교리/열을 찾는다. 모르면 false.</summary>
+    public bool FindSlot(GameObject slotObject, out int doctrineIndex, out ShopColumn column)
+    {
+        for (int d = 0; d < slotObjects.Count; d++)
+        {
+            Dictionary<ShopColumn, GameObject> slots = slotObjects[d];
+            if (slots == null)
+            {
+                continue;
+            }
+
+            foreach (KeyValuePair<ShopColumn, GameObject> pair in slots)
+            {
+                if (pair.Value == slotObject)
+                {
+                    doctrineIndex = d;
+                    column = pair.Key;
+                    return true;
+                }
+            }
+        }
+
+        doctrineIndex = -1;
+        column = ShopColumn.Subject;
+        return false;
+    }
+
+    /// <summary>슬롯 라벨 텍스트. 없으면 null.</summary>
+    public Text GetSlotText(int doctrineIndex, ShopColumn column)
+    {
+        Dictionary<ShopColumn, Text> texts = GetSlotTexts(doctrineIndex);
+        if (texts != null && texts.TryGetValue(column, out Text text))
+        {
+            return text;
+        }
+
+        return null;
+    }
+
+    /// <summary>드래그 위치의 슬롯만 밝게 표시한다.</summary>
+    public void HighlightSlotAt(Vector2 screenPosition)
+    {
+        bool over = TryGetSlotAt(screenPosition, out int overDoctrine, out ShopColumn overColumn);
+        for (int d = 0; d < slotObjects.Count; d++)
+        {
+            Dictionary<ShopColumn, Image> images = GetSlotImages(d);
+            if (images == null)
+            {
+                continue;
+            }
+
+            foreach (KeyValuePair<ShopColumn, Image> pair in images)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                pair.Value.color = GetSlotFilled(d, pair.Key)
+                    ? CardSelected
+                    : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
+            }
+        }
+    }
+
+    /// <summary>드래그 하이라이트를 원래 색으로 되돌린다.</summary>
+    public void RefreshSlotColors()
+    {
+        for (int d = 0; d < slotObjects.Count; d++)
+        {
+            Dictionary<ShopColumn, Image> images = GetSlotImages(d);
+            if (images == null)
+            {
+                continue;
+            }
+
+            foreach (KeyValuePair<ShopColumn, Image> pair in images)
+            {
+                if (pair.Value == null)
+                {
+                    continue;
+                }
+
+                pair.Value.color = GetSlotFilled(d, pair.Key) ? CardSelected : SlotBackground;
+            }
+        }
     }
 
     /// <summary>드래그 중인 카드의 EntryIndex. 모르면 -1.</summary>
@@ -416,8 +472,6 @@ public class FoundationPanelView : MonoBehaviour
         column = ShopColumn.Subject;
         return false;
     }
-
-    private ItemDragHandler itemDragHandler;
 
     public void SetCountSummary(string summary)
     {
@@ -503,38 +557,6 @@ public class FoundationPanelView : MonoBehaviour
         {
             target.font = UiTheme.GetFont();
             target.text = description ?? string.Empty;
-        }
-    }
-
-    /// <summary>클릭 배치 대상 교리를 강조 표시한다. (빈 슬롯 색으로 구분)</summary>
-    public void SetActiveDoctrine(int doctrineIndex)
-    {
-        for (int d = 0; d < slotImages.Count; d++)
-        {
-            Dictionary<ShopColumn, Image> images = GetSlotImages(d);
-            if (images == null)
-            {
-                continue;
-            }
-
-            bool active = d == doctrineIndex;
-            foreach (KeyValuePair<ShopColumn, Image> pair in images)
-            {
-                if (pair.Value == null)
-                {
-                    continue;
-                }
-
-                bool filled = GetSlotFilled(d, pair.Key);
-                if (filled)
-                {
-                    pair.Value.color = CardSelected;
-                }
-                else
-                {
-                    pair.Value.color = active ? TabActive : SlotBackground;
-                }
-            }
         }
     }
 
@@ -669,11 +691,7 @@ public class FoundationPanelView : MonoBehaviour
         slotImages[doctrineIndex][column] = image;
         slotObjects[doctrineIndex][column] = slot;
 
-        Button button = slot.AddComponent<Button>();
-        button.targetGraphic = image;
-        button.navigation = new Navigation { mode = Navigation.Mode.None };
-        int capturedDoctrine = doctrineIndex;
-        button.onClick.AddListener(() => SlotClicked?.Invoke(capturedDoctrine, column));
+        slot.AddComponent<SlotDragHandler>().Initialize(this, slot);
     }
 
     // ---------------- 열기/닫기 ----------------
@@ -780,33 +798,7 @@ public class FoundationPanelView : MonoBehaviour
             }
 
             rect.position = eventData.position;
-
-            // 슬롯 위에 있으면 밝게 표시한다.
-            int overDoctrine = -1;
-            ShopColumn overColumn = ShopColumn.Subject;
-            bool over = view != null
-                && view.TryGetSlotAt(eventData.position, out overDoctrine, out overColumn);
-
-            for (int d = 0; d < view.slotObjects.Count; d++)
-            {
-                Dictionary<ShopColumn, Image> images = view.GetSlotImages(d);
-                if (images == null)
-                {
-                    continue;
-                }
-
-                foreach (KeyValuePair<ShopColumn, Image> pair in images)
-                {
-                    if (pair.Value == null)
-                    {
-                        continue;
-                    }
-
-                    pair.Value.color = view.GetSlotFilled(d, pair.Key)
-                        ? CardSelected
-                        : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
-                }
-            }
+            view.HighlightSlotAt(eventData.position);
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -845,6 +837,157 @@ public class FoundationPanelView : MonoBehaviour
             {
                 view.ItemDroppedOnSlot?.Invoke(entryIndex, targetDoctrine, targetColumn);
             }
+        }
+
+        private void HighlightSlotAt(Vector2 screenPosition)
+        {
+            int overDoctrine = -1;
+            ShopColumn overColumn = ShopColumn.Subject;
+            bool over = view != null
+                && view.TryGetSlotAt(screenPosition, out overDoctrine, out overColumn);
+
+            for (int d = 0; d < view.slotObjects.Count; d++)
+            {
+                Dictionary<ShopColumn, Image> images = view.GetSlotImages(d);
+                if (images == null)
+                {
+                    continue;
+                }
+
+                foreach (KeyValuePair<ShopColumn, Image> pair in images)
+                {
+                    if (pair.Value == null)
+                    {
+                        continue;
+                    }
+
+                    pair.Value.color = view.GetSlotFilled(d, pair.Key)
+                        ? CardSelected
+                        : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
+                }
+            }
+        }
+    }
+
+    // 채워진 슬롯 드래그 처리. 같은 열 다른 슬롯에 드롭하면 이동/교환,
+    // 슬롯 밖(빈 곳/목록)에 드롭하면 해제. 빈 슬롯은 드래그 불가.
+    private sealed class SlotDragHandler : MonoBehaviour,
+        IBeginDragHandler, IDragHandler, IEndDragHandler
+    {
+        private FoundationPanelView view;
+        private GameObject slotObject;
+        private int fromDoctrine = -1;
+        private ShopColumn fromColumn = ShopColumn.Subject;
+        private Transform originalParent;
+        private int originalSibling;
+        private GameObject ghost;
+        private bool dragging;
+
+        public void Initialize(FoundationPanelView panelView, GameObject slot)
+        {
+            view = panelView;
+            slotObject = slot;
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+            dragging = false;
+            ghost = null;
+            if (view == null || slotObject == null)
+            {
+                return;
+            }
+
+            if (!view.FindSlot(slotObject, out fromDoctrine, out fromColumn))
+            {
+                return;
+            }
+
+            if (!view.GetSlotFilled(fromDoctrine, fromColumn))
+            {
+                return;
+            }
+
+            RectTransform slotRect = slotObject.GetComponent<RectTransform>();
+            if (slotRect == null)
+            {
+                return;
+            }
+
+            originalParent = slotObject.transform.parent;
+            originalSibling = slotObject.transform.GetSiblingIndex();
+
+            // 원본은 자리에 두고, 반투명 고스트를 최상위에서 끈다. 레이아웃이 안 흔들린다.
+            ghost = new GameObject("SlotDragGhost", typeof(RectTransform), typeof(Image));
+            RectTransform ghostRect = ghost.GetComponent<RectTransform>();
+            ghostRect.SetParent(view.canvas.transform, false);
+            ghostRect.sizeDelta = slotRect.rect.size;
+            ghostRect.position = slotRect.position;
+            Image ghostImage = ghost.GetComponent<Image>();
+            Image sourceImage = slotObject.GetComponent<Image>();
+            ghostImage.sprite = sourceImage != null ? sourceImage.sprite : null;
+            ghostImage.color = new Color(0.95f, 0.75f, 0.75f, 0.85f);
+            ghostImage.raycastTarget = false;
+            Text label = view.GetSlotText(fromDoctrine, fromColumn);
+            if (label != null)
+            {
+                GameObject labelGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
+                labelGo.transform.SetParent(ghost.transform, false);
+                Text ghostText = labelGo.GetComponent<Text>();
+                ghostText.font = label.font;
+                ghostText.fontSize = label.fontSize;
+                ghostText.text = label.text;
+                ghostText.color = label.color;
+                ghostText.alignment = label.alignment;
+                UiTheme.Stretch(labelGo.GetComponent<RectTransform>(), 4f);
+                ghostText.raycastTarget = false;
+            }
+
+            ghost.transform.SetAsLastSibling();
+            dragging = true;
+            view.HighlightSlotAt(eventData.position);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (!dragging || ghost == null)
+            {
+                return;
+            }
+
+            ghost.GetComponent<RectTransform>().position = eventData.position;
+            view.HighlightSlotAt(eventData.position);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (!dragging)
+            {
+                return;
+            }
+
+            dragging = false;
+            if (ghost != null)
+            {
+                Destroy(ghost);
+                ghost = null;
+            }
+
+            if (view == null)
+            {
+                return;
+            }
+
+            if (view.TryGetSlotAt(eventData.position, out int targetDoctrine, out ShopColumn targetColumn))
+            {
+                view.SlotDroppedOnSlot?.Invoke(fromDoctrine, fromColumn, targetDoctrine, targetColumn);
+            }
+            else
+            {
+                view.SlotDroppedOutside?.Invoke(fromDoctrine, fromColumn);
+            }
+
+            view.RefreshSlotColors();
         }
     }
 }
