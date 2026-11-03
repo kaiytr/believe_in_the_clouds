@@ -36,9 +36,15 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     private bool movementLocked;
     private bool configurationValid;
     private float nextTargetSearchTime;
+    private CoinDropOrigin coinDropOrigin;
     private readonly string defeatId = "enemy:" + Guid.NewGuid().ToString("N") + "/defeat";
 
     public string DefeatId => defeatId;
+    // Existing subtype convention, with an Inspector override for future enemies.
+    [SerializeField] private bool overrideRewardKind;
+    [SerializeField] private EnemyRewardKind rewardKind;
+    public EnemyRewardKind RewardKind => overrideRewardKind ? rewardKind :
+        this is DogEnemy ? EnemyRewardKind.Dog : this is BelieverEnemy ? EnemyRewardKind.Believer : EnemyRewardKind.Executive;
 
     public event Action<PlayerHitResult> PlayerHitReceived;
 
@@ -368,14 +374,15 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     protected virtual void Die()
     {
         if (IsDead) return;
-        EnemyRewardKind kind = this is DogEnemy ? EnemyRewardKind.Dog :
-            this is BelieverEnemy ? EnemyRewardKind.Believer : EnemyRewardKind.Executive;
+        EnemyRewardKind kind = RewardKind;
+        Currency.Service?.ObserveEnemyDefeat(kind, defeatId);
         Vector3 origin = bodyCollider != null ? bodyCollider.bounds.center : transform.position;
-        // Coin presentation waits for the death motion to finish; the reward itself
-        // (ledger entry / pending balance) is still recorded immediately below.
+        // Reserve the reward now, but launch coins from the corpse's final
+        // position when it disappears, including knockback applied after this hit.
+        coinDropOrigin = new CoinDropOrigin(bodyCollider != null ? bodyCollider.transform : transform, origin);
         float deathRaiseDelay = Mathf.Max(0f, destroyDelay - 0.05f);
-        if (EconomyRuntime.Instance != null) EconomyRuntime.Instance.RewardDefeat(kind, defeatId, origin, deathRaiseDelay);
-        else Currency.Service?.TryRewardDefeat(kind, defeatId, origin, presentationDelay: deathRaiseDelay);
+        if (EconomyRuntime.Instance != null) EconomyRuntime.Instance.RewardDefeat(kind, defeatId, origin, dropOrigin: coinDropOrigin);
+        else Currency.Service?.TryRewardDefeat(kind, defeatId, origin, dropOrigin: coinDropOrigin);
         if (beliefController != null)
         {
             beliefController.StateChanged -= HandleBeliefStateChanged;
@@ -447,6 +454,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
 
     private void OnDestroy()
     {
+        coinDropOrigin?.Freeze();
         if (beliefController != null)
             beliefController.StateChanged -= HandleBeliefStateChanged;
     }

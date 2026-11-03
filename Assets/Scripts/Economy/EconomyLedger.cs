@@ -60,7 +60,7 @@ public static class EconomyLedger
         if (data == null || data.schemaVersion != EconomyProfileData.CurrentSchemaVersion ||
             data.revision < 0 || data.revision == long.MaxValue || string.IsNullOrWhiteSpace(data.profileId) ||
             data.balance < 0 || data.balance > EconomySettings.MaxCoins || !ValidatePieces(data.pieces) ||
-            data.pendingGrants == null || data.processedTransactions == null) return false;
+            data.statistics == null || !data.statistics.IsValid() || data.pendingGrants == null || data.processedTransactions == null) return false;
         long pending = 0;
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (EconomyReceipt receipt in data.processedTransactions)
@@ -99,6 +99,8 @@ public static class EconomyLedger
         if (string.IsNullOrWhiteSpace(death.deathId) || death.sourceRevision < 0 || death.sourceRevision > data.revision ||
             !Enum.IsDefined(typeof(EconomyDeathPhase), death.phase) || !ValidatePieces(death.allPiecesAfterUnequip) ||
             !ValidatePieces(death.removedPieces) || !ValidatePieces(death.remainingPieces)) return false;
+        if (death.hasResult != (death.result != null) || (death.hasResult && !death.result.IsValid()) ||
+            (death.awaitingChoice && death.phase != EconomyDeathPhase.Captured)) return false;
         if (death.phase == EconomyDeathPhase.Captured) return true;
         int total = Total(death.allPiecesAfterUnequip);
         if (death.lostCoins < 0 || death.lostCoins > EconomySettings.MaxCoins * (long)EconomySettings.DeathLossPercent / 100 ||

@@ -58,6 +58,8 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     private bool showingSheetFrame;
     private bool deadPlayed;
 
+    public bool IsDeathAnimationComplete => !HasFrames(deadFrames) || deadPlayed;
+
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -202,7 +204,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
             return;
         }
 
-        OneShotState state = PlayOnce(deadFrames, deadFramesPerSecond);
+        OneShotState state = PlayOnce(deadFrames, deadFramesPerSecond, useUnscaledTime: true);
         if (state == OneShotState.Finished)
             deadPlayed = true;
     }
@@ -215,7 +217,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     }
 
     // 한 번만 재생하고 마지막 프레임에서 멈춘다.
-    private OneShotState PlayOnce(Sprite[] frames, float fps)
+    private OneShotState PlayOnce(Sprite[] frames, float fps, bool useUnscaledTime = false)
     {
         if (activeFrames != frames)
         {
@@ -227,19 +229,19 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
             return OneShotState.Started;
         }
 
-        if (frameIndex >= frames.Length - 1)
-            return OneShotState.Finished;
-
-        frameTimer += Time.deltaTime;
+        // Death keeps playing while the world is paused, including the final frame's duration.
+        frameTimer += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
         float frameDuration = 1f / Mathf.Max(1f, activeFramesPerSecond);
-        while (frameTimer >= frameDuration && frameIndex < frames.Length - 1)
+        while (frameTimer >= frameDuration)
         {
             frameTimer -= frameDuration;
+            if (frameIndex >= frames.Length - 1)
+                return OneShotState.Finished;
             frameIndex++;
             ApplyFrame(frames[frameIndex]);
         }
 
-        return frameIndex >= frames.Length - 1 ? OneShotState.Finished : OneShotState.Playing;
+        return OneShotState.Playing;
     }
 
     private void ApplyFrame(Sprite sprite)

@@ -5,6 +5,7 @@ using System.IO;
 // Scene names remain stable for saved runs; this catalog owns their asset locations.
 public static class ProjectScenes
 {
+    public const string Title = "Assets/Scenes/Gameplay/Title.unity";
     public const string Lobby = "Assets/Scenes/Gameplay/Lobby.unity";
     public const string ShopTest = "Assets/Scenes/Gameplay/ShopTest.unity";
     public const string DogCombatTest = "Assets/Scenes/Gameplay/DogCombatTest.unity";

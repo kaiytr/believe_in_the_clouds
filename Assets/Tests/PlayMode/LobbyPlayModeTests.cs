@@ -29,6 +29,8 @@ public sealed class LobbyPlayModeTests
 
     [UnityTearDown] public IEnumerator TearDown()
     {
+        if (PlayerDeathCoordinator.Active != null) Object.Destroy(PlayerDeathCoordinator.Active.gameObject);
+        yield return null;
         SceneManager.sceneLoaded -= PauseCombatActors;
         // A persistent router must not route other suites back into this fixture.
         if (Flow != null) Object.Destroy(Flow.gameObject);
@@ -63,6 +65,14 @@ public sealed class LobbyPlayModeTests
             Time.realtimeSinceStartup < until) yield return null;
         Assert.That(CombatScenes, Does.Contain(SceneManager.GetActiveScene().name));
         yield return Ready(SceneManager.GetActiveScene().name);
+    }
+
+    private static IEnumerator DeathResultReady()
+    {
+        float until = Time.realtimeSinceStartup + 5f;
+        while (Object.FindFirstObjectByType<DeathResultView>() == null && Time.realtimeSinceStartup < until)
+            yield return null;
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
     }
 
     private static void PauseCombatActors(Scene scene, LoadSceneMode mode)
@@ -175,7 +185,12 @@ public sealed class LobbyPlayModeTests
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
         Assert.That(Flow.InputReady, Is.False); Assert.That(Currency.Balance, Is.EqualTo(100));
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
-        store.FailWrites = false; yield return Ready("Lobby");
+        store.FailWrites = false;
+        yield return DeathResultReady();
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
+        Assert.That(Currency.Balance, Is.EqualTo(100));
+        Player.GetComponent<PlayerDeathCoordinator>().Continue();
+        yield return Ready("Lobby");
         Assert.That(Flow.State.id, Is.Not.EqualTo(oldRun)); Assert.That(Flow.State.combatClears, Is.Zero);
         Assert.That(Player.CurrentHp, Is.EqualTo(Player.MaxHp)); Assert.That(Currency.Balance, Is.EqualTo(70));
         Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(10));
@@ -190,7 +205,9 @@ public sealed class LobbyPlayModeTests
         Flow.ToggleSaveFailure(); Assert.That(Flow.FixtureStore.FailWrites, Is.True);
         Flow.DieForTest(); yield return null;
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
-        Flow.ToggleSaveFailure(); yield return Ready("Lobby");
+        Flow.ToggleSaveFailure();
+        yield return DeathResultReady();
+        Player.GetComponent<PlayerDeathCoordinator>().Continue(); yield return Ready("Lobby");
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }
 

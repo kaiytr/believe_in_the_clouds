@@ -92,6 +92,9 @@ public sealed class EconomyDeathRecord
     public long sourceRevision;
     public int randomSeed;
     public EconomyDeathPhase phase;
+    public bool awaitingChoice;
+    public bool hasResult;
+    public DeathResultData result;
     public int lostCoins;
     public int lostPieces;
     public List<PieceCount> allPiecesAfterUnequip = new List<PieceCount>();
@@ -102,11 +105,12 @@ public sealed class EconomyDeathRecord
 [Serializable]
 public sealed class EconomyProfileData
 {
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
     public int schemaVersion = CurrentSchemaVersion;
     public long revision;
     public string profileId = Guid.NewGuid().ToString("N");
     public int balance;
+    public PlayStatistics statistics = new PlayStatistics();
     // Includes pieces referenced by equipped doctrines, exactly once.
     public List<PieceCount> pieces = new List<PieceCount>();
     public List<PendingGrant> pendingGrants = new List<PendingGrant>();
@@ -127,7 +131,9 @@ public sealed class EconomyProfileData
 
     public void Normalize()
     {
+        statistics = statistics ?? new PlayStatistics();
         if (!hasDeath) death = null;
+        else if (death != null && !death.hasResult) death.result = null;
         if (!hasRun) run = null;
         else run?.Normalize();
         if (processedTransactions != null)
@@ -136,16 +142,52 @@ public sealed class EconomyProfileData
     }
 }
 
+// Presentation only: follow the corpse while it moves, then keep its final
+// world position after destruction. Shared by every token and save retry.
+public sealed class CoinDropOrigin
+{
+    private Transform source;
+    private readonly Vector3 localOffset;
+    private Vector3 position;
+    private bool ready;
+
+    public CoinDropOrigin(Transform source, Vector3 initialPosition)
+    {
+        this.source = source;
+        position = initialPosition;
+        localOffset = source != null ? source.InverseTransformPoint(initialPosition) : Vector3.zero;
+        ready = source == null;
+    }
+    public Vector3 Position
+    {
+        get
+        {
+            if (source != null) position = source.TransformPoint(localOffset);
+            return position;
+        }
+    }
+    public bool IsReady => ready || source == null;
+    public void Freeze()
+    {
+        position = Position;
+        source = null;
+        ready = true;
+    }
+}
+
 public readonly struct CoinFlightRequest
 {
     public readonly PendingGrant Grant;
     public readonly Vector3 Position;
     public readonly Camera SourceCamera;
-    // Time before the visual flight starts, independent of the reward already recorded. Lets
-    // enemy defeats hold the coin presentation until the death motion finishes.
     public readonly float PresentationDelay;
-    public CoinFlightRequest(PendingGrant grant, Vector3 position, Camera camera, float presentationDelay = 0f)
-    { Grant = grant; Position = position; SourceCamera = camera; PresentationDelay = Mathf.Max(0f, presentationDelay); }
+    public readonly CoinDropOrigin DropOrigin;
+    public CoinFlightRequest(PendingGrant grant, Vector3 position, Camera camera, float presentationDelay = 0f,
+        CoinDropOrigin dropOrigin = null)
+    {
+        Grant = grant; Position = position; SourceCamera = camera;
+        PresentationDelay = Mathf.Max(0f, presentationDelay); DropOrigin = dropOrigin;
+    }
 }
 
 public enum EnemyRewardKind { Dog, Believer, Executive, Boss }

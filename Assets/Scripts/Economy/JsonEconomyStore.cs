@@ -79,7 +79,7 @@ public sealed class JsonEconomyStore : IEconomyStore
                 if (data.hasRun) return new EconomyLoadResult(EconomyLoadStatus.Invalid);
                 data.schemaVersion = 2;
             }
-            if (data != null && data.schemaVersion == 2)
+            if (data != null && data.schemaVersion >= 2 && data.schemaVersion <= 3)
                 data.schemaVersion = EconomyProfileData.CurrentSchemaVersion;
             return EconomyLedger.Validate(data)
                 ? new EconomyLoadResult(EconomyLoadStatus.Loaded, data)

@@ -71,7 +71,7 @@ public class MagicCircleAttack : EnemyAttack
             slowDuration,
             circleVisualDuration,
             PlayerBodyCollider,
-            out bool hpDamageApplied);
+            out bool hpDamageApplied, gameObject);
         if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);
 
         if (harmfulEffectApplied)

@@ -38,7 +38,7 @@ public sealed class BossBurnEffect : MonoBehaviour
         while (Time.time + 0.0001f >= nextTick && nextTick <= endsAt + 0.0001f)
         {
             TickAttempts++;
-            if (health.TakeDamage(new DamageInfo(damage, DamageSource.Enemy))) TicksAccepted++;
+            if (health.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, source != null ? source.gameObject : null, "화상"))) TicksAccepted++;
             nextTick += interval;
         }
         if (Time.time >= endsAt) Clear();

@@ -10,6 +10,7 @@ public sealed class CoinFlightView : MonoBehaviour
         public string GrantId, TokenId;
         public Vector3 WorldPosition, LandingPosition;
         public Camera SourceCamera;
+        public CoinDropOrigin DropOrigin;
         public Vector2 LaunchPosition;
         public float HorizontalScatter, ArcHeight, Age, Delay, GroundSeconds, Duration, NextRetry;
         public Image Image;
@@ -52,7 +53,7 @@ public sealed class CoinFlightView : MonoBehaviour
             waiting.Enqueue(new Flight
             {
                 GrantId = request.Grant.grantId, TokenId = token.tokenId,
-                WorldPosition = request.Position, SourceCamera = source,
+                WorldPosition = request.Position, SourceCamera = source, DropOrigin = request.DropOrigin,
                 HorizontalScatter = Random.insideUnitCircle.x * Mathf.Max(0f, settings.scatterRadius),
                 ArcHeight = Mathf.Max(0f, settings.dropArcHeight) * Random.Range(.75f, 1.25f),
                 GroundSeconds = Mathf.Max(0f, settings.groundRestSeconds),
@@ -118,8 +119,15 @@ public sealed class CoinFlightView : MonoBehaviour
         {
             Flight flight = active[i];
             if (!service.IsPendingToken(flight.GrantId, flight.TokenId)) { Release(i); continue; }
-            flight.Age += Time.unscaledDeltaTime;
             bool noPresentation = target == null || flight.SourceCamera == null;
+            if (!noPresentation && flight.DropOrigin != null && !flight.DropOrigin.IsReady)
+            {
+                // Keep a fallback position even if the source disappears unexpectedly.
+                flight.WorldPosition = flight.DropOrigin.Position;
+                flight.Image.enabled = false;
+                continue;
+            }
+            flight.Age += Time.unscaledDeltaTime;
             float elapsed = flight.Age - flight.Delay;
             float scatter = Mathf.Max(0f, settings.scatterSeconds);
             float groundEnd = scatter + flight.GroundSeconds;
@@ -135,6 +143,7 @@ public sealed class CoinFlightView : MonoBehaviour
             if (elapsed < 0f) continue;
             if (!flight.DropInitialized)
             {
+                if (flight.DropOrigin != null) flight.WorldPosition = flight.DropOrigin.Position;
                 flight.LandingPosition = FindLandingPosition(flight);
                 flight.DropInitialized = true;
             }

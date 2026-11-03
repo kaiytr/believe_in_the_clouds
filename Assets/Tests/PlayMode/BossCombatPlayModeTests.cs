@@ -88,7 +88,10 @@ public sealed class BossCombatPlayModeTests
         Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(3));
         Assert.That(player.CurrentHp,Is.EqualTo(100f-(data.MeleeComboDamage[0]+data.MeleeComboDamage[1]+
             data.MeleeComboDamage[2])));
-        Assert.That(playerBody.linearVelocity.y,Is.GreaterThan(0f));
+        Assert.That(playerAttack.TryGetComboStep(2,out PlayerAttack.ComboStep finisher),Is.True);
+        Assert.That(finisher.launchUp,Is.Zero);
+        Assert.That(playerBody.linearVelocity.y,Is.EqualTo(0f).Within(.001f));
+        Assert.That(playerBody.linearVelocity.x,Is.LessThan(0f),"The three-hit finisher knocks back without launching.");
         Assert.That(boss.transform.localScale,Is.EqualTo(Vector3.one));
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
@@ -465,7 +468,7 @@ public sealed class BossCombatPlayModeTests
         var record = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
         cancel();
         float hp = player.CurrentHp;
-        yield return new WaitForSeconds(.8f);
+        yield return new WaitForSecondsRealtime(.8f);
         Assert.That(record.Outcome, Is.EqualTo(AttackOutcome.Cancelled));
         Assert.That(player.CurrentHp, Is.EqualTo(hp));
         Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
@@ -982,6 +985,12 @@ public sealed class BossCombatPlayModeTests
     [UnityTearDown]
     public IEnumerator TearDown()
     {
+        if (PlayerDeathCoordinator.Active != null)
+        {
+            Currency.Service?.CompleteDeferredDeath(PlayerDeathCoordinator.Active.DeathId);
+            Object.Destroy(PlayerDeathCoordinator.Active.gameObject);
+        }
+        Time.timeScale = 1f;
         SceneManager.sceneLoaded-=PauseOnLoad;
         if(boss!=null) { boss.PauseAndCancelForTest(); boss.gameObject.SetActive(false); if(originalData!=null) Set(boss,"settings",originalData); }
         foreach(var fixture in fixtures) if(fixture!=null) Object.Destroy(fixture); fixtures.Clear();

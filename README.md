@@ -7,7 +7,7 @@
 
 | 폴더 | 용도 |
 | --- | --- |
-| `Assets/Scenes/Gameplay/` | Lobby와 실제 분기에서 불러오는 7개 씬. 빌드에 포함 |
+| `Assets/Scenes/Gameplay/` | Lobby·실제 분기·Title 목적지 8개 씬. 빌드에 포함 |
 | `Assets/Scenes/Tests/` | 통합 전투, 코인, 상자, 재단의 개별 검증 |
 | `Assets/Scenes/Sources/` | 플레이어·적 구성의 제작 원본. 생성 도구와 자동 테스트가 사용 |
 
@@ -48,3 +48,9 @@ Unity에서 **`Assets/Scenes/Tests/ChestTest.unity`를 열고 Play**하면 상�
 - [상자 개발명세서](Docs/ChestSystem_TechnicalSpec.md): 기존 구조 재사용, 홀드 입력, 단일 보상 거래·저장, 검증 계획
 - [상자 테스트 가이드](Docs/ChestSystem_TestGuide.md): 실행·조작·테스트 도구와 직접 확인할 항목
 - [상자 구현 결과](Docs/ChestSystem_ImplementationStatus.md): 구현 범위·저장 호환·검증 결과와 기존 실패 구분
+
+## 사망 결과 화면
+
+플레이어 사망 시 현재 씬 위에 결과 UI가 열리고 게임이 정지한다. **이어하기**를 누르면 기존 사망 페널티 적용 후 로비로 복귀하며, **저장 및 종료**를 누르면 같은 페널티와 결과 기록을 저장한 뒤 최소 타이틀 씬으로 이동한다. 타이틀의 ‘로비로 이동’은 기존 로비 흐름을 사용한다.
+
+통계·캡처·저장 정책·변경 파일·검증 결과는 [사망 결과 UI 구현 결과](Docs/DeathResultSystem_ImplementationStatus.md)를 참고한다. 일반 Editor Play는 기존처럼 메모리 저장이며, 디스크 저장 검증에는 `-usePersistentEditorProfile`을 사용한다.

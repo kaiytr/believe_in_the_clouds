@@ -255,15 +255,21 @@ public sealed class StageIntegrationPlayModeTests
         var dash = Player.GetComponent<PlayerDash>();
         var emitter = Player.GetComponent<CombatAfterimageEmitter>();
         Attack(attack); Assert.That(attack.IsAttacking,Is.True);
+        Sprite emittedSprite = Player.GetComponent<SpriteRenderer>().sprite;
         Assert.That(dash.TryDash(),Is.True);
+        var firstImage = Object.FindFirstObjectByType<CombatAfterimage>().GetComponent<SpriteRenderer>();
+        Assert.That(firstImage.sprite,Is.SameAs(emittedSprite));
+        float firstOpacity = firstImage.color.a;
         Attack(attack);
         Assert.That(attack.IsAttacking,Is.False); Assert.That(move.ControlLocked,Is.True);
         yield return new WaitForSeconds(.09f);
         Assert.That(emitter.ActiveCount,Is.GreaterThan(0));
+        Assert.That(firstImage.sprite,Is.SameAs(emittedSprite),"Afterimages retain the emitted frame while the player keeps animating.");
+        Assert.That(firstImage.color.a,Is.LessThan(firstOpacity));
         foreach (var image in Object.FindObjectsByType<CombatAfterimage>(FindObjectsSortMode.None))
         {
             Assert.That(image.GetComponent<Collider2D>(),Is.Null);
-            Assert.That(image.GetComponent<SpriteRenderer>().sprite,Is.EqualTo(Player.GetComponent<SpriteRenderer>().sprite));
+            Assert.That(image.GetComponent<SpriteRenderer>().sprite,Is.Not.Null);
         }
         dash.enabled = false;
         Assert.That(move.ControlLocked,Is.False); Assert.That(dash.IsDashing,Is.False);
@@ -362,6 +368,8 @@ public sealed class StageIntegrationPlayModeTests
         EconomyRuntime.Ensure();
         EconomyService previous = Currency.Service;
         EconomyRuntime.Instance.SetService(new EconomyService(new MemoryEconomyStore(), new EconomyRandom(18)));
+        float previousScatter = EconomyRuntime.Instance.Settings.scatterRadius;
+        EconomyRuntime.Instance.Settings.scatterRadius = 0f;
         try
         {
             yield return null;
@@ -375,7 +383,20 @@ public sealed class StageIntegrationPlayModeTests
             float deathDuration = (float)typeof(EnemyUnit).GetField("destroyDelay",
                 BindingFlags.Instance | BindingFlags.NonPublic).GetValue(enemy);
             var service = Currency.Service;
+            CoinDropOrigin dropOrigin = null;
+            service.FlightRequested += request => dropOrigin = request.DropOrigin;
+            Vector3 hitPosition = enemy.BodyCollider.bounds.center;
+            // Keep both hit and corpse positions visible, so screen-edge clamping
+            // cannot hide the world-position movement in the camera assertions.
+            var dropCamera = Camera.main;
+            foreach (var behaviour in dropCamera.GetComponents<MonoBehaviour>()) behaviour.enabled = false;
+            dropCamera.transform.position = new Vector3(hitPosition.x + 3f, dropCamera.transform.position.y, dropCamera.transform.position.z);
             Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.True);
+            Assert.That(dropOrigin, Is.Not.Null);
+            // PlayerAttack applies its knockback after damage has already caused Die().
+            Rigidbody2D corpse = enemy.GetComponent<Rigidbody2D>();
+            corpse.gravityScale = 0f;
+            corpse.AddForce(Vector2.right * 4f, ForceMode2D.Impulse);
             Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.False);
             int reward = service.PendingBalance;
             Assert.That(reward, Is.InRange(5, 7));
@@ -384,9 +405,22 @@ public sealed class StageIntegrationPlayModeTests
             Assert.That(enemy != null, Is.True, "The death motion is still running.");
             Assert.That(view.GetComponentsInChildren<Image>().Any(item => item.enabled), Is.False);
             Assert.That(service.Balance, Is.Zero);
+            Time.timeScale = 0f;
+            yield return new WaitForSecondsRealtime(deathDuration);
+            Assert.That(enemy != null, Is.True, "A paused corpse has not completed its death motion.");
+            Assert.That(view.GetComponentsInChildren<Image>().Any(item => item.enabled), Is.False);
+            Time.timeScale = 1f;
             yield return Until(() => enemy == null);
+            Vector3 finalPosition = dropOrigin.Position;
+            Assert.That(dropOrigin.IsReady, Is.True);
+            Assert.That(finalPosition.x, Is.GreaterThan(hitPosition.x + .5f), "The corpse moved after the lethal hit.");
             Image coin = null;
             yield return Until(() => (coin = view.GetComponentsInChildren<Image>().FirstOrDefault(item => item.enabled)) != null);
+            float expectedDropX = Mathf.Clamp(Camera.main.WorldToScreenPoint(finalPosition).x, 12f, Screen.width - 12f);
+            float oldDropX = Mathf.Clamp(Camera.main.WorldToScreenPoint(hitPosition).x, 12f, Screen.width - 12f);
+            float actualDropX = RectTransformUtility.WorldToScreenPoint(null, coin.rectTransform.position).x;
+            Assert.That(actualDropX, Is.EqualTo(expectedDropX).Within(2f));
+            Assert.That(Mathf.Abs(actualDropX - oldDropX), Is.GreaterThan(5f), "Coins must originate from the corpse, not the lethal-hit position.");
             yield return new WaitForSecondsRealtime(EconomyRuntime.Instance.Settings.scatterSeconds + .03f);
             Assert.That(coin.rectTransform.sizeDelta, Is.EqualTo(Vector2.one * 30f));
             Assert.That(service.Balance, Is.Zero, "Ground rest precedes HUD settlement.");
@@ -410,7 +444,12 @@ public sealed class StageIntegrationPlayModeTests
             Assert.That(service.Balance, Is.EqualTo(reward));
             Assert.That(service.PendingBalance, Is.Zero);
         }
-        finally { EconomyRuntime.Instance.SetService(previous); }
+        finally
+        {
+            Time.timeScale = 1f;
+            EconomyRuntime.Instance.Settings.scatterRadius = previousScatter;
+            EconomyRuntime.Instance.SetService(previous);
+        }
     }
 
     [UnityTest]

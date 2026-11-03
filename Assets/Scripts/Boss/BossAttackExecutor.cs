@@ -132,8 +132,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
             warning = CreateWarning(geometry, followOwner: true);
             bool combo = hitIndex > 0;
             string label = combo ? $"연속 베기 {hitIndex}/{OwnerComboCount}" : AttackLabel(record);
+            string finisherHint = step.launchUp > 0f ? "피니시 · 적중 시 넉백과 띄우기" : "피니시 · 적중 시 넉백";
             string hint = combo
-                ? (isFinisher ? "피니시 · 적중 시 넉백과 띄우기" : "플레이어의 연계 · 표시된 범위에서 벗어나세요.")
+                ? (isFinisher ? finisherHint : "플레이어의 연계 · 표시된 범위에서 벗어나세요.")
                 : AttackHint(record);
             if (combo && owner.IsBurning) hint += " · 피격 시 화상";
             else if (combo && belief == BossBeliefKind.AttackAndDodge) hint += $" · 회피하면 믿음 -{Data.BeliefReduction:0}";
