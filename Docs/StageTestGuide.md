@@ -4,7 +4,7 @@ Unity에서 `Assets/Scenes/Tests/StageTest.unity`를 열고 Play를 누른다.
 
 - A/D 또는 좌우 방향키: 이동
 - Space: 점프
-- 마우스 좌클릭: 지상 4타 콤보 / 공중 공격
+- 마우스 좌클릭: 지상 3타 콤보 / 공중 공격
 - Left Shift: 공격을 취소하고 대쉬, 파란 잔상 표시
 - R: StageTest 전체 재시작
 

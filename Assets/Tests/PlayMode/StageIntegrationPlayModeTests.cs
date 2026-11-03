@@ -52,7 +52,7 @@ public sealed class StageIntegrationPlayModeTests
             yield return Load(scene);
             GameObject player = Player;
             Assert.That(player.GetComponent<PlayerMove>().BaseMoveSpeed,Is.EqualTo(7f),scene);
-            Assert.That(player.GetComponent<PlayerAttack>().ComboCount,Is.EqualTo(4),scene);
+            Assert.That(player.GetComponent<PlayerAttack>().ComboCount,Is.EqualTo(3),scene);
             Assert.That(player.GetComponent<PlayerDash>(),Is.Not.Null,scene);
             Assert.That(player.GetComponent<PlayerHitReact>(),Is.Not.Null,scene);
             Assert.That(player.GetComponents<PlayerBody>().Length,Is.EqualTo(1),scene);

@@ -79,7 +79,7 @@ public sealed class BossDebugPanel : MonoBehaviour
             }
         }
         Section(content, "연속 베기");
-        Label("Combo info", content, "플레이어 콤보를 따라 4타 자동 실행", 13, new Color(.75f, .81f, .9f));
+        Label("Combo info", content, "플레이어 콤보를 따라 연속 베기 자동 실행", 13, new Color(.75f, .81f, .9f));
         Transform health = Row(content);
         Button(health, "HP -50", () => boss.SetHpForTest(boss.CurrentHp - 50f));
         Button(health, "HP 회복", () => boss.SetHpForTest(boss.MaxHp));

@@ -182,8 +182,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         }
         if (!BindPlayer())
         {
-            SetStatus("PlayerHealth, 4타 콤보 데이터, 몸체 콜라이더 필요");
-            Debug.LogError(name + ": tagged Player requires PlayerHealth, a four-step PlayerAttack, a non-trigger body Collider2D and PlayerCombatEvents.", this);
+            SetStatus("PlayerHealth, 콤보 데이터, 몸체 콜라이더 필요");
+            Debug.LogError(name + ": tagged Player requires PlayerHealth, a multi-step PlayerAttack, a non-trigger body Collider2D and PlayerCombatEvents.", this);
             return;
         }
         attacks.Initialize(this);
@@ -204,7 +204,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         playerHealth = actor.GetComponent<PlayerHealth>();
         playerAttack = actor.GetComponent<PlayerAttack>();
         playerEvents = actor.GetComponent<PlayerCombatEvents>();
-        if (playerHealth == null || playerAttack == null || playerAttack.ComboCount < 4 ||
+        if (playerHealth == null || playerAttack == null || playerAttack.ComboCount < 2 ||
             PlayerCollider == null || PlayerCollider.isTrigger || playerEvents == null) return false;
         playerEvents.SignalPublished += HandlePlayerSignal;
         Physics2D.IgnoreCollision(bodyCollider, PlayerCollider, true);

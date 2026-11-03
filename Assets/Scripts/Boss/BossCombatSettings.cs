@@ -29,7 +29,7 @@ public sealed class BossCombatSettings : ScriptableObject
     [Header("Melee / dash / projectile")]
     public float MeleeActiveTime = 0.12f;
     public float MeleeDamage = 14f;
-    public float[] MeleeComboDamage = { 6f, 7f, 8f, 14f };
+    public float[] MeleeComboDamage = { 6f, 7f, 14f };
     public float MeleeComboFirstWarning = 0.65f;
     public float MeleeComboFollowupWarning = 0.35f;
     public float DashDistance = 4.5f;
@@ -118,8 +118,8 @@ public sealed class BossCombatSettings : ScriptableObject
             PhaseTwoSpeedMultiplier <= 0f || PhaseTwoDamageMultiplier < 0f ||
             MeleeComboFirstWarning <= 0f || MeleeComboFollowupWarning <= 0f)
             errors.Add("Attack timing: windup/active/speed must be positive and recovery/damage multipliers non-negative.");
-        if (MeleeComboDamage == null || MeleeComboDamage.Length != 4)
-            errors.Add("Melee combo: exactly four damage values are required.");
+        if (MeleeComboDamage == null || MeleeComboDamage.Length < 2)
+            errors.Add("Melee combo: at least two damage values are required.");
         else
             for (int i = 0; i < MeleeComboDamage.Length; i++)
                 if (MeleeComboDamage[i] < 0f)

@@ -92,28 +92,32 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
     private IEnumerator MeleeCombo()
     {
-        if (owner.PlayerAttack == null || owner.PlayerAttack.ComboCount < 4)
+        int stepCount = owner.PlayerAttack != null ? owner.PlayerAttack.ComboCount : 0;
+        if (owner.PlayerAttack == null || stepCount < 2)
         {
-            owner.ShowFeedback("연속 베기 중지 · 플레이어 4타 콤보 데이터 없음", new Color(1f, .65f, .45f));
+            owner.ShowFeedback("연속 베기 중지 · 플레이어 콤보 데이터 부족", new Color(1f, .65f, .45f));
             yield break;
         }
 
         owner.FacePlayer();
         int direction = owner.Facing;
         int token = owner.Generation;
-        for (int index = 0; index < 4 && token == owner.Generation && owner.CanStartNextHit; index++)
+        for (int index = 0; index < stepCount && token == owner.Generation && owner.CanStartNextHit; index++)
         {
             if (!owner.PlayerAttack.TryGetComboStep(index, out PlayerAttack.ComboStep step))
                 yield break;
 
             float warning = index == 0 ? Data.MeleeComboFirstWarning : Data.MeleeComboFollowupWarning;
+            float damage = index < Data.MeleeComboDamage.Length
+                ? Data.MeleeComboDamage[index]
+                : Data.MeleeComboDamage[Data.MeleeComboDamage.Length - 1];
             // The player's comboWindow accepts a buffered click; this sequence advances automatically after recovery.
-            yield return PlayerMeleeStep(index + 1, step, direction, Data.MeleeComboDamage[index],
+            yield return PlayerMeleeStep(index + 1, index == stepCount - 1, step, direction, damage,
                 warning / owner.SpeedMultiplier, owner.RegularAttackBelief);
         }
     }
 
-    private IEnumerator PlayerMeleeStep(int hitIndex, PlayerAttack.ComboStep step, int direction,
+    private IEnumerator PlayerMeleeStep(int hitIndex, bool isFinisher, PlayerAttack.ComboStep step, int direction,
         float damage, float warningDuration, BossBeliefKind belief)
     {
         if (!owner.CanStartNextHit) yield break;
@@ -127,9 +131,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
         {
             warning = CreateWarning(geometry, followOwner: true);
             bool combo = hitIndex > 0;
-            string label = combo ? $"연속 베기 {hitIndex}/4타" : AttackLabel(record);
+            string label = combo ? $"연속 베기 {hitIndex}/{OwnerComboCount}" : AttackLabel(record);
             string hint = combo
-                ? (hitIndex == 4 ? "올려베기 피니시 · 적중 시 넉백과 띄우기" : "플레이어의 4타 연계 · 표시된 범위에서 벗어나세요.")
+                ? (isFinisher ? "피니시 · 적중 시 넉백과 띄우기" : "플레이어의 연계 · 표시된 범위에서 벗어나세요.")
                 : AttackHint(record);
             if (combo && owner.IsBurning) hint += " · 피격 시 화상";
             else if (combo && belief == BossBeliefKind.AttackAndDodge) hint += $" · 회피하면 믿음 -{Data.BeliefReduction:0}";
@@ -198,7 +202,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             slash.Show(record.Geometry, Data.AttackOrder, owner.IsBurning);
             while (Time.time < activeEndsAt && owner.IsAttackValid(record))
             {
-                if (owner.Observe(record, record.Geometry) && owner.TryHit(record) && hitIndex == 4)
+                if (owner.Observe(record, record.Geometry) && owner.TryHit(record) && isFinisher)
                     ApplyFinisherKnockback(step, direction);
                 yield return PhysicsTick;
             }
@@ -260,7 +264,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         }
         if (facePlayer) owner.FacePlayer();
         // Special patterns use the player's first swing through the same movement, warning and hit path as the combo.
-        yield return PlayerMeleeStep(0, step, owner.Facing, damage, windup / owner.SpeedMultiplier, belief);
+        yield return PlayerMeleeStep(0, false, step, owner.Facing, damage, windup / owner.SpeedMultiplier, belief);
         yield return Recovery();
     }
 
@@ -383,8 +387,10 @@ public sealed class BossAttackExecutor : MonoBehaviour
         yield return Recovery();
     }
 
+    private int OwnerComboCount => owner.PlayerAttack != null ? Mathf.Max(1, owner.PlayerAttack.ComboCount) : 1;
+
     private string AttackLabel(BossAttackRecord record) => record.Kind == BossAttackKind.Melee && record.HitIndex > 0 ?
-        $"연속 베기 {record.HitIndex}/4타" : BossCombatController.AttackName(record.Kind);
+        $"연속 베기 {record.HitIndex}/{OwnerComboCount}" : BossCombatController.AttackName(record.Kind);
 
     private string AttackHint(BossAttackRecord record)
     {

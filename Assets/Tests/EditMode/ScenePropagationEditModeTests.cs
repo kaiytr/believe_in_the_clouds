@@ -36,8 +36,8 @@ public sealed class ScenePropagationEditModeTests
             Assert.That(actual.FindProperty("downFanOriginOffset").vector2Value, Is.EqualTo(expected.FindProperty("downFanOriginOffset").vector2Value));
             Assert.That(actual.FindProperty("airAttack.hitboxOffset").vector2Value, Is.EqualTo(Vector2.zero));
             Assert.That(actual.FindProperty("airAttack.name").stringValue, Is.EqualTo("공중: 아래 부채꼴 내리찍기"));
-            Assert.That(actual.FindProperty("comboSteps").arraySize, Is.EqualTo(4));
-            for (int i = 0; i < 4; i++)
+            Assert.That(actual.FindProperty("comboSteps").arraySize, Is.EqualTo(3));
+            for (int i = 0; i < 3; i++)
                 foreach (string field in new[] { "damage", "windupTime", "recoveryTime", "lungeDistance" })
                 {
                     string property = $"comboSteps.Array.data[{i}].{field}";
