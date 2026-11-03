@@ -8,9 +8,11 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private SpriteRenderer border;
     [SerializeField] private TextMesh label;
     [SerializeField] private BoxCollider2D trigger;
+    [SerializeField] private Sprite closedDoor;
+    [SerializeField] private Sprite combatDoor;
+    [SerializeField] private Sprite shopDoor;
     [Tooltip("분기 위 안내와 콜라이더 윗면 사이의 월드 거리.")]
     [SerializeField, Min(0f)] private float promptGap = .8f;
-    private Color displayed;
 
     public Transform PromptAnchor => transform;
     public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
@@ -79,18 +81,27 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     {
         BranchCandidate candidate = Candidate;
         if (candidate == null || body == null) return;
-        Color color = candidate.revealed ? RoleColor(candidate.role) : new Color(.36f, .39f, .45f);
-        if (displayed != color)
-        {
-            displayed = color;
-            body.color = color;
-            if (label != null)
-            {
-                label.text = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
-            }
-        }
+
+        string roleLabel = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
+        if (label != null && label.text != roleLabel) label.text = roleLabel;
+
         bool selected = InteractionController.Instance != null && InteractionController.Instance.Current == this &&
             LobbyFlowRuntime.Instance.InputReady && IsInRange(LobbyFlowRuntime.Instance.Scene.Player.transform.position);
+        if (closedDoor != null)
+        {
+            Sprite door = closedDoor;
+            if (candidate.revealed)
+            {
+                if (candidate.role == BranchRole.Combat && combatDoor != null) door = combatDoor;
+                else if (candidate.role == BranchRole.Shop && shopDoor != null) door = shopDoor;
+            }
+            if (body.sprite != door) body.sprite = door;
+            Color tint = candidate.revealed ? Color.white : new Color(.88f, .88f, .88f);
+            body.color = selected ? Color.Lerp(tint, new Color(1f, .9f, .55f), .3f) : tint;
+            return;
+        }
+
+        body.color = candidate.revealed ? RoleColor(candidate.role) : new Color(.36f, .39f, .45f);
         if (border != null)
         {
             border.color = selected ? new Color(1f, .9f, .55f) : new Color(.19f, .23f, .3f);

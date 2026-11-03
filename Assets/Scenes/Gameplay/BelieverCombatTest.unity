@@ -449,6 +449,7 @@ MonoBehaviour:
   foundationPrefab: {fileID: 0}
   foundationAnchor: {fileID: 0}
   squareSprite: {fileID: 21300000, guid: d923fef7a1f10764bb74f97c25d3daac, type: 3}
+  returnDoorSprite: {fileID: 21300000, guid: d85d9e742b3200746bba80f125607cbf, type: 3}
   worldMaterial: {fileID: 2100000, guid: 1d315a27cd0606c4aa48028539218aa5, type: 2}
   runStageOnly: 1
   runStageRole: 0

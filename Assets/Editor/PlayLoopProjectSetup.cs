@@ -61,6 +61,8 @@ public static class PlayLoopProjectSetup
         controllerSettings.FindProperty("player").objectReferenceValue = player;
         controllerSettings.FindProperty("squareSprite").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Boss/UnitSquare.png");
+        controllerSettings.FindProperty("returnDoorSprite").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Design/Lobby/BranchClosed.png");
         controllerSettings.FindProperty("worldMaterial").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
         controllerSettings.FindProperty("showTestTools").boolValue = true;
