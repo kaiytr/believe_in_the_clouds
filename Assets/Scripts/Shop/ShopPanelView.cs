@@ -3,55 +3,67 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// 상점 패널.
+// 상점 패널 (장바구니형).
 //
 // 레이아웃(제공된 사진):
-//   ┌ 3열 × 4행 카드 그리드 ┐
-//   1열 = 주어 / 2열 = 조건 / 3열 = 결과
-//   각 카드 = [왼쪽 회색 아이콘 블록][오른쪽 글 영역]
-//   하단: 교리 슬롯 구매 버튼 (현재 칸 수 + 다음 구매 안내)
+//   ┌ 위: 교리 나열 칸 (3열 그리드, 세로 스크롤) ──────────┐
+//   │ 카드 × 9 보임 · 교리 12종 + 교리칸 1종 = 13줄 표시    │
+//   └ 아래: 구매 칸 (가로 스크롤) + 총 코인 + 구매 버튼 ────┘
 //
 // 동작 규칙:
-// - 열마다 하나씩이 아니라 여러 장을 고를 수 있다 (장바구니).
-// - 한 장만 골라도 구매 버튼이 켜진다.
-// - 조각 구매 시 교리로 활성화하지 않는다. 인벤토리에 쌓기만 한다.
-// - 교리 칸 구매 버튼은 조각 장바구니와 별개로 언제든 눌러 1칸씩 늘린다.
+// - 교리 나열 칸: 카드 클릭 → 구매 칸에 1개 추가 (중복 가능, 개수 제한 없음).
+// - 구매 칸: 카드 클릭 → 그 1개가 빠진다. 좌우 스크롤로 모두 볼 수 있다.
+// - 구매 버튼: 구매 칸 전체를 TryPurchase 1건으로 결제. 실패 시 칸 유지.
+// - 등급은 지금 신경 쓰지 않는다 (표시만 유지).
 //
 // 표시만 담당한다. 장바구니/구매 요청은 ShopScreen이 한다.
 public class ShopPanelView : MonoBehaviour
 {
-    private static readonly Color ColumnBackground = new Color(0.78f, 0.78f, 0.78f, 1f);
     private static readonly Color PanelBackground = new Color(0.86f, 0.86f, 0.86f, 1f);
+    private static readonly Color ListBackground = new Color(0.71f, 0.71f, 0.71f, 1f);
+    private static readonly Color CartBackground = new Color(0.78f, 0.76f, 0.72f, 1f);
     private static readonly Color FooterBackground = new Color(0.20f, 0.21f, 0.23f, 0.92f);
     private static readonly Color BuyEnabled = new Color(0.78f, 0.36f, 0.36f, 1f);
     private static readonly Color BuyDisabled = new Color(0.42f, 0.43f, 0.45f, 1f);
+
+    // 교리칸 1칸 가격. ShopScreen.SlotPrice와 같은 값으로 유지한다.
+    internal const int SlotPrice = 100;
 
     private Canvas canvas;
     private GameObject content;
     private Text titleText;
     private Text footerText;
-    private Text selectionText;
-    private Button pieceBuyButton;
-    private Text pieceBuyLabel;
-    private Button slotBuyButton;
-    private Text slotBuyLabel;
-    private bool slotBoughtThisOpen;
+    private Text totalText;
+    private RectTransform catalogContent;
+    private RectTransform cartContent;
+    private ScrollRect cartScroller;
+    private ScrollDragGuard cartGuard;
+    private Button buyButton;
+    private Text buyLabel;
+    private GameObject emptyCartText;
     private bool isOpen;
 
-    private readonly List<ShopCardView> subjectCards = new List<ShopCardView>();
-    private readonly List<ShopCardView> conditionCards = new List<ShopCardView>();
-    private readonly List<ShopCardView> resultCards = new List<ShopCardView>();
+    // 총 코인 줄에 함께 보여줄 교리칸 수.
+    private int slotCount;
+    private long lastTotal;
+    private long lastBalance;
+
+    // 카탈로그 카드 → 항목 식별자. 교리칸 항목은 "slot"이다.
+    private readonly Dictionary<GameObject, string> catalogObjectToId = new Dictionary<GameObject, string>();
+
+    // 구매 칸 카드 오브젝트 (담은 순서대로).
+    private readonly List<GameObject> cartObjects = new List<GameObject>();
 
     public bool IsOpen => isOpen;
 
-    /// <summary>카드를 눌렀을 때. (열, 해당 열 안의 인덱스)</summary>
-    public event Action<ShopColumn, int> CardClicked;
+    /// <summary>교리 나열 칸의 카드를 눌렀을 때. (항목 Id, 교리칸이면 "slot")</summary>
+    public event Action<string> CatalogClicked;
 
-    /// <summary>조각 구매 버튼을 눌렀을 때 (장바구니에 담은 조각).</summary>
-    public event Action PieceBuyClicked;
+    /// <summary>구매 칸의 카드를 눌렀을 때. (구매 칸 안의 순서 index)</summary>
+    public event Action<int> CartClicked;
 
-    /// <summary>교리 칸(재단 슬롯) 구매 버튼을 눌렀을 때.</summary>
-    public event Action SlotBuyClicked;
+    /// <summary>구매 버튼을 눌렀을 때. (구매 칸 전체 결제)</summary>
+    public event Action BuyClicked;
 
     public static ShopPanelView BuildRuntime()
     {
@@ -77,169 +89,44 @@ public class ShopPanelView : MonoBehaviour
         UiTheme.Stretch(blocker.GetComponent<RectTransform>());
         blocker.GetComponent<Image>().raycastTarget = true;
 
-        // 사진의 비율(1088 × 624 ≈ 1.74 : 1)에 맞춘 패널.
+        // 사진 비율(1348 × 796 ≈ 1.69 : 1).
         GameObject panel = UiTheme.CreateImage("Panel", content.transform, PanelBackground);
         RectTransform panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
         panelRect.pivot = new Vector2(0.5f, 0.5f);
         panelRect.anchoredPosition = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(1090f, 700f);
+        panelRect.sizeDelta = new Vector2(1240f, 732f);
 
-        Text title = UiTheme.CreateText("Title", panel.transform, "상점", 30,
+        Text title = UiTheme.CreateText("Title", panel.transform, "상점", 22,
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         RectTransform titleRect = title.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 1f);
         titleRect.anchorMax = new Vector2(1f, 1f);
         titleRect.pivot = new Vector2(0.5f, 1f);
-        titleRect.anchoredPosition = new Vector2(0f, -22f);
-        titleRect.sizeDelta = new Vector2(0f, 48f);
-
-        // 3열 그리드 영역.
-        GameObject grid = new GameObject("Grid", typeof(RectTransform));
-        grid.transform.SetParent(panel.transform, false);
-        RectTransform gridRect = grid.GetComponent<RectTransform>();
-        gridRect.anchorMin = new Vector2(0f, 0f);
-        gridRect.anchorMax = new Vector2(1f, 1f);
-        gridRect.offsetMin = new Vector2(18f, 84f);
-        gridRect.offsetMax = new Vector2(-18f, -66f);
-
-        HorizontalLayoutGroup gridLayout = grid.AddComponent<HorizontalLayoutGroup>();
-        gridLayout.padding = new RectOffset(0, 0, 0, 0);
-        gridLayout.spacing = 16;
-        gridLayout.childControlWidth = true;
-        gridLayout.childControlHeight = true;
-        gridLayout.childForceExpandWidth = true;
-        gridLayout.childForceExpandHeight = true;
+        titleRect.anchoredPosition = new Vector2(0f, -10f);
+        titleRect.sizeDelta = new Vector2(0f, 36f);
 
         ShopPanelView view = root.AddComponent<ShopPanelView>();
         view.canvas = canvas;
         view.content = content;
         view.titleText = title;
 
-        view.subjectCards.AddRange(view.BuildColumn(grid.transform, "주어", ShopColumn.Subject));
-        view.conditionCards.AddRange(view.BuildColumn(grid.transform, "조건", ShopColumn.Condition));
-        view.resultCards.AddRange(view.BuildColumn(grid.transform, "결과", ShopColumn.Result));
-
+        // 위: 교리 나열 칸 (세로 스크롤).
+        view.catalogContent = view.BuildCatalogGrid(panel.transform);
+        // 아래: 구매 칸 (가로 스크롤) + 총 코인 + 구매 버튼.
+        view.BuildCartBar(panel.transform);
         view.BuildFooter(panel.transform);
 
-        view.ClearSelection();
+        view.ClearCart();
         view.SetBuyEnabled(false);
         content.SetActive(false);
         return view;
     }
 
-    // 한 열 = 회색 배경 박스 + 세로로 4장 카드.
-    private List<ShopCardView> BuildColumn(Transform parent, string columnName, ShopColumn column)
-    {
-        GameObject columnObject = UiTheme.CreateImage("Column_" + columnName, parent, ColumnBackground);
-        columnObject.GetComponent<Image>().raycastTarget = false;
-
-        // 사진처럼 열 안쪽에 여백을 두고 카드를 배치한다.
-        VerticalLayoutGroup columnLayout = columnObject.AddComponent<VerticalLayoutGroup>();
-        columnLayout.padding = new RectOffset(12, 12, 12, 12);
-        columnLayout.spacing = 12;
-        columnLayout.childControlWidth = true;
-        columnLayout.childControlHeight = true;
-        columnLayout.childForceExpandWidth = true;
-        columnLayout.childForceExpandHeight = true;
-
-        List<ShopCardView> cards = new List<ShopCardView>();
-        IReadOnlyList<ShopEntry> entries = ShopCatalog.GetColumn(column);
-
-        for (int i = 0; i < entries.Count; i++)
-        {
-            ShopCardView card = ShopCardView.BuildRuntime(columnObject.transform, entries[i]);
-            int index = i;
-            card.Clicked += _ => CardClicked?.Invoke(column, index);
-            cards.Add(card);
-        }
-
-        return cards;
-    }
-
-    private void BuildFooter(Transform parent)
-    {
-        GameObject footer = UiTheme.CreateImage("Footer", parent, FooterBackground);
-        RectTransform footerRect = footer.GetComponent<RectTransform>();
-        footerRect.anchorMin = new Vector2(0f, 0f);
-        footerRect.anchorMax = new Vector2(1f, 0f);
-        footerRect.pivot = new Vector2(0.5f, 0f);
-        footerRect.anchoredPosition = new Vector2(0f, 16f);
-        footerRect.sizeDelta = new Vector2(-36f, 56f);
-
-        Text footerText = UiTheme.CreateText("FooterText", footer.transform,
-            "카드를 한 장 이상 고르세요.", 17, Color.white, TextAnchor.MiddleLeft);
-        RectTransform textRect = footerText.rectTransform;
-        textRect.anchorMin = new Vector2(0f, 0.5f);
-        textRect.anchorMax = new Vector2(1f, 1f);
-        textRect.offsetMin = new Vector2(16f, 0f);
-        textRect.offsetMax = new Vector2(-384f, -2f);
-        footerText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        footerText.verticalOverflow = VerticalWrapMode.Truncate;
-        this.footerText = footerText;
-
-        // 선택 현황 줄: 플레이어 + 피격 → 회복
-        Text selectionText = UiTheme.CreateText("SelectionText", footer.transform, "—  +  —  →  —",
-            16, new Color(1f, 0.78f, 0.78f, 1f), TextAnchor.MiddleLeft);
-        RectTransform selectionRect = selectionText.rectTransform;
-        selectionRect.anchorMin = new Vector2(0f, 0f);
-        selectionRect.anchorMax = new Vector2(1f, 0.5f);
-        selectionRect.offsetMin = new Vector2(16f, 2f);
-        selectionRect.offsetMax = new Vector2(-384f, 0f);
-        selectionText.horizontalOverflow = HorizontalWrapMode.Overflow;
-        selectionText.verticalOverflow = VerticalWrapMode.Truncate;
-        this.selectionText = selectionText;
-
-        // 조각 구매 버튼 (오른쪽에서 두 번째). 장바구니가 비면 꺼진다.
-        GameObject pieceBuyObject = UiTheme.CreateImage("PieceBuyButton", footer.transform, BuyDisabled);
-        pieceBuyObject.GetComponent<Image>().raycastTarget = true;
-        RectTransform pieceBuyRect = pieceBuyObject.GetComponent<RectTransform>();
-        pieceBuyRect.anchorMin = new Vector2(1f, 0.5f);
-        pieceBuyRect.anchorMax = new Vector2(1f, 0.5f);
-        pieceBuyRect.pivot = new Vector2(1f, 0.5f);
-        pieceBuyRect.anchoredPosition = new Vector2(-196f, 0f);
-        pieceBuyRect.sizeDelta = new Vector2(180f, 44f);
-
-        Text pieceBuyLabel = UiTheme.CreateText("PieceBuyLabel", pieceBuyObject.transform, "조각 구매",
-            15, Color.white, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(pieceBuyLabel.rectTransform, 2f);
-
-        Button pieceBuyButton = pieceBuyObject.AddComponent<Button>();
-        pieceBuyButton.targetGraphic = pieceBuyObject.GetComponent<Image>();
-        pieceBuyButton.navigation = new Navigation { mode = Navigation.Mode.None };
-        pieceBuyButton.onClick.AddListener(() => PieceBuyClicked?.Invoke());
-
-        this.pieceBuyButton = pieceBuyButton;
-        this.pieceBuyLabel = pieceBuyLabel;
-
-        // 교리 칸 구매 버튼 (오른쪽 끝). 조각 선택과 무관하게 언제든 눌린다.
-        GameObject slotBuyObject = UiTheme.CreateImage("SlotBuyButton", footer.transform, BuyEnabled);
-        slotBuyObject.GetComponent<Image>().raycastTarget = true;
-        RectTransform slotBuyRect = slotBuyObject.GetComponent<RectTransform>();
-        slotBuyRect.anchorMin = new Vector2(1f, 0.5f);
-        slotBuyRect.anchorMax = new Vector2(1f, 0.5f);
-        slotBuyRect.pivot = new Vector2(1f, 0.5f);
-        slotBuyRect.anchoredPosition = new Vector2(-8f, 0f);
-        slotBuyRect.sizeDelta = new Vector2(180f, 44f);
-
-        Text slotBuyLabel = UiTheme.CreateText("SlotBuyLabel", slotBuyObject.transform, "교리칸 구매",
-            15, Color.white, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(slotBuyLabel.rectTransform, 2f);
-
-        Button slotBuyButton = slotBuyObject.AddComponent<Button>();
-        slotBuyButton.targetGraphic = slotBuyObject.GetComponent<Image>();
-        slotBuyButton.navigation = new Navigation { mode = Navigation.Mode.None };
-        slotBuyButton.onClick.AddListener(() => SlotBuyClicked?.Invoke());
-
-        this.slotBuyButton = slotBuyButton;
-        this.slotBuyLabel = slotBuyLabel;
-    }
-
     public void Open(string shopName)
     {
         isOpen = true;
-        slotBoughtThisOpen = false;
 
         if (titleText != null)
         {
@@ -252,22 +139,15 @@ public class ShopPanelView : MonoBehaviour
             footerText.font = UiTheme.GetFont();
         }
 
-        if (slotBuyLabel != null)
+        if (totalText != null)
         {
-            slotBuyLabel.font = UiTheme.GetFont();
+            totalText.font = UiTheme.GetFont();
         }
 
-        if (pieceBuyLabel != null)
+        if (buyLabel != null)
         {
-            pieceBuyLabel.font = UiTheme.GetFont();
+            buyLabel.font = UiTheme.GetFont();
         }
-
-        if (selectionText != null)
-        {
-            selectionText.font = UiTheme.GetFont();
-        }
-
-        ClearSelection();
 
         if (content != null)
         {
@@ -287,110 +167,421 @@ public class ShopPanelView : MonoBehaviour
         }
     }
 
-    /// <summary>선택 상태를 모두 지운다.</summary>
-    public void ClearSelection()
-    {
-        ClearCards(subjectCards);
-        ClearCards(conditionCards);
-        ClearCards(resultCards);
-        SetFooter("카드를 한 장 이상 고르세요.");
-        SetSelectionSummary(null, null, null);
-        SetPieceBuyEnabled(false);
-    }
+    // ---------------- 위: 교리 나열 칸 (3열, 세로 스크롤) ----------------
 
-    /// <summary>조각 구매 버튼 활성/라벨을 바꾼다.</summary>
-    public void SetPieceBuyEnabled(bool value, string label = null)
+    private RectTransform BuildCatalogGrid(Transform parent)
     {
-        if (pieceBuyButton != null)
+        GameObject area = new GameObject("CatalogArea", typeof(RectTransform));
+        area.transform.SetParent(parent, false);
+        RectTransform areaRect = area.GetComponent<RectTransform>();
+        areaRect.anchorMin = new Vector2(0f, 0f);
+        areaRect.anchorMax = new Vector2(1f, 1f);
+        // 사진: 위 62px(테두리) ~ 아래 205px(구매 칸 + 푸터) 사이가 나열 칸. 높이 465.
+        areaRect.offsetMin = new Vector2(62f, 205f);
+        areaRect.offsetMax = new Vector2(-62f, -62f);
+
+        GameObject scroll = new GameObject("CatalogScroll", typeof(RectTransform));
+        scroll.transform.SetParent(area.transform, false);
+        RectTransform scrollRect = scroll.GetComponent<RectTransform>();
+        UiTheme.Stretch(scrollRect);
+
+        ScrollRect scroller = scroll.AddComponent<ScrollRect>();
+        scroller.horizontal = false;
+        scroller.vertical = true;
+        scroller.movementType = ScrollRect.MovementType.Clamped;
+        scroller.scrollSensitivity = 40f;
+        // 카드 위에서 드래그로 스크롤할 때 카드가 클릭(담기)되지 않게 한다.
+        ScrollDragGuard guard = ScrollDragGuard.Attach(scroller);
+
+        // 뷰포트가 클릭(레이캐스트)을 받아야 휠/드래그가 스크롤로 전달된다.
+        GameObject viewport = UiTheme.CreateImage("Viewport", scroll.transform, ListBackground);
+        viewport.GetComponent<Image>().raycastTarget = true;
+        RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+        UiTheme.Stretch(viewportRect);
+        viewport.AddComponent<Mask>().showMaskGraphic = true;
+        scroller.viewport = viewportRect;
+
+        GameObject list = new GameObject("List", typeof(RectTransform));
+        list.transform.SetParent(viewport.transform, false);
+        RectTransform listRect = list.GetComponent<RectTransform>();
+        listRect.anchorMin = new Vector2(0f, 1f);
+        listRect.anchorMax = new Vector2(1f, 1f);
+        listRect.pivot = new Vector2(0.5f, 1f);
+        listRect.anchoredPosition = Vector2.zero;
+        listRect.sizeDelta = Vector2.zero;
+        scroller.content = listRect;
+
+        // 한 화면에 3×3 = 9개가 딱 맞게 보인다. (가로 1116, 세로 465, 간격 8)
+        GridLayoutGroup grid = list.AddComponent<GridLayoutGroup>();
+        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        grid.constraintCount = 3;
+        grid.cellSize = new Vector2(366f, 149f);
+        grid.spacing = new Vector2(8f, 8f);
+        grid.padding = new RectOffset(0, 0, 0, 0);
+        grid.childAlignment = TextAnchor.UpperLeft;
+
+        ContentSizeFitter fitter = list.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // 세로 3줄 = 왼쪽 주어 / 가운데 조건 / 오른쪽 결과 순으로 나열한다.
+        // Grid는 가로 방향으로 채우므로, 한 행씩 [주어, 조건, 결과] 묶음으로 넣는다.
+        // 교리칸 구매 항목은 마지막 자리 유지.
+        IReadOnlyList<ShopEntry> subjects = ShopCatalog.GetColumn(ShopColumn.Subject);
+        IReadOnlyList<ShopEntry> conditions = ShopCatalog.GetColumn(ShopColumn.Condition);
+        IReadOnlyList<ShopEntry> results = ShopCatalog.GetColumn(ShopColumn.Result);
+        int rows = Math.Max(subjects.Count, Math.Max(conditions.Count, results.Count));
+
+        catalogObjectToId.Clear();
+        for (int row = 0; row < rows; row++)
         {
-            pieceBuyButton.interactable = value;
-
-            if (pieceBuyButton.targetGraphic != null)
+            if (row < subjects.Count)
             {
-                pieceBuyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
+                ShopEntry entry = subjects[row];
+                BuildCatalogCard(list.transform, entry.Label, entry.Detail,
+                    entry.Price, entry.Id, catalogObjectToId, guard);
+            }
+
+            if (row < conditions.Count)
+            {
+                ShopEntry entry = conditions[row];
+                BuildCatalogCard(list.transform, entry.Label, entry.Detail,
+                    entry.Price, entry.Id, catalogObjectToId, guard);
+            }
+
+            if (row < results.Count)
+            {
+                ShopEntry entry = results[row];
+                BuildCatalogCard(list.transform, entry.Label, entry.Detail,
+                    entry.Price, entry.Id, catalogObjectToId, guard);
             }
         }
 
-        if (pieceBuyLabel != null)
+        // 교리칸 구매 항목 (마지막 자리 유지).
+        BuildCatalogCard(list.transform, "교리칸", "재단 교리 +1칸",
+            SlotPrice, "slot", catalogObjectToId, guard);
+
+        return listRect;
+    }
+
+    private GameObject BuildCatalogCard(Transform parent, string name, string detail,
+        int price, string id, Dictionary<GameObject, string> map, ScrollDragGuard guard)
+    {
+        GameObject card = UiTheme.CreateImage("Catalog_" + id, parent, Color.white);
+        Image background = card.GetComponent<Image>();
+        background.raycastTarget = true;
+
+        // 사진의 카드 구성: 위 [이름 + 등급] / 아래 [설명 + 구매 버튼 자리].
+        // 등급은 지금 신경 쓰지 않으므로 뱃지 없이 이름 + 가격만 둔다.
+        VerticalLayoutGroup layout = card.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(12, 12, 10, 10);
+        layout.spacing = 6;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = true;
+
+        GameObject top = new GameObject("Top", typeof(RectTransform));
+        top.transform.SetParent(card.transform, false);
+        HorizontalLayoutGroup topLayout = top.AddComponent<HorizontalLayoutGroup>();
+        topLayout.spacing = 8;
+        topLayout.childControlWidth = true;
+        topLayout.childControlHeight = true;
+        topLayout.childForceExpandWidth = true;
+        topLayout.childForceExpandHeight = true;
+
+        Text nameText = UiTheme.CreateText("Name", top.transform, name, 20,
+            UiTheme.TextDark, TextAnchor.MiddleLeft);
+        LayoutElement nameLayout = nameText.gameObject.AddComponent<LayoutElement>();
+        nameLayout.flexibleWidth = 2f;
+
+        Text priceText = UiTheme.CreateText("Price", top.transform, $"● {price:N0}", 18,
+            UiTheme.TextDark, TextAnchor.MiddleRight);
+        LayoutElement priceLayout = priceText.gameObject.AddComponent<LayoutElement>();
+        priceLayout.flexibleWidth = 1f;
+
+        GameObject bottom = new GameObject("Bottom", typeof(RectTransform));
+        bottom.transform.SetParent(card.transform, false);
+        HorizontalLayoutGroup bottomLayout = bottom.AddComponent<HorizontalLayoutGroup>();
+        bottomLayout.spacing = 8;
+        bottomLayout.childControlWidth = true;
+        bottomLayout.childControlHeight = true;
+        bottomLayout.childForceExpandWidth = true;
+        bottomLayout.childForceExpandHeight = true;
+
+        Text detailText = UiTheme.CreateText("Detail", bottom.transform, detail, 14,
+            UiTheme.TextMuted, TextAnchor.MiddleLeft);
+        LayoutElement detailLayout = detailText.gameObject.AddComponent<LayoutElement>();
+        detailLayout.flexibleWidth = 2f;
+
+        Text buyText = UiTheme.CreateText("Buy", bottom.transform, "담기", 16,
+            new Color(0.78f, 0.36f, 0.36f, 1f), TextAnchor.MiddleCenter);
+        LayoutElement buyLayout = buyText.gameObject.AddComponent<LayoutElement>();
+        buyLayout.flexibleWidth = 1f;
+
+        Button button = card.AddComponent<Button>();
+        button.targetGraphic = background;
+        button.navigation = new Navigation { mode = Navigation.Mode.None };
+
+        map[card] = id;
+        button.onClick.AddListener(() =>
         {
-            pieceBuyLabel.font = UiTheme.GetFont();
+            if (guard != null && guard.ShouldIgnoreClick) return;
+            CatalogClicked?.Invoke(id);
+        });
+
+        return card;
+    }
+
+    // ---------------- 아래: 구매 칸 (가로 스크롤) ----------------
+
+    private void BuildCartBar(Transform parent)
+    {
+        GameObject bar = UiTheme.CreateImage("CartBar", parent, CartBackground);
+        RectTransform barRect = bar.GetComponent<RectTransform>();
+        barRect.anchorMin = new Vector2(0f, 0f);
+        barRect.anchorMax = new Vector2(1f, 0f);
+        barRect.pivot = new Vector2(0.5f, 0f);
+        barRect.anchoredPosition = new Vector2(0f, 58f);
+        barRect.sizeDelta = new Vector2(-124f, 132f);
+
+        // 왼쪽: 가로 스크롤 구매 목록. 카드 3개(270 × 3 + 간격 16 × 2 + 여백 8)가 보인다.
+        GameObject scroll = new GameObject("CartScroll", typeof(RectTransform));
+        scroll.transform.SetParent(bar.transform, false);
+        RectTransform scrollRect = scroll.GetComponent<RectTransform>();
+        scrollRect.anchorMin = new Vector2(0f, 0f);
+        scrollRect.anchorMax = new Vector2(0f, 1f);
+        scrollRect.pivot = new Vector2(0f, 0.5f);
+        scrollRect.anchoredPosition = new Vector2(12f, 0f);
+        scrollRect.sizeDelta = new Vector2(850f, -24f);
+
+        ScrollRect scroller = scroll.AddComponent<ScrollRect>();
+        scroller.horizontal = true;
+        scroller.vertical = false;
+        scroller.movementType = ScrollRect.MovementType.Clamped;
+        scroller.scrollSensitivity = 40f;
+
+        GameObject viewport = new GameObject("Viewport", typeof(RectTransform));
+        viewport.transform.SetParent(scroll.transform, false);
+        RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+        UiTheme.Stretch(viewportRect);
+        // 레이캐스트를 받아야 휠/드래그가 스크롤로 전달된다.
+        // Mask가 Graphic을 요구하므로 Image를 먼저 붙인다.
+        Image viewportImage = viewport.AddComponent<Image>();
+        viewportImage.color = new Color(1f, 1f, 1f, 0.01f);
+        viewportImage.raycastTarget = true;
+        viewport.AddComponent<Mask>().showMaskGraphic = false;
+        scroller.viewport = viewportRect;
+        cartScroller = scroller;
+        cartGuard = ScrollDragGuard.Attach(scroller);
+
+        GameObject list = new GameObject("CartList", typeof(RectTransform));
+        list.transform.SetParent(viewport.transform, false);
+        RectTransform listRect = list.GetComponent<RectTransform>();
+        listRect.anchorMin = new Vector2(0f, 0f);
+        listRect.anchorMax = new Vector2(0f, 1f);
+        listRect.pivot = new Vector2(0f, 0.5f);
+        listRect.anchoredPosition = Vector2.zero;
+        listRect.sizeDelta = new Vector2(0f, 0f);
+        scroller.content = listRect;
+        cartContent = listRect;
+
+        HorizontalLayoutGroup listLayout = list.AddComponent<HorizontalLayoutGroup>();
+        listLayout.padding = new RectOffset(4, 4, 0, 0);
+        listLayout.spacing = 16;
+        listLayout.childControlWidth = true;
+        listLayout.childControlHeight = true;
+        listLayout.childForceExpandWidth = false;
+        listLayout.childForceExpandHeight = true;
+
+        ContentSizeFitter fitter = list.AddComponent<ContentSizeFitter>();
+        fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // 비었을 때 안내 문구.
+        GameObject empty = new GameObject("EmptyCart", typeof(RectTransform));
+        empty.transform.SetParent(viewport.transform, false);
+        RectTransform emptyRect = empty.GetComponent<RectTransform>();
+        UiTheme.Stretch(emptyRect, 12f);
+        Text emptyText = UiTheme.CreateText("Text", empty.transform, "위에서 교리를 눌러 담으세요.", 17,
+            UiTheme.TextMuted, TextAnchor.MiddleCenter);
+        UiTheme.Stretch(emptyText.rectTransform);
+        emptyCartText = empty;
+
+        // 오른쪽: 총 코인 + 구매 버튼.
+        Text total = UiTheme.CreateText("Total", bar.transform, "총 코인 ● 0", 15,
+            UiTheme.TextDark, TextAnchor.MiddleRight);
+        RectTransform totalRect = total.rectTransform;
+        totalRect.anchorMin = new Vector2(1f, 1f);
+        totalRect.anchorMax = new Vector2(1f, 1f);
+        totalRect.pivot = new Vector2(1f, 1f);
+        totalRect.anchoredPosition = new Vector2(-10f, -6f);
+        totalRect.sizeDelta = new Vector2(240f, 40f);
+        totalText = total;
+
+        GameObject buyObject = UiTheme.CreateImage("BuyButton", bar.transform, BuyDisabled);
+        buyObject.GetComponent<Image>().raycastTarget = true;
+        RectTransform buyRect = buyObject.GetComponent<RectTransform>();
+        buyRect.anchorMin = new Vector2(1f, 0f);
+        buyRect.anchorMax = new Vector2(1f, 0f);
+        buyRect.pivot = new Vector2(1f, 0f);
+        buyRect.anchoredPosition = new Vector2(-12f, 12f);
+        buyRect.sizeDelta = new Vector2(230f, 72f);
+
+        Text label = UiTheme.CreateText("Label", buyObject.transform, "구매", 24,
+            Color.white, TextAnchor.MiddleCenter);
+        UiTheme.Stretch(label.rectTransform, 2f);
+        buyLabel = label;
+
+        Button button = buyObject.AddComponent<Button>();
+        button.targetGraphic = buyObject.GetComponent<Image>();
+        button.navigation = new Navigation { mode = Navigation.Mode.None };
+        button.onClick.AddListener(() => BuyClicked?.Invoke());
+        buyButton = button;
+    }
+
+    private void BuildFooter(Transform parent)
+    {
+        GameObject footer = UiTheme.CreateImage("Footer", parent, FooterBackground);
+        RectTransform footerRect = footer.GetComponent<RectTransform>();
+        footerRect.anchorMin = new Vector2(0f, 0f);
+        footerRect.anchorMax = new Vector2(1f, 0f);
+        footerRect.pivot = new Vector2(0.5f, 0f);
+        footerRect.anchoredPosition = new Vector2(0f, 14f);
+        footerRect.sizeDelta = new Vector2(-124f, 36f);
+
+        Text footerText = UiTheme.CreateText("FooterText", footer.transform,
+            "교리를 눌러 담으세요.", 17, Color.white, TextAnchor.MiddleLeft);
+        RectTransform textRect = footerText.rectTransform;
+        textRect.anchorMin = new Vector2(0f, 0f);
+        textRect.anchorMax = new Vector2(1f, 1f);
+        textRect.offsetMin = new Vector2(16f, 0f);
+        textRect.offsetMax = new Vector2(-16f, 0f);
+        footerText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        footerText.verticalOverflow = VerticalWrapMode.Truncate;
+        this.footerText = footerText;
+    }
+
+    // ---------------- 구매 칸 표시 ----------------
+
+    /// <summary>구매 칸을 통째로 다시 그린다. (Id 목록 순서대로, 중복 허용)</summary>
+    public void SetCart(IReadOnlyList<string> ids, IReadOnlyList<string> names,
+        IReadOnlyList<int> prices)
+    {
+        for (int i = 0; i < cartObjects.Count; i++)
+        {
+            if (cartObjects[i] != null)
+            {
+                cartObjects[i].SetActive(false);
+                Destroy(cartObjects[i]);
+            }
+        }
+
+        cartObjects.Clear();
+
+        // 카드가 줄어든 뒤 스크롤이 빈 곳에 남지 않도록 왼쪽 끝으로 되돌린다.
+        if (cartScroller != null) cartScroller.horizontalNormalizedPosition = 0f;
+
+        bool empty = ids == null || ids.Count == 0;
+        if (emptyCartText != null)
+        {
+            emptyCartText.SetActive(empty);
+        }
+
+        if (empty || names == null || prices == null)
+        {
+            return;
+        }
+
+        int count = Math.Min(ids.Count, Math.Min(names.Count, prices.Count));
+        for (int i = 0; i < count; i++)
+        {
+            int index = i;
+            GameObject card = UiTheme.CreateImage("Cart_" + i + "_" + ids[i], cartContent, Color.white);
+            Image background = card.GetComponent<Image>();
+            background.raycastTarget = true;
+
+            // 구매 칸은 카드 3개가 보이도록 너비 270 고정.
+            LayoutElement cardSize = card.AddComponent<LayoutElement>();
+            cardSize.preferredWidth = 270f;
+            cardSize.minWidth = 270f;
+
+            VerticalLayoutGroup layout = card.AddComponent<VerticalLayoutGroup>();
+            layout.padding = new RectOffset(10, 10, 8, 8);
+            layout.spacing = 4;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            Text nameText = UiTheme.CreateText("Name", card.transform, names[i] ?? ids[i], 18,
+                UiTheme.TextDark, TextAnchor.MiddleCenter);
+            nameText.font = UiTheme.GetFont();
+
+            Text priceText = UiTheme.CreateText("Price", card.transform, $"● {prices[i]:N0}", 16,
+                UiTheme.TextDark, TextAnchor.MiddleCenter);
+            priceText.font = UiTheme.GetFont();
+
+            Button button = card.AddComponent<Button>();
+            button.targetGraphic = background;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            button.onClick.AddListener(() =>
+            {
+                // 가로 스크롤 드래그로 카드가 빠지지 않게 한다.
+                if (cartGuard != null && cartGuard.ShouldIgnoreClick) return;
+                CartClicked?.Invoke(index);
+            });
+
+            cartObjects.Add(card);
+        }
+    }
+
+    /// <summary>구매 칸을 비운다.</summary>
+    public void ClearCart()
+    {
+        SetCart(null, null, null);
+    }
+
+    /// <summary>총 코인(구매 칸 합계 + 보유/부족) 표시.</summary>
+    public void SetTotal(long total, long balance)
+    {
+        lastTotal = total;
+        lastBalance = balance;
+        RefreshTotalText();
+    }
+
+    private void RefreshTotalText()
+    {
+        if (totalText == null)
+        {
+            return;
+        }
+
+        totalText.font = UiTheme.GetFont();
+        string second = slotCount > 0 ? $"합계 ● {lastTotal:N0} · 교리칸 {slotCount}칸" : $"합계 ● {lastTotal:N0}";
+        totalText.text = $"총 코인 ● {lastBalance:N0}\n{second}";
+    }
+
+    /// <summary>구매 버튼 활성/라벨.</summary>
+    public void SetBuyEnabled(bool value, string label = null)
+    {
+        if (buyButton != null)
+        {
+            buyButton.interactable = value;
+
+            if (buyButton.targetGraphic != null)
+            {
+                buyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
+            }
+        }
+
+        if (buyLabel != null)
+        {
+            buyLabel.font = UiTheme.GetFont();
             if (label != null)
             {
-                pieceBuyLabel.text = label;
+                buyLabel.text = label;
             }
-        }
-    }
-
-    /// <summary>현재 교리 칸 수와 다음 구매 안내를 표시한다.</summary>
-    public void SetSlotSummary(int currentCount)
-    {
-        if (slotBuyLabel != null)
-        {
-            slotBuyLabel.font = UiTheme.GetFont();
-            slotBuyLabel.text = $"교리칸 구매\n{currentCount} → {currentCount + 1}칸";
-        }
-    }
-
-    public void SetSlotSummaryText(string message)
-    {
-    }
-
-    /// <summary>이번 열람 중 교리 칸을 이미 샀는지. 호환용으로만 남김.</summary>
-
-    /// <summary>교리 칸 구매 버튼 활성/라벨을 바꾼다. 단독 구매라 항상 켜둔다.</summary>
-    public void SetSlotBuyEnabled(bool value, string label)
-    {
-        if (slotBuyButton != null)
-        {
-            slotBuyButton.interactable = value;
-
-            if (slotBuyButton.targetGraphic != null)
-            {
-                slotBuyButton.targetGraphic.color = value ? BuyEnabled : BuyDisabled;
-            }
-        }
-
-        if (slotBuyLabel != null)
-        {
-            slotBuyLabel.font = UiTheme.GetFont();
-            slotBuyLabel.text = label ?? "교리칸 구매";
-        }
-    }
-
-    /// <summary>이번 열람 중 교리 칸을 이미 샀는지. 조각 안내 문구 분기에 쓴다.</summary>
-    public bool SlotBoughtThisOpen
-    {
-        get => slotBoughtThisOpen;
-        set => slotBoughtThisOpen = value;
-    }
-
-    /// <summary>지정한 카드만 선택 표시한다. (여러 장 동시 선택용)</summary>
-    public void AddSelection(ShopColumn column, int index)
-    {
-        List<ShopCardView> cards = GetCards(column);
-        if (index >= 0 && index < cards.Count)
-        {
-            cards[index].SetSelected(true);
-        }
-    }
-
-    /// <summary>지정한 카드의 선택 표시를 끈다.</summary>
-    public void RemoveSelection(ShopColumn column, int index)
-    {
-        List<ShopCardView> cards = GetCards(column);
-        if (index >= 0 && index < cards.Count)
-        {
-            cards[index].SetSelected(false);
-        }
-    }
-
-    /// <summary>열 안에서 하나만 선택되도록 표시한다. (단일 선택이 필요한 곳용)</summary>
-    public void SetSelection(ShopColumn column, int index)
-    {
-        List<ShopCardView> cards = GetCards(column);
-        for (int i = 0; i < cards.Count; i++)
-        {
-            cards[i].SetSelected(i == index);
         }
     }
 
@@ -402,39 +593,16 @@ public class ShopPanelView : MonoBehaviour
         }
     }
 
-    /// <summary>하단에 현재 선택 현황을 요약해 보여준다.</summary>
-    public void SetSelectionSummary(string subject, string condition, string result)
+    /// <summary>교리 칸 수 안내. (구매 칸 안에 교리칸 항목이 포함되므로 별도 버튼 없음)</summary>
+    public void SetSlotSummary(int currentCount)
     {
-        string pick = Format(subject) + "  +  " + Format(condition) + "  →  " + Format(result);
-        selectionText.text = pick;
-    }
-
-    private static string Format(string value)
-    {
-        return string.IsNullOrEmpty(value) ? "—" : value;
+        slotCount = currentCount;
+        RefreshTotalText();
     }
 
     public void SetBuyEnabled(bool value)
     {
-        SetPieceBuyEnabled(value, value ? "조각 구매" : "조각 구매");
-    }
-
-    private List<ShopCardView> GetCards(ShopColumn column)
-    {
-        switch (column)
-        {
-            case ShopColumn.Subject: return subjectCards;
-            case ShopColumn.Condition: return conditionCards;
-            default: return resultCards;
-        }
-    }
-
-    private void ClearCards(List<ShopCardView> cards)
-    {
-        for (int i = 0; i < cards.Count; i++)
-        {
-            cards[i].SetSelected(false);
-        }
+        SetBuyEnabled(value, "구매");
     }
 
     private void OnDestroy()

@@ -120,7 +120,9 @@ public sealed class EconomyEditModeTests
     {
         Assert.That(service.TryPurchase(new PurchaseRequest(new[] { "result.heal" })).Error, Is.EqualTo(EconomyError.InsufficientFunds));
         service.TryGrant(100, "fixture");
-        Assert.That(service.TryPurchase(new PurchaseRequest(new[] { "subject.player", "subject.player" })).Error, Is.EqualTo(EconomyError.InvalidTransaction));
+        // 장바구니형: 같은 조각을 여러 번 담을 수 있다 (중복 구매 허용).
+        Assert.That(service.TryPurchase(new PurchaseRequest(new[] { "subject.player", "subject.player" }, "dup:1")).Success, Is.True);
+        Assert.That(service.CountPiece("subject.player"), Is.EqualTo(2));
         Assert.That(service.TryPurchase(new PurchaseRequest(new[] { "missing" })).Error, Is.EqualTo(EconomyError.InvalidItem));
         service.TryGrantPiece("subject.player", 9999, "fixture");
         Assert.That(service.TryPurchase(new PurchaseRequest(new[] { "subject.player", "result.speed" })).Error, Is.EqualTo(EconomyError.ItemLimit));

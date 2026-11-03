@@ -128,20 +128,22 @@ public sealed partial class EconomyService
     {
         if (request?.CardIds == null || request.CardIds.Length == 0) return Fail(EconomyError.InvalidItem, request?.TransactionId);
         string[] ids = (string[])request.CardIds.Clone();
-        var unique = new HashSet<string>(StringComparer.Ordinal);
+        // 장바구니형: 같은 조각을 여러 번 담을 수 있다. 종류별 개수를 센다.
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         long price = 0;
         foreach (string id in ids)
         {
             if (!ShopCatalog.TryGet(id, out ShopEntry entry)) return Fail(EconomyError.InvalidItem, request.TransactionId);
-            if (!unique.Add(id)) return Fail(EconomyError.InvalidTransaction, request.TransactionId);
+            counts.TryGetValue(id, out int current);
+            counts[id] = current + 1;
             price += entry.Price;
         }
         Array.Sort(ids, StringComparer.Ordinal);
         string key = RequestKey("purchase", ids);
         return Execute(request.TransactionId, key, "shop.purchase", data =>
         {
-            foreach (string id in ids)
-                if (EconomyLedger.Count(data.pieces, id) >= EconomySettings.MaxPiecesPerKind) return Fail(EconomyError.ItemLimit, request.TransactionId);
+            foreach (KeyValuePair<string, int> pair in counts)
+                if ((long)EconomyLedger.Count(data.pieces, pair.Key) + pair.Value > EconomySettings.MaxPiecesPerKind) return Fail(EconomyError.ItemLimit, request.TransactionId);
             if (price > data.balance) return Fail(EconomyError.InsufficientFunds, request.TransactionId);
             data.balance -= (int)price;
             foreach (string id in ids) EconomyLedger.Add(data.pieces, id, 1);

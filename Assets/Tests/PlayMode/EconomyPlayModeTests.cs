@@ -271,15 +271,16 @@ public sealed class EconomyPlayModeTests
         var player = GameObject.FindGameObjectWithTag("Player");
         ShopScreen.Instance.Open(shop, player);
         yield return null;
-        var card = Object.FindObjectsByType<ShopCardView>(FindObjectsSortMode.None).First(item => item.Entry.Id == "subject.player");
-        Assert.That(card.GetComponentInChildren<Text>().text, Does.Contain("30코인"));
-        card.GetComponent<Button>().onClick.Invoke();
-        var buy = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).First(item => item.name == "PieceBuyButton");
+        var card = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).First(item => item.name == "Catalog_subject.player");
+        var priceLabel = card.GetComponentsInChildren<Text>().First(item => item.name == "Price");
+        Assert.That(priceLabel.text, Does.Contain("30"));
+        card.onClick.Invoke();
+        // 중복 담기: 같은 카드를 두 번 누르면 구매 칸에 2개 쌓인다.
+        card.onClick.Invoke();
+        var buy = Object.FindObjectsByType<Button>(FindObjectsSortMode.None).First(item => item.name == "BuyButton");
         failing.FailWrites = true; buy.onClick.Invoke();
         Assert.That(Currency.Balance, Is.EqualTo(100)); Assert.That(Currency.Service.CountPiece("subject.player"), Is.Zero);
         failing.FailWrites = false; buy.onClick.Invoke();
-        Assert.That(Currency.Balance, Is.EqualTo(70)); Assert.That(Currency.Service.CountPiece("subject.player"), Is.EqualTo(1));
-        card.GetComponent<Button>().onClick.Invoke(); buy.onClick.Invoke();
         Assert.That(Currency.Balance, Is.EqualTo(40)); Assert.That(Currency.Service.CountPiece("subject.player"), Is.EqualTo(2));
     }
 
@@ -295,29 +296,32 @@ public sealed class EconomyPlayModeTests
         yield return null;
         var slots = DoctrineSlotStore.EnsureExists();
         int before = slots.SlotCount;
-        var card = Object.FindObjectsByType<ShopCardView>(FindObjectsSortMode.None).Single(item => item.Entry.Id == "subject.player");
-        card.GetComponent<Button>().onClick.Invoke();
+        // 조각 1개 + 교리칸 1개를 구매 칸에 담는다 (13번째 자리).
         var buttons = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
-        var slotBuy = buttons.Single(item => item.name == "SlotBuyButton");
-        var pieceBuy = buttons.Single(item => item.name == "PieceBuyButton");
+        var pieceCard = buttons.Single(item => item.name == "Catalog_subject.player");
+        var slotCard = buttons.Single(item => item.name == "Catalog_slot");
+        pieceCard.onClick.Invoke();
+        slotCard.onClick.Invoke();
+        buttons = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
+        var buy = buttons.Single(item => item.name == "BuyButton");
         Canvas.ForceUpdateCanvases();
-        var slotPrice = slotBuy.GetComponentInChildren<Text>();
-        Assert.That(slotPrice.text, Does.Contain("100코인"));
-        Assert.That(slotPrice.preferredHeight, Is.LessThanOrEqualTo(slotPrice.rectTransform.rect.height + 1f), "The slot price must fit inside its purchase button.");
+        var totalLabel = Object.FindObjectsByType<Text>(FindObjectsSortMode.None).Single(item => item.name == "Total");
+        Assert.That(totalLabel.text, Does.Contain("130"), "The total must show the cart sum.");
         memory.FailWrites = true;
-        slotBuy.onClick.Invoke();
+        buy.onClick.Invoke();
         Assert.That(Currency.Balance, Is.EqualTo(130));
         Assert.That(slots.SlotCount, Is.EqualTo(before));
         memory.FailWrites = false;
-        slotBuy.onClick.Invoke();
-        Assert.That(Currency.Balance, Is.EqualTo(30));
+        buy.onClick.Invoke();
+        Assert.That(Currency.Balance, Is.Zero);
         Assert.That(slots.SlotCount, Is.EqualTo(before + 1));
         Assert.That(FoundationScreen.Instance.DoctrineCount, Is.EqualTo(before + 1));
-        Assert.That(pieceBuy.interactable, Is.True, "Slot purchases must preserve the selected piece cart.");
-        pieceBuy.onClick.Invoke();
-        Assert.That(Currency.Balance, Is.Zero);
         Assert.That(Currency.Service.CountPiece("subject.player"), Is.EqualTo(1));
-        slotBuy.onClick.Invoke();
+        // 잔액 0에서 교리칸을 다시 담아도 결제되지 않는다.
+        buttons = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
+        buttons.Single(item => item.name == "Catalog_slot").onClick.Invoke();
+        buttons = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
+        buttons.Single(item => item.name == "BuyButton").onClick.Invoke();
         Assert.That(Currency.Balance, Is.Zero);
         Assert.That(slots.SlotCount, Is.EqualTo(before + 1), "An unaffordable slot purchase must not add a slot.");
         var foundationObject = new GameObject("Slot purchase integration foundation", typeof(FoundationInteractable));
