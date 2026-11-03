@@ -67,6 +67,9 @@ public sealed partial class EconomyService
         initialized = true;
         if (profile.death != null && profile.death.phase != EconomyDeathPhase.Committed)
         {
+            // A process restart completes an already captured death using the same journal.
+            // This prevents quitting the result screen from restoring pre-death assets.
+            profile.death.awaitingChoice = false;
             rewardsBlocked = true;
             deathWork = new DeathWork
             {
@@ -147,7 +150,7 @@ public sealed partial class EconomyService
     }
 
     public CurrencyResult TryRewardDefeat(EnemyRewardKind kind, string defeatId, Vector3 position, Camera sourceCamera = null,
-        float presentationDelay = 0f)
+        float presentationDelay = 0f, CoinDropOrigin dropOrigin = null)
     {
         if (busy) return Fail(EconomyError.Busy, defeatId);
         if (!Enum.IsDefined(typeof(EnemyRewardKind), kind)) return Fail(EconomyError.InvalidItem, defeatId);
@@ -166,7 +169,7 @@ public sealed partial class EconomyService
             int applied = Math.Min(rolled, EconomySettings.MaxCoins - data.balance - EconomyLedger.Pending(data));
             if (applied > 0) data.pendingGrants.Add(CreateGrant(activeTransactionId, applied));
             return Success(rolled, applied, data.balance, activeTransactionId);
-        }, () => { retryDrops.Remove(defeatId); retryDropKinds.Remove(defeatId); RequestFlight(defeatId, position, sourceCamera, presentationDelay); });
+        }, () => { retryDrops.Remove(defeatId); retryDropKinds.Remove(defeatId); RequestFlight(defeatId, position, sourceCamera, presentationDelay, dropOrigin); });
     }
 
     private CurrencyResult Execute(string id, string key, string reason, Func<EconomyProfileData, CurrencyResult> mutate,
@@ -184,6 +187,7 @@ public sealed partial class EconomyService
             var work = profile.Copy();
             CurrencyResult result = mutate(work);
             if (!result.Success) return result;
+            RecordAcquisitions(work);
             work.revision++;
             var receipt = new EconomyReceipt { id = id, requestKey = key, result = result.Copy() };
             decorateReceipt?.Invoke(work, receipt);
@@ -212,13 +216,14 @@ public sealed partial class EconomyService
         return grant;
     }
 
-    private void RequestFlight(string grantId, Vector3 position, Camera camera, float presentationDelay = 0f)
+    private void RequestFlight(string grantId, Vector3 position, Camera camera, float presentationDelay = 0f,
+        CoinDropOrigin dropOrigin = null)
     {
         PendingGrant grant = profile.Copy().pendingGrants.Find(item => item.grantId == grantId);
         if (grant == null) return;
         if (FlightRequested == null) return; // Runtime update/reload safely settles when there is no view.
         foreach (Action<CoinFlightRequest> handler in FlightRequested.GetInvocationList())
-            SafeInvoke(() => handler(new CoinFlightRequest(grant, position, camera, presentationDelay)));
+            SafeInvoke(() => handler(new CoinFlightRequest(grant, position, camera, presentationDelay, dropOrigin)));
     }
 
     public CurrencyResult TrySettleToken(string grantId, string tokenId)
@@ -272,7 +277,10 @@ public sealed partial class EconomyService
         return true;
     }
 
-    public CurrencyResult TryHandleDeath(string deathId, IEquipmentAdapter equipment, Action processDeathEffects)
+    public CurrencyResult TryHandleDeath(string deathId, IEquipmentAdapter equipment, Action processDeathEffects) =>
+        StartDeath(deathId, equipment, processDeathEffects, null);
+
+    private CurrencyResult StartDeath(string deathId, IEquipmentAdapter equipment, Action processDeathEffects, DeathResultData result)
     {
         if (busy) return Fail(EconomyError.Busy, deathId);
         if (!initialized) return Fail(EconomyError.NotReady, deathId);
@@ -287,8 +295,10 @@ public sealed partial class EconomyService
         work.death = new EconomyDeathRecord
         {
             deathId = deathId, sourceRevision = profile.revision, phase = EconomyDeathPhase.Captured,
-            randomSeed = random.Next(0, int.MaxValue)
+            randomSeed = random.Next(0, int.MaxValue),
+            awaitingChoice = result != null, hasResult = result != null, result = result?.Copy()
         };
+        MergeObservedDefeats(work.statistics);
         if (work.hasRun)
         {
             work.run.area = RunArea.Dying;
@@ -319,6 +329,7 @@ public sealed partial class EconomyService
                 pending.EffectsProcessed = true; // Never emit the same death effects again on a retry.
                 if (pending.Effects != null) SafeInvoke(pending.Effects);
             }
+            if (pending.Data.death.awaitingChoice) return Success(0, 0, Balance, id);
             if (!pending.Unequipped)
             {
                 try
@@ -352,11 +363,13 @@ public sealed partial class EconomyService
             if (final.hasRun)
                 final.run = LobbyRules.NewRun(LobbyRules.StableId(id + ":next-run"),
                     pending.Data.run.maxHp, pending.Data.death.randomSeed);
+            final.statistics = new PlayStatistics();
             final.revision++;
             var result = Success(beforeTotal, final.death.lostCoins, final.balance, id);
             final.processedTransactions.Add(new EconomyReceipt { id = id, requestKey = "death", result = result.Copy() });
             if (!Save(final)) return Fail(EconomyError.SaveFailed, id);
             deathWork = null;
+            observedDefeats.Clear();
             Publish(final, "player.death", id);
             if (DeathCompleted != null)
                 foreach (Action<EconomyDeathRecord> handler in DeathCompleted.GetInvocationList())

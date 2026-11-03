@@ -29,6 +29,8 @@ public sealed class LobbyPlayModeTests
 
     [UnityTearDown] public IEnumerator TearDown()
     {
+        if (PlayerDeathCoordinator.Active != null) Object.Destroy(PlayerDeathCoordinator.Active.gameObject);
+        yield return null;
         SceneManager.sceneLoaded -= PauseCombatActors;
         // A persistent router must not route other suites back into this fixture.
         if (Flow != null) Object.Destroy(Flow.gameObject);
@@ -175,7 +177,12 @@ public sealed class LobbyPlayModeTests
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
         Assert.That(Flow.InputReady, Is.False); Assert.That(Currency.Balance, Is.EqualTo(100));
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
-        store.FailWrites = false; yield return Ready("Lobby");
+        store.FailWrites = false;
+        yield return new WaitForSecondsRealtime(.65f);
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
+        Assert.That(Currency.Balance, Is.EqualTo(100));
+        Player.GetComponent<PlayerDeathCoordinator>().Continue();
+        yield return Ready("Lobby");
         Assert.That(Flow.State.id, Is.Not.EqualTo(oldRun)); Assert.That(Flow.State.combatClears, Is.Zero);
         Assert.That(Player.CurrentHp, Is.EqualTo(Player.MaxHp)); Assert.That(Currency.Balance, Is.EqualTo(70));
         Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(10));
@@ -190,7 +197,8 @@ public sealed class LobbyPlayModeTests
         Flow.ToggleSaveFailure(); Assert.That(Flow.FixtureStore.FailWrites, Is.True);
         Flow.DieForTest(); yield return null;
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
-        Flow.ToggleSaveFailure(); yield return Ready("Lobby");
+        Flow.ToggleSaveFailure();
+        Player.GetComponent<PlayerDeathCoordinator>().Continue(); yield return Ready("Lobby");
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }
 

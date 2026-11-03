@@ -3,6 +3,7 @@ using UnityEngine;
 public class MagicCircle : MonoBehaviour
 {
     private float radius;
+    private GameObject attacker;
 
     public bool Activate(
         float radius,
@@ -11,8 +12,9 @@ public class MagicCircle : MonoBehaviour
         float slowDuration,
         float visualDuration,
         Collider2D targetBodyCollider,
-        out bool hpDamageApplied)
+        out bool hpDamageApplied, GameObject attacker = null)
     {
+        this.attacker = attacker;
         this.radius = radius;
         float diameter = radius * 2f;
         transform.localScale = new Vector3(diameter, diameter, 1f);
@@ -44,7 +46,7 @@ public class MagicCircle : MonoBehaviour
             damageable = playerRoot.GetComponentInChildren<IDamageable>();
         if (damageable != null)
         {
-            hpDamageApplied = damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+            hpDamageApplied = damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, attacker, "마법진"));
             harmfulEffectApplied |= hpDamageApplied;
         }
 

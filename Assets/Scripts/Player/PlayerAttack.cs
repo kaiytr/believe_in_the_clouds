@@ -687,9 +687,10 @@ public class PlayerAttack : MonoBehaviour
     private IEnumerator HitStop(float duration)
     {
         float previousScale = Time.timeScale;
+        if (PlayerDeathCoordinator.IsResultOpen) yield break;
         Time.timeScale = 0.05f;
         yield return new WaitForSecondsRealtime(duration);
-        Time.timeScale = previousScale;
+        if (!PlayerDeathCoordinator.IsResultOpen) Time.timeScale = previousScale;
     }
 
     private void OnDisable()

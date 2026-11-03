@@ -553,7 +553,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public bool TryHit(BossAttackRecord record)
     {
         if (!IsAttackValid(record) || !record.TryContact()) return false;
-        var damage = new DamageInfo(record.Damage, DamageSource.Enemy);
+        var damage = new DamageInfo(record.Damage, DamageSource.Enemy, gameObject, AttackName(record.Kind));
         bool isComboHit = record.Kind == BossAttackKind.Melee && record.HitIndex > 0;
         bool accepted = isComboHit && record.HitIndex > 1 && lastAcceptedComboPatternId == record.PatternId
             ? playerHealth.TakeDamageFromBossCombo(damage)
@@ -639,8 +639,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         if (removeBurn && playerHealth != null) playerHealth.GetComponent<BossBurnEffect>()?.Clear(this);
     }
+    private readonly string defeatId = "boss:" + System.Guid.NewGuid().ToString("N") + "/defeat";
     private void Die()
     {
+        Currency.Service?.ObserveEnemyDefeat(EnemyRewardKind.Boss, defeatId);
         IsDead = true;
         EncounterStarted = false;
         SetContactDamageSuppressed(true);

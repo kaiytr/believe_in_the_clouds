@@ -465,7 +465,7 @@ public sealed class BossCombatPlayModeTests
         var record = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
         cancel();
         float hp = player.CurrentHp;
-        yield return new WaitForSeconds(.8f);
+        yield return new WaitForSecondsRealtime(.8f);
         Assert.That(record.Outcome, Is.EqualTo(AttackOutcome.Cancelled));
         Assert.That(player.CurrentHp, Is.EqualTo(hp));
         Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
@@ -982,6 +982,12 @@ public sealed class BossCombatPlayModeTests
     [UnityTearDown]
     public IEnumerator TearDown()
     {
+        if (PlayerDeathCoordinator.Active != null)
+        {
+            Currency.Service?.CompleteDeferredDeath(PlayerDeathCoordinator.Active.DeathId);
+            Object.Destroy(PlayerDeathCoordinator.Active.gameObject);
+        }
+        Time.timeScale = 1f;
         SceneManager.sceneLoaded-=PauseOnLoad;
         if(boss!=null) { boss.PauseAndCancelForTest(); boss.gameObject.SetActive(false); if(originalData!=null) Set(boss,"settings",originalData); }
         foreach(var fixture in fixtures) if(fixture!=null) Object.Destroy(fixture); fixtures.Clear();

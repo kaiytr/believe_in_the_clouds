@@ -27,6 +27,8 @@ public sealed class EconomyPlayModeTests
     [UnityTearDown]
     public IEnumerator TearDown()
     {
+        if (PlayerDeathCoordinator.Active != null) Object.Destroy(PlayerDeathCoordinator.Active.gameObject);
+        yield return null;
         Time.timeScale = 1;
         ShopScreen.Instance?.Close();
         DoctrineManager.Instance?.Clear();
@@ -65,6 +67,10 @@ public sealed class EconomyPlayModeTests
             Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.True);
             Assert.That(enemy.TakeDamage(new DamageInfo(100000, DamageSource.Environment)), Is.False);
         }
+        PlayStatistics statistics = Currency.Service.StatisticsSnapshot();
+        Assert.That(statistics.Count(EnemyRewardKind.Believer), Is.EqualTo(1));
+        Assert.That(statistics.Count(EnemyRewardKind.Dog), Is.EqualTo(1));
+        Assert.That(statistics.Count(EnemyRewardKind.Executive), Is.EqualTo(1));
         int total = Currency.Balance + Currency.PendingBalance - before;
         Assert.That(total, Is.InRange(15, 20));
         Assert.That(Currency.Service.Snapshot().processedTransactions.Count(item => item.requestKey.StartsWith("defeat|")), Is.EqualTo(3));
@@ -92,6 +98,9 @@ public sealed class EconomyPlayModeTests
         player.TakeDamage(100000);
         yield return null;
         Assert.That(player.IsDead, Is.True); Assert.That(deathEvents, Is.EqualTo(1));
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
+        Assert.That(service.Balance + service.PendingBalance, Is.EqualTo(110));
+        Assert.That(service.CompleteDeferredDeath(player.GetComponent<PlayerDeathCoordinator>().DeathId).Success, Is.True);
         Assert.That(context.Equipment.EquippedCount, Is.Zero);
         Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(10));
         Assert.That(service.Balance, Is.EqualTo(77)); Assert.That(service.PendingBalance, Is.Zero);
@@ -201,6 +210,32 @@ public sealed class EconomyPlayModeTests
         while (service.PendingBalance > 0 && Time.realtimeSinceStartup < deadline) yield return null;
         Assert.That(service.Balance, Is.EqualTo(result.AppliedAmount));
         Assert.That(service.PendingBalance, Is.Zero);
+    }
+
+    [UnityTest]
+    public IEnumerator FailedDefeatRewardKeepsFinalCorpsePositionAfterSourceIsDestroyed()
+    {
+        yield return Load("EconomyTest");
+        var memory = new MemoryEconomyStore();
+        EconomyRuntime.Instance.SetService(new EconomyService(memory, new EconomyRandom(1)));
+        var corpse = new GameObject("Moving corpse origin");
+        var origin = new CoinDropOrigin(corpse.transform, Vector3.zero);
+        CoinDropOrigin requestedOrigin = null;
+        int requests = 0;
+        Currency.Service.FlightRequested += request => { requestedOrigin = request.DropOrigin; requests++; };
+        memory.FailWrites = true;
+        EconomyRuntime.Instance.RewardDefeat(EnemyRewardKind.Dog, "moving-corpse-retry", Vector3.zero, dropOrigin: origin);
+        corpse.transform.position = new Vector3(3f, 1f, 0f);
+        origin.Freeze();
+        Object.Destroy(corpse);
+        yield return null;
+        memory.FailWrites = false;
+        yield return new WaitForSecondsRealtime(.7f);
+        Assert.That(requestedOrigin, Is.SameAs(origin));
+        Assert.That(requestedOrigin.Position, Is.EqualTo(new Vector3(3f, 1f, 0f)));
+        Assert.That(requestedOrigin.IsReady, Is.True);
+        EconomyRuntime.Instance.RewardDefeat(EnemyRewardKind.Dog, "moving-corpse-retry", Vector3.zero, dropOrigin: origin);
+        Assert.That(requests, Is.EqualTo(1), "Retries cannot launch another drop.");
     }
 
     [UnityTest]

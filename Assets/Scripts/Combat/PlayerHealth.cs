@@ -55,12 +55,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     public bool TakeDamage(DamageInfo damageInfo)
     {
-        return ApplyDamage(damageInfo.Amount, null);
+        return ApplyDamage(damageInfo.Amount, damageInfo.Attacker, cause: DeathCause.Describe(damageInfo.Attacker, damageInfo.Source, damageInfo.Detail));
     }
 
     internal bool TakeDamageFromBossCombo(DamageInfo damageInfo)
     {
-        return ApplyDamage(damageInfo.Amount, null, allowDuringInvulnerability: true);
+        return ApplyDamage(damageInfo.Amount, damageInfo.Attacker, allowDuringInvulnerability: true,
+            cause: DeathCause.Describe(damageInfo.Attacker, damageInfo.Source, damageInfo.Detail));
     }
 
     public void TakeDamage(float damage, GameObject source = null)
@@ -68,13 +69,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         ApplyDamage(damage, source);
     }
 
-    private bool ApplyDamage(float damage, GameObject source, bool allowDuringInvulnerability = false)
+    private bool ApplyDamage(float damage, GameObject source, bool allowDuringInvulnerability = false, string cause = null)
     {
-        if (damage <= 0f || (isInvulnerable && !allowDuringInvulnerability) || currentHp <= 0f)
+        if (float.IsNaN(damage) || float.IsInfinity(damage) || damage <= 0f || (isInvulnerable && !allowDuringInvulnerability) || currentHp <= 0f)
             return false;
 
         currentHp = Mathf.Max(0f, currentHp - damage);
-        if (currentHp <= 0f) Currency.Service?.BlockDefeatRewards();
+        if (currentHp <= 0f)
+        {
+            Currency.Service?.BlockDefeatRewards();
+            deathCoordinator.PrepareDeath(cause ?? DeathCause.Describe(source, null));
+        }
         Debug.Log($"[Player] Damage: {damage} / HP: {currentHp}/{maxHp}");
 
         if (DoctrineEventBus.HasListeners)
@@ -89,7 +94,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
         if (currentHp <= 0f)
         {
-            Die(source);
+            Die(source, cause ?? DeathCause.Describe(source, null));
             return true;
         }
 
@@ -111,7 +116,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     public void ResetHealth()
     {
-        if (Currency.Service != null && Currency.Service.HasPendingDeath) return;
+        if ((deathCoordinator != null && deathCoordinator.HasResult) || (Currency.Service != null && Currency.Service.HasPendingDeath)) return;
         if (invulnerabilityRoutine != null)
         {
             StopCoroutine(invulnerabilityRoutine);
@@ -192,7 +197,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             spriteRenderers[i].enabled = originalRendererStates[i];
     }
 
-    private void Die(GameObject source)
+    private void Die(GameObject source, string cause)
     {
         isInvulnerable = true;
         RestoreRenderers();
@@ -202,7 +207,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         {
             if (DoctrineEventBus.HasListeners)
                 DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
-        });
+        }, cause);
     }
 
     private void OnDisable()

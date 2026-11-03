@@ -188,7 +188,7 @@ public sealed class ChestEditModeTests
             File.WriteAllText(path, JsonUtility.ToJson(legacy));
             var reopened = new EconomyService(new JsonEconomyStore(path)); Assert.That(reopened.Initialize(), Is.True);
             Assert.That(reopened.Balance, Is.EqualTo(98)); Assert.That(reopened.CountPiece("result.speed"), Is.EqualTo(4));
-            Assert.That(reopened.Snapshot().schemaVersion, Is.EqualTo(3));
+            Assert.That(reopened.Snapshot().schemaVersion, Is.EqualTo(EconomyProfileData.CurrentSchemaVersion));
             if (version == 2) Assert.That(reopened.RunSnapshot().stage.id, Is.EqualTo(stageId));
             else Assert.That(reopened.RunSnapshot(), Is.Null);
             Assert.That(EconomyLedger.Validate(reopened.Snapshot()), Is.True);

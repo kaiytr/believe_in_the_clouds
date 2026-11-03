@@ -79,7 +79,7 @@ public class StoneProjectile : MonoBehaviour
                 damageable = player.GetComponentInChildren<IDamageable>();
 
             bool applied = damageable != null &&
-                           damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+                           damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, sourceAttack.Owner.gameObject, "돌 투척"));
             if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
             Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
             Destroy(gameObject);

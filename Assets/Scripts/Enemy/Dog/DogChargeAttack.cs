@@ -227,7 +227,7 @@ public class DogChargeAttack : EnemyAttack
         if (damageable == null && player != null)
             damageable = player.GetComponentInChildren<IDamageable>();
         playerContactAppliedHarm = damageable != null &&
-                                   damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy));
+                                   damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, gameObject, "돌진"));
         if (playerContactAppliedHarm) NotifyPlayerHpDamageApplied(CurrentAttackId);
     }
 

@@ -129,6 +129,11 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
             nextRetry = Time.unscaledTime + .5f;
             Report(Service.TryInitializeRun(Scene.Player.MaxHp)); RefreshState();
         }
+        if (PlayerDeathCoordinator.IsResultOpen)
+        {
+            Scene.SetPlayable(false);
+            return; // The result buttons own routing, including after the death commits.
+        }
         if (Service.HasPendingDeath)
         {
             Scene.SetPlayable(false);
@@ -155,6 +160,13 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
             SavePlayerCheckpoint();
         }
         Scene.SetPlayable(InputReady);
+    }
+
+    public void RouteAfterDeath(string sceneName)
+    {
+        if (IsTransitioning) throw new System.InvalidOperationException("이미 씬을 전환하고 있습니다.");
+        if (Service.HasPendingDeath) throw new System.InvalidOperationException("사망 저장을 완료하지 못했습니다.");
+        StartCoroutine(Route(sceneName));
     }
 
     private IEnumerator Route(string sceneName)
