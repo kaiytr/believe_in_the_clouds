@@ -8,6 +8,9 @@ public static class ProjectScenes
     public const string Title = "Assets/Scenes/Gameplay/Title.unity";
     public const string Lobby = "Assets/Scenes/Gameplay/Lobby.unity";
     public const string ShopTest = "Assets/Scenes/Gameplay/ShopTest.unity";
+    public const string Tutorial = "Assets/Scenes/Gameplay/Designed/Tutorial.unity";
+    public const string CombatLevelFolder = "Assets/Scenes/Gameplay/Designed/";
+    public const int CombatLevelCount = 6;
     public const string DogCombatTest = "Assets/Scenes/Gameplay/DogCombatTest.unity";
     public const string BelieverCombatTest = "Assets/Scenes/Gameplay/BelieverCombatTest.unity";
     public const string ExecutiveCombatTest = "Assets/Scenes/Gameplay/ExecutiveCombatTest.unity";
@@ -26,12 +29,17 @@ public static class ProjectScenes
         {
             yield return Lobby;
             yield return ShopTest;
+            yield return Tutorial;
+            for (int number = 1; number <= CombatLevelCount; number++)
+                yield return CombatLevelFolder + CombatLevelName(number) + ".unity";
             yield return DogCombatTest;
             yield return BelieverCombatTest;
             yield return ExecutiveCombatTest;
             yield return BossTest;
         }
     }
+
+    public static string CombatLevelName(int number) => "CombatLevel" + number;
 
     public static IEnumerable<string> AllPaths
     {
