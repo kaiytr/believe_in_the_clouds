@@ -177,6 +177,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         RestoreRenderers();
         isInvulnerable = false;
         invulnerabilityRoutine = null;
+        // Resume trigger-stay callbacks even if the player stood still during immunity.
+        Rigidbody2D body = bodyCollider != null ? bodyCollider.attachedRigidbody : null;
+        if (body != null) body.WakeUp();
     }
 
     private void SetRenderersVisible(bool visible)
