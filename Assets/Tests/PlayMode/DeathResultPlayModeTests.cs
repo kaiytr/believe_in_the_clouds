@@ -47,7 +47,7 @@ public sealed class DeathResultPlayModeTests
     private static Button Button(string name) => Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(item => item.name == name);
     private static IEnumerator WaitForResult() => WaitUntil(() => Object.FindFirstObjectByType<DeathResultView>() != null);
 
-    [UnityTest] public IEnumerator DeathAnimationFinishesBeforeResultWhileWorldAndControlsStayFrozen()
+    [UnityTest] public IEnumerator DeathZoomAndSlowMotionFinishBeforeResultWithoutSquashingThePlayer()
     {
         var animation = player.GetComponent<PlayerIdleSpriteAnimator>();
         Assert.That(animation, Is.Not.Null);
@@ -62,9 +62,13 @@ public sealed class DeathResultPlayModeTests
         }
 
         Vector3 position = player.transform.position;
+        Vector3 scale = player.transform.localScale;
+        Camera camera = Camera.main;
+        float cameraSize = camera.orthographicSize;
+        float startedAt = Time.unscaledTime;
         var coordinator = Kill();
         Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Null);
-        Assert.That(Time.timeScale, Is.Zero);
+        Assert.That(Time.timeScale, Is.EqualTo(.5f));
         Assert.That(UiModal.IsOpen, Is.True);
         Assert.That(player.GetComponent<PlayerMove>().enabled, Is.False);
         Assert.That(player.GetComponent<PlayerAttack>().enabled, Is.False);
@@ -77,15 +81,24 @@ public sealed class DeathResultPlayModeTests
         {
             yield return null;
             ObserveFrame();
-            Assert.That(Time.timeScale, Is.Zero);
             Assert.That(player.transform.position, Is.EqualTo(position));
+            Assert.That(player.transform.localScale, Is.EqualTo(scale));
             if (!animation.IsDeathAnimationComplete)
+            {
+                Assert.That(Time.timeScale, Is.EqualTo(.5f));
                 Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Null);
+            }
         }
-        Assert.That(animation.IsDeathAnimationComplete, Is.True, "Death animation must finish with paused game time.");
+        Assert.That(animation.IsDeathAnimationComplete, Is.True);
+        Assert.That(Time.unscaledTime - startedAt, Is.GreaterThanOrEqualTo(1.1f));
         CollectionAssert.AreEqual(frames, shownFrames);
         Assert.That(renderer.sprite, Is.SameAs(frames[frames.Length - 1]));
         yield return WaitForResult();
+        Assert.That(Time.timeScale, Is.Zero);
+        Assert.That(camera.orthographicSize, Is.EqualTo(cameraSize * .6f).Within(.01f));
+        Vector3 focus = camera.WorldToViewportPoint(player.BodyCollider.bounds.center);
+        Assert.That(focus.x, Is.EqualTo(.5f).Within(.02f));
+        Assert.That(focus.y, Is.EqualTo(.5f).Within(.02f));
         Assert.That(Object.FindObjectsByType<DeathResultView>(FindObjectsSortMode.None), Has.Length.EqualTo(1));
         Assert.That(Currency.Balance, Is.EqualTo(100));
     }
@@ -152,7 +165,7 @@ public sealed class DeathResultPlayModeTests
         yield return WaitUntil(() => SceneManager.GetActiveScene().name == TitleScreen.SceneName);
         yield return null;
         var saved = store.Load().Data;
-        Assert.That(saved.balance, Is.EqualTo(70)); Assert.That(EconomyLedger.Total(saved.pieces), Is.EqualTo(10));
+        Assert.That(saved.balance, Is.EqualTo(70)); Assert.That(EconomyLedger.Total(saved.pieces), Is.EqualTo(9));
         Assert.That(saved.death.result.screenshotPngBase64, Is.Not.Empty);
         Assert.That(saved.death.result.statistics.coins, Is.EqualTo(100));
         Assert.That(Time.timeScale, Is.EqualTo(1)); Assert.That(UiModal.IsOpen, Is.False);
@@ -171,6 +184,8 @@ public sealed class DeathResultPlayModeTests
         Assert.That(dog.TakeDamage(new DamageInfo(10000, DamageSource.Environment)), Is.True);
         dog.TakeDamage(new DamageInfo(10000, DamageSource.Environment));
         int actualReward = Currency.Service.Snapshot().processedTransactions.Single(item => item.id == dog.DefeatId).result.AppliedAmount;
+        Camera camera = Camera.main;
+        float cameraSize = camera.orthographicSize;
         Assert.That(player.TakeDamage(new DamageInfo(10000, DamageSource.Enemy, dog.gameObject, "돌진")), Is.True);
         yield return null;
         var coordinator = player.GetComponent<PlayerDeathCoordinator>();
@@ -178,6 +193,9 @@ public sealed class DeathResultPlayModeTests
         Assert.That(coordinator.Result.statistics.Count(EnemyRewardKind.Dog), Is.EqualTo(1));
         Assert.That(coordinator.Result.statistics.coins, Is.EqualTo(actualReward));
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("DogCombatTest"));
+        yield return WaitForResult();
+        yield return null;
+        Assert.That(camera.orthographicSize, Is.EqualTo(cameraSize * .6f).Within(.01f));
     }
     [UnityTest] public IEnumerator CaptureFailureHasFallbackAndDoesNotChangeRenderTarget()
     {

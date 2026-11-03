@@ -203,7 +203,7 @@ public sealed class LobbyPlayModeTests
         yield return Ready("Lobby");
         Assert.That(Flow.State.id, Is.Not.EqualTo(oldRun)); Assert.That(Flow.State.combatClears, Is.Zero);
         Assert.That(Player.CurrentHp, Is.EqualTo(Player.MaxHp)); Assert.That(Currency.Balance, Is.EqualTo(70));
-        Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(9));
         Flow.Service.TryHandleDeath(death, null, () => Assert.Fail("Duplicate death"));
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }
@@ -221,7 +221,7 @@ public sealed class LobbyPlayModeTests
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }
 
-    [UnityTest] public IEnumerator ConfirmedDeathLosesThirtyPercentAndClearsTheFoundationOnLobbyReturn()
+    [UnityTest] public IEnumerator ConfirmedDeathLosesOneThirdAndClearsTheFoundationOnLobbyReturn()
     {
         var foundation = FoundationScreen.Instance;
         var manager = DoctrineHudBoot.EnsureManagerExists();

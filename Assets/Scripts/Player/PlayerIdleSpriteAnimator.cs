@@ -204,7 +204,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
             return;
         }
 
-        OneShotState state = PlayOnce(deadFrames, deadFramesPerSecond, useUnscaledTime: true);
+        OneShotState state = PlayOnce(deadFrames, deadFramesPerSecond);
         if (state == OneShotState.Finished)
             deadPlayed = true;
     }
@@ -217,7 +217,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     }
 
     // 한 번만 재생하고 마지막 프레임에서 멈춘다.
-    private OneShotState PlayOnce(Sprite[] frames, float fps, bool useUnscaledTime = false)
+    private OneShotState PlayOnce(Sprite[] frames, float fps)
     {
         if (activeFrames != frames)
         {
@@ -229,8 +229,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
             return OneShotState.Started;
         }
 
-        // Death keeps playing while the world is paused, including the final frame's duration.
-        frameTimer += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        frameTimer += Time.deltaTime;
         float frameDuration = 1f / Mathf.Max(1f, activeFramesPerSecond);
         while (frameTimer >= frameDuration)
         {

@@ -275,7 +275,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHitReact
   hitCrouchScaleY: 0.75
   hitCrouchDuration: 0.18
-  kneelScaleY: 0.55
 --- !u!114 &6308225462173386905
 MonoBehaviour:
   m_ObjectHideFlags: 0
