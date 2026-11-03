@@ -98,6 +98,9 @@ public sealed class EconomyPlayModeTests
         player.TakeDamage(100000);
         yield return null;
         Assert.That(player.IsDead, Is.True); Assert.That(deathEvents, Is.EqualTo(1));
+        float resultDeadline = Time.realtimeSinceStartup + 5f;
+        while (Object.FindFirstObjectByType<DeathResultView>() == null && Time.realtimeSinceStartup < resultDeadline)
+            yield return null;
         Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
         Assert.That(service.Balance + service.PendingBalance, Is.EqualTo(110));
         Assert.That(service.CompleteDeferredDeath(player.GetComponent<PlayerDeathCoordinator>().DeathId).Success, Is.True);
@@ -419,7 +422,10 @@ public sealed class EconomyPlayModeTests
         ShopScreen.Instance.Close();
         context.PrepareEquipmentFixture();
         GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerHealth>().TakeDamage(100000);
-        yield return null;
+        float resultDeadline = Time.realtimeSinceStartup + 5f;
+        while (Object.FindFirstObjectByType<DeathResultView>() == null && Time.realtimeSinceStartup < resultDeadline)
+            yield return null;
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
         yield return Capture("04-death", 1600, 900);
         yield return Capture("05-death-4x3", 1200, 900);
     }

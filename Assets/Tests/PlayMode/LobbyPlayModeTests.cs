@@ -67,6 +67,14 @@ public sealed class LobbyPlayModeTests
         yield return Ready(SceneManager.GetActiveScene().name);
     }
 
+    private static IEnumerator DeathResultReady()
+    {
+        float until = Time.realtimeSinceStartup + 5f;
+        while (Object.FindFirstObjectByType<DeathResultView>() == null && Time.realtimeSinceStartup < until)
+            yield return null;
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
+    }
+
     private static void PauseCombatActors(Scene scene, LoadSceneMode mode)
     {
         if (!CombatScenes.Contains(scene.name)) return;
@@ -178,7 +186,7 @@ public sealed class LobbyPlayModeTests
         Assert.That(Flow.InputReady, Is.False); Assert.That(Currency.Balance, Is.EqualTo(100));
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
         store.FailWrites = false;
-        yield return new WaitForSecondsRealtime(.65f);
+        yield return DeathResultReady();
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(stageScene));
         Assert.That(Currency.Balance, Is.EqualTo(100));
         Player.GetComponent<PlayerDeathCoordinator>().Continue();
@@ -198,6 +206,7 @@ public sealed class LobbyPlayModeTests
         Flow.DieForTest(); yield return null;
         Assert.That(Flow.Service.HasPendingDeath, Is.True);
         Flow.ToggleSaveFailure();
+        yield return DeathResultReady();
         Player.GetComponent<PlayerDeathCoordinator>().Continue(); yield return Ready("Lobby");
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }

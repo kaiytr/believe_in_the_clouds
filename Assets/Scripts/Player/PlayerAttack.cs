@@ -3,11 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// 플레이어 근접 콤보 공격. 마우스 좌클릭으로 지상 4연타가 나간다.
+// 플레이어 근접 콤보 공격. 마우스 좌클릭으로 지상 3연타가 나간다.
 // 1타: 뒤로 짧게 사선 베기
 // 2타: 반대 앞 방향으로 길게 베기
-// 3타: 전진 찌르기
-// 4타: 올려베기 피니쉬
+// 3타: 전진 찌르기 (피니쉬)
 // 공중(점프 중) 공격: 아래쪽 부채꼴 1회. 착지 전까지 1회만 나간다.
 //
 // 판정: 지상은 각 타수마다 전방 OverlapBox 1회로 적중을 처리한다.
@@ -18,7 +17,7 @@ using UnityEngine;
 //       "플레이어는 공격하면 ..." 계열 교리가 별도 분기 없이 발동한다.
 // 이동: 공격 중에는 PlayerMove.ControlLocked를 잠가 이동 덮어쓰기와
 //       방향 전환을 막고, 타수별 전진(lunge) 거리만큼 Rigidbody로 밀어준다.
-// 애니메이터가 있으면 Attack1~4 / AirAttack 트리거, IsAttacking / Combo 파라미터를 쏘므로
+// 애니메이터가 있으면 Attack1~3 / AirAttack 트리거, IsAttacking / Combo 파라미터를 쏘므로
 // 나중에 스프라이트 애니메이션만 연결하면 된다.
 [RequireComponent(typeof(PlayerMove))]
 [RequireComponent(typeof(PlayerCombatEvents))]
@@ -48,7 +47,7 @@ public class PlayerAttack : MonoBehaviour
         [Tooltip("타격 후 다음 입력/종료를 기다리는 경직 시간.")]
         [Min(0f)] public float recoveryTime;
 
-        [Tooltip("recovery 이후 다음 타 입력을 받아주는 유예 시간. 4타는 피니쉬라 0 권장.")]
+        [Tooltip("recovery 이후 다음 타 입력을 받아주는 유예 시간. 마지막 타는 피니쉬라 0 권장.")]
         [Min(0f)] public float comboWindow;
 
         [Tooltip("이번 타에 앞으로 미끄러지듯 나가는 거리.")]
@@ -57,7 +56,7 @@ public class PlayerAttack : MonoBehaviour
         [Tooltip("적중 시 적을 미는 힘(충격량).")]
         [Min(0f)] public float knockback;
 
-        [Tooltip("적중 시 적을 띄우는 힘(충격량). 4타 피니쉬용.")]
+        [Tooltip("적중 시 적을 띄우는 힘(충격량). 피니쉬용.")]
         [Min(0f)] public float launchUp;
     }
 
@@ -66,7 +65,7 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private int attackMouseButton = 0;
     public int AttackMouseButton => attackMouseButton;
 
-    [Header("콤보 (1~4타)")]
+    [Header("콤보 (1~3타)")]
     [SerializeField] private ComboStep[] comboSteps = new ComboStep[]
     {
         new ComboStep
@@ -111,20 +110,6 @@ public class PlayerAttack : MonoBehaviour
             knockback = 4f,
             launchUp = 0f,
         },
-        new ComboStep
-        {
-            name = "4타: 올려베기 피니쉬",
-            damage = 24f,
-            hitboxSize = new Vector2(2.0f, 1.9f),
-            hitboxOffset = new Vector2(0.9f, 0.6f),
-            hitboxAngle = 60f,
-            windupTime = 0.16f,
-            recoveryTime = 0.38f,
-            comboWindow = 0f,
-            lungeDistance = 0.9f,
-            knockback = 6f,
-            launchUp = 5f,
-        },
     };
 
     [Header("공중 공격 (점프 중 · 아래 부채꼴)")]
@@ -161,19 +146,22 @@ public class PlayerAttack : MonoBehaviour
     [Tooltip("공격 후 착지 전까지 공중 공격을 다시 쓸 수 있게 하는지.")]
     [SerializeField] private bool airAttackResetOnLand = true;
 
+    [Header("아래 부채꼴 파티클")]
+    [Tooltip("내리찍기 임팩트 파티클. 비워두면 Awake에서 자동으로 붙인다. 끄려면 enabled를 끄면 된다.")]
+    [SerializeField] private DownFanImpactEffect downFanImpact;
+    [Tooltip("파티클을 띄울지 여부.")]
+    [SerializeField] private bool spawnDownFanImpact = true;
+
     [Header("판정")]
     [Tooltip("공격이 맞을 레이어. 비워두면(0) 전부 판정한다.")]
     [SerializeField] private LayerMask targetLayers = Physics2D.AllLayers;
 
-    [Header("히트박스 비주얼")]
-    [Tooltip("자식으로 붙는 PlayerAttackHitbox. 비워두면 Awake에서 자동 탐색/생성한다.")]
-    [SerializeField] private PlayerAttackHitbox hitboxVisual;
-
-    [Tooltip("타격 이펙트처럼 박스가 남아있는 시간.")]
-    [SerializeField, Min(0f)] private float hitboxVisualDuration = 0.12f;
+    [Header("지상 베기 칼날 파티클")]
+    [Tooltip("1/2/3타 타격 지점에서 아래 공격과 같은 재질의 궤적을 그린다.")]
+    [SerializeField] private bool spawnSwingSlash = true;
 
     [Header("피니쉬 연출")]
-    [Tooltip("4타가 적중했을 때 시간을 잠깐 멈추는 타격감 연출(초). 0이면 끄기.")]
+    [Tooltip("피니쉬(마지막 타)가 적중했을 때 시간을 잠깐 멈추는 타격감 연출(초). 0이면 끄기.")]
     [SerializeField, Min(0f)] private float finishHitStop = 0.06f;
 
     private Rigidbody2D rb;
@@ -183,7 +171,7 @@ public class PlayerAttack : MonoBehaviour
     private PlayerHealth health;
     private PlayerDash dash;
 
-    private int currentCombo; // 다음에 나갈 타수 (0~3)
+    private int currentCombo; // 다음에 나갈 타수 (0~2)
     private bool isAttacking;
     private bool isAirAttacking;
     private bool airAttackUsed; // 이번 점프에서 공중 공격을 썼는지
@@ -197,10 +185,11 @@ public class PlayerAttack : MonoBehaviour
     private PlayerAttackContext activeSwing;
 
     public bool IsAttacking => isAttacking || isAirAttacking;
+    public bool IsAirAttacking => isAirAttacking;
     public int CurrentCombo => currentCombo;
     public int ComboCount => comboSteps != null ? comboSteps.Length : 0;
 
-    /// <summary>Exposes the ground combo definition so the boss can mirror the player's four-hit sequence.</summary>
+    /// <summary>Exposes the ground combo definition so the boss can mirror the player's combo.</summary>
     public bool TryGetComboStep(int index, out ComboStep step)
     {
         if (comboSteps == null || index < 0 || index >= comboSteps.Length)
@@ -225,20 +214,26 @@ public class PlayerAttack : MonoBehaviour
         health = GetComponent<PlayerHealth>();
         dash = GetComponent<PlayerDash>();
         baseScale = transform.localScale;
-        hitboxVisual = GetComponentInChildren<PlayerAttackHitbox>(true);
-        if (hitboxVisual == null)
-        {
-            GameObject go = new GameObject("AttackHitbox");
-            go.transform.SetParent(transform, false);
-            go.transform.localPosition = Vector3.zero;
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one;
-            // 자식이라 부모 태그를 그대로 물려받지만, 콜라이더가 없어
-            // 실제 판정(ContactDamage/OverlapBox)에 간섭하지 않는다.
-            go.tag = "Untagged";
-            go.layer = gameObject.layer;
-            hitboxVisual = go.AddComponent<PlayerAttackHitbox>();
-        }
+
+        ResolveDownFanImpact();
+    }
+
+    // 내리찍기 파티클은 씬 루트에 스스로 풀을 만든다.
+    // 플레이어 자식으로 두면 좌우 반전되므로 컴포넌트만 플레이어에 붙이고
+    // 파티클 오브젝트는 별도 루트에서 관리한다.
+    private void ResolveDownFanImpact()
+    {
+        if (downFanImpact == null)
+            downFanImpact = GetComponent<DownFanImpactEffect>();
+
+        if (downFanImpact == null)
+            downFanImpact = gameObject.AddComponent<DownFanImpactEffect>();
+
+        SpriteRenderer body = GetComponent<SpriteRenderer>();
+        if (body == null)
+            body = GetComponentInChildren<SpriteRenderer>();
+        if (body != null)
+            downFanImpact.SetSortingLayer(body.sortingLayerID);
     }
 
     private void Update()
@@ -301,7 +296,6 @@ public class PlayerAttack : MonoBehaviour
 
         activeSwing?.Dispose();
         activeSwing = null;
-        hitboxVisual?.Hide();
         StopMotion();
         currentCombo = 0;
         inputBuffered = false;
@@ -401,7 +395,7 @@ public class PlayerAttack : MonoBehaviour
     {
         if (animator != null)
             animator.SetTrigger("Attack" + (index + 1));
-        return SwingOnce(comboSteps[index], index, stopSlide: true,
+        return SwingOnce(comboSteps[index], stopSlide: true,
             isFinish: index == comboSteps.Length - 1);
     }
 
@@ -430,9 +424,12 @@ public class PlayerAttack : MonoBehaviour
                 yield break;
 
             Vector2 origin = DownFanOrigin(facing);
-            if (hitboxVisual != null)
-                hitboxVisual.ShowDownFan(downFanOriginOffset, Vector2.down,
-                    downFanHalfAngle, downFanRadius, hitboxVisualDuration);
+
+            // 판정과 같은 원점/반경/각도로 칼날 궤적을 그린다.
+            if (spawnDownFanImpact && downFanImpact != null)
+            {
+                downFanImpact.Play(origin, downFanRadius, downFanHalfAngle, facing);
+            }
 
             int hitCount = DoDownFanHit(attack);
             if (hitCount > 0 && rb != null && downFanPlayerBounce > 0f)
@@ -538,7 +535,7 @@ public class PlayerAttack : MonoBehaviour
         enemyRb.AddForce(force, ForceMode2D.Impulse);
     }
 
-    private IEnumerator SwingOnce(ComboStep step, int comboIndexForVisual, bool stopSlide, bool isFinish = false)
+    private IEnumerator SwingOnce(ComboStep step, bool stopSlide, bool isFinish = false)
     {
         float facing = transform.localScale.x >= 0f ? 1f : -1f;
         Vector3 scale = transform.localScale;
@@ -566,9 +563,13 @@ public class PlayerAttack : MonoBehaviour
 
             if (activeSwing != attack || !isActiveAndEnabled)
                 yield break;
-            if (hitboxVisual != null)
-                hitboxVisual.ShowSwing(comboIndexForVisual, step.hitboxSize, step.hitboxOffset,
-                    step.hitboxAngle, hitboxVisualDuration);
+
+            // 판정 박스를 그리는 대신, 타격 지점에 아래 공격과 같은 칼날 궤적을 그린다.
+            if (spawnSwingSlash && downFanImpact != null)
+            {
+                Vector2 center = HitCenter(step, facing);
+                downFanImpact.PlaySwing(transform.position, center, step.hitboxSize, facing);
+            }
 
             int hitCount = DoHit(attack, step, facing);
             if (stopSlide) StopMotion();
@@ -704,7 +705,7 @@ public class PlayerAttack : MonoBehaviour
             return;
 
         float facing = transform != null && transform.localScale.x < 0f ? -1f : 1f;
-        Color[] colors = { Color.cyan, Color.green, Color.yellow, Color.red };
+        Color[] colors = { Color.cyan, Color.green, Color.yellow };
 
         for (int i = 0; i < comboSteps.Length; i++)
         {

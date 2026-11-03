@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 3608538687230886213}
   - component: {fileID: 7138799533125009962}
   - component: {fileID: 6455396816621203815}
+  - component: {fileID: 5298411138573312401}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -234,17 +235,6 @@ MonoBehaviour:
     lungeDistance: 1.8
     knockback: 4
     launchUp: 0
-  - name: "4\uD0C0: \uC62C\uB824\uBCA0\uAE30 \uD53C\uB2C8\uC26C"
-    damage: 24
-    hitboxSize: {x: 2, y: 1.9}
-    hitboxOffset: {x: 0.9, y: 0.6}
-    hitboxAngle: 60
-    windupTime: 0.16
-    recoveryTime: 0.38
-    comboWindow: 0
-    lungeDistance: 0.9
-    knockback: 6
-    launchUp: 5
   airAttack:
     name: "공중: 아래 부채꼴 내리찍기"
     damage: 14
@@ -264,11 +254,12 @@ MonoBehaviour:
   downFanEnemyKnockOut: 2
   downFanPlayerBounce: 8
   airAttackResetOnLand: 1
+  downFanImpact: {fileID: 0}
+  spawnDownFanImpact: 1
+  spawnSwingSlash: 1
   targetLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  hitboxVisual: {fileID: 0}
-  hitboxVisualDuration: 0.12
   finishHitStop: 0.06
 --- !u!114 &8151520561007178528
 MonoBehaviour:
@@ -383,6 +374,58 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineSubject
   Identity: 1
+--- !u!114 &5298411138573312401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c9176fdf634963aa2d7d803e2a7c51, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIdleSpriteAnimator
+  idleFrames:
+  - {fileID: 1061527380459089461, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  - {fileID: 6207771810069409013, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  - {fileID: -2380374124312247100, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  idleFramesPerSecond: 4
+  walkFrames:
+  - {fileID: 8598911646308356358, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -8971905496091981746, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -2912558134338543859, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: 1712548768681341929, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  walkFramesPerSecond: 8
+  jumpFrames:
+  - {fileID: -9062837415071662908, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  - {fileID: 8245629656952527113, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  - {fileID: -8619526791323513395, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  jumpVelocityThreshold: 1
+  deadFrames:
+  - {fileID: -5965892656687719484, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  - {fileID: -2164901213922389267, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  - {fileID: 4383519046183800969, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  deadFramesPerSecond: 5
+  downAttackFrames:
+  - {fileID: 6074012789666076083, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  - {fileID: -7027990949269339174, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  - {fileID: 1427495894719679787, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  downAttackFramesPerSecond: 12
+  attack1Frames:
+  - {fileID: -4518302543605216317, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -1461705153809937357, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -5254297954493108069, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attack2Frames:
+  - {fileID: 427998804050586947, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -2551861374933727485, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: 3193601639079225981, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attack3Frames:
+  - {fileID: 740032103608935834, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -8694810538317637598, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: 7975911915541452761, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attackFramesPerSecond: 14
+  movementThreshold: 0.08
 --- !u!1 &2626817653940688287
 GameObject:
   m_ObjectHideFlags: 0

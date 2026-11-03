@@ -52,7 +52,7 @@ public sealed class StageIntegrationPlayModeTests
             yield return Load(scene);
             GameObject player = Player;
             Assert.That(player.GetComponent<PlayerMove>().BaseMoveSpeed,Is.EqualTo(7f),scene);
-            Assert.That(player.GetComponent<PlayerAttack>().ComboCount,Is.EqualTo(4),scene);
+            Assert.That(player.GetComponent<PlayerAttack>().ComboCount,Is.EqualTo(3),scene);
             Assert.That(player.GetComponent<PlayerDash>(),Is.Not.Null,scene);
             Assert.That(player.GetComponent<PlayerHitReact>(),Is.Not.Null,scene);
             Assert.That(player.GetComponents<PlayerBody>().Length,Is.EqualTo(1),scene);
@@ -255,15 +255,21 @@ public sealed class StageIntegrationPlayModeTests
         var dash = Player.GetComponent<PlayerDash>();
         var emitter = Player.GetComponent<CombatAfterimageEmitter>();
         Attack(attack); Assert.That(attack.IsAttacking,Is.True);
+        Sprite emittedSprite = Player.GetComponent<SpriteRenderer>().sprite;
         Assert.That(dash.TryDash(),Is.True);
+        var firstImage = Object.FindFirstObjectByType<CombatAfterimage>().GetComponent<SpriteRenderer>();
+        Assert.That(firstImage.sprite,Is.SameAs(emittedSprite));
+        float firstOpacity = firstImage.color.a;
         Attack(attack);
         Assert.That(attack.IsAttacking,Is.False); Assert.That(move.ControlLocked,Is.True);
         yield return new WaitForSeconds(.09f);
         Assert.That(emitter.ActiveCount,Is.GreaterThan(0));
+        Assert.That(firstImage.sprite,Is.SameAs(emittedSprite),"Afterimages retain the emitted frame while the player keeps animating.");
+        Assert.That(firstImage.color.a,Is.LessThan(firstOpacity));
         foreach (var image in Object.FindObjectsByType<CombatAfterimage>(FindObjectsSortMode.None))
         {
             Assert.That(image.GetComponent<Collider2D>(),Is.Null);
-            Assert.That(image.GetComponent<SpriteRenderer>().sprite,Is.EqualTo(Player.GetComponent<SpriteRenderer>().sprite));
+            Assert.That(image.GetComponent<SpriteRenderer>().sprite,Is.Not.Null);
         }
         dash.enabled = false;
         Assert.That(move.ControlLocked,Is.False); Assert.That(dash.IsDashing,Is.False);

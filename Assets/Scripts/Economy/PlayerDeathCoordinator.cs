@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -62,6 +63,13 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
         UiModal.Push(this);
         Time.timeScale = 0f;
         DisableControls();
+        StartCoroutine(ShowResultAfterDeathAnimation());
+    }
+    private IEnumerator ShowResultAfterDeathAnimation()
+    {
+        var animation = GetComponent<PlayerIdleSpriteAnimator>();
+        while (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
+            yield return null;
         view = DeathResultView.Create(Result, capture, Continue, SaveAndExit);
         if (!LastResult.Success) view.SetError("사망 기록 저장 실패 · 저장 공간을 확인한 뒤 다시 시도해 주세요.");
     }
@@ -91,7 +99,7 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     public void SaveAndExit() => Choose(true);
     private void Choose(bool toTitle)
     {
-        if (!HasResult || choosing || transitioning) return;
+        if (!HasResult || view == null || choosing || transitioning) return;
         choosing = true; view.SetBusy(true);
         string destination = toTitle ? TitleScreen.SceneName : LobbyFlowRuntime.LobbyScene;
         try

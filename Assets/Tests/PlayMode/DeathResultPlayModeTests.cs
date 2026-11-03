@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -43,6 +45,67 @@ public sealed class DeathResultPlayModeTests
         return player.GetComponent<PlayerDeathCoordinator>();
     }
     private static Button Button(string name) => Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(item => item.name == name);
+    private static IEnumerator WaitForResult() => WaitUntil(() => Object.FindFirstObjectByType<DeathResultView>() != null);
+
+    [UnityTest] public IEnumerator DeathAnimationFinishesBeforeResultWhileWorldAndControlsStayFrozen()
+    {
+        var animation = player.GetComponent<PlayerIdleSpriteAnimator>();
+        Assert.That(animation, Is.Not.Null);
+        var frames = (Sprite[])typeof(PlayerIdleSpriteAnimator).GetField("deadFrames", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(animation);
+        Assert.That(frames.Length, Is.GreaterThan(1));
+        var renderer = player.GetComponent<SpriteRenderer>();
+        var shownFrames = new List<Sprite>();
+        void ObserveFrame()
+        {
+            if (frames.Contains(renderer.sprite) && (shownFrames.Count == 0 || shownFrames[shownFrames.Count - 1] != renderer.sprite))
+                shownFrames.Add(renderer.sprite);
+        }
+
+        Vector3 position = player.transform.position;
+        var coordinator = Kill();
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Null);
+        Assert.That(Time.timeScale, Is.Zero);
+        Assert.That(UiModal.IsOpen, Is.True);
+        Assert.That(player.GetComponent<PlayerMove>().enabled, Is.False);
+        Assert.That(player.GetComponent<PlayerAttack>().enabled, Is.False);
+        Assert.That(player.GetComponent<PlayerDash>().enabled, Is.False);
+        coordinator.Continue(); coordinator.SaveAndExit();
+        Assert.That(Currency.Balance, Is.EqualTo(100), "Choices cannot skip the death animation.");
+
+        float deadline = Time.realtimeSinceStartup + 5f;
+        while (!animation.IsDeathAnimationComplete && Time.realtimeSinceStartup < deadline)
+        {
+            yield return null;
+            ObserveFrame();
+            Assert.That(Time.timeScale, Is.Zero);
+            Assert.That(player.transform.position, Is.EqualTo(position));
+            if (!animation.IsDeathAnimationComplete)
+                Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Null);
+        }
+        Assert.That(animation.IsDeathAnimationComplete, Is.True, "Death animation must finish with paused game time.");
+        CollectionAssert.AreEqual(frames, shownFrames);
+        Assert.That(renderer.sprite, Is.SameAs(frames[frames.Length - 1]));
+        yield return WaitForResult();
+        Assert.That(Object.FindObjectsByType<DeathResultView>(FindObjectsSortMode.None), Has.Length.EqualTo(1));
+        Assert.That(Currency.Balance, Is.EqualTo(100));
+    }
+
+    [UnityTest] public IEnumerator DisabledDeathAnimatorDoesNotBlockResult()
+    {
+        player.GetComponent<PlayerIdleSpriteAnimator>().enabled = false;
+        Kill();
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
+        yield return null;
+    }
+
+    [UnityTest] public IEnumerator MissingDeathFramesDoNotBlockResult()
+    {
+        var animation = player.GetComponent<PlayerIdleSpriteAnimator>();
+        typeof(PlayerIdleSpriteAnimator).GetField("deadFrames", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(animation, Array.Empty<Sprite>());
+        Kill();
+        Assert.That(Object.FindFirstObjectByType<DeathResultView>(), Is.Not.Null);
+        yield return null;
+    }
 
     [UnityTest] public IEnumerator LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists()
     {
@@ -53,7 +116,7 @@ public sealed class DeathResultPlayModeTests
         Assert.That(camera.transform.position, Is.EqualTo(cameraPosition));
         Assert.That(camera.orthographicSize, Is.EqualTo(cameraSize));
         player.TakeDamage(10000); coordinator.CaptureDeath(() => Assert.Fail("Duplicate effects"));
-        yield return new WaitForSecondsRealtime(.7f);
+        yield return WaitForResult();
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Lobby"));
         Assert.That(Object.FindObjectsByType<DeathResultView>(FindObjectsSortMode.None), Has.Length.EqualTo(1));
         Assert.That(Time.timeScale, Is.Zero); Assert.That(UiModal.IsOpen, Is.True);
@@ -78,6 +141,7 @@ public sealed class DeathResultPlayModeTests
     {
         var coordinator = Kill();
         store.FailWrites = true;
+        yield return WaitForResult();
         Button("저장 및 종료").onClick.Invoke(); yield return null;
         Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("Lobby"));
         Assert.That(Time.timeScale, Is.Zero); Assert.That(Button("저장 및 종료").interactable, Is.True);
@@ -138,7 +202,7 @@ public sealed class DeathResultPlayModeTests
     }
     [UnityTest] public IEnumerator ResultLayoutFitsWideAndFourByThreeScreens()
     {
-        Kill(); yield return null;
+        Kill(); yield return WaitForResult();
         if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) Assert.Ignore("Graphics required");
         string output = Path.GetFullPath("Logs/DeathResultVerification"); Directory.CreateDirectory(output);
         foreach (Vector2Int resolution in new[] { new Vector2Int(1600, 900), new Vector2Int(1200, 900) })

@@ -71,7 +71,6 @@ MonoBehaviour:
   MeleeComboDamage:
   - 6
   - 7
-  - 8
   - 14
   MeleeComboFirstWarning: 0.65
   MeleeComboFollowupWarning: 0.35

@@ -63,12 +63,12 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator MeleeComboMirrorsPlayerHitboxesAndAutomaticallyLandsFourHits()
+    public IEnumerator MeleeComboMirrorsPlayerHitboxesAndAutomaticallyLandsThreeHits()
     {
         PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
         var playerAttack=player.GetComponent<PlayerAttack>();
         Assert.That(playerAttack,Is.Not.Null);
-        Assert.That(playerAttack.ComboCount,Is.GreaterThanOrEqualTo(4));
+        Assert.That(playerAttack.ComboCount,Is.GreaterThanOrEqualTo(3));
         PlayerAttack.ComboStep firstStep;
         Assert.That(playerAttack.TryGetComboStep(0,out firstStep),Is.True);
         boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
@@ -85,10 +85,13 @@ public sealed class BossCombatPlayModeTests
         Assert.That(player.CurrentHp,Is.EqualTo(100f-data.MeleeComboDamage[0]));
         Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Hit));
         yield return Until(()=>!boss.IsPatternRunning);
-        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(4));
+        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(3));
         Assert.That(player.CurrentHp,Is.EqualTo(100f-(data.MeleeComboDamage[0]+data.MeleeComboDamage[1]+
-            data.MeleeComboDamage[2]+data.MeleeComboDamage[3])));
-        Assert.That(playerBody.linearVelocity.y,Is.GreaterThan(0f));
+            data.MeleeComboDamage[2])));
+        Assert.That(playerAttack.TryGetComboStep(2,out PlayerAttack.ComboStep finisher),Is.True);
+        Assert.That(finisher.launchUp,Is.Zero);
+        Assert.That(playerBody.linearVelocity.y,Is.EqualTo(0f).Within(.001f));
+        Assert.That(playerBody.linearVelocity.x,Is.LessThan(0f),"The three-hit finisher knocks back without launching.");
         Assert.That(boss.transform.localScale,Is.EqualTo(Vector3.one));
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
@@ -262,7 +265,7 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator PhaseTwoStareCompletesTheFourHitFollowupAndTestHitAppliesOnce()
+    public IEnumerator PhaseTwoStareCompletesTheThreeHitFollowupAndTestHitAppliesOnce()
     {
         data.StareDuration=.2f;
         data.PhaseTwoPool=new[] { new BossPatternWeight(BossPatternKind.MeleeCombo,1f,.5f) };
@@ -271,7 +274,7 @@ public sealed class BossCombatPlayModeTests
         yield return Until(()=>boss.ActiveBossAttackId>0);
         Assert.That(boss.ActiveBeliefPhrase,Is.Not.Empty);
         yield return Until(()=>!boss.IsPatternRunning);
-        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(4));
+        Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(3));
         var hitIndices = new List<int>();
         foreach (BossAttackRecord record in boss.AttackHistory)
             if (record.Kind == BossAttackKind.Melee)
@@ -280,7 +283,7 @@ public sealed class BossCombatPlayModeTests
                 Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
                 Assert.That(record.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
             }
-        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, hitIndices);
+        CollectionAssert.AreEqual(new[] { 1, 2, 3 }, hitIndices);
         Assert.That(boss.ActiveAttacks.Count,Is.Zero);
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
         Assert.That(Last.Belief,Is.EqualTo(BossBeliefKind.AttackAndDodge));
@@ -317,7 +320,7 @@ public sealed class BossCombatPlayModeTests
                 Assert.That(record.EndReason,Is.EqualTo(BossAttackEndReason.Completed));
                 completedHits.Add(record.HitIndex);
             }
-        CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, completedHits);
+        CollectionAssert.AreEqual(new[] { 1, 2, 3 }, completedHits);
         Assert.That(boss.ActiveAttacks.Count,Is.Zero);
         Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
     }
