@@ -30,20 +30,25 @@ public class FoundationPanelView : MonoBehaviour
         public int Count;
     }
 
-    private static readonly Color PanelBackground = new Color(0.85f, 0.85f, 0.85f, 1f);
-    private static readonly Color LeftBackground = new Color(0.71f, 0.71f, 0.71f, 1f);
-    private static readonly Color ListBackground = new Color(0.83f, 0.83f, 0.83f, 1f);
-    private static readonly Color TabNormal = new Color(0.55f, 0.55f, 0.55f, 1f);
-    private static readonly Color TabHover = new Color(0.62f, 0.62f, 0.62f, 1f);
-    private static readonly Color TabActive = new Color(0.40f, 0.40f, 0.42f, 1f);
-    private static readonly Color CardNormal = new Color(0.65f, 0.65f, 0.65f, 1f);
-    private static readonly Color CardHover = new Color(0.72f, 0.72f, 0.72f, 1f);
-    private static readonly Color CardSelected = new Color(0.90f, 0.62f, 0.62f, 1f);
-    private static readonly Color GroupBackground = new Color(0.77f, 0.77f, 0.77f, 1f);
-    private static readonly Color SlotBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
-    private static readonly Color DescriptionBackground = new Color(0.66f, 0.66f, 0.66f, 1f);
+    private static readonly Color PanelBackground = new Color(0.93f, 0.88f, 0.80f, 1f);
+    private static readonly Color PanelBorder = new Color(0.36f, 0.23f, 0.13f, 1f);
+    private static readonly Color LeftBackground = new Color(0.78f, 0.64f, 0.47f, 1f);
+    private static readonly Color ListBackground = new Color(0.93f, 0.88f, 0.80f, 1f);
+    private static readonly Color TabNormal = new Color(0.55f, 0.42f, 0.30f, 1f);
+    private static readonly Color TabActive = new Color(0.95f, 0.90f, 0.81f, 1f);
+    private static readonly Color TabTextActive = new Color(0.24f, 0.15f, 0.08f, 1f);
+    private static readonly Color CardNormal = new Color(0.95f, 0.90f, 0.81f, 1f);
+    private static readonly Color CardHover = new Color(0.98f, 0.94f, 0.87f, 1f);
+    private static readonly Color CardSelected = new Color(0.90f, 0.78f, 0.60f, 1f);
+    private static readonly Color GroupBackground = new Color(0.78f, 0.64f, 0.47f, 1f);
+    private static readonly Color SlotBackground = new Color(0.95f, 0.90f, 0.81f, 1f);
+    private static readonly Color SlotBorder = new Color(0.55f, 0.42f, 0.30f, 1f);
+    private static readonly Color DescriptionBackground = new Color(0.95f, 0.90f, 0.81f, 1f);
 
-    private const int InitialDoctrineGroups = 3; // 처음에 보여주는 교리 수
+    // 잠긴 교리 칸: 안쪽 칸은 살짝 어둡게, 자물쇠 없이 비활성화만 한다.
+    private static readonly Color LockedSlotBackground = new Color(0.83f, 0.76f, 0.64f, 1f);
+
+    private const int InitialDoctrineGroups = 3; // 처음에 보여주는 교리 수 (열린 1 + 잠긴 2)
 
     private Canvas canvas;
     private GameObject content;
@@ -52,9 +57,14 @@ public class FoundationPanelView : MonoBehaviour
     private Text countText;
     private bool isOpen;
 
-    // 오른쪽 교리 그룹 컨테이너 (SetDoctrineCount에서 증설).
+    // 실제 열린 교리 수 (기본 1개). 표시는 초기 3칸을 유지하고, 열린 칸 뒤는
+    // 같은 그룹 UI로 보이되 입력을 받지 않는다. (상점 구매 시 열린 칸이 늘어난다.)
     private Transform rightContent;
     private readonly List<GameObject> doctrineGroups = new List<GameObject>();
+    private readonly List<CanvasGroup> doctrineGroupFades = new List<CanvasGroup>();
+
+    // 실제 열린 교리 수. 이 뒤의 칸은 표시만 되고 입력을 받지 않는다.
+    private int unlockedCount = 1;
 
     private readonly Dictionary<ShopColumn, Image> tabImages = new Dictionary<ShopColumn, Image>();
     private readonly Dictionary<ShopColumn, Button> tabButtons = new Dictionary<ShopColumn, Button>();
@@ -109,14 +119,18 @@ public class FoundationPanelView : MonoBehaviour
         UiTheme.Stretch(blocker.GetComponent<RectTransform>());
         blocker.GetComponent<Image>().raycastTarget = true;
 
-        // 사진 비율(1084 × 600 ≈ 1.8 : 1).
-        GameObject panel = UiTheme.CreateImage("Panel", content.transform, PanelBackground);
+        // 상점과 같은 패널 크기(1240 × 732) + 진한 브라운 테두리 4px.
+        GameObject border = UiTheme.CreateImage("PanelBorder", content.transform, PanelBorder);
+        RectTransform borderRect = border.GetComponent<RectTransform>();
+        borderRect.anchorMin = new Vector2(0.5f, 0.5f);
+        borderRect.anchorMax = new Vector2(0.5f, 0.5f);
+        borderRect.pivot = new Vector2(0.5f, 0.5f);
+        borderRect.anchoredPosition = Vector2.zero;
+        borderRect.sizeDelta = new Vector2(1248f, 740f);
+
+        GameObject panel = UiTheme.CreateImage("Panel", border.transform, PanelBackground);
         RectTransform panelRect = panel.GetComponent<RectTransform>();
-        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
-        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
-        panelRect.anchoredPosition = Vector2.zero;
-        panelRect.sizeDelta = new Vector2(1240f, 700f);
+        UiTheme.Stretch(panelRect, 4f);
 
         FoundationPanelView view = root.AddComponent<FoundationPanelView>();
         view.canvas = canvas;
@@ -129,20 +143,61 @@ public class FoundationPanelView : MonoBehaviour
         return view;
     }
 
-    /// <summary>오른쪽 교리 칸 개수를 맞춘다. 늘어난 만큼 뒤에 그룹을 붙인다.</summary>
+    /// <summary>오른쪽 교리 칸 개수를 맞춘다. 표시용 3칸 중 열린 칸만 활성화한다.</summary>
     public void SetDoctrineCount(int count)
     {
-        count = Mathf.Max(1, count);
+        SetUnlockedCount(count);
+    }
 
+    /// <summary>열린 교리 수. 항상 뒤에 잠긴 칸 1개를 붙여 보여주고, 남는 칸은 비활성화한다.</summary>
+    public void SetUnlockedCount(int unlocked)
+    {
         if (rightContent == null)
         {
             return;
         }
 
-        while (doctrineGroups.Count < count)
+        unlocked = Mathf.Max(1, unlocked);
+
+        // 항상 열린 칸 뒤에 잠긴 칸 1개를 둔다.
+        // (열린 1 + 잠긴 2 = 3칸 → 구매 시 열린 2 + 잠긴 1 = 3칸 → 전부 해금되면 열린 3 + 잠긴 1 = 4칸)
+        int visible = Mathf.Max(unlocked + 1, InitialDoctrineGroups);
+        while (doctrineGroups.Count < visible)
         {
             BuildDoctrineGroup(rightContent, doctrineGroups.Count);
         }
+
+        unlockedCount = unlocked;
+
+        for (int i = 0; i < doctrineGroups.Count; i++)
+        {
+            bool isUnlocked = i < unlocked;
+            bool isVisible = i < visible;
+            if (doctrineGroups[i] != null)
+            {
+                doctrineGroups[i].SetActive(isVisible);
+            }
+
+            if (i < doctrineGroupFades.Count && doctrineGroupFades[i] != null)
+            {
+                doctrineGroupFades[i].alpha = isUnlocked ? 1f : 0.55f;
+                doctrineGroupFades[i].interactable = isUnlocked;
+                doctrineGroupFades[i].blocksRaycasts = isUnlocked;
+            }
+        }
+
+        // 잠긴 칸의 설명은 안내 문구를 지워 비활성 느낌만 남긴다.
+        for (int i = 0; i < doctrineDescriptions.Count; i++)
+        {
+            Text description = doctrineDescriptions[i];
+            if (description != null && !IsUnlocked(i))
+            {
+                description.font = UiTheme.GetFont();
+                description.text = string.Empty;
+            }
+        }
+
+        RefreshSlotColors();
     }
 
     // ---------------- 왼쪽: 탭 + 교리 목록 (기능 있음) ----------------
@@ -157,18 +212,18 @@ public class FoundationPanelView : MonoBehaviour
         leftRect.anchoredPosition = Vector2.zero;
         leftRect.sizeDelta = new Vector2(390f, 0f);
 
-        // 탭 줄.
+        // 사진처럼 탭은 왼쪽 목록 박스 위에 걸치게 둔다.
         GameObject tabRow = new GameObject("Tabs", typeof(RectTransform));
         tabRow.transform.SetParent(left.transform, false);
         RectTransform tabRect = tabRow.GetComponent<RectTransform>();
         tabRect.anchorMin = new Vector2(0f, 1f);
         tabRect.anchorMax = new Vector2(1f, 1f);
-        tabRect.pivot = new Vector2(0.5f, 1f);
-        tabRect.anchoredPosition = new Vector2(0f, -14f);
-        tabRect.sizeDelta = new Vector2(-28f, 56f);
+        tabRect.pivot = new Vector2(0f, 1f);
+        tabRect.anchoredPosition = new Vector2(14f, 6f);
+        tabRect.sizeDelta = new Vector2(-28f, 44f);
 
         HorizontalLayoutGroup tabLayout = tabRow.AddComponent<HorizontalLayoutGroup>();
-        tabLayout.spacing = 8;
+        tabLayout.spacing = 6;
         tabLayout.childControlWidth = true;
         tabLayout.childControlHeight = true;
         tabLayout.childForceExpandWidth = true;
@@ -250,6 +305,7 @@ public class FoundationPanelView : MonoBehaviour
         Text text = UiTheme.CreateText("Label", tab.transform, label, 20,
             Color.white, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform);
+        text.fontStyle = FontStyle.Bold;
 
         Button button = tab.AddComponent<Button>();
         button.targetGraphic = image;
@@ -261,12 +317,22 @@ public class FoundationPanelView : MonoBehaviour
         tabButtons[column] = button;
     }
 
-    /// <summary>활성 탭 표시를 바꾼다.</summary>
+    /// <summary>활성 탭 표시를 바꾼다. 활성 탭은 밝은 박스 + 진한 글자.</summary>
     public void SetActiveTab(ShopColumn active)
     {
         foreach (KeyValuePair<ShopColumn, Image> pair in tabImages)
         {
-            pair.Value.color = pair.Key == active ? TabActive : TabNormal;
+            bool isActive = pair.Key == active;
+            pair.Value.color = isActive ? TabActive : TabNormal;
+        }
+
+        foreach (KeyValuePair<ShopColumn, Button> pair in tabButtons)
+        {
+            Text label = pair.Value.GetComponentInChildren<Text>();
+            if (label != null)
+            {
+                label.color = pair.Key == active ? TabTextActive : Color.white;
+            }
         }
     }
 
@@ -310,23 +376,27 @@ public class FoundationPanelView : MonoBehaviour
         GameObject card = UiTheme.CreateImage("Item_" + data.Label, listRoot, CardNormal);
         Image image = card.GetComponent<Image>();
         image.raycastTarget = true;
+        AddOutline(card.transform, SlotBorder, 5f);
 
         LayoutElement layout = card.AddComponent<LayoutElement>();
-        layout.preferredHeight = 104f;
-        layout.minHeight = 90f;
+        layout.preferredHeight = 118f;
+        layout.minHeight = 96f;
 
         // 조각은 개수만큼 한 줄씩 따로 표시하므로 "×N"을 붙이지 않는다.
-        string text = data.Label;
+        // 사진처럼 제목은 크게 굵게, 설명은 작게.
+        string text = $"<size=26><b>{data.Label}</b></size>";
         if (!string.IsNullOrEmpty(data.Detail))
         {
-            text += $"\n<size=13><color=#3A3C40>{data.Detail}</color></size>";
+            text += $"\n<size=14><color=#5A4632>{data.Detail}</color></size>";
         }
 
         Text label = UiTheme.CreateText("Label", card.transform, text, 21,
-            UiTheme.TextDark, TextAnchor.MiddleCenter);
+            TabTextActive, TextAnchor.MiddleLeft);
         label.font = UiTheme.GetFont();
         label.fontStyle = FontStyle.Normal;
-        UiTheme.Stretch(label.rectTransform, 8f);
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Truncate;
+        UiTheme.Stretch(label.rectTransform, 12f);
 
         card.AddComponent<ItemDragHandler>().Initialize(this, card);
 
@@ -385,10 +455,18 @@ public class FoundationPanelView : MonoBehaviour
                 continue;
             }
 
+            bool unlocked = IsUnlocked(d);
+
             foreach (KeyValuePair<ShopColumn, Image> pair in images)
             {
                 if (pair.Value == null)
                 {
+                    continue;
+                }
+
+                if (!unlocked)
+                {
+                    pair.Value.color = LockedSlotBackground;
                     continue;
                 }
 
@@ -410,6 +488,8 @@ public class FoundationPanelView : MonoBehaviour
                 continue;
             }
 
+            bool unlocked = IsUnlocked(d);
+
             foreach (KeyValuePair<ShopColumn, Image> pair in images)
             {
                 if (pair.Value == null)
@@ -417,9 +497,17 @@ public class FoundationPanelView : MonoBehaviour
                     continue;
                 }
 
-                pair.Value.color = GetSlotFilled(d, pair.Key) ? CardSelected : SlotBackground;
+                pair.Value.color = !unlocked
+                    ? LockedSlotBackground
+                    : (GetSlotFilled(d, pair.Key) ? CardSelected : SlotBackground);
             }
         }
+    }
+
+    /// <summary>이 교리 칸이 열려 있는지. 잠긴 칸은 드롭도 받지 않는다.</summary>
+    public bool IsUnlocked(int doctrineIndex)
+    {
+        return doctrineIndex >= 0 && doctrineIndex < unlockedCount;
     }
 
     /// <summary>드래그 중인 카드의 EntryIndex. 모르면 -1.</summary>
@@ -439,6 +527,12 @@ public class FoundationPanelView : MonoBehaviour
         int count = slotObjects.Count;
         for (int d = 0; d < count; d++)
         {
+            // 잠긴 칸은 드롭 대상이 아니다.
+            if (!IsUnlocked(d))
+            {
+                continue;
+            }
+
             Dictionary<ShopColumn, GameObject> slots = slotObjects[d];
             if (slots == null)
             {
@@ -505,15 +599,15 @@ public class FoundationPanelView : MonoBehaviour
         slotFilledRows[doctrineIndex][(int)column] = filled;
     }
 
-    /// <summary>교리 하나의 슬롯 3개 표시를 갱신한다. 비어 있으면 기본 라벨(주어/조건/결과).</summary>
+    /// <summary>교리 하나의 슬롯 3개 표시를 갱신한다. 비어 있으면 빈 칸으로 둔다.</summary>
     public void SetSlots(int doctrineIndex, string subjectLabel, string conditionLabel, string resultLabel)
     {
-        SetSlotLabel(doctrineIndex, ShopColumn.Subject, subjectLabel, "주어");
-        SetSlotLabel(doctrineIndex, ShopColumn.Condition, conditionLabel, "조건");
-        SetSlotLabel(doctrineIndex, ShopColumn.Result, resultLabel, "결과");
+        SetSlotLabel(doctrineIndex, ShopColumn.Subject, subjectLabel);
+        SetSlotLabel(doctrineIndex, ShopColumn.Condition, conditionLabel);
+        SetSlotLabel(doctrineIndex, ShopColumn.Result, resultLabel);
     }
 
-    private void SetSlotLabel(int doctrineIndex, ShopColumn column, string label, string fallback)
+    private void SetSlotLabel(int doctrineIndex, ShopColumn column, string label)
     {
         Dictionary<ShopColumn, Text> texts = GetSlotTexts(doctrineIndex);
         if (texts == null || !texts.TryGetValue(column, out Text text) || text == null)
@@ -523,14 +617,18 @@ public class FoundationPanelView : MonoBehaviour
 
         bool filled = !string.IsNullOrEmpty(label);
         text.font = UiTheme.GetFont();
-        text.text = filled ? label : fallback;
+        text.fontStyle = filled ? FontStyle.Bold : FontStyle.Normal;
+        text.fontSize = filled ? 20 : 16;
+        text.text = filled ? label : string.Empty;
 
         SetSlotFilled(doctrineIndex, column, filled);
 
         Dictionary<ShopColumn, Image> images = GetSlotImages(doctrineIndex);
         if (images != null && images.TryGetValue(column, out Image image) && image != null)
         {
-            image.color = filled ? CardSelected : SlotBackground;
+            image.color = !IsUnlocked(doctrineIndex)
+                ? LockedSlotBackground
+                : (filled ? CardSelected : SlotBackground);
         }
     }
 
@@ -564,6 +662,8 @@ public class FoundationPanelView : MonoBehaviour
 
     private void BuildRight(Transform parent, int doctrineCount)
     {
+        doctrineCount = Mathf.Max(1, doctrineCount);
+
         // 교리가 많아지면 오른쪽이 스크롤된다.
         GameObject scroll = new GameObject("RightScroll", typeof(RectTransform));
         scroll.transform.SetParent(parent, false);
@@ -593,7 +693,7 @@ public class FoundationPanelView : MonoBehaviour
         rightRect.anchorMin = new Vector2(0f, 1f);
         rightRect.anchorMax = new Vector2(1f, 1f);
         rightRect.pivot = new Vector2(0.5f, 1f);
-        rightRect.anchoredPosition = Vector2.zero;
+        rightRect.anchoredPosition = new Vector2(0f, -6f);
         rightRect.sizeDelta = new Vector2(0f, 0f);
         rightContent = right.transform;
         scroller.content = rightRect;
@@ -609,20 +709,43 @@ public class FoundationPanelView : MonoBehaviour
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
-        for (int i = 0; i < Mathf.Max(1, doctrineCount); i++)
+        for (int i = 0; i < doctrineCount; i++)
         {
             BuildDoctrineGroup(rightContent, i);
         }
+
+        // 잠긴 칸: 표시용으로 뒤에 2칸을 더 붙이되, 열린 칸만 활성화한다.
+        // (초기는 열린 1 + 잠긴 2 = 3칸 표시. 자물쇠 아이콘은 두지 않는다.)
+        SetUnlockedCount(doctrineCount);
     }
 
     // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄. 모든 교리 동일하게 동작한다.
+    // 사진처럼 그룹 박스 밑에 교리 번호 스티커를 붙인다.
     private void BuildDoctrineGroup(Transform parent, int doctrineIndex)
     {
+        GameObject holder = new GameObject("DoctrineHolder" + (doctrineIndex + 1), typeof(RectTransform));
+        holder.transform.SetParent(parent, false);
+        LayoutElement holderLayout = holder.AddComponent<LayoutElement>();
+        holderLayout.preferredHeight = 212f;
+        holderLayout.minHeight = 180f;
+
+        // 잠금/해금 표시용. 잠긴 칸은 이 그룹 전체를 흐리게 하고 입력을 막는다.
+        CanvasGroup fade = holder.AddComponent<CanvasGroup>();
+        doctrineGroupFades.Add(fade);
+
+        VerticalLayoutGroup holderVertical = holder.AddComponent<VerticalLayoutGroup>();
+        holderVertical.padding = new RectOffset(0, 0, 0, 0);
+        holderVertical.spacing = 0f;
+        holderVertical.childControlWidth = true;
+        holderVertical.childControlHeight = true;
+        holderVertical.childForceExpandWidth = true;
+        holderVertical.childForceExpandHeight = true;
+
         int number = doctrineIndex + 1;
-        GameObject group = UiTheme.CreateImage("Doctrine" + number, parent, GroupBackground);
+        GameObject group = UiTheme.CreateImage("Doctrine" + number, holder.transform, GroupBackground);
         LayoutElement groupLayout = group.AddComponent<LayoutElement>();
-        groupLayout.preferredHeight = 240f;
-        groupLayout.minHeight = 200f;
+        groupLayout.preferredHeight = 180f;
+        groupLayout.minHeight = 150f;
 
         VerticalLayoutGroup groupVertical = group.AddComponent<VerticalLayoutGroup>();
         groupVertical.padding = new RectOffset(28, 28, 22, 22);
@@ -653,12 +776,13 @@ public class FoundationPanelView : MonoBehaviour
             slotFilledRows.Add(new bool[3]);
         }
 
-        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Subject, "주어");
-        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Condition, "조건");
-        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Result, "결과");
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Subject);
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Condition);
+        BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Result);
 
         // 설명 줄.
         GameObject description = UiTheme.CreateImage("Description", group.transform, DescriptionBackground);
+        AddOutline(description.transform, SlotBorder, 4f);
         LayoutElement descriptionLayout = description.AddComponent<LayoutElement>();
         descriptionLayout.flexibleHeight = 0.7f;
         descriptionLayout.minHeight = 36f;
@@ -674,15 +798,70 @@ public class FoundationPanelView : MonoBehaviour
         }
 
         doctrineDescriptions[doctrineIndex] = text;
-        doctrineGroups.Add(group);
+        doctrineGroups.Add(holder);
+
+        // 교리 번호 스티커: 그룹 박스 왼쪽 아래에 겹쳐 붙는다.
+        GameObject badge = UiTheme.CreateImage("DoctrineBadge" + number, holder.transform, GroupBackground);
+        AddOutline(badge.transform, SlotBorder, 4f);
+        RectTransform badgeRect = badge.GetComponent<RectTransform>();
+        badgeRect.anchorMin = new Vector2(0f, 0f);
+        badgeRect.anchorMax = new Vector2(0f, 0f);
+        badgeRect.pivot = new Vector2(0f, 1f);
+        badgeRect.anchoredPosition = new Vector2(28f, 0f);
+        badgeRect.sizeDelta = new Vector2(96f, 32f);
+        badge.GetComponent<Image>().raycastTarget = false;
+
+        Text badgeText = UiTheme.CreateText("Text", badge.transform, $"교리{number}", 18,
+            TabTextActive, TextAnchor.MiddleCenter);
+        badgeText.fontStyle = FontStyle.Bold;
+        UiTheme.Stretch(badgeText.rectTransform, 2f);
     }
 
-    private void BuildSlot(int doctrineIndex, Transform parent, ShopColumn column, string defaultLabel)
+    private static void FillBorderOutline(GameObject border, float thickness, Color color)
     {
-        GameObject slot = UiTheme.CreateImage("Slot_" + defaultLabel, parent, SlotBackground);
+        Image image = border.GetComponent<Image>();
+        image.sprite = UiTheme.WhiteSprite;
+        image.color = new Color(0f, 0f, 0f, 0f);
+        image.raycastTarget = false;
+
+        AddBorderStrip(border.transform, "Top", color, new Vector2(0f, 1f), new Vector2(1f, 1f), thickness, false);
+        AddBorderStrip(border.transform, "Bottom", color, new Vector2(0f, 0f), new Vector2(1f, 0f), thickness, false);
+        AddBorderStrip(border.transform, "Left", color, new Vector2(0f, 0f), new Vector2(0f, 1f), thickness, true);
+        AddBorderStrip(border.transform, "Right", color, new Vector2(1f, 0f), new Vector2(1f, 1f), thickness, true);
+    }
+
+    private static void AddBorderStrip(Transform parent, string name, Color color,
+        Vector2 anchorMin, Vector2 anchorMax, float thickness, bool vertical)
+    {
+        GameObject strip = UiTheme.CreateImage(name, parent, color);
+        RectTransform rect = strip.GetComponent<RectTransform>();
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = vertical
+            ? new Vector2(thickness, 0f)
+            : new Vector2(0f, thickness);
+        strip.GetComponent<Image>().raycastTarget = false;
+    }
+
+    /// <summary>사진의 진한 베이지 테두리. 카드/슬롯/설명 박스에 두른다.</summary>
+    private static void AddOutline(Transform parent, Color color, float thickness)
+    {
+        GameObject border = new GameObject("Outline", typeof(RectTransform), typeof(Image));
+        border.transform.SetParent(parent, false);
+        RectTransform borderRect = border.GetComponent<RectTransform>();
+        UiTheme.Stretch(borderRect, 0f);
+        FillBorderOutline(border, thickness, color);
+    }
+
+    private void BuildSlot(int doctrineIndex, Transform parent, ShopColumn column)
+    {
+        GameObject slot = UiTheme.CreateImage("Slot_" + column, parent, SlotBackground);
+        AddOutline(slot.transform, SlotBorder, 5f);
         Image image = slot.GetComponent<Image>();
 
-        Text text = UiTheme.CreateText("Label", slot.transform, defaultLabel, 20,
+        Text text = UiTheme.CreateText("Label", slot.transform, string.Empty, 20,
             UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform);
 
@@ -693,8 +872,6 @@ public class FoundationPanelView : MonoBehaviour
 
         slot.AddComponent<SlotDragHandler>().Initialize(this, slot);
     }
-
-    // ---------------- 열기/닫기 ----------------
 
     public void Open()
     {
@@ -841,31 +1018,7 @@ public class FoundationPanelView : MonoBehaviour
 
         private void HighlightSlotAt(Vector2 screenPosition)
         {
-            int overDoctrine = -1;
-            ShopColumn overColumn = ShopColumn.Subject;
-            bool over = view != null
-                && view.TryGetSlotAt(screenPosition, out overDoctrine, out overColumn);
-
-            for (int d = 0; d < view.slotObjects.Count; d++)
-            {
-                Dictionary<ShopColumn, Image> images = view.GetSlotImages(d);
-                if (images == null)
-                {
-                    continue;
-                }
-
-                foreach (KeyValuePair<ShopColumn, Image> pair in images)
-                {
-                    if (pair.Value == null)
-                    {
-                        continue;
-                    }
-
-                    pair.Value.color = view.GetSlotFilled(d, pair.Key)
-                        ? CardSelected
-                        : (over && d == overDoctrine && pair.Key == overColumn ? CardHover : SlotBackground);
-                }
-            }
+            view?.HighlightSlotAt(screenPosition);
         }
     }
 
