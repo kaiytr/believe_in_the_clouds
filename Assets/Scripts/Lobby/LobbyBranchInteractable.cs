@@ -119,7 +119,6 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
         {
             case BranchRole.Combat: return new Color(.76f, .28f, .31f);
             case BranchRole.Shop: return new Color(.76f, .6f, .22f);
-            case BranchRole.Event: return new Color(.28f, .55f, .78f);
             default: return new Color(.57f, .3f, .72f);
         }
     }

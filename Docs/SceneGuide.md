@@ -6,7 +6,7 @@ Unity 6000.3.5f2 기준. 기본 시작점은 `Assets/Scenes/Gameplay/Lobby.unity
 
 1. `Gameplay/Lobby.unity`를 열고 Play한다.
 2. F2 패널에서 **전체 플레이 루프 테스트**를 누른다. 일반 신규 시작과 구분되는 격리된 메모리 프로필이며 테스트용 100코인을 지급한다.
-3. 전투 분기를 골라 개 → 신도 → 간부 전투를 차례로 완료하고, 각 전투의 오른쪽 출구에서 E로 로비에 돌아온다. 전투 사이에는 상점·이벤트 분기와 로비 재단도 확인한다.
+3. 전투 분기를 골라 개 → 신도 → 간부 전투를 차례로 완료하고, 각 전투의 오른쪽 출구에서 E로 로비에 돌아온다. 전투 사이에는 상점 분기와 로비 재단도 확인한다.
 4. 전투 3회 완료 후 준비되는 보스 분기로 들어가 새 먹구름·번개 대피와 충격파를 확인한다.
 5. 보스를 처치하면 현재 구현의 런 완료 상태를 확인한다. 전투 중 사망하면 손실 처리 후 새 런으로 로비에 돌아오는지 확인한다. 새 루프를 시작하려면 테스트 버튼을 다시 사용한다.
 
@@ -17,9 +17,9 @@ Unity 6000.3.5f2 기준. 기본 시작점은 `Assets/Scenes/Gameplay/Lobby.unity
 | 위치 | 씬 | 용도 |
 | --- | --- | --- |
 | Gameplay | Lobby | 로비·재단·분기 선택, 빌드 시작점 |
+| Gameplay | Title | 사망 결과에서 저장 및 종료 후 표시하는 타이틀 |
 | Gameplay | DogCombatTest / BelieverCombatTest / ExecutiveCombatTest | 실제 런의 일반 적 전투 |
 | Gameplay | ShopTest | 실제 런의 상점 |
-| Gameplay | TemporaryStage | 이벤트 분기의 임시 콘텐츠 |
 | Gameplay | BossTest | 실제 런의 보스 전투. 직접 열면 패턴별 검증도 가능 |
 | Tests | StageTest | 개·신도·간부·보스가 이어지는 단독 통합 전투 |
 | Tests | EconomyTest | 코인·결제·사망 손실·저장 실패 검증 |
@@ -31,7 +31,7 @@ Unity 6000.3.5f2 기준. 기본 시작점은 `Assets/Scenes/Gameplay/Lobby.unity
 
 `Test`가 포함된 Gameplay 씬도 현재 로비의 실제 목적지다. 씬 이름은 런 라우팅과 테스트가 사용하므로 유지하고, 역할은 폴더로 구분했다.
 
-빌드에는 Gameplay의 7개 씬만 포함한다. Tests와 Sources는 에디터에서 직접 열어 사용한다. 빈 기본 `SampleScene`은 제거했으며 Unity가 제공하는 `Assets/Settings/Scenes/URP2DSceneTemplate.unity`는 새 씬 템플릿으로 유지한다.
+빌드에는 Lobby·Title과 전투·상점·보스 씬을 포함한다. Tests와 Sources는 에디터에서 직접 열어 사용한다. 빈 기본 `SampleScene`은 제거했으며 Unity가 제공하는 `Assets/Settings/Scenes/URP2DSceneTemplate.unity`는 새 씬 템플릿으로 유지한다.
 
 ## 문제가 있는 기능만 다시 확인할 때
 
@@ -49,7 +49,7 @@ BossTest의 패턴 선택 키는 직접 연 단독 테스트에서 사용한다.
 
 씬 자산 경로는 `Assets/Scripts/Scenes/ProjectScenes.cs`에서 관리한다. 생성 도구와 자동 테스트는 이 경로를 사용한다. 런 라우팅에 쓰는 씬 이름과 기존 씬 GUID는 유지했다.
 
-기존 Tools 메뉴는 새 폴더에 생성한다. `Tools/Lobby/Connect run content scenes`는 실제 플레이 씬 7개를 빌드 목록에 연결한다. `Tools/Stage/Sync test players and build StageTest`는 개별 검증 씬을 빌드 목록에 추가하지 않는다.
+기존 Tools 메뉴는 새 폴더에 생성한다. `Tools/Lobby/Connect run content scenes`는 로비·전투·상점·보스와 Title을 빌드 목록에 연결한다. `Tools/Stage/Sync test players and build StageTest`는 개별 검증 씬을 빌드 목록에 추가하지 않는다.
 
 기존 씬을 Play하는 데 재생성 메뉴는 필요하지 않다. 재생성 메뉴를 실행하면 해당 씬의 수동 배치가 대체될 수 있으므로 실제 구성을 다시 만들 때 사용한다.
 

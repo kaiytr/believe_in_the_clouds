@@ -81,9 +81,7 @@ public sealed class LobbySceneController : MonoBehaviour
         status.text = isLobby ? $"로비  |  전투 클리어 {run.combatClears}회" + (run.combatClears >= 3 ? " · 보스 후보 해금" : " · 3회부터 보스 후보 등장")
             : run.area == RunArea.Complete ? "임시 보스 완료  |  런 완료 검증 · 정식 엔딩은 후속 연결"
             : run.hasStage ? $"{LobbyRules.RoleLabel(run.stage.role)} 임시 스테이지  |  " +
-                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : run.stage.role == BranchRole.Event
-                    ? "이벤트 임시 구간 · 출구에서 E로 확인 후 복귀"
-                    : "역할 완료 전에는 복귀할 수 없습니다")
+                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : "역할 완료 전에는 복귀할 수 없습니다")
             : "스테이지 확인 중";
         message.text = flow.Message;
         bool ready = flow.InputReady;
@@ -96,10 +94,9 @@ public sealed class LobbySceneController : MonoBehaviour
         fail.interactable = flow.FixtureStore != null;
         if (!isLobby && exitBody != null && run.hasStage)
         {
-            bool eventPlaceholder = run.stage.role == BranchRole.Event && !run.stage.completed;
-            bool available = (run.stage.completed && run.stage.role != BranchRole.Boss) || eventPlaceholder;
+            bool available = run.stage.completed && run.stage.role != BranchRole.Boss;
             exitBody.color = available ? new Color(.27f, .65f, .53f) : new Color(.22f, .25f, .3f);
-            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : eventPlaceholder ? "이벤트 확인 · E" : available ? "출구 · E" : "완료 후 출구 사용";
+            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : available ? "출구 · E" : "완료 후 출구 사용";
         }
     }
 
@@ -122,8 +119,7 @@ public sealed class LobbySceneController : MonoBehaviour
             var panel = new GameObject("Panel"); panel.transform.SetParent(exit.transform, false); panel.transform.localScale = new Vector3(2, 4.6f, 1);
             exitBody = panel.AddComponent<SpriteRenderer>(); exitBody.sprite = squareSprite; exitBody.sharedMaterial = worldMaterial; exitBody.sortingOrder = -8;
             exit.AddComponent<TemporaryStageExit>();
-            string initialExitLabel = run.stage.role == BranchRole.Event ? "이벤트 확인 · E" : "완료 후 출구 사용";
-            exitLabel = WorldLabel(exit.transform, "Exit label", initialExitLabel, new Vector2(0, 2.7f), Color.white);
+            exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용", new Vector2(0, 2.7f), Color.white);
         }
     }
 

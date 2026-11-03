@@ -12,7 +12,6 @@ public static class PlayLoopProjectSetup
         (ProjectScenes.DogCombatTest, BranchRole.Combat),
         (ProjectScenes.BelieverCombatTest, BranchRole.Combat),
         (ProjectScenes.ExecutiveCombatTest, BranchRole.Combat),
-        (ProjectScenes.TemporaryStage, BranchRole.Event),
         (ProjectScenes.BossTest, BranchRole.Boss)
     };
 
@@ -35,7 +34,7 @@ public static class PlayLoopProjectSetup
             EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
         }
 
-        Debug.Log("Lobby run roles now load their combat, shop, event, and boss scenes. Standalone test scenes remain usable.");
+        Debug.Log("Lobby run roles now load their combat, shop, and boss scenes. Standalone test scenes remain usable.");
     }
 
     private static void ConfigureScene(string path, BranchRole role)
@@ -56,7 +55,7 @@ public static class PlayLoopProjectSetup
         var controllerSettings = new SerializedObject(controller);
         controllerSettings.FindProperty("isLobby").boolValue = false;
         controllerSettings.FindProperty("runStageOnly").boolValue = true;
-        controllerSettings.FindProperty("runStageRole").enumValueIndex = (int)role;
+        controllerSettings.FindProperty("runStageRole").intValue = (int)role;
         controllerSettings.FindProperty("stageMinX").floatValue = role == BranchRole.Shop ? -8.5f : role == BranchRole.Boss ? -17f : -10f;
         controllerSettings.FindProperty("stageMaxX").floatValue = role == BranchRole.Shop ? 8.5f : role == BranchRole.Boss ? 17f : 10f;
         controllerSettings.FindProperty("player").objectReferenceValue = player;
@@ -73,7 +72,7 @@ public static class PlayLoopProjectSetup
             if (completion == null)
                 completion = new GameObject("[Run Stage Completion]").AddComponent<RunStageCompletionWatcher>();
             var completionSettings = new SerializedObject(completion);
-            completionSettings.FindProperty("role").enumValueIndex = (int)role;
+            completionSettings.FindProperty("role").intValue = (int)role;
             completionSettings.ApplyModifiedPropertiesWithoutUndo();
         }
         else if (completion != null)

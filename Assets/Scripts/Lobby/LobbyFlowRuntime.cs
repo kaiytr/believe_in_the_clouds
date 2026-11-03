@@ -7,7 +7,6 @@ using UnityEngine.SceneManagement;
 public sealed class LobbyFlowRuntime : MonoBehaviour
 {
     public const string LobbyScene = "Lobby";
-    public const string StageScene = "TemporaryStage";
     public const string ShopTestScene = "ShopTest";
     public const string BossTestScene = "BossTest";
     private static readonly string[] CombatTestScenes = { "DogCombatTest", "BelieverCombatTest", "ExecutiveCombatTest" };
@@ -99,7 +98,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
 
     private string StageSceneForCurrentRun()
     {
-        if (State?.stage == null) return StageScene;
+        if (State?.stage == null) return LobbyScene;
         switch (State.stage.role)
         {
             case BranchRole.Combat:
@@ -108,9 +107,8 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
                     : StableCombatSceneIndex(State.stage.id);
                 return CombatTestScenes[index];
             case BranchRole.Shop: return ShopTestScene;
-            case BranchRole.Event: return StageScene;
             case BranchRole.Boss: return BossTestScene;
-            default: return StageScene;
+            default: throw new System.InvalidOperationException("지원하지 않는 스테이지 역할입니다.");
         }
     }
 
@@ -254,7 +252,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
                 else Debug.LogError("Could not seed play loop test currency: " + grant.Error, this);
             }
         }
-        Message = "전체 플레이 루프 테스트 · 전투/상점/이벤트와 3회 전투 후 보스 분기가 준비됩니다.";
+        Message = "전체 플레이 루프 테스트 · 전투/상점과 3회 전투 후 보스 분기가 준비됩니다.";
     }
     public void ToggleSaveFailure()
     {

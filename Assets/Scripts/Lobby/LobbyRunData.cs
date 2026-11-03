@@ -4,7 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
-public enum BranchRole { Combat, Shop, Event, Boss }
+// Value 2 belonged to the removed event role. Keep existing boss saves at 3.
+public enum BranchRole { Combat = 0, Shop = 1, Boss = 3 }
 public enum RunArea { Lobby, TemporaryStage, Dying, Complete }
 
 [Serializable]
@@ -52,6 +53,7 @@ public sealed class LobbyRunData
     }
     public void Normalize()
     {
+        LobbyRules.MigrateRemovedEventStages(this);
         if (!hasStage) stage = null;
         else if (stage != null && !stage.hasChestState) stage.chestState = null;
     }
@@ -60,8 +62,34 @@ public sealed class LobbyRunData
 // Seeded, pure rules. Failed saves reuse the same plan rather than rerolling.
 public static class LobbyRules
 {
+    private const int RemovedEventRole = 2;
     public const int RevealPrice = 5;
     public const int BossUnlockClears = 3;
+
+    internal static void MigrateRemovedEventStages(LobbyRunData run)
+    {
+        if (run.candidates != null)
+            foreach (BranchCandidate candidate in run.candidates)
+                if (candidate != null && (int)candidate.role == RemovedEventRole)
+                    candidate.role = BranchRole.Combat;
+
+        if (!run.hasStage || run.stage == null || (int)run.stage.role != RemovedEventRole) return;
+        if (run.area == RunArea.TemporaryStage && run.candidates != null)
+        {
+            // Return old event saves to a fresh lobby visit without awarding a combat clear.
+            // New branch IDs avoid replaying the old departure/completion receipts.
+            string previousStageId = run.stage.id;
+            run.visit++;
+            run.area = RunArea.Lobby;
+            run.hasStage = false; run.stage = null; run.hasPosition = false;
+            int seed = BitConverter.ToInt32(new Guid(StableId("removed-event:" + previousStageId)).ToByteArray(), 0) & int.MaxValue;
+            GenerateCandidates(run, seed);
+        }
+        else if (run.area == RunArea.Dying)
+        {
+            run.hasStage = false; run.stage = null; run.hasPosition = false;
+        }
+    }
 
     public static string StableId(string cause)
     {
@@ -86,7 +114,7 @@ public static class LobbyRules
         run.candidates.Clear();
         var random = new System.Random(seed);
         int count = random.Next(2, 4);
-        var pool = new List<BranchRole> { BranchRole.Combat, BranchRole.Shop, BranchRole.Event };
+        var pool = new List<BranchRole> { BranchRole.Combat, BranchRole.Shop };
         if (run.combatClears >= BossUnlockClears) pool.Add(BranchRole.Boss);
         run.candidates.Add(new BranchCandidate { id = run.batchId + ":0", role = BranchRole.Combat });
         for (int i = 1; i < count; i++)
@@ -145,7 +173,6 @@ public static class LobbyRules
         {
             case BranchRole.Combat: return "전투";
             case BranchRole.Shop: return "상점";
-            case BranchRole.Event: return "이벤트";
             case BranchRole.Boss: return "보스";
             default: return "알 수 없음";
         }
