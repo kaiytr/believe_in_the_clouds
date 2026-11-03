@@ -9,9 +9,6 @@ EditorBuildSettings:
     path: Assets/Scenes/Gameplay/Lobby.unity
     guid: 09749100502795a44b02e1f64fa4817f
   - enabled: 1
-    path: Assets/Scenes/Gameplay/TemporaryStage.unity
-    guid: 506e24550b3ada0458ba1d63eb95c39f
-  - enabled: 1
     path: Assets/Scenes/Gameplay/ShopTest.unity
     guid: e2380cdbfa5db2844955d9b654dd7aa8
   - enabled: 1

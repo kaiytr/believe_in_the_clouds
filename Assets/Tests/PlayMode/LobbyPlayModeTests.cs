@@ -117,6 +117,16 @@ public sealed class LobbyPlayModeTests
         Assert.That(Player.GetComponent<PlayerAttack>().enabled, Is.True);
     }
 
+    [UnityTest] public IEnumerator PlayLoopTestBuildsOnlyCombatAndShopGatesBeforeBossUnlock()
+    {
+        Flow.StartPlayLoopTest(); yield return Ready("Lobby");
+        CollectionAssert.AreEquivalent(new[] { BranchRole.Combat, BranchRole.Shop }, Flow.State.candidates.Select(candidate => candidate.role));
+        Assert.That(Gates(), Has.Length.EqualTo(2));
+        foreach (var gate in Gates())
+            Assert.That(gate.GetComponentInChildren<TextMesh>().text, Is.EqualTo("?"));
+        Assert.That(Application.CanStreamedLevelBeLoaded("TemporaryStage"), Is.False);
+    }
+
     [UnityTest] public IEnumerator RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate()
     {
         Currency.TryGrant(5, "fixture"); var gate = Gates()[0]; Move(new Vector2(gate.transform.position.x, -1.95f));

@@ -25,6 +25,7 @@ public sealed class LobbyEditModeTests
             var run = LobbyRules.NewRun("fixture", 100, seed); run.combatClears = clears;
             LobbyRules.GenerateCandidates(run, seed);
             Assert.That(LobbyRules.Validate(run, false), Is.True);
+            Assert.That(run.candidates.All(c => c.role == BranchRole.Combat || c.role == BranchRole.Shop || c.role == BranchRole.Boss), Is.True);
             Assert.That(run.candidates.All(c => !c.revealed), Is.True);
             if (run.candidates.Count == 2) twos++;
             if (run.candidates.Any(c => c.role == BranchRole.Boss)) bosses++;
@@ -47,6 +48,123 @@ public sealed class LobbyEditModeTests
         Assert.That(reopened.Balance, Is.EqualTo(23));
         var external = reopened.RunSnapshot(); external.candidates.Clear();
         Assert.That(reopened.RunSnapshot().candidates.Count, Is.GreaterThanOrEqualTo(2));
+    }
+
+    [TestCase(0)] [TestCase(3)]
+    public void PlayLoopFixtureOffersOnlyCombatShopAndUnlockedBoss(int clears)
+    {
+        var data = service.Snapshot(); data.run.combatClears = clears;
+        Assert.That(store.TrySave(data), Is.True);
+        service = service.Reopen(); Assert.That(service.Initialize(), Is.True);
+        Assert.That(service.TryConfigurePlayLoopTestCandidates().Success, Is.True);
+        var roles = service.RunSnapshot().candidates.Select(candidate => candidate.role).ToArray();
+        CollectionAssert.AreEqual(clears >= 3
+            ? new[] { BranchRole.Combat, BranchRole.Shop, BranchRole.Boss }
+            : new[] { BranchRole.Combat, BranchRole.Shop }, roles);
+    }
+
+    [Test]
+    public void LegacyEventCandidatePreservesAssetsIdentityAndPaidRevealAsCombat()
+    {
+        service.TryGrant(91, "fixture"); service.TryGrantPiece("result.speed", 4, "fixture");
+        var data = service.Snapshot();
+        var candidate = data.run.candidates[0];
+        candidate.role = (BranchRole)2; candidate.revealed = true;
+        string id = candidate.id, batch = data.run.batchId;
+        WithSavedProfile(data, migrated =>
+        {
+            var run = migrated.RunSnapshot();
+            Assert.That(run.batchId, Is.EqualTo(batch));
+            Assert.That(run.candidates[0].id, Is.EqualTo(id));
+            Assert.That(run.candidates[0].role, Is.EqualTo(BranchRole.Combat));
+            Assert.That(run.candidates[0].revealed, Is.True);
+            Assert.That(migrated.Balance, Is.EqualTo(91));
+            Assert.That(migrated.CountPiece("result.speed"), Is.EqualTo(4));
+            Assert.That(migrated.TryRevealBranch(id).Success, Is.True);
+            Assert.That(migrated.Balance, Is.EqualTo(91), "A previously paid reveal must remain free.");
+        });
+    }
+
+    [TestCase(false)] [TestCase(true)]
+    public void LegacyEventStageReturnsToLobbyWithoutClearAndNewDepartureDoesNotReplayOldReceipt(bool completed)
+    {
+        service.TryGrant(91, "fixture");
+        var chosen = service.RunSnapshot().candidates.First(candidate => candidate.role == BranchRole.Combat);
+        Assert.That(service.TryDepartBranch(chosen.id, 71).Success, Is.True);
+        if (completed) Assert.That(service.TryCompleteTemporaryStage(service.RunSnapshot().stage.id).Success, Is.True);
+        var data = service.Snapshot();
+        data.run.candidates.First(candidate => candidate.id == chosen.id).role = (BranchRole)2;
+        data.run.stage.role = (BranchRole)2;
+        data.run.hasPosition = true; data.run.playerX = 8; data.run.playerY = -2;
+        string oldStage = data.run.stage.id, oldBatch = data.run.batchId;
+        WithSavedProfile(data, migrated =>
+        {
+            var run = migrated.RunSnapshot();
+            Assert.That(run.area, Is.EqualTo(RunArea.Lobby));
+            Assert.That(run.hasStage, Is.False); Assert.That(run.stage, Is.Null);
+            Assert.That(run.hasPosition, Is.False);
+            Assert.That(run.hp, Is.EqualTo(71)); Assert.That(run.combatClears, Is.Zero);
+            Assert.That(run.batchId, Is.Not.EqualTo(oldBatch));
+            Assert.That(migrated.Balance, Is.EqualTo(91));
+            var combat = run.candidates.First(candidate => candidate.role == BranchRole.Combat);
+            Assert.That(migrated.TryDepartBranch(combat.id, run.hp).Success, Is.True);
+            Assert.That(migrated.RunSnapshot().area, Is.EqualTo(RunArea.TemporaryStage));
+            string stage = migrated.RunSnapshot().stage.id;
+            Assert.That(stage, Is.Not.EqualTo(oldStage));
+            Assert.That(migrated.TryCompleteTemporaryStage(stage).Success, Is.True);
+            Assert.That(migrated.TryReturnFromStage(stage, run.hp).Success, Is.True);
+            Assert.That(migrated.RunSnapshot().combatClears, Is.EqualTo(1));
+            var reopened = migrated.Reopen(); Assert.That(reopened.Initialize(), Is.True);
+            Assert.That(JsonUtility.ToJson(reopened.RunSnapshot()), Is.EqualTo(JsonUtility.ToJson(migrated.RunSnapshot())));
+        });
+    }
+
+    [Test]
+    public void ExistingBossStageKeepsItsSerializedRoleAndProgress()
+    {
+        SeedRole(BranchRole.Boss, 3);
+        var boss = service.RunSnapshot().candidates.First(candidate => candidate.role == BranchRole.Boss);
+        Assert.That(service.TryDepartBranch(boss.id, 82).Success, Is.True);
+        var data = service.Snapshot();
+        WithSavedProfile(data, migrated =>
+        {
+            var run = migrated.RunSnapshot();
+            Assert.That((int)run.stage.role, Is.EqualTo(3));
+            Assert.That(run.stage.role, Is.EqualTo(BranchRole.Boss));
+            Assert.That(run.stage.id, Is.EqualTo(data.run.stage.id));
+            Assert.That(run.area, Is.EqualTo(RunArea.TemporaryStage));
+            Assert.That(run.combatClears, Is.EqualTo(3)); Assert.That(run.hp, Is.EqualTo(82));
+        });
+    }
+
+    [Test]
+    public void LegacyEventDeathRemainsDyingUntilTheDeathJournalCompletes()
+    {
+        var run = service.RunSnapshot();
+        run.candidates[0].role = (BranchRole)2;
+        run.hasStage = true;
+        run.stage = new TemporaryStageData { id = "legacy-event", branchId = run.candidates[0].id, role = (BranchRole)2 };
+        run.area = RunArea.Dying; run.hp = 0;
+        run.Normalize();
+        Assert.That(run.area, Is.EqualTo(RunArea.Dying)); Assert.That(run.hp, Is.Zero);
+        Assert.That(run.hasStage, Is.False);
+        Assert.That(LobbyRules.Validate(run, true), Is.True);
+    }
+
+    private static void WithSavedProfile(EconomyProfileData data, Action<EconomyService> verify)
+    {
+        string path = Path.Combine(Path.GetTempPath(), "clouds-event-removal-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            File.WriteAllText(path, JsonUtility.ToJson(data));
+            var migrated = new EconomyService(new JsonEconomyStore(path));
+            Assert.That(migrated.Initialize(), Is.True);
+            verify(migrated);
+        }
+        finally
+        {
+            foreach (string suffix in new[] { "", ".bak", ".tmp", ".recover" }) File.Delete(path + suffix);
+        }
     }
 
     [TestCase(0)] [TestCase(4)] [TestCase(5)] [TestCase(100)]
@@ -89,7 +207,7 @@ public sealed class LobbyEditModeTests
         Assert.That(JsonUtility.ToJson(reopened.RunSnapshot()), Is.EqualTo(JsonUtility.ToJson(run)));
     }
 
-    [TestCase(BranchRole.Combat)] [TestCase(BranchRole.Shop)] [TestCase(BranchRole.Event)]
+    [TestCase(BranchRole.Combat)] [TestCase(BranchRole.Shop)]
     public void OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(BranchRole role)
     {
         SeedRole(role);

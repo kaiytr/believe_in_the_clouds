@@ -8,25 +8,24 @@ using UnityEngine.SceneManagement;
 public static class LobbyProjectSetup
 {
     public const string LobbyPath = ProjectScenes.Lobby;
-    public const string StagePath = ProjectScenes.TemporaryStage;
     public const string LobbyPrefabFolder = "Assets/Prefabs/Lobby";
     public const string BranchPrefabPath = LobbyPrefabFolder + "/LobbyBranch.prefab";
     public const string FoundationPrefabPath = LobbyPrefabFolder + "/Foundation.prefab";
     private static Sprite Square => AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Boss/UnitSquare.png");
     private static Material Material => AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
 
-    [MenuItem("Tools/Lobby/Build lobby and temporary stage")]
+    [MenuItem("Tools/Lobby/Build lobby")]
     public static void Build()
     {
         if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
         EnsureLobbyPrefabs();
-        BuildScene(false); BuildScene(true);
-        var scenes = EditorBuildSettings.scenes.Where(scene => scene.path != LobbyPath && scene.path != StagePath).ToList();
+        BuildScene();
+        var scenes = EditorBuildSettings.scenes.Where(scene => scene.path != LobbyPath &&
+            scene.path != "Assets/Scenes/Gameplay/TemporaryStage.unity").ToList();
         scenes.Insert(0, new EditorBuildSettingsScene(LobbyPath, true));
-        scenes.Add(new EditorBuildSettingsScene(StagePath, true));
         EditorBuildSettings.scenes = scenes.ToArray();
         AssetDatabase.SaveAssets();
-        Debug.Log("Lobby and TemporaryStage built; Lobby is the prototype build entry. Existing test scenes are preserved.");
+        Debug.Log("Lobby built; removed event stage excluded. Existing scene registrations are preserved.");
     }
 
     [MenuItem("Tools/Lobby/Configure existing lobby prefab layout")]
@@ -49,45 +48,41 @@ public static class LobbyProjectSetup
         Debug.Log("Lobby prefab assets and editable layout anchors are ready.");
     }
 
-    private static void BuildScene(bool lobby)
+    private static void BuildScene()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.PlayerPath));
-        player.name = "Player"; player.transform.position = new Vector3(lobby ? -12 : -7, -1.95f, 0);
+        player.name = "Player"; player.transform.position = new Vector3(-12, -1.95f, 0);
         var cameraRoot = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener), typeof(LobbyCameraFollow));
-        cameraRoot.tag = "MainCamera"; cameraRoot.transform.position = new Vector3(lobby ? -13 : -2, 0, -10);
+        cameraRoot.tag = "MainCamera"; cameraRoot.transform.position = new Vector3(-13, 0, -10);
         Camera camera = cameraRoot.GetComponent<Camera>(); camera.orthographic = true; camera.orthographicSize = 6;
         camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = new Color(.07f, .105f, .16f);
         var follow = cameraRoot.GetComponent<LobbyCameraFollow>(); follow.Target = player.transform;
-        follow.MinX = lobby ? -24 : -14; follow.MaxX = lobby ? 32 : 14;
+        follow.MinX = -24; follow.MaxX = 32;
 
         GameObject scenery = new GameObject("Room");
-        Visual(scenery.transform, "Backdrop", new Vector2(lobby ? 4 : 0, 1), new Vector2(lobby ? 60 : 30, 24), new Color(.085f, .13f, .2f), -30);
+        Visual(scenery.transform, "Backdrop", new Vector2(4, 1), new Vector2(60, 24), new Color(.085f, .13f, .2f), -30);
         int groundLayer = LayerMask.NameToLayer("Ground");
-        GameObject ground = Visual(scenery.transform, "Ground", new Vector2(lobby ? 4 : 0, -3.5f), new Vector2(lobby ? 58 : 30, 1), new Color(.24f, .32f, .4f), 0);
+        GameObject ground = Visual(scenery.transform, "Ground", new Vector2(4, -3.5f), new Vector2(58, 1), new Color(.24f, .32f, .4f), 0);
         ground.layer = groundLayer; ground.AddComponent<BoxCollider2D>();
-        foreach (float x in new[] { lobby ? -24f : -12f, lobby ? 32f : 12f })
+        foreach (float x in new[] { -24f, 32f })
         {
             GameObject wall = Visual(scenery.transform, "Room boundary", new Vector2(x, 4), new Vector2(1, 15), new Color(.16f, .23f, .3f), -5);
             wall.layer = groundLayer; wall.AddComponent<BoxCollider2D>();
         }
-        if (lobby)
-            for (int i = 0; i < 7; i++)
-                Visual(scenery.transform, "Background pillar " + i, new Vector2(-20 + i * 8, 1), new Vector2(.3f, 12), new Color(.105f, .16f, .24f), -25);
+        for (int i = 0; i < 7; i++)
+            Visual(scenery.transform, "Background pillar " + i, new Vector2(-20 + i * 8, 1), new Vector2(.3f, 12), new Color(.105f, .16f, .24f), -25);
 
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.HudPath));
-        var controller = new GameObject(lobby ? "[LobbyScene]" : "[TemporaryStageScene]").AddComponent<LobbySceneController>();
+        var controller = new GameObject("[LobbyScene]").AddComponent<LobbySceneController>();
         var settings = new SerializedObject(controller);
-        settings.FindProperty("isLobby").boolValue = lobby;
+        settings.FindProperty("isLobby").boolValue = true;
         settings.FindProperty("player").objectReferenceValue = player.GetComponent<PlayerHealth>();
         settings.FindProperty("squareSprite").objectReferenceValue = Square;
         settings.FindProperty("worldMaterial").objectReferenceValue = Material;
         settings.ApplyModifiedPropertiesWithoutUndo();
-        if (lobby)
-        {
-            ConfigureLobbyLayout(controller);
-        }
-        EditorSceneManager.SaveScene(scene, lobby ? LobbyPath : StagePath);
+        ConfigureLobbyLayout(controller);
+        EditorSceneManager.SaveScene(scene, LobbyPath);
     }
 
     private static void EnsureLobbyPrefabs()

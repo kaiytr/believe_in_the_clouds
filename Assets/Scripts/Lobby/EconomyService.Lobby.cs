@@ -43,7 +43,7 @@ public sealed partial class EconomyService
             data.run.candidates.Clear();
             BranchRole[] roles = data.run.combatClears >= LobbyRules.BossUnlockClears
                 ? new[] { BranchRole.Combat, BranchRole.Shop, BranchRole.Boss }
-                : new[] { BranchRole.Combat, BranchRole.Shop, BranchRole.Event };
+                : new[] { BranchRole.Combat, BranchRole.Shop };
             for (int i = 0; i < roles.Length; i++)
             {
                 data.run.candidates.Add(new BranchCandidate
