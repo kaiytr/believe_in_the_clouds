@@ -95,6 +95,8 @@ public abstract class EnemyAttack : MonoBehaviour
         owner.ChangeState(EnemyState.AttackWindup);
         PrepareAttack(target);
         activeIndicator = ShowDangerIndicator();
+        if (activeIndicator != null)
+            activeIndicator.SetSortingBehind(owner.GetComponentInChildren<SpriteRenderer>());
         attackRoutine = StartCoroutine(AttackRoutine(target));
         return true;
     }

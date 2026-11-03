@@ -18,6 +18,7 @@ public class DangerIndicator : MonoBehaviour
     private bool followTargetEnabled;
     private bool hasDirection;
     private SpriteRenderer fill;
+    private SpriteRenderer sortingReference;
     private LineRenderer directionMarker;
     private float fullAlpha = 0.3f;
     private readonly Vector3[] directionPoints = new Vector3[5];
@@ -107,6 +108,15 @@ public class DangerIndicator : MonoBehaviour
         UpdateDirectionMarker();
     }
 
+    public void SetSortingBehind(SpriteRenderer reference)
+    {
+        if (reference == null)
+            return;
+
+        sortingReference = reference;
+        ApplySortingBehindReference();
+    }
+
     public void Cancel()
     {
         followTargetEnabled = false;
@@ -158,6 +168,27 @@ public class DangerIndicator : MonoBehaviour
         directionMarker.sortingLayerID = fill != null ? fill.sortingLayerID : 0;
         directionMarker.sortingOrder = (fill != null ? fill.sortingOrder : 0) + directionSortingOffset;
         directionMarker.positionCount = 5;
+        ApplySortingBehindReference();
+    }
+
+    private void ApplySortingBehindReference()
+    {
+        if (sortingReference == null)
+            return;
+
+        if (fill == null)
+            fill = GetComponent<SpriteRenderer>();
+        if (fill != null)
+        {
+            fill.sortingLayerID = sortingReference.sortingLayerID;
+            fill.sortingOrder = sortingReference.sortingOrder - 2;
+        }
+
+        if (directionMarker != null)
+        {
+            directionMarker.sortingLayerID = sortingReference.sortingLayerID;
+            directionMarker.sortingOrder = sortingReference.sortingOrder - 1;
+        }
     }
 
     private void UpdateDirectionMarker()
