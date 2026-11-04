@@ -46,7 +46,11 @@ public class EnemyContactDamage : MonoBehaviour
         // Table rule: OnAttack triggers only when the hit lands.
         // Owner = enemy root (this may sit on a child part), subject = attacker.
         GameObject ownerObject = transform.root != null ? transform.root.gameObject : gameObject;
-        if (damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, ownerObject, "접촉 피해")) &&
+        float attackDamage = damage;
+        DoctrineStats ownerStats = ownerObject != null ? ownerObject.GetComponent<DoctrineStats>() : null;
+        if (ownerStats != null)
+            attackDamage *= ownerStats.AttackMultiplier;
+        if (damageable.TakeDamage(new DamageInfo(attackDamage, DamageSource.Enemy, ownerObject, "접촉 피해")) &&
             DoctrineEventBus.HasListeners)
         {
             DoctrineEventBus.Raise(ConditionType.OnAttack, ownerObject, playerRoot.gameObject);

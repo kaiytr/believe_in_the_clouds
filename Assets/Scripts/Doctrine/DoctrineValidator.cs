@@ -76,23 +76,17 @@ public static class DoctrineValidator
         {
             if (doctrine.Subject != SubjectType.All)
             {
-                DoctrineSubject subject = target.GetComponent<DoctrineSubject>();
-                if (subject == null)
+                SubjectType identity = DoctrineSubject.GetIdentity(target);
+                if (identity == SubjectType.None)
                 {
-                    reason = $"Target ({target.name}) has no DoctrineSubject; " +
+                    reason = $"Target ({target.name}) Subject Identity is None; " +
                              $"cannot match Subject ({doctrine.Subject}).";
                     return false;
                 }
 
-                if (subject.Identity == SubjectType.None)
+                if (identity != doctrine.Subject)
                 {
-                    reason = $"Target ({target.name}) Subject Identity is None.";
-                    return false;
-                }
-
-                if (subject.Identity != doctrine.Subject)
-                {
-                    reason = $"Target Subject ({subject.Identity}) differs from " +
+                    reason = $"Target Subject ({identity}) differs from " +
                              $"doctrine Subject ({doctrine.Subject}); never triggers.";
                     return false;
                 }

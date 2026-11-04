@@ -34,6 +34,15 @@ public abstract class EnemyAttack : MonoBehaviour
 
     public event Action<EnemyAttack, AttackOutcome> OutcomeReported;
     public event Action<EnemyAttack, EnemyAttackResult> AttackResolved;
+
+    protected float DoctrineAttackMultiplier
+    {
+        get
+        {
+            DoctrineStats stats = owner != null ? owner.GetComponent<DoctrineStats>() : null;
+            return stats != null ? stats.AttackMultiplier : 1f;
+        }
+    }
     public int CurrentAttackId => attackId;
     public bool IsWindingUp => phase == AttackPhase.Windup;
     public virtual float WindupDuration => windupTime;

@@ -1,24 +1,55 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 회복 교리가 발동했을 때 캐릭터 "주변"에 초록 이펙트가 피어오르는 연출.
+// 교리 발동 피드백용 주변 연출. 회복(초록)이 원본이며 피해증가(연보라)도 같은 틀을 쓴다.
 //
-// 캐릭터 스프라이트를 직접 물들이지 않는다(몸이 초록으로 변하지 않음).
+// 캐릭터 스프라이트를 직접 물들이지 않는다(몸 색이 변하지 않음).
 // 대신 대상 둘레에 다음 요소가 생겼다가 천천히 사라진다:
-//   1) 발밑에서 퍼지는 초록 링 + 바닥 광원
-//   2) 위로 솟는 얇은 초록 빛줄기
-//   3) 떠오르는 초록 십자(+) 문양  ← 기준 이미지의 핵심
+//   1) 발밑에서 퍼지는 링 + 바닥 광원
+//   2) 위로 솟는 얇은 빛줄기
+//   3) 떠오르는 십자(+) 문양  ← 기준 이미지의 핵심
 //   4) 작게 반짝이며 떠오르는 빛 알갱이
 //
 // 대상의 자식으로 두지 않고 씬 루트에 둔다.
 // 플레이어는 좌우 반전을 localScale.x 부호로 하므로 자식으로 두면
 // 이펙트까지 거울처럼 뒤집히고 몸 스케일로 찌그러진다.
 //
-// 회복은 쿨타임이 길어(20초) 발동 빈도가 낮으므로 매번 생성/파괴해도 부담이 적다.
+// 같은 대상에는 하나만 유지한다(교체식 버프와 동일: 재발동하면 기존 연출을 끊고 새로 시작).
 // EditMode 테스트에서 오브젝트가 남지 않도록 플레이 중에만 생성한다.
 public sealed class DoctrineHealEffect : MonoBehaviour
 {
     private static readonly Color DefaultTint = new Color(0.36f, 1f, 0.52f, 1f);
+    private static readonly Color AttackBuffTint = new Color(0.78f, 0.62f, 1f, 1f);
+    private static readonly Color SpeedBuffTint = new Color(0.48f, 0.84f, 1f, 1f);
+
+    private enum EffectKind
+    {
+        Heal = 0,
+        AttackBuff = 1,
+        SpeedBuff = 2
+    }
+
+    // 대상 + 종류별로 하나만 유지한다. 이속과 피해증가가 동시에 걸려도
+    // 서로의 연출을 지우지 않는다.
+    private readonly struct EffectKey : System.IEquatable<EffectKey>
+    {
+        private readonly int targetId;
+        private readonly EffectKind kind;
+
+        public EffectKey(int targetId, EffectKind kind)
+        {
+            this.targetId = targetId;
+            this.kind = kind;
+        }
+
+        public bool Equals(EffectKey other) => targetId == other.targetId && kind == other.kind;
+        public override bool Equals(object obj) => obj is EffectKey other && Equals(other);
+        public override int GetHashCode() => (targetId * 397) ^ (int)kind;
+    }
+
+    private static readonly Dictionary<EffectKey, DoctrineHealEffect> ActiveByTarget =
+        new Dictionary<EffectKey, DoctrineHealEffect>();
 
     private const float TotalDuration = 1.5f;
     private const float RingDuration = 0.8f;
@@ -75,20 +106,60 @@ public sealed class DoctrineHealEffect : MonoBehaviour
     /// <summary>대상 주변에 회복 이펙트를 재생한다. tint를 생략하면 기본 초록.</summary>
     public static void Play(GameObject target, Color? tintOverride = null)
     {
+        PlayInternal(target, tintOverride ?? DefaultTint, EffectKind.Heal, "Doctrine heal effect");
+    }
+
+    /// <summary>대상 주변에 피해증가 이펙트를 재생한다. 회복과 같은 모양, 연보라색.</summary>
+    public static void PlayAttackBuff(GameObject target)
+    {
+        PlayInternal(target, AttackBuffTint, EffectKind.AttackBuff, "Doctrine attack buff effect");
+    }
+
+    /// <summary>대상 주변에 이속증가 이펙트를 재생한다. 회복과 같은 모양, 하늘색.</summary>
+    public static void PlaySpeedBuff(GameObject target)
+    {
+        PlayInternal(target, SpeedBuffTint, EffectKind.SpeedBuff, "Doctrine speed buff effect");
+    }
+
+    private static void PlayInternal(GameObject target, Color tint, EffectKind kind, string rootName)
+    {
         if (target == null || !Application.isPlaying)
         {
             return;
         }
 
-        GameObject root = new GameObject("Doctrine heal effect");
+        // 같은 대상·같은 종류의 이전 연출은 끊고 새로 시작한다.
+        // 10초 쿨/5초 지속이라 겹치면 번잡하다.
+        EffectKey key = new EffectKey(target.GetInstanceID(), kind);
+        if (ActiveByTarget.TryGetValue(key, out DoctrineHealEffect previous) && previous != null)
+        {
+            ActiveByTarget.Remove(key);
+            Destroy(previous.gameObject);
+        }
+
+        GameObject root = new GameObject(rootName);
         SceneManager.MoveGameObjectToScene(root, target.scene);
         DoctrineHealEffect effect = root.AddComponent<DoctrineHealEffect>();
-        effect.Init(target, tintOverride ?? DefaultTint);
+        ActiveByTarget[key] = effect;
+        effect.Init(target, tint, key);
     }
 
-    private void Init(GameObject targetObject, Color tintColor)
+    private EffectKey boundKey;
+    private bool hasBoundKey;
+
+    private void OnDestroy()
+    {
+        if (hasBoundKey && ActiveByTarget.TryGetValue(boundKey, out DoctrineHealEffect current) && current == this)
+        {
+            ActiveByTarget.Remove(boundKey);
+        }
+    }
+
+    private void Init(GameObject targetObject, Color tintColor, EffectKey key)
     {
         target = targetObject.transform;
+        boundKey = key;
+        hasBoundKey = true;
         tint = tintColor;
 
         sourceBody = FindBodyRenderer(targetObject);

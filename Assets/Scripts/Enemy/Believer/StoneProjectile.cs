@@ -78,8 +78,14 @@ public class StoneProjectile : MonoBehaviour
             if (damageable == null && player != null)
                 damageable = player.GetComponentInChildren<IDamageable>();
 
+            float attackDamage = damage;
+            DoctrineStats ownerStats = sourceAttack.Owner != null
+                ? sourceAttack.Owner.GetComponent<DoctrineStats>()
+                : null;
+            if (ownerStats != null)
+                attackDamage *= ownerStats.AttackMultiplier;
             bool applied = damageable != null &&
-                           damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, sourceAttack.Owner.gameObject, "돌 투척"));
+                           damageable.TakeDamage(new DamageInfo(attackDamage, DamageSource.Enemy, sourceAttack.Owner.gameObject, "돌 투척"));
             if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
             Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
             Destroy(gameObject);

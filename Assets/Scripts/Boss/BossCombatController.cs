@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
-public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGeneration
+public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, ICombatGeneration
 {
     [SerializeField] private bool startOnAwake;
     [SerializeField] private BossCombatSettings settings;
@@ -78,6 +78,23 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public int Facing => facing;
     public float CurrentHp => currentHp;
     public float MaxHp => settings != null ? settings.MaxHp : 0f;
+    float IHealth.CurrentHealth => currentHp;
+    float IHealth.MaxHealth => MaxHp;
+    void IHealth.TakeDamage(float amount, GameObject source)
+    {
+        TakeDamage(new DamageInfo(amount, DamageSource.Doctrine, source));
+    }
+    void IHealth.Heal(float amount)
+    {
+        if (IsDead || amount <= 0f)
+            return;
+        currentHp = Mathf.Max(0f, Mathf.Min(MaxHp, currentHp + amount));
+        if (!IsLowHealthForDoctrine)
+            lowHealthNotified = false;
+        Notify();
+    }
+    private bool lowHealthNotified;
+    private bool IsLowHealthForDoctrine => !IsDead && currentHp <= MaxHp * 0.3f;
     public float CurrentBelief => belief != null ? belief.Current : 0f;
     public float MaxBelief => belief != null ? belief.Maximum : 0f;
     public float NormalizedBelief => MaxBelief > 0f ? CurrentBelief / MaxBelief : 0f;
@@ -87,7 +104,16 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
     public float ConditionRemaining => Mathf.Max(0f, conditionEndsAt - Time.time);
     public float ConditionProgress => conditionDuration > 0f ? 1f - ConditionRemaining / conditionDuration : 0f;
     public float SpeedMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoSpeedMultiplier : 1f;
-    public float DamageMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoDamageMultiplier : 1f;
+    public float DamageMultiplier
+    {
+        get
+        {
+            float phaseMultiplier = Phase == BossPhase.Two ? settings.PhaseTwoDamageMultiplier : 1f;
+            DoctrineStats stats = GetComponent<DoctrineStats>();
+            float doctrineMultiplier = stats != null ? stats.AttackMultiplier : 1f;
+            return phaseMultiplier * doctrineMultiplier;
+        }
+    }
     public string ActivePatternName => patternRunning ? PatternName(activePattern) : "대기";
     public BossPatternKind ActivePattern => activePattern;
     public string ActiveBeliefPhrase => BeliefPhrase(activeBelief);
@@ -231,6 +257,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         if (currentHp <= 0f) Die();
         else if (Phase == BossPhase.One && currentHp <= threshold) EnterPhaseTwo();
         attack?.ConfirmHit(this, before - currentHp, info.HitIndex);
+        if (DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(ConditionType.OnHit, gameObject, info.Attacker);
+            if (!IsDead && !lowHealthNotified && IsLowHealthForDoctrine)
+            {
+                lowHealthNotified = true;
+                DoctrineEventBus.Raise(ConditionType.LowHealth, gameObject, info.Attacker);
+            }
+        }
         Notify();
         return true;
     }
@@ -651,6 +686,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, ICombatGe
         bodyCollider.enabled = false;
         SetPresentation(BossPresentationState.Dead);
         SetStatus("보스 격파");
+        if (DoctrineEventBus.HasListeners)
+            DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, null);
     }
     public void FacePlayer() { if (TargetValid) Face(PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1); }
     private void Face(int direction)

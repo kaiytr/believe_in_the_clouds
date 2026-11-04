@@ -117,39 +117,49 @@ public static class DoctrineEffectExecutor
         return true;
     }
 
-    public static bool ExecuteAttackBuff(GameObject target, float multiplier, float duration)
+    private static DoctrineStats ResolveDoctrineStats(GameObject target)
     {
         if (target == null)
         {
-            return false;
+            return null;
         }
 
         DoctrineStats stats = target.GetComponent<DoctrineStats>();
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: {target.name} has no DoctrineStats.");
+            // Enemies and bosses opt into doctrines without prefab edits:
+            // keep the rule engine common, attach the stat holder on demand.
+            stats = target.AddComponent<DoctrineStats>();
+        }
+
+        return stats;
+    }
+
+    public static bool ExecuteAttackBuff(GameObject target, float multiplier, float duration)
+    {
+        DoctrineStats stats = ResolveDoctrineStats(target);
+        if (stats == null)
+        {
+            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: target is null.");
             return false;
         }
 
         stats.ApplyAttackBuff(multiplier, duration);
+        DoctrineHealEffect.PlayAttackBuff(target);
         return true;
     }
 
     public static bool ExecuteSpeedBuff(GameObject target, float multiplier, float duration)
     {
-        if (target == null)
-        {
-            return false;
-        }
-
-        DoctrineStats stats = target.GetComponent<DoctrineStats>();
+        DoctrineStats stats = ResolveDoctrineStats(target);
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] Speed change failed: {target.name} has no DoctrineStats.");
+            Debug.LogWarning($"[Doctrine] Speed change failed: target is null.");
             return false;
         }
 
         stats.ApplySpeedBuff(multiplier, duration);
+        DoctrineHealEffect.PlaySpeedBuff(target);
         return true;
     }
 
@@ -215,7 +225,8 @@ public static class DoctrineEffectExecutor
                 continue;
             }
 
-            IHealth health = hit.GetComponent<IHealth>();
+            IHealth health = hit.GetComponent<IHealth>()
+                ?? hit.GetComponentInParent<IHealth>();
             if (health == null)
             {
                 continue;
