@@ -17,6 +17,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     private float currentHp;
     private bool isInvulnerable;
+    private bool isDashInvulnerable;
     private bool lowHealthNotified;
     private Coroutine invulnerabilityRoutine;
     private SpriteRenderer[] spriteRenderers;
@@ -26,13 +27,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
-    public bool IsInvulnerable => isInvulnerable;
+    public bool IsInvulnerable => isInvulnerable || isDashInvulnerable;
     public Collider2D BodyCollider => bodyCollider;
 
     public float CurrentHealth => currentHp;
     public float MaxHealth => maxHp;
     public bool IsDead => currentHp <= 0f;
     private bool IsLowHealth => !IsDead && currentHp <= maxHp * lowHealthRatio;
+
+    internal void SetDashInvulnerability(bool active)
+    {
+        isDashInvulnerable = active && !IsDead;
+    }
 
     private void Awake()
     {
@@ -71,7 +77,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     private bool ApplyDamage(float damage, GameObject source, bool allowDuringInvulnerability = false, string cause = null)
     {
-        if (float.IsNaN(damage) || float.IsInfinity(damage) || damage <= 0f || (isInvulnerable && !allowDuringInvulnerability) || currentHp <= 0f)
+        if (float.IsNaN(damage) || float.IsInfinity(damage) || damage <= 0f ||
+            isDashInvulnerable || (isInvulnerable && !allowDuringInvulnerability) || currentHp <= 0f)
             return false;
 
         currentHp = Mathf.Max(0f, currentHp - damage);
@@ -203,6 +210,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     private void Die(GameObject source, string cause)
     {
         isInvulnerable = true;
+        isDashInvulnerable = false;
         RestoreRenderers();
         Debug.Log("[Player] Dead");
 
