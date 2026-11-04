@@ -297,7 +297,8 @@ MonoBehaviour:
   label: {fileID: 5216208355421738655}
   trigger: {fileID: 6346472070749990019}
   closedDoor: {fileID: 21300000, guid: d85d9e742b3200746bba80f125607cbf, type: 3}
-  combatDoor: {fileID: 21300000, guid: 018cfbca3e61a4b48abf06fef44845d3, type: 3}
+  combatDoor: {fileID: 21300000, guid: 4ee812a0ddec41919102cc0737ffac0a, type: 3}
+  bossDoor: {fileID: 21300000, guid: 018cfbca3e61a4b48abf06fef44845d3, type: 3}
   shopDoor: {fileID: 21300000, guid: 9a866dd377f4c0742933d1e1bb6b865f, type: 3}
   promptGap: 0.8
 --- !u!1 &8829020209648748925

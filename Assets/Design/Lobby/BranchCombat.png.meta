@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 018cfbca3e61a4b48abf06fef44845d3
+guid: 4ee812a0ddec41919102cc0737ffac0a
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -103,10 +103,10 @@ TextureImporter:
       name: BranchCombat_0
       rect:
         serializedVersion: 2
-        x: 6
+        x: 7
         y: 0
-        width: 53
-        height: 75
+        width: 51
+        height: 76
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 51a8d8d176bd206b0800000000000000
-      internalID: -5331457772929316331
+      spriteID: 82d3c69f8c45488e9d2cebdac5205f90
+      internalID: -4815309217344512123
       vertices: []
       indices:
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData:
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 9e14c1fd97b744c09f3883f5fd428934
     internalID: 0
     vertices: []
     indices:
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      BranchCombat_0: -5331457772929316331
+      BranchCombat_0: -4815309217344512123
   mipmapLimitGroupName:
   pSDRemoveMatte: 0
   userData:
