@@ -47,17 +47,17 @@ public class BelieverEnemy : EnemyUnit
             return;
         }
 
-        if (stoneAttack.IsAttacking)
+        if (IsMovementLocked)
         {
             StopMovement();
             return;
         }
 
-        if (!stoneAttack.CanAttackFromCurrentPosition(target))
+        if (!stoneAttack.CanEngageTargetFromCurrentPosition(target))
         {
             retreatAfterAttack = false;
             StopMovement();
-            ChangeState(EnemyState.Idle);
+            ChangeMovementState(EnemyState.Idle);
             return;
         }
 
@@ -89,12 +89,37 @@ public class BelieverEnemy : EnemyUnit
             return;
         }
 
+        if (horizontalDistance > preferredMaxDistance)
+        {
+            ApproachSafely();
+            return;
+        }
+
         StopMovement();
         FaceTarget();
-        ChangeState(EnemyState.Idle);
+        ChangeMovementState(EnemyState.Idle);
 
         if (stoneAttack.IsReady)
             stoneAttack.TryAttack(target);
+    }
+
+    private void ApproachSafely()
+    {
+        float direction = Mathf.Sign(target.position.x - transform.position.x);
+        if (!CanMoveSafelyOnPlatform(direction))
+        {
+            StopAtPlatformEdge();
+            return;
+        }
+
+        ChangeMovementState(EnemyState.Chase);
+        MoveTowardTarget();
+    }
+
+    private void ChangeMovementState(EnemyState state)
+    {
+        if (stoneAttack == null || !stoneAttack.IsAttacking)
+            ChangeState(state);
     }
 
     public bool CanEngageTargetOnCurrentPlatform(Transform candidate, Vector2 attackOrigin)
@@ -231,7 +256,7 @@ public class BelieverEnemy : EnemyUnit
             return;
         }
 
-        ChangeState(EnemyState.Retreat);
+        ChangeMovementState(EnemyState.Retreat);
         MoveAwayFromTarget(true);
     }
 
@@ -239,6 +264,6 @@ public class BelieverEnemy : EnemyUnit
     {
         StopMovement();
         FaceTarget();
-        ChangeState(EnemyState.Idle);
+        ChangeMovementState(EnemyState.Idle);
     }
 }

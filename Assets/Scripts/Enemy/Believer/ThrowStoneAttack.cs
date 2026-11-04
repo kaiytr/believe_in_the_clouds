@@ -21,6 +21,13 @@ public class ThrowStoneAttack : EnemyAttack
 
     public float AttackRange => attackRange;
     public bool CanAttackFromCurrentPosition(Transform target) => CanAttack(target);
+    public bool CanEngageTargetFromCurrentPosition(Transform target)
+    {
+        BelieverEnemy believer = owner as BelieverEnemy;
+        return target != null && believer != null &&
+               believer.CanEngageTargetOnCurrentPlatform(target, GetSpawnPosition());
+    }
+
     public override bool IsConfigured => base.IsConfigured && projectilePrefab != null &&
                                          dangerIndicatorPrefab != null && attackRange > 0f &&
                                          projectileSpeed > 0f && indicatorWidth > 0f;
@@ -34,7 +41,7 @@ public class ThrowStoneAttack : EnemyAttack
         float horizontalDistance = Mathf.Abs(target.position.x - transform.position.x);
         float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
         return horizontalDistance <= attackRange && verticalDistance <= verticalAttackTolerance &&
-               believer.CanEngageTargetOnCurrentPlatform(target, GetSpawnPosition());
+               CanEngageTargetFromCurrentPosition(target);
     }
 
     protected override void PrepareAttack(Transform target)
@@ -92,6 +99,11 @@ public class ThrowStoneAttack : EnemyAttack
 
         TrackPendingHitResult();
         projectile.Initialize(LockedDirection, projectileSpeed, damage, lockedProjectileDistance, this);
+
+        // Keep the body committed through the throw, then allow spacing adjustments
+        // while the launched projectile is still travelling.
+        yield return new WaitForSeconds(.25f);
+        owner.UnlockMovement();
     }
 
     private Vector2 GetSpawnPosition()
