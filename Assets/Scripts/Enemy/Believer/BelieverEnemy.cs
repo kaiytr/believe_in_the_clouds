@@ -1,27 +1,42 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(ThrowStoneAttack))]
 public class BelieverEnemy : EnemyUnit
 {
-    [Header("Distance Control")]
-    [SerializeField]
-    private float preferredMinDistance = 4.5f;
+    private const float PlatformSampleSpacing = 0.4f;
+    private const float WalkableNormalMinimum = 0.65f;
+    private const float PlayerGroundProbeDrop = 5f;
+    private const float CurrentGroundProbeDrop = 0.7f;
+    private const float PerceptionCacheDuration = 0.1f;
+    private const float PerceptionCachePositionSqr = 0.04f;
 
-    [SerializeField]
-    private float preferredMaxDistance = 5.5f;
+    [Header("Distance Control")]
+    [SerializeField] private float preferredMinDistance = 4.5f;
+    [SerializeField] private float preferredMaxDistance = 5.5f;
+
+    [Header("Platform Awareness")]
+    [SerializeField] private LayerMask platformMask = 1 << 6;
+    [SerializeField, Min(0.05f)] private float maximumPlatformStep = 0.45f;
+    [SerializeField, Min(0.01f)] private float edgeProbeDistance = 0.18f;
+    [SerializeField, Min(0.01f)] private float groundProbeLift = 0.25f;
 
     private ThrowStoneAttack stoneAttack;
-
     private bool retreatAfterAttack;
+    private bool hasPerceptionCache;
+    private bool cachedCanEngage;
+    private float perceptionCacheExpiresAt;
+    private Vector2 cachedEnemyPosition;
+    private Vector2 cachedTargetPosition;
+    private Vector2 cachedAttackOrigin;
+
     public float RetreatTriggerDistance => preferredMinDistance;
     public bool IsRetreating => CurrentState == EnemyState.Retreat;
 
     protected override void Awake()
     {
         base.Awake();
-
-        stoneAttack =
-            GetComponent<ThrowStoneAttack>();
+        stoneAttack = GetComponent<ThrowStoneAttack>();
     }
 
     protected override void UpdateAI()
@@ -32,118 +47,198 @@ public class BelieverEnemy : EnemyUnit
             return;
         }
 
-        /*
-         * 공격 중에는 이동하지 않는다.
-         */
         if (stoneAttack.IsAttacking)
         {
             StopMovement();
             return;
         }
 
-        float horizontalDistance =
-            GetHorizontalDistanceToTarget();
+        if (!stoneAttack.CanAttackFromCurrentPosition(target))
+        {
+            retreatAfterAttack = false;
+            StopMovement();
+            ChangeState(EnemyState.Idle);
+            return;
+        }
 
-        /*
-         * 가까이 붙은 상태에서 공격했다면
-         * 공격 종료 후 선호 거리까지 후퇴한다.
-         */
+        float horizontalDistance = GetHorizontalDistanceToTarget();
+
         if (retreatAfterAttack)
         {
-            if (horizontalDistance <
-                preferredMaxDistance)
+            if (horizontalDistance < preferredMaxDistance)
             {
-                ChangeState(
-                    EnemyState.Retreat
-                );
-
-                MoveAwayFromTarget(true);
-
+                RetreatSafely();
                 return;
             }
 
             retreatAfterAttack = false;
         }
 
-        /*
-         * 너무 멀다.
-         *
-         * 공격 사거리 안쪽의 선호 거리까지 접근한다.
-         */
-        if (horizontalDistance >
-            preferredMaxDistance)
+        if (horizontalDistance < preferredMinDistance)
         {
-            ChangeState(
-                EnemyState.Chase
-            );
-
-            MoveTowardTarget();
-
-            return;
-        }
-
-        /*
-         * 너무 가까움.
-         */
-        if (horizontalDistance <
-            preferredMinDistance)
-        {
-            /*
-             * 공격 준비가 되어 있다면
-             * 바로 도망치지 않고 먼저 공격한다.
-             *
-             * 기획:
-             * "가까이 접근하면 도망치기보다
-             * 잠시 멈춰 공격한 뒤 다시 거리를 벌린다."
-             */
             if (stoneAttack.IsReady)
             {
                 StopMovement();
                 FaceTarget();
-
-                bool attackStarted =
-                    stoneAttack.TryAttack(
-                        target
-                    );
-
-                if (attackStarted)
-                {
+                if (stoneAttack.TryAttack(target))
                     retreatAfterAttack = true;
-                }
-
                 return;
             }
 
-            /*
-             * 공격 쿨타임 중이라면
-             * 그냥 후퇴해서 거리 확보.
-             */
-            ChangeState(
-                EnemyState.Retreat
-            );
-
-            MoveAwayFromTarget(true);
-
+            RetreatSafely();
             return;
         }
 
-        /*
-         * 선호 거리 안.
-         *
-         * 이동하지 않고 공격한다.
-         */
         StopMovement();
         FaceTarget();
-
-        ChangeState(
-            EnemyState.Idle
-        );
+        ChangeState(EnemyState.Idle);
 
         if (stoneAttack.IsReady)
+            stoneAttack.TryAttack(target);
+    }
+
+    public bool CanEngageTargetOnCurrentPlatform(Transform candidate, Vector2 attackOrigin)
+    {
+        Collider2D enemyBody = BodyCollider;
+        Collider2D playerBody = TargetBodyCollider;
+        if (candidate == null || candidate != Target || !candidate.gameObject.activeInHierarchy ||
+            enemyBody == null || playerBody == null || !playerBody.enabled)
+            return false;
+
+        Vector2 enemyPosition = enemyBody.bounds.center;
+        Vector2 playerPosition = playerBody.bounds.center;
+        if (hasPerceptionCache && Time.time < perceptionCacheExpiresAt &&
+            (enemyPosition - cachedEnemyPosition).sqrMagnitude < PerceptionCachePositionSqr &&
+            (playerPosition - cachedTargetPosition).sqrMagnitude < PerceptionCachePositionSqr &&
+            (attackOrigin - cachedAttackOrigin).sqrMagnitude < PerceptionCachePositionSqr)
+            return cachedCanEngage;
+
+        cachedEnemyPosition = enemyPosition;
+        cachedTargetPosition = playerPosition;
+        cachedAttackOrigin = attackOrigin;
+        perceptionCacheExpiresAt = Time.time + PerceptionCacheDuration;
+        hasPerceptionCache = true;
+        cachedCanEngage = EvaluateTargetOnCurrentPlatform(enemyBody, playerBody, enemyPosition,
+            playerPosition, attackOrigin);
+        return cachedCanEngage;
+    }
+
+    private bool EvaluateTargetOnCurrentPlatform(Collider2D enemyBody, Collider2D playerBody,
+        Vector2 enemyPosition, Vector2 playerPosition, Vector2 attackOrigin)
+    {
+        if (!TryFindGroundUnder(enemyBody, CurrentGroundProbeDrop, out Vector2 enemyGround) ||
+            !TryFindGroundUnder(playerBody, PlayerGroundProbeDrop, out Vector2 playerGround) ||
+            Mathf.Abs(enemyGround.y - playerGround.y) > maximumPlatformStep ||
+            !HasConnectedGroundPath(enemyGround, playerGround))
+            return false;
+
+        if (IsBlockedByPlatform(enemyPosition, playerPosition))
+            return false;
+
+        Vector2 projectileLineEnd = new Vector2(playerPosition.x, attackOrigin.y);
+        return !IsBlockedByPlatform(attackOrigin, projectileLineEnd);
+    }
+
+    private bool HasConnectedGroundPath(Vector2 start, Vector2 end)
+    {
+        float horizontalDistance = Mathf.Abs(end.x - start.x);
+        if (horizontalDistance <= PlatformSampleSpacing)
+            return Mathf.Abs(end.y - start.y) <= maximumPlatformStep;
+
+        int sampleCount = Mathf.CeilToInt(horizontalDistance / PlatformSampleSpacing);
+        float direction = Mathf.Sign(end.x - start.x);
+        float groundY = start.y;
+        for (int i = 1; i <= sampleCount; i++)
         {
-            stoneAttack.TryAttack(
-                target
-            );
+            float x = i == sampleCount ? end.x : start.x + direction * PlatformSampleSpacing * i;
+            if (!TryFindGroundNear(x, groundY, out Vector2 nextGround))
+                return false;
+            groundY = nextGround.y;
         }
+
+        return Mathf.Abs(groundY - end.y) <= maximumPlatformStep;
+    }
+
+    private bool CanMoveSafelyOnPlatform(float direction)
+    {
+        if (Mathf.Abs(direction) < 0.01f || BodyCollider == null ||
+            !TryFindGroundUnder(BodyCollider, CurrentGroundProbeDrop, out Vector2 currentGround))
+            return false;
+
+        Bounds bounds = BodyCollider.bounds;
+        float probeX = bounds.center.x + Mathf.Sign(direction) * (bounds.extents.x + edgeProbeDistance);
+        return TryFindGroundNear(probeX, currentGround.y, out Vector2 groundAhead) &&
+               Mathf.Abs(groundAhead.y - currentGround.y) <= maximumPlatformStep;
+    }
+
+    private bool TryFindGroundUnder(Collider2D body, float maximumDrop, out Vector2 groundPoint)
+    {
+        Bounds bounds = body.bounds;
+        Vector2 origin = new Vector2(bounds.center.x, bounds.min.y + groundProbeLift);
+        return TryFindWalkableGround(origin, groundProbeLift + maximumDrop, out groundPoint);
+    }
+
+    private bool TryFindGroundNear(float x, float expectedY, out Vector2 groundPoint)
+    {
+        float tolerance = maximumPlatformStep;
+        Vector2 origin = new Vector2(x, expectedY + tolerance + 0.02f);
+        if (!TryFindWalkableGround(origin, tolerance * 2f + 0.04f, out groundPoint) ||
+            Mathf.Abs(groundPoint.y - expectedY) > tolerance)
+        {
+            groundPoint = default;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryFindWalkableGround(Vector2 origin, float distance, out Vector2 groundPoint)
+    {
+        List<RaycastHit2D> hits = CombatPhysics.Raycast(origin, Vector2.down, distance, platformMask);
+        float closestDistance = float.MaxValue;
+        groundPoint = default;
+        bool found = false;
+        for (int i = 0; i < hits.Count; i++)
+        {
+            RaycastHit2D hit = hits[i];
+            if (hit.collider == null || hit.normal.y < WalkableNormalMinimum || hit.distance >= closestDistance)
+                continue;
+
+            closestDistance = hit.distance;
+            groundPoint = hit.point;
+            found = true;
+        }
+
+        return found;
+    }
+
+    private bool IsBlockedByPlatform(Vector2 start, Vector2 end)
+    {
+        if ((end - start).sqrMagnitude < 0.0001f)
+            return false;
+
+        Vector2 direction = (end - start).normalized;
+        List<RaycastHit2D> hits = CombatPhysics.Raycast(start, direction, Vector2.Distance(start, end), platformMask);
+        return hits.Count > 0;
+    }
+
+    private void RetreatSafely()
+    {
+        float direction = target.position.x < transform.position.x ? 1f : -1f;
+        if (!CanMoveSafelyOnPlatform(direction))
+        {
+            StopAtPlatformEdge();
+            return;
+        }
+
+        ChangeState(EnemyState.Retreat);
+        MoveAwayFromTarget(true);
+    }
+
+    private void StopAtPlatformEdge()
+    {
+        StopMovement();
+        FaceTarget();
+        ChangeState(EnemyState.Idle);
     }
 }

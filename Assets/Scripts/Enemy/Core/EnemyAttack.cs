@@ -60,7 +60,8 @@ public abstract class EnemyAttack : MonoBehaviour
         if (owner == null || owner.IsDead)
             return;
 
-        if (phase != AttackPhase.Idle && !HasAttackTarget())
+        if (phase != AttackPhase.Idle &&
+            (!HasAttackTarget() || (phase == AttackPhase.Windup && !IsWindupTargetValid(attackTarget))))
         {
             CancelAttack(true);
             return;
@@ -181,6 +182,7 @@ public abstract class EnemyAttack : MonoBehaviour
     }
 
     protected abstract bool CanAttack(Transform target);
+    protected virtual bool IsWindupTargetValid(Transform target) => true;
     protected virtual void PrepareAttack(Transform target) { }
     protected abstract DangerIndicator ShowDangerIndicator();
     protected abstract bool IsPlayerInThreatRange(Collider2D bodyCollider);

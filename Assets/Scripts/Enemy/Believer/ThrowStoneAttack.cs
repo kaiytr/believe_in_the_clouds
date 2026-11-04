@@ -4,7 +4,7 @@ using UnityEngine;
 public class ThrowStoneAttack : EnemyAttack
 {
     [Header("Range")]
-    [SerializeField, Min(0.01f)] private float attackRange = 6f;
+    [SerializeField, Min(0.01f)] private float attackRange = 100f;
 
     [Header("Projectile")]
     [SerializeField] private StoneProjectile projectilePrefab;
@@ -17,20 +17,31 @@ public class ThrowStoneAttack : EnemyAttack
     [SerializeField, Min(0f)] private float verticalAttackTolerance = 1.5f;
 
     private Vector2 launchOrigin;
+    private float lockedProjectileDistance;
 
     public float AttackRange => attackRange;
+    public bool CanAttackFromCurrentPosition(Transform target) => CanAttack(target);
     public override bool IsConfigured => base.IsConfigured && projectilePrefab != null &&
                                          dangerIndicatorPrefab != null && attackRange > 0f &&
                                          projectileSpeed > 0f && indicatorWidth > 0f;
 
     protected override bool CanAttack(Transform target)
     {
-        if (target == null)
+        BelieverEnemy believer = owner as BelieverEnemy;
+        if (target == null || believer == null)
             return false;
 
         float horizontalDistance = Mathf.Abs(target.position.x - transform.position.x);
         float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
-        return horizontalDistance <= attackRange && verticalDistance <= verticalAttackTolerance;
+        return horizontalDistance <= attackRange && verticalDistance <= verticalAttackTolerance &&
+               believer.CanEngageTargetOnCurrentPlatform(target, GetSpawnPosition());
+    }
+
+    protected override bool IsWindupTargetValid(Transform target) => CanAttack(target);
+
+    protected override void PrepareAttack(Transform target)
+    {
+        lockedProjectileDistance = attackRange;
     }
 
     protected override DangerIndicator ShowDangerIndicator()
@@ -40,26 +51,26 @@ public class ThrowStoneAttack : EnemyAttack
 
         Transform origin = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.SetupFollowing(origin, LockedDirection, new Vector2(attackRange, indicatorWidth));
+        indicator.SetupFollowing(origin, LockedDirection, new Vector2(lockedProjectileDistance, indicatorWidth));
         return indicator;
     }
 
     protected override bool IsPlayerInThreatRange(Collider2D bodyCollider)
     {
-        return IsBodyInThrowLane(bodyCollider, GetSpawnPosition());
+        return IsBodyInThrowLane(bodyCollider, GetSpawnPosition(), lockedProjectileDistance);
     }
 
-    private bool IsBodyInThrowLane(Collider2D bodyCollider, Vector2 origin)
+    private bool IsBodyInThrowLane(Collider2D bodyCollider, Vector2 origin, float length)
     {
-        Vector2 center = origin + LockedDirection * (attackRange * 0.5f);
-        return ColliderOverlapsBox(bodyCollider, center, new Vector2(attackRange, indicatorWidth));
+        Vector2 center = origin + LockedDirection * (length * 0.5f);
+        return ColliderOverlapsBox(bodyCollider, center, new Vector2(length, indicatorWidth));
     }
 
     public AttackOutcome GetOutcomeAtMaximumRange()
     {
         Collider2D body = PlayerBodyCollider;
         return WasPlayerThreatenedDuringWarning && body != null &&
-               !IsBodyInThrowLane(body, launchOrigin)
+               !IsBodyInThrowLane(body, launchOrigin, lockedProjectileDistance)
             ? AttackOutcome.EvadedByPlayer
             : AttackOutcome.Missed;
     }
@@ -72,6 +83,9 @@ public class ThrowStoneAttack : EnemyAttack
             yield break;
         }
 
+        if (!CanAttack(owner.Target))
+            yield break;
+
         MarkAttackAsLaunched();
         Vector2 spawnPosition = GetSpawnPosition();
         launchOrigin = spawnPosition;
@@ -82,7 +96,7 @@ public class ThrowStoneAttack : EnemyAttack
             Quaternion.Euler(0f, 0f, angle));
 
         TrackPendingHitResult();
-        projectile.Initialize(LockedDirection, projectileSpeed, damage, attackRange, this);
+        projectile.Initialize(LockedDirection, projectileSpeed, damage, lockedProjectileDistance, this);
     }
 
     private Vector2 GetSpawnPosition()
@@ -92,6 +106,8 @@ public class ThrowStoneAttack : EnemyAttack
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        Vector3 origin = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
+        float direction = transform.localScale.x < 0f ? -1f : 1f;
+        Gizmos.DrawLine(origin, origin + Vector3.right * direction * attackRange);
     }
 }

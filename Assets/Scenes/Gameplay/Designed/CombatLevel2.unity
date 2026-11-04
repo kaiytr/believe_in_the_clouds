@@ -3527,7 +3527,7 @@ MonoBehaviour:
   cooldown: 2.5
   windupTime: 0.8
   recoveryTime: 0.5
-  attackRange: 6
+  attackRange: 100
   projectilePrefab: {fileID: 9164700331100154157, guid: c679be4d1c54d2d42a8893bdf7938938, type: 3}
   projectileSpawnPoint: {fileID: 490302348}
   projectileSpeed: 8
@@ -5208,7 +5208,7 @@ MonoBehaviour:
   cooldown: 2.5
   windupTime: 0.8
   recoveryTime: 0.5
-  attackRange: 6
+  attackRange: 100
   projectilePrefab: {fileID: 9164700331100154157, guid: c679be4d1c54d2d42a8893bdf7938938, type: 3}
   projectileSpawnPoint: {fileID: 843148164}
   projectileSpeed: 8
@@ -11928,7 +11928,7 @@ MonoBehaviour:
   cooldown: 2.5
   windupTime: 0.8
   recoveryTime: 0.5
-  attackRange: 6
+  attackRange: 100
   projectilePrefab: {fileID: 9164700331100154157, guid: c679be4d1c54d2d42a8893bdf7938938, type: 3}
   projectileSpawnPoint: {fileID: 257903577}
   projectileSpeed: 8
@@ -13669,7 +13669,7 @@ MonoBehaviour:
   cooldown: 2.5
   windupTime: 0.8
   recoveryTime: 0.5
-  attackRange: 6
+  attackRange: 100
   projectilePrefab: {fileID: 9164700331100154157, guid: c679be4d1c54d2d42a8893bdf7938938, type: 3}
   projectileSpawnPoint: {fileID: 160926332}
   projectileSpeed: 8
