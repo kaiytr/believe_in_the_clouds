@@ -552,7 +552,8 @@ public class DoctrineHud : MonoBehaviour
         for (int i = canvas.transform.childCount - 1; i >= 0; i--)
         {
             Transform child = canvas.transform.GetChild(i);
-            if (child.name != "PlayerHudBand" && child.name != "PlayerStrengthBackground")
+            if (child.name != "PlayerHudBand" && child.name != "PlayerStrengthBackground"
+                && child.name != "PlayerPortrait")
                 continue;
 
             child.gameObject.SetActive(false);
@@ -585,6 +586,13 @@ public class DoctrineHud : MonoBehaviour
             "PlayerStrengthGauge",
             HudArtworkResources.Load("PlayerStrengthGauge"),
             bandRect);
+
+        Image portrait = CreatePixelArtImage(
+            "PlayerPortrait",
+            HudArtworkResources.Load("PlayerPortrait"),
+            canvas.transform);
+        if (portrait != null)
+            portrait.transform.SetAsLastSibling();
     }
 
     private Image CreatePixelArtImage(string name, HudArtworkSprite artwork, Transform parent)

@@ -25,6 +25,7 @@ public static class HudArtworkResources
     {
         { "PlayerStrengthBackground", new RectInt(34, 33, 1001, 206) },
         { "PlayerStrengthGauge", new RectInt(118, 47, 904, 53) },
+        { "PlayerPortrait", new RectInt(34, 33, 206, 206) },
         { "PlayerCoinBadge", new RectInt(1585, 42, 271, 79) },
         { "EnemyStrengthBackground", new RectInt(1169, 283, 465, 38) },
         { "EnemyStrengthGauge", new RectInt(1174, 288, 453, 28) },
