@@ -380,7 +380,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
-  moveSpeedRatio: 0.5
+  moveSpeedRatio: 1
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 103787190}
   destroyDelay: 1.5
