@@ -12,9 +12,6 @@ public class DoctrineHud : MonoBehaviour
     [SerializeField] private float bandHeight = 220f;
     [SerializeField] private Color bandColor = new Color(0.76f, 0.76f, 0.76f, 0.94f);
 
-    [Header("플레이어 초상")]
-    [SerializeField] private Vector2 portraitPosition = new Vector2(48f, 22f);
-    [SerializeField] private float portraitDiameter = 176f;
     [Tooltip("비워두면 씬에서 PlayerHealth가 붙은 오브젝트를 자동으로 찾는다.")]
     [SerializeField] private PlayerHealth player;
 
@@ -46,9 +43,7 @@ public class DoctrineHud : MonoBehaviour
     private Canvas canvas;
     private RectTransform doctrineRow;
     private RectTransform bandRect;
-    private Image portraitImage;
     private Image hpFill;
-    private Text portraitFallback;
     private bool built;
 
     [Header("교리 효과 툴팁 (좌측 상단)")]
@@ -65,9 +60,8 @@ public class DoctrineHud : MonoBehaviour
 
     private static DoctrineHud instance;
 
-    // PlayerHealth/초상 스프라이트 탐색은 매 프레임 하면 비싸므로 간격을 둔다.
+    // 씬 전환 뒤 PlayerHealth 참조를 다시 찾는 간격.
     private float nextPlayerSearchTime;
-    private bool portraitResolved;
 
     [Header("확인용 (자동 표시)")]
     [Tooltip("활성 교리도, 연결된 확인용 목록도 없을 때 내장된 예시 3개를 보여준다. 끄면 비어 있을 때 아무 칸도 그리지 않는다.")]
@@ -125,7 +119,7 @@ public class DoctrineHud : MonoBehaviour
             BuildIfNeeded();
 
         // 씬이 바뀌면 플레이어/초상/매니저 참조가 끊긴다. 0.5초 간격으로 다시 찾는다.
-        if (Time.unscaledTime >= nextPlayerSearchTime && (player == null || !portraitResolved))
+        if (Time.unscaledTime >= nextPlayerSearchTime && player == null)
         {
             nextPlayerSearchTime = Time.unscaledTime + 0.5f;
             ResolvePlayer();
@@ -151,8 +145,13 @@ public class DoctrineHud : MonoBehaviour
     private void RefreshCurrency()
     {
         if (currencyText == null) return;
-        currencyText.text = Currency.IsReady ? $"코인 {Currency.Balance:N0}" : "재화 확인 중";
-        currencyText.color = Time.unscaledTime < currencyFlashUntil ? new Color(1f, .88f, .35f) : Color.white;
+        PositionCurrencyBadge();
+        currencyText.text = Currency.IsReady
+            ? (Currency.Balance < 100 ? Currency.Balance.ToString("D2") : Currency.Balance.ToString("N0"))
+            : "--";
+        currencyText.color = Time.unscaledTime < currencyFlashUntil
+            ? new Color(1f, .72f, .22f)
+            : new Color(0.30f, 0.22f, 0.15f);
     }
 
     private void ResolvePlayer()
@@ -160,7 +159,6 @@ public class DoctrineHud : MonoBehaviour
         if (player == null)
         {
             player = FindFirstObjectByType<PlayerHealth>();
-            portraitResolved = false;
         }
 
         if (player == null)
@@ -173,15 +171,6 @@ public class DoctrineHud : MonoBehaviour
             RebuildDoctrineSlots();
         }
 
-        SpriteRenderer renderer = player.GetComponentInChildren<SpriteRenderer>();
-        if (portraitImage != null && renderer != null && renderer.sprite != null)
-        {
-            portraitImage.sprite = renderer.sprite;
-            portraitImage.color = Color.white;
-            portraitResolved = true;
-            if (portraitFallback != null)
-                portraitFallback.gameObject.SetActive(false);
-        }
     }
 
     private void RefreshPlayerHud()
@@ -195,6 +184,17 @@ public class DoctrineHud : MonoBehaviour
                 ? Mathf.Clamp01(player.CurrentHp / player.MaxHp)
                 : 0f;
         }
+    }
+
+    private void PositionCurrencyBadge()
+    {
+        if (currencyTarget == null)
+            return;
+
+        currencyTarget.anchorMin = currencyTarget.anchorMax = new Vector2(1f, 0f);
+        currencyTarget.pivot = new Vector2(1f, 0f);
+        currencyTarget.anchoredPosition = new Vector2(-12f, 42f);
+        currencyTarget.localScale = Vector3.one;
     }
 
     private void TryBindManager()
@@ -534,61 +534,78 @@ public class DoctrineHud : MonoBehaviour
         if (canvas.GetComponent<GraphicRaycaster>() == null)
             canvas.gameObject.AddComponent<GraphicRaycaster>();
 
+        ClearGeneratedHud();
+
         // 씬에 저장된 HUD의 스케일이 0이면 아무것도 보이지 않으므로 바로잡는다.
         if (transform.localScale == Vector3.zero)
             transform.localScale = Vector3.one;
 
         BuildBottomBand();
-        BuildPortrait();
-        BuildDoctrineRow();
+        BuildHudArtwork();
         BuildHpBar();
+        BuildDoctrineRow();
         BuildCurrencyBadge();
+    }
+
+    private void ClearGeneratedHud()
+    {
+        for (int i = canvas.transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = canvas.transform.GetChild(i);
+            if (child.name != "PlayerHudBand" && child.name != "PlayerStrengthBackground")
+                continue;
+
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
     }
 
     private void BuildBottomBand()
     {
-        GameObject band = UiTheme.CreateImage("PlayerHudBand", canvas.transform, bandColor);
+        GameObject band = new GameObject("PlayerHudBand", typeof(RectTransform));
+        band.transform.SetParent(canvas.transform, false);
         bandRect = band.GetComponent<RectTransform>();
         bandRect.anchorMin = new Vector2(0f, 0f);
         bandRect.anchorMax = new Vector2(1f, 0f);
         bandRect.pivot = new Vector2(0.5f, 0f);
         bandRect.anchoredPosition = Vector2.zero;
         bandRect.sizeDelta = new Vector2(0f, bandHeight);
-        // 하단 밴드가 레이캐스트를 가로채면 완성된 교리 슬롯 클릭이 안 먹는다.
-        band.GetComponent<Image>().raycastTarget = false;
     }
 
-    private void BuildPortrait()
+    private void BuildHudArtwork()
     {
-        GameObject avatar = UiTheme.CreateImage("PlayerPortraitCircle", bandRect, UiTheme.SubjectPlayer);
-        RectTransform avatarRect = avatar.GetComponent<RectTransform>();
-        avatarRect.anchorMin = new Vector2(0f, 0f);
-        avatarRect.anchorMax = new Vector2(0f, 0f);
-        avatarRect.pivot = new Vector2(0f, 0f);
-        avatarRect.anchoredPosition = portraitPosition;
-        avatarRect.sizeDelta = new Vector2(portraitDiameter, portraitDiameter);
-        avatar.GetComponent<Image>().sprite = UiTheme.CircleSprite;
+        Image background = CreatePixelArtImage(
+            "PlayerStrengthBackground",
+            HudArtworkResources.Load("PlayerStrengthBackground"),
+            canvas.transform);
+        if (background != null)
+            background.transform.SetAsFirstSibling();
 
-        GameObject maskObject = new GameObject("PortraitMask", typeof(RectTransform), typeof(Image), typeof(Mask));
-        maskObject.transform.SetParent(avatar.transform, false);
-        RectTransform maskRect = maskObject.GetComponent<RectTransform>();
-        UiTheme.Stretch(maskRect, 8f);
-        Image maskImage = maskObject.GetComponent<Image>();
-        maskImage.sprite = UiTheme.CircleSprite;
-        maskImage.color = Color.white;
-        maskObject.GetComponent<Mask>().showMaskGraphic = false;
+        hpFill = CreatePixelArtImage(
+            "PlayerStrengthGauge",
+            HudArtworkResources.Load("PlayerStrengthGauge"),
+            bandRect);
+    }
 
-        GameObject portrait = new GameObject("PortraitSprite", typeof(RectTransform), typeof(Image));
-        portrait.transform.SetParent(maskObject.transform, false);
-        RectTransform portraitRect = portrait.GetComponent<RectTransform>();
-        UiTheme.Stretch(portraitRect);
-        portraitImage = portrait.GetComponent<Image>();
-        portraitImage.preserveAspect = true;
-        portraitImage.color = Color.white;
+    private Image CreatePixelArtImage(string name, HudArtworkSprite artwork, Transform parent)
+    {
+        if (!artwork.IsValid)
+            return null;
 
-        portraitFallback = UiTheme.CreateText("PlayerFallback", avatar.transform, "플레이어", 16,
-            UiTheme.TextDark, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(portraitFallback.rectTransform, 8f);
+        GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        imageObject.transform.SetParent(parent, false);
+        RectTransform rect = imageObject.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.zero;
+        rect.pivot = Vector2.zero;
+        rect.anchoredPosition = new Vector2(artwork.PixelBounds.x, artwork.PixelBounds.y);
+        rect.sizeDelta = new Vector2(artwork.PixelBounds.width, artwork.PixelBounds.height);
+
+        Image image = imageObject.GetComponent<Image>();
+        image.sprite = artwork.Sprite;
+        image.color = Color.white;
+        image.raycastTarget = false;
+        return image;
     }
 
     private void BuildDoctrineRow()
@@ -605,22 +622,9 @@ public class DoctrineHud : MonoBehaviour
 
     private void BuildHpBar()
     {
-        GameObject background = UiTheme.CreateImage("HpBarBackground", bandRect, hpBackgroundColor);
-        RectTransform rect = background.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(0f, 0f);
-        rect.anchorMax = new Vector2(0f, 0f);
-        rect.pivot = new Vector2(0f, 0f);
-        rect.anchoredPosition = hpPosition;
-        rect.sizeDelta = hpSize;
+        if (hpFill == null)
+            return;
 
-        GameObject fill = UiTheme.CreateImage("HpBarFill", background.transform, hpFillColor);
-        RectTransform fillRect = fill.GetComponent<RectTransform>();
-        fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = new Vector2(1f, 1f);
-        fillRect.pivot = new Vector2(0f, 0.5f);
-        fillRect.offsetMin = Vector2.zero;
-        fillRect.offsetMax = Vector2.zero;
-        hpFill = fill.GetComponent<Image>();
         hpFill.type = Image.Type.Filled;
         hpFill.fillMethod = Image.FillMethod.Horizontal;
         hpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
@@ -629,19 +633,22 @@ public class DoctrineHud : MonoBehaviour
 
     private void BuildCurrencyBadge()
     {
-        GameObject badge = UiTheme.CreateImage("CurrencyBadge", bandRect,
-            new Color(0.57f, 0.57f, 0.57f, 1f));
-        RectTransform rect = badge.GetComponent<RectTransform>();
-        currencyTarget = rect;
-        rect.anchorMin = new Vector2(1f, 0f);
-        rect.anchorMax = new Vector2(1f, 0f);
-        rect.pivot = new Vector2(1f, 0f);
-        rect.anchoredPosition = new Vector2(-currencyMargin.x, currencyMargin.y);
-        rect.sizeDelta = currencySize;
+        Image badge = CreatePixelArtImage(
+            "CurrencyBadge",
+            HudArtworkResources.Load("PlayerCoinBadge"),
+            bandRect);
+        if (badge == null)
+            return;
 
-        currencyText = UiTheme.CreateText("CurrencyLabel", badge.transform, "코인 0", 18,
-            Color.white, TextAnchor.MiddleCenter);
-        RectTransform textRect = badge.transform.Find("CurrencyLabel").GetComponent<RectTransform>();
-        UiTheme.Stretch(textRect);
+        currencyTarget = badge.rectTransform;
+        PositionCurrencyBadge();
+        currencyText = UiTheme.CreateText("CurrencyLabel", badge.transform, "00", 42,
+            new Color(0.30f, 0.22f, 0.15f), TextAnchor.MiddleCenter);
+        RectTransform textRect = currencyText.rectTransform;
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.pivot = new Vector2(0.5f, 0.5f);
+        textRect.offsetMin = new Vector2(44f, 0f);
+        textRect.offsetMax = new Vector2(-28f, 0f);
     }
 }
