@@ -48,15 +48,41 @@ public class DoctrineHud : MonoBehaviour
 
     [Header("교리 효과 툴팁 (좌측 상단)")]
     [SerializeField] private float tooltipSeconds = 3f;
-    [SerializeField] private Vector2 tooltipMargin = new Vector2(24f, -24f);
-    [SerializeField] private Vector2 tooltipSize = new Vector2(560f, 150f);
-    [SerializeField] private Color tooltipBackground = new Color(0.08f, 0.09f, 0.11f, 0.92f);
-    [SerializeField] private Color tooltipTextColor = new Color(1f, 1f, 1f, 1f);
+    [SerializeField] private Vector2 tooltipMargin = new Vector2(0f, -30f);
+    [Tooltip("Doctrine_BG 아트의 원본 크기(913x186). 스킨을 못 찾으면 이 크기의 단색 배경으로 대체한다.")]
+    [SerializeField] private Vector2 tooltipSize = new Vector2(913f, 186f);
+    [SerializeField] private Color tooltipBackground = new Color(0.95f, 0.86f, 0.73f, 1f);
+    [SerializeField] private Color tooltipTextColor = Color.black;
 
     private GameObject tooltipObject;
     private Text tooltipTitle;
     private Text tooltipBody;
     private Coroutine tooltipRoutine;
+
+    // 툴팁 배경 아트(Assets/Resources/UI/Doctrine_BG). Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
+    private static Sprite tooltipSprite;
+
+    private static Sprite LoadTooltipSprite()
+    {
+        if (tooltipSprite != null)
+        {
+            return tooltipSprite;
+        }
+
+        tooltipSprite = Resources.Load<Sprite>("UI/Doctrine_BG");
+        if (tooltipSprite == null)
+        {
+            Texture2D texture = Resources.Load<Texture2D>("UI/Doctrine_BG");
+            if (texture != null)
+            {
+                tooltipSprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                tooltipSprite.name = "Doctrine_BG";
+            }
+        }
+
+        return tooltipSprite;
+    }
 
     private static DoctrineHud instance;
 
@@ -405,32 +431,44 @@ public class DoctrineHud : MonoBehaviour
 
         GameObject background = UiTheme.CreateImage("TooltipBackground", root.transform, tooltipBackground);
         UiTheme.Stretch(background.GetComponent<RectTransform>());
-        background.GetComponent<Image>().raycastTarget = false;
+        Image backgroundImage = background.GetComponent<Image>();
+        backgroundImage.raycastTarget = false;
+
+        Sprite art = LoadTooltipSprite();
+        if (art != null)
+        {
+            backgroundImage.sprite = art;
+            backgroundImage.color = Color.white;
+            backgroundImage.type = Image.Type.Simple;
+            backgroundImage.preserveAspect = false;
+            rect.sizeDelta = new Vector2(art.rect.width, art.rect.height);
+        }
 
         GameObject texts = new GameObject("TooltipTexts", typeof(RectTransform));
         texts.transform.SetParent(root.transform, false);
         RectTransform textsRect = texts.GetComponent<RectTransform>();
         textsRect.anchorMin = Vector2.zero;
         textsRect.anchorMax = Vector2.one;
-        textsRect.offsetMin = new Vector2(18f, 14f);
-        textsRect.offsetMax = new Vector2(-18f, -14f);
+        // 아트 안쪽 베이지 판(위 18px·아래 18px는 투명 여백)에 맞춘 여백.
+        textsRect.offsetMin = new Vector2(52f, 40f);
+        textsRect.offsetMax = new Vector2(-56f, -34f);
 
         tooltipTitle = UiTheme.CreateText("TooltipTitle", texts.transform, string.Empty,
-            22, tooltipTextColor, TextAnchor.UpperLeft);
+            24, tooltipTextColor, TextAnchor.UpperLeft);
         RectTransform titleRect = tooltipTitle.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 1f);
         titleRect.anchorMax = new Vector2(1f, 1f);
         titleRect.pivot = new Vector2(0f, 1f);
         titleRect.anchoredPosition = Vector2.zero;
-        titleRect.sizeDelta = new Vector2(0f, 34f);
+        titleRect.sizeDelta = new Vector2(0f, 36f);
 
         tooltipBody = UiTheme.CreateText("TooltipBody", texts.transform, string.Empty,
-            18, tooltipTextColor, TextAnchor.UpperLeft);
+            20, tooltipTextColor, TextAnchor.UpperLeft);
         RectTransform bodyRect = tooltipBody.rectTransform;
         bodyRect.anchorMin = Vector2.zero;
         bodyRect.anchorMax = Vector2.one;
         bodyRect.offsetMin = new Vector2(0f, 0f);
-        bodyRect.offsetMax = new Vector2(0f, -40f);
+        bodyRect.offsetMax = new Vector2(0f, -42f);
 
         root.SetActive(false);
         tooltipObject = root;
