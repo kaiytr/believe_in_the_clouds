@@ -4,8 +4,8 @@ using UnityEngine;
 
 // Doctrine system EditMode tests, aligned to the fixed table:
 // Subjects 4 / Conditions 4 / Results 4.
-// Heal = 10% max HP (20s cooldown), IncreaseSpeed = x1.4 persistent,
-// IncreaseAttack = x1.2 for 5s, Explode = 30% of exploder max HP to all sides incl. self.
+// Heal = 10% max HP (20s cooldown), IncreaseSpeed = x1.4 for 5s (10s cooldown),
+// IncreaseAttack = x1.2 for 5s (10s cooldown), Explode = 30% of exploder max HP to all sides incl. self.
 [TestFixture]
 public class DoctrineEditModeTests
 {
@@ -186,7 +186,7 @@ public class DoctrineEditModeTests
         Assert.AreEqual(0, manager.ActiveCount);
     }
 
-    // All + LowHealth + IncreaseSpeed: table x1.4 persistent, no code change needed.
+    // All + LowHealth + IncreaseSpeed: table x1.4 for 5s, 10s cooldown.
     [Test]
     public void NewCombination_WorksWithoutCodeChange()
     {
@@ -232,15 +232,44 @@ public class DoctrineEditModeTests
     }
 
     [Test]
-    public void Explode_HasTableCooldownOfFiveSeconds()
+    public void BuffCooldowns_AreTableValues()
     {
         Doctrine explode = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Explode);
         Doctrine heal = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
         Doctrine speed = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseSpeed);
+        Doctrine attack = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseAttack);
 
         Assert.AreEqual(5f, DoctrineManager.GetCooldownSeconds(explode), 0.001f);
         Assert.AreEqual(20f, DoctrineManager.GetCooldownSeconds(heal), 0.001f);
-        Assert.AreEqual(0f, DoctrineManager.GetCooldownSeconds(speed), 0.001f);
+        Assert.AreEqual(10f, DoctrineManager.GetCooldownSeconds(speed), 0.001f);
+        Assert.AreEqual(10f, DoctrineManager.GetCooldownSeconds(attack), 0.001f);
+    }
+
+    [Test]
+    public void SpeedBuff_ReplacesInsteadOfStacking()
+    {
+        GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
+        DoctrineStats stats = player.GetComponent<DoctrineStats>();
+
+        stats.ApplySpeedBuff(1.4f, 5f);
+        stats.ApplySpeedBuff(1.4f, 5f);
+
+        Assert.AreEqual(1.4f, stats.SpeedMultiplier, 0.001f);
+    }
+
+    [Test]
+    public void SpeedDoctrine_AppliesTableMultiplierOnTrigger()
+    {
+        GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
+        DoctrineStats stats = player.GetComponent<DoctrineStats>();
+
+        Assert.IsTrue(manager.TryActivate(
+            new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.IncreaseSpeed),
+            player, out string reason), reason);
+
+        DoctrineEventBus.Raise(ConditionType.OnHit, player, null);
+
+        Assert.AreEqual(1.4f, stats.SpeedMultiplier, 0.001f);
     }
 
     [Test]

@@ -19,7 +19,6 @@ public sealed class ShopEntry
     public string Detail { get; internal set; }
     public ShopRarity Rarity { get; internal set; }
     public int Price => Rarity == ShopRarity.Rare ? 95 : Rarity == ShopRarity.Uncommon ? 55 : 30;
-    public string RarityLabel => Rarity == ShopRarity.Rare ? "희귀" : Rarity == ShopRarity.Uncommon ? "고급" : "일반";
 
     public SubjectType Subject { get; internal set; } = SubjectType.None;
     public ConditionType Condition { get; internal set; } = ConditionType.None;
@@ -124,7 +123,7 @@ public static class ShopCatalog
             Result = ResultType.IncreaseSpeed,
             Id = "result.speed", Rarity = ShopRarity.Common,
             Label = "이속 증가",
-            Detail = "이동속도가 증가한다 · +40%"
+            Detail = "이동속도가 증가한다 · +40%, 5초"
         },
         new ShopEntry
         {

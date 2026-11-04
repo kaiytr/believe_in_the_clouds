@@ -2,12 +2,12 @@ using System;
 using UnityEngine;
 
 // 교리 슬롯(재단의 교리 칸) 개수 저장소.
-// - 기본 3칸에서 시작해 상점에서 구매할 때마다 1칸씩 늘어난다.
+// - 기본 1칸이 주어지고, 상점에서 구매할 때마다 1칸씩 늘어난다.
 // - 메모리 전용(DontDestroyOnLoad), 디스크 저장 없음. 인벤토리와 같은 정책.
 // - 재단 화면과 상점 화면은 이 개수를 구독해 UI를 늘린다.
 public class DoctrineSlotStore : MonoBehaviour
 {
-    public const int DefaultSlots = 3;
+    public const int DefaultSlots = 1;
 
     public static DoctrineSlotStore Instance { get; private set; }
 

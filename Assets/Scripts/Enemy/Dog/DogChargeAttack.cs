@@ -282,8 +282,9 @@ public class DogChargeAttack : EnemyAttack
         IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
         if (damageable == null && player != null)
             damageable = player.GetComponentInChildren<IDamageable>();
+        float attackDamage = damage * DoctrineAttackMultiplier;
         playerContactAppliedHarm = damageable != null &&
-                                   damageable.TakeDamage(new DamageInfo(damage, DamageSource.Enemy, gameObject, "돌진"));
+                                   damageable.TakeDamage(new DamageInfo(attackDamage, DamageSource.Enemy, gameObject, "돌진"));
         if (playerContactAppliedHarm) NotifyPlayerHpDamageApplied(CurrentAttackId);
     }
 

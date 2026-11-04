@@ -5,8 +5,8 @@ using UnityEngine;
 // instead of adding branches per doctrine.
 // Table-fixed values (DoctrineTable) are the defaults:
 //   Explode       = 30% of exploder max HP, friends and foes alike (incl. self)
-//   IncreaseSpeed = x1.4 persistent (re-applied by manager while equipped)
-//   IncreaseAttack= x1.2 for 5s
+//   IncreaseSpeed = x1.4 for 5s, 10s cooldown (replace)
+//   IncreaseAttack= x1.2 for 5s, 10s cooldown (replace)
 //   Heal          = 10% of max HP
 // Doctrine.Magnitude (>0) acts as an explicit damage/amount override when set.
 public static class DoctrineEffectExecutor
@@ -16,6 +16,11 @@ public static class DoctrineEffectExecutor
     private static readonly HashSet<IHealth> OverlapSeen = new HashSet<IHealth>();
     public const float DefaultExplodeRadius = 3f;
     public const float DefaultAttackBuffDuration = 5f;
+
+    // 폭발 데미지를 적용하는 동안 true. 이 사이에 TakeDamage가 일으키는
+    // OnHit/LowHealth/OnDeath 이벤트는 DoctrineManager가 무시한다.
+    // 없으면 "맞은 적이 또 폭발 → 그 폭발에 맞은 적이 또 폭발" 연쇄로 맵이 쓸린다.
+    public static bool IsApplyingDoctrineDamage { get; private set; }
 
     public static bool IsSupported(ResultType result)
     {
@@ -49,7 +54,7 @@ public static class DoctrineEffectExecutor
                 return ExecuteSpeedBuff(
                     target,
                     1f + DoctrineTable.SpeedIncreaseRatio,
-                    0f); // persistent (no revert)
+                    ResolveDuration(doctrine.Duration, DoctrineTable.SpeedBuffDuration));
 
             case ResultType.IncreaseAttack:
                 return ExecuteAttackBuff(
@@ -86,6 +91,8 @@ public static class DoctrineEffectExecutor
         }
 
         health.Heal(amount);
+        // 실제 회복량이 0이어도(이미 가득 참) "교리가 발동했다"는 피드백은 보여준다.
+        DoctrineHealEffect.Play(target);
         return true;
     }
 
@@ -111,47 +118,59 @@ public static class DoctrineEffectExecutor
         }
 
         health.Heal(amount);
+        DoctrineHealEffect.Play(target);
         return true;
     }
 
-    public static bool ExecuteAttackBuff(GameObject target, float multiplier, float duration)
+    private static DoctrineStats ResolveDoctrineStats(GameObject target)
     {
         if (target == null)
         {
-            return false;
+            return null;
         }
 
         DoctrineStats stats = target.GetComponent<DoctrineStats>();
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: {target.name} has no DoctrineStats.");
+            // Enemies and bosses opt into doctrines without prefab edits:
+            // keep the rule engine common, attach the stat holder on demand.
+            stats = target.AddComponent<DoctrineStats>();
+        }
+
+        return stats;
+    }
+
+    public static bool ExecuteAttackBuff(GameObject target, float multiplier, float duration)
+    {
+        DoctrineStats stats = ResolveDoctrineStats(target);
+        if (stats == null)
+        {
+            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: target is null.");
             return false;
         }
 
         stats.ApplyAttackBuff(multiplier, duration);
+        DoctrineHealEffect.PlayAttackBuff(target);
         return true;
     }
 
     public static bool ExecuteSpeedBuff(GameObject target, float multiplier, float duration)
     {
-        if (target == null)
-        {
-            return false;
-        }
-
-        DoctrineStats stats = target.GetComponent<DoctrineStats>();
+        DoctrineStats stats = ResolveDoctrineStats(target);
         if (stats == null)
         {
-            Debug.LogWarning($"[Doctrine] Speed change failed: {target.name} has no DoctrineStats.");
+            Debug.LogWarning($"[Doctrine] Speed change failed: target is null.");
             return false;
         }
 
         stats.ApplySpeedBuff(multiplier, duration);
+        DoctrineHealEffect.PlaySpeedBuff(target);
         return true;
     }
 
     // Table explode: ratio of the exploder's max HP, friends and foes alike (incl. self).
     // damageOverride (>0) replaces the ratio damage (legacy params / tuning).
+    // The visual plays even when damage is 0: the feedback (range flash) is shown regardless.
     public static bool ExecuteExplodeMaxRatio(
         GameObject center,
         float ratio,
@@ -172,6 +191,9 @@ public static class DoctrineEffectExecutor
             damage = maxHp * ratio;
         }
 
+        float effectRadius = radius > 0f ? radius : DefaultExplodeRadius;
+        DoctrineExplodeEffect.Play(center, effectRadius);
+
         if (damage <= 0f)
         {
             return false;
@@ -187,6 +209,8 @@ public static class DoctrineEffectExecutor
         {
             return false;
         }
+
+        DoctrineExplodeEffect.Play(center, radius > 0f ? radius : DefaultExplodeRadius);
 
         List<IHealth> targets = FindTargetsInRadius(center, radius);
         return ApplyExplodeDamage(targets, damage, source, null);
@@ -212,7 +236,8 @@ public static class DoctrineEffectExecutor
                 continue;
             }
 
-            IHealth health = hit.GetComponent<IHealth>();
+            IHealth health = hit.GetComponent<IHealth>()
+                ?? hit.GetComponentInParent<IHealth>();
             if (health == null)
             {
                 continue;
@@ -241,23 +266,31 @@ public static class DoctrineEffectExecutor
             return false;
         }
 
-        int hitCount = 0;
-        foreach (IHealth health in targets)
+        IsApplyingDoctrineDamage = true;
+        try
         {
-            if (health == null || health == exclude)
+            int hitCount = 0;
+            foreach (IHealth health in targets)
             {
-                continue;
+                if (health == null || health == exclude)
+                {
+                    continue;
+                }
+
+                health.TakeDamage(damage, source);
+                hitCount++;
             }
 
-            health.TakeDamage(damage, source);
-            hitCount++;
+            if (VerboseLogs)
+            {
+                Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
+            }
+            return true;
         }
-
-        if (VerboseLogs)
+        finally
         {
-            Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
+            IsApplyingDoctrineDamage = false;
         }
-        return true;
     }
 
     private static float ResolveDuration(float value, float defaultValue)

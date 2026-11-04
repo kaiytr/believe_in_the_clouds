@@ -14,7 +14,7 @@ public class DoctrineDefinition : ScriptableObject
     [Tooltip("효과 수치: 명시 피해/회복량 오버라이드. 0이면 표 고정값(비율) 사용.")]
     public float Magnitude;
 
-    [Tooltip("지속 시간(초). 0이면 표 고정값(피해증가 5초, 이속 영속) 사용. 피해증가 오버라이드용.")]
+    [Tooltip("지속 시간(초). 0이면 표 고정값(이속/피해증가 5초) 사용. 오버라이드용.")]
     public float Duration;
 
     [Tooltip("Explode 반경. 0이면 표 고정값(3) 사용.")]

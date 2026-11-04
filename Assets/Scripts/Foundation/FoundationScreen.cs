@@ -15,7 +15,7 @@ using UnityEngine;
 public class FoundationScreen : MonoBehaviour
 {
     // DoctrineSlotStore.DefaultSlots와 같은 기본값. 저장소가 아직 없을 때의 예비값.
-    private const int FallbackDoctrineCount = 3;
+    private const int FallbackDoctrineCount = 1;
 
     private const int ColumnCount = 3;
 
@@ -270,7 +270,8 @@ public class FoundationScreen : MonoBehaviour
     // (가용 = 보유 - 슬롯 사용중)
     private void HandleItemDroppedOnSlot(int entryIndex, int doctrineIndex, ShopColumn targetColumn)
     {
-        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count)
+        if (doctrineIndex < 0 || doctrineIndex >= slotRows.Count
+            || panel == null || !panel.IsUnlocked(doctrineIndex))
         {
             return;
         }
@@ -316,6 +317,7 @@ public class FoundationScreen : MonoBehaviour
     {
         if (fromDoctrine < 0 || fromDoctrine >= slotRows.Count) return;
         if (toDoctrine < 0 || toDoctrine >= slotRows.Count) return;
+        if (panel == null || !panel.IsUnlocked(fromDoctrine) || !panel.IsUnlocked(toDoctrine)) return;
         if (fromColumn != toColumn) return;
         if (fromDoctrine == toDoctrine && fromColumn == toColumn) return;
         ShopEntry moving = GetSlot(fromDoctrine, fromColumn);

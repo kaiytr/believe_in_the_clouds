@@ -4,7 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(BeliefController))]
-public abstract class EnemyUnit : MonoBehaviour, IDamageable
+public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 {
     [Header("Stats")]
     [SerializeField] protected float maxHp = 30f;
@@ -58,6 +58,21 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
     public BeliefController Belief => beliefController;
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
+    float IHealth.CurrentHealth => currentHp;
+    float IHealth.MaxHealth => maxHp;
+    bool IHealth.IsDead => IsDead;
+    void IHealth.TakeDamage(float amount, GameObject source)
+    {
+        TakeDamage(new DamageInfo(amount, DamageSource.Doctrine, source));
+    }
+    void IHealth.Heal(float amount)
+    {
+        if (IsDead || amount <= 0f)
+            return;
+        currentHp = Mathf.Max(0f, Mathf.Min(maxHp, currentHp + amount));
+        beliefView?.UpdateHealth(currentHp, maxHp);
+    }
+    private bool lowHealthNotified;
     public float ReferencePlayerMoveSpeed => targetMovement != null ? targetMovement.BaseMoveSpeed : 0f;
     public float FacingDirection => GetActiveAttackDirection();
     public bool HasCombatTarget => HasValidTarget();
@@ -123,7 +138,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (IsDead || movementLocked)
             return;
 
-        rb.linearVelocity = new Vector2(moveInput * ReferencePlayerMoveSpeed * moveSpeedRatio, rb.linearVelocity.y);
+        DoctrineStats doctrineStats = GetComponent<DoctrineStats>();
+        float doctrineMultiplier = doctrineStats != null ? doctrineStats.SpeedMultiplier : 1f;
+        rb.linearVelocity = new Vector2(moveInput * ReferencePlayerMoveSpeed * moveSpeedRatio * doctrineMultiplier, rb.linearVelocity.y);
     }
 
     protected abstract void UpdateAI();
@@ -344,7 +361,10 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
             return false;
 
         PlayerAttackContext playerAttack = damageInfo.PlayerAttack;
-        if (playerAttack != null &&
+        // Doctrine damage (e.g. explode chains) has no PlayerAttackContext:
+        // skip the combo bookkeeping, still apply HP + OnHit like normal hits.
+        bool doctrineDamage = damageInfo.Source == DamageSource.Doctrine;
+        if (!doctrineDamage && playerAttack != null &&
             (playerAttack.Actor == null || target == null || playerAttack.Actor != target.gameObject ||
              damageInfo.HitIndex < 0 || !playerAttack.Begin(this)))
             return false;
@@ -355,7 +375,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         if (finalDamage <= 0f)
             return false;
 
-        if (playerAttack != null && !playerAttack.TryConsumeHit(this, damageInfo.HitIndex))
+        if (!doctrineDamage && playerAttack != null && !playerAttack.TryConsumeHit(this, damageInfo.HitIndex))
             return false;
         float previousHp = currentHp;
         Bounds enemyBounds = bodyCollider != null ? bodyCollider.bounds : default;
@@ -363,6 +383,15 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable
         float facing = FacingDirection;
         currentHp = Mathf.Max(0f, currentHp - finalDamage);
         beliefView?.UpdateHealth(currentHp, maxHp);
+        if (DoctrineEventBus.HasListeners)
+        {
+            DoctrineEventBus.Raise(ConditionType.OnHit, gameObject, damageInfo.Attacker);
+            if (!IsDead && !lowHealthNotified && currentHp <= maxHp * 0.3f)
+            {
+                lowHealthNotified = true;
+                DoctrineEventBus.Raise(ConditionType.LowHealth, gameObject, damageInfo.Attacker);
+            }
+        }
         if (currentHp <= 0f)
             Die();
         else if (playerAttack != null && playerAttack.CountsForBelief && targetBodyCollider != null)

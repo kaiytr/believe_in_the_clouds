@@ -11,7 +11,7 @@ using UnityEngine;
 // One doctrine's execution never stops the remaining doctrines.
 // Table rules:
 //   Heal has a per-doctrine 20s cooldown (keyed by doctrine rule + owner).
-//   IncreaseSpeed (+40%) is persistent: re-applied on every matching event.
+//   IncreaseSpeed / IncreaseAttack: 5s duration, 10s cooldown, replace (never stack).
 public class DoctrineManager : MonoBehaviour
 {
     public static DoctrineManager Instance { get; private set; }
@@ -117,10 +117,6 @@ public class DoctrineManager : MonoBehaviour
 
         entry = new ActiveDoctrine(doctrine.Clone(), owner);
         activeDoctrines.Add(entry);
-        if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
-        {
-            ReapplyPersistentSpeed(entry);
-        }
 
         if (verboseLogs)
         {
@@ -153,10 +149,7 @@ public class DoctrineManager : MonoBehaviour
 
         ActiveDoctrine removed = activeDoctrines[index];
         activeDoctrines.RemoveAt(index);
-        if (removed.Doctrine != null && removed.Doctrine.Result == ResultType.IncreaseSpeed)
-        {
-            RefreshPersistentSpeed(removed.Owner, removed.Doctrine);
-        }
+        ClearRemovedBuff(removed);
 
         RemoveCooldownsFor(removed);
         if (verboseLogs)
@@ -184,22 +177,28 @@ public class DoctrineManager : MonoBehaviour
 
     public void Clear()
     {
-        // Reset persistent speed buffs held by owners.
+        // 해제 시 남아 있는 이속/피해 버프도 함께 지운다.
         for (int i = 0; i < activeDoctrines.Count; i++)
         {
             ActiveDoctrine entry = activeDoctrines[i];
-            if (entry == null || entry.Doctrine == null)
+            if (entry == null || entry.Doctrine == null || entry.Owner == null)
             {
                 continue;
             }
 
-            if (entry.Doctrine.Result == ResultType.IncreaseSpeed && entry.Owner != null)
+            DoctrineStats stats = entry.Owner.GetComponent<DoctrineStats>();
+            if (stats == null)
             {
-                DoctrineStats stats = entry.Owner.GetComponent<DoctrineStats>();
-                if (stats != null)
-                {
-                    stats.ClearPersistentSpeedBuff();
-                }
+                continue;
+            }
+
+            if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
+            {
+                stats.ClearSpeedBuff();
+            }
+            else if (entry.Doctrine.Result == ResultType.IncreaseAttack)
+            {
+                stats.ClearAttackBuff();
             }
         }
 
@@ -214,6 +213,13 @@ public class DoctrineManager : MonoBehaviour
 
     public void NotifyEvent(DoctrineEventData evt)
     {
+        // 폭발 데미지 적용 중에 TakeDamage가 일으키는 OnHit/LowHealth/OnDeath은 무시한다.
+        // 없으면 "맞은 적이 또 폭발 → 그 폭발에 맞은 적이 또 폭발" 연쇄로 맵이 쓸린다.
+        if (DoctrineEffectExecutor.IsApplyingDoctrineDamage)
+        {
+            return;
+        }
+
         // No active doctrines: return without GetComponent/snapshot allocs.
         if (activeDoctrines.Count == 0)
         {
@@ -274,10 +280,6 @@ public class DoctrineManager : MonoBehaviour
                     if (ok)
                     {
                         MarkCooldown(entry, target);
-                        if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
-                        {
-                            ReapplyPersistentSpeed(entry);
-                        }
                     }
 
                     if (verboseLogs)
@@ -446,6 +448,17 @@ public class DoctrineManager : MonoBehaviour
             return DoctrineTable.ExplodeCooldownSec;
         }
 
+        // 이속/피해 증가: 지속 5초 · 쿨 10초.
+        if (doctrine.Result == ResultType.IncreaseSpeed)
+        {
+            return DoctrineTable.SpeedCooldownSec;
+        }
+
+        if (doctrine.Result == ResultType.IncreaseAttack)
+        {
+            return DoctrineTable.AttackCooldownSec;
+        }
+
         return 0f;
     }
 
@@ -462,57 +475,44 @@ public class DoctrineManager : MonoBehaviour
         return CooldownPrefix(entry) + targetId;
     }
 
-    // Persistent +40% speed: assert it on activate and on every matching event
-    // so revives / stat resets cannot silently drop it.
-    private static void ReapplyPersistentSpeed(ActiveDoctrine entry)
+    // 해제된 교리가 걸어둔 이속/피해 버프만 정리한다.
+    // 같은 결과의 교리가 아직 남아 있으면 그 버프는 건드리지 않는다.
+    private void ClearRemovedBuff(ActiveDoctrine removed)
     {
-        if (entry == null || entry.Doctrine == null)
+        if (removed == null || removed.Doctrine == null || removed.Owner == null)
         {
             return;
         }
 
-        GameObject owner = entry.Owner;
-        if (owner == null)
+        ResultType result = removed.Doctrine.Result;
+        if (result != ResultType.IncreaseSpeed && result != ResultType.IncreaseAttack)
         {
             return;
         }
 
-        DoctrineStats stats = owner.GetComponent<DoctrineStats>();
-        if (stats == null)
-        {
-            return;
-        }
-
-        stats.ApplySpeedBuff(1f + DoctrineTable.SpeedIncreaseRatio, 0f);
-    }
-
-    // Removing one IncreaseSpeed doctrine while others remain must keep x1.4.
-    private void RefreshPersistentSpeed(GameObject owner, Doctrine removed)
-    {
-        if (owner == null || removed == null)
-        {
-            return;
-        }
-
-        DoctrineStats stats = owner.GetComponent<DoctrineStats>();
-        if (stats == null)
-        {
-            return;
-        }
-
-        stats.ClearPersistentSpeedBuff();
         for (int i = 0; i < activeDoctrines.Count; i++)
         {
             ActiveDoctrine entry = activeDoctrines[i];
-            if (entry == null || entry.Doctrine == null || entry.Owner != owner)
+            if (entry != null && entry.Owner == removed.Owner
+                && entry.Doctrine != null && entry.Doctrine.Result == result)
             {
-                continue;
+                return;
             }
+        }
 
-            if (entry.Doctrine.Result == ResultType.IncreaseSpeed)
-            {
-                stats.ApplySpeedBuff(1f + DoctrineTable.SpeedIncreaseRatio, 0f);
-            }
+        DoctrineStats stats = removed.Owner.GetComponent<DoctrineStats>();
+        if (stats == null)
+        {
+            return;
+        }
+
+        if (result == ResultType.IncreaseSpeed)
+        {
+            stats.ClearSpeedBuff();
+        }
+        else
+        {
+            stats.ClearAttackBuff();
         }
     }
 }

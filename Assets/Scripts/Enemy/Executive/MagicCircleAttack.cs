@@ -66,7 +66,7 @@ public class MagicCircleAttack : EnemyAttack
         MagicCircle circle = Instantiate(magicCirclePrefab, lockedTargetPosition, Quaternion.identity);
         bool harmfulEffectApplied = circle.Activate(
             circleRadius,
-            damage,
+            damage * DoctrineAttackMultiplier,
             slowMultiplier,
             slowDuration,
             circleVisualDuration,

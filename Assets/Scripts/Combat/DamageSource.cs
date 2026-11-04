@@ -2,5 +2,6 @@ public enum DamageSource
 {
     PlayerOwned,
     Enemy,
-    Environment
+    Environment,
+    Doctrine
 }
