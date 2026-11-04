@@ -623,6 +623,24 @@ TextureImporter:
   - first:
       213: 7884531935328584586
     second: PlatformerTerrain_206
+  - first:
+      213: 188700001
+    second: InteriorWall
+  - first:
+      213: 188700002
+    second: InteriorCornice
+  - first:
+      213: 188700003
+    second: InteriorArcade
+  - first:
+      213: 188700004
+    second: InteriorColumnShaft
+  - first:
+      213: 188700005
+    second: InteriorColumnCapital
+  - first:
+      213: 188700006
+    second: InteriorColumnBase
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -666,7 +684,7 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 16
@@ -1509,6 +1527,138 @@ TextureImporter:
       indices:
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: InteriorWall
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1120
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e14ab4012af456c188f96efe6ba7b3de
+      internalID: 188700001
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorCornice
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 1056
+        width: 112
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 97362b7be6f85b8d99f8da118437fac0
+      internalID: 188700002
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorArcade
+      rect:
+        serializedVersion: 2
+        x: 1088
+        y: 912
+        width: 144
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58403838ddb35ef49c678f70391d77d3
+      internalID: 188700003
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnShaft
+      rect:
+        serializedVersion: 2
+        x: 1392
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: adbd06fdefb045d48a3c1cf716fc27ac
+      internalID: 188700004
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnCapital
+      rect:
+        serializedVersion: 2
+        x: 1424
+        y: 1152
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e70e4cd81a6147ebbf1dae740d144a6d
+      internalID: 188700005
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnBase
+      rect:
+        serializedVersion: 2
+        x: 1424
+        y: 1008
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 71d0fe95c7b04556825cf176bf03669d
+      internalID: 188700006
+      vertices: []
+      indices:
+      edges: []
+      weights: []
     outline: []
     customData:
     physicsShape: []
@@ -1559,6 +1709,12 @@ TextureImporter:
       Stone2_2: 491889807
       Stone2_3: 2088852535
       Window: 322375353
+      InteriorWall: 188700001
+      InteriorCornice: 188700002
+      InteriorArcade: 188700003
+      InteriorColumnShaft: 188700004
+      InteriorColumnCapital: 188700005
+      InteriorColumnBase: 188700006
   mipmapLimitGroupName:
   pSDRemoveMatte: 0
   userData:
