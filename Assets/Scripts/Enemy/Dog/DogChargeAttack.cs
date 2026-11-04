@@ -129,7 +129,8 @@ public class DogChargeAttack : EnemyAttack
         indicator.SetupFollowing(
             transform,
             new Vector2(lockedDirectionX, 0f),
-            new Vector2(chargeDistance, indicatorHeight));
+            new Vector2(chargeDistance, indicatorHeight),
+            showDirectionMarker: false);
         return indicator;
     }
 

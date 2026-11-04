@@ -52,7 +52,8 @@ public class DangerIndicator : MonoBehaviour
         UpdateDirectionMarker();
     }
 
-    public void SetupFollowing(Transform followTarget, Vector2 direction, Vector2 size)
+    public void SetupFollowing(Transform followTarget, Vector2 direction, Vector2 size,
+        bool showDirectionMarker = true)
     {
         this.followTarget = followTarget;
         lockedDirection = direction.normalized;
@@ -60,7 +61,7 @@ public class DangerIndicator : MonoBehaviour
         followOffset = lockedDirection * (indicatorSize.x * 0.5f);
         followAngle = Mathf.Atan2(lockedDirection.y, lockedDirection.x) * Mathf.Rad2Deg;
         followTargetEnabled = true;
-        SetDirection(lockedDirection);
+        SetDirection(showDirectionMarker ? lockedDirection : Vector2.zero);
         UpdateFollowPosition();
         SetProgress(0f);
     }
