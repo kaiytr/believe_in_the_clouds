@@ -7,9 +7,12 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(1100)]
 public sealed class PlayerDeathCoordinator : MonoBehaviour
 {
-    private const float DeathTimeScale = .5f;
+    private const float DeathTimeScale = .25f;
     private const float ZoomDuration = .55f;
     private const float ZoomLensScale = .6f;
+    private const float ResultDelayAfterDeathAnimation = 2f;
+    private const float DeathGroundSnapDistance = 20f;
+    private const float WalkableGroundNormalMinimum = .65f;
 
     private string lifeId = Guid.NewGuid().ToString("N");
     private IEquipmentAdapter equipment;
@@ -66,6 +69,14 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     public void CaptureDeath(Action processExistingDeathEffects, string cause = "알 수 없는 원인")
     {
         if (HasResult || IsResultOpen) return;
+        if (TryGetComponent(out deathBody))
+        {
+            bodyConstraints = deathBody.constraints;
+            SnapBodyToGround();
+            deathBody.linearVelocity = Vector2.zero;
+            deathBody.angularVelocity = 0f;
+            deathBody.constraints = RigidbodyConstraints2D.FreezeAll;
+        }
         PrepareDeath(cause);
         HasResult = true; Active = this;
         equipment = equipment ?? new PlayerEquipmentAdapter(gameObject);
@@ -75,25 +86,60 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
         QueueCapture();
         UiModal.Push(this);
         DisableControls();
-        if (TryGetComponent(out deathBody))
-        {
-            bodyConstraints = deathBody.constraints;
-            deathBody.linearVelocity = Vector2.zero;
-            deathBody.angularVelocity = 0f;
-            deathBody.constraints = RigidbodyConstraints2D.FreezeAll;
-        }
         StartCoroutine(ShowResultAfterDeathAnimation());
     }
+
+    private void SnapBodyToGround()
+    {
+        PlayerHealth health = GetComponent<PlayerHealth>();
+        Collider2D bodyCollider = health != null ? health.BodyCollider : GetComponent<Collider2D>();
+        if (deathBody == null || bodyCollider == null)
+            return;
+
+        PlayerMove movement = GetComponent<PlayerMove>();
+        int groundMask = movement != null ? movement.GroundLayer.value : 0;
+        if (groundMask == 0)
+            groundMask = LayerMask.GetMask("Ground");
+        if (groundMask == 0)
+            return;
+
+        Bounds bounds = bodyCollider.bounds;
+        Vector2 origin = bounds.center;
+        var hits = CombatPhysics.Raycast(origin, Vector2.down, DeathGroundSnapDistance, groundMask);
+        float nearestDistance = float.MaxValue;
+        RaycastHit2D groundHit = default;
+        for (int i = 0; i < hits.Count; i++)
+        {
+            RaycastHit2D hit = hits[i];
+            if (hit.collider == null || hit.normal.y < WalkableGroundNormalMinimum ||
+                hit.distance >= nearestDistance)
+                continue;
+
+            nearestDistance = hit.distance;
+            groundHit = hit;
+        }
+
+        if (groundHit.collider == null)
+            return;
+
+        Vector2 position = deathBody.position;
+        position.y += groundHit.point.y - bounds.min.y;
+        deathBody.position = position;
+        Physics2D.SyncTransforms();
+    }
+
     private IEnumerator ShowResultAfterDeathAnimation()
     {
         var animation = GetComponent<PlayerIdleSpriteAnimator>();
+        BeginCameraZoom();
+        Time.timeScale = DeathTimeScale;
         if (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
         {
-            BeginCameraZoom();
-            Time.timeScale = DeathTimeScale;
             while (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
                 yield return null;
         }
+
+        yield return new WaitForSecondsRealtime(ResultDelayAfterDeathAnimation);
         Time.timeScale = 0f;
         view = DeathResultView.Create(Result, capture, Continue, SaveAndExit);
         if (!LastResult.Success) view.SetError("사망 기록 저장 실패 · 저장 공간을 확인한 뒤 다시 시도해 주세요.");
