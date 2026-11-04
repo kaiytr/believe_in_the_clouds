@@ -58,6 +58,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public Rigidbody2D Body => body;
     public Collider2D BodyCollider => bodyCollider;
     public SpriteRenderer BodyRenderer => presentation != null ? presentation.BodyRenderer : null;
+    internal BossCombatView Presentation => presentation;
     public PlayerHealth PlayerHealth => playerHealth;
     public PlayerAttack PlayerAttack => playerAttack;
     public Collider2D PlayerCollider => playerHealth != null ? playerHealth.BodyCollider : null;
@@ -317,6 +318,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         body.position = spawnPosition;
         body.linearVelocity = Vector2.zero;
         body.angularVelocity = 0f;
+        body.simulated = true;
         bodyCollider.enabled = true;
         if (playerHealth != null && savedPlayerSpawn)
         {
@@ -663,12 +665,13 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         cueDuration = cueEndsAt = 0f;
         cueTitle = "전투 대기"; cueHint = "공격 예고를 보고 대응하세요.";
         CueState = BossPresentationState.Idle;
+        SetPresentation(BossPresentationState.Idle);
         foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
         activeAttacks.Clear();
         generation++;
         nextPatternSearchAt = 0f;
         if (hazards != null) hazards.Cancel();
-        if (attacks != null) attacks.ClearAfterimages();
+        if (attacks != null) attacks.ClearPresentationEffects();
         if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
         effects.Clear();
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
@@ -683,6 +686,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         SetContactDamageSuppressed(true);
         CancelCombat(true);
         body.linearVelocity = Vector2.zero;
+        body.simulated = false;
         bodyCollider.enabled = false;
         SetPresentation(BossPresentationState.Dead);
         SetStatus("보스 격파");

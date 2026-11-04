@@ -31,6 +31,7 @@ public class PlayerDash : MonoBehaviour
     private PlayerAttack attack;
     private PlayerHealth health;
     private SpriteRenderer bodyVisual;
+    private PlayerIdleSpriteAnimator spriteAnimator;
     private CombatAfterimageEmitter afterimages;
 
     private float cooldownRemaining;
@@ -47,6 +48,7 @@ public class PlayerDash : MonoBehaviour
         health = GetComponent<PlayerHealth>();
         bodyVisual = GetComponent<SpriteRenderer>();
         if (bodyVisual == null) bodyVisual = GetComponentInChildren<SpriteRenderer>();
+        spriteAnimator = GetComponent<PlayerIdleSpriteAnimator>();
         afterimages = GetComponent<CombatAfterimageEmitter>();
         if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
     }
@@ -88,6 +90,7 @@ public class PlayerDash : MonoBehaviour
     private IEnumerator DashRoutine(float dir)
     {
         isDashing = true;
+        spriteAnimator?.ShowDashFrame();
         health?.SetDashInvulnerability(true);
         cooldownRemaining = cooldown;
         playerMove.ControlLocked = true;

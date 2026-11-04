@@ -295,7 +295,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.85, y: 1.9, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1162096181225999556}
@@ -349,7 +349,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: d923fef7a1f10764bb74f97c25d3daac, type: 3}
+  m_Sprite: {fileID: 40293810, guid: 6e43cac9035adaa4f9a54b310d91ff1f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1518,6 +1518,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatView
   visualRoot: {fileID: 1162096181225999556}
   bodyRenderer: {fileID: 6532656600797935484}
+  idleFrames:
+  - {fileID: 40293810, guid: 6e43cac9035adaa4f9a54b310d91ff1f, type: 3}
+  - {fileID: -1787704530, guid: 6e43cac9035adaa4f9a54b310d91ff1f, type: 3}
+  - {fileID: -246447750, guid: 6e43cac9035adaa4f9a54b310d91ff1f, type: 3}
+  walkFrames:
+  - {fileID: 931412484, guid: 8e1149308c9a4764596570b4001d681e, type: 3}
+  - {fileID: 2107644248, guid: 8e1149308c9a4764596570b4001d681e, type: 3}
+  - {fileID: -358371752, guid: 8e1149308c9a4764596570b4001d681e, type: 3}
+  - {fileID: 1092155352, guid: 8e1149308c9a4764596570b4001d681e, type: 3}
+  jumpFrames:
+  - {fileID: -775717642, guid: c982a4351b7d16943aa14857388e943c, type: 3}
+  - {fileID: 642154665, guid: c982a4351b7d16943aa14857388e943c, type: 3}
+  - {fileID: 556058855, guid: c982a4351b7d16943aa14857388e943c, type: 3}
+  deathFrames:
+  - {fileID: 913199634, guid: 3ec88585d3c39b845b823e477e5665f1, type: 3}
+  - {fileID: -1320215561, guid: 3ec88585d3c39b845b823e477e5665f1, type: 3}
+  - {fileID: 1915717375, guid: 3ec88585d3c39b845b823e477e5665f1, type: 3}
+  dashFrame: {fileID: 2081772474, guid: d3f9dc07769483e419a8dde6b3cb72fc, type: 3}
+  attack1Frames:
+  - {fileID: -1695398395, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: 1282947596, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: -2106894071, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  attack2Frames:
+  - {fileID: 1082018363, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: 1002836451, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: -1627738312, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  attack3Frames:
+  - {fileID: 1999565980, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: -774238608, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  - {fileID: 833590121, guid: 64d514d994409fc4d8eea81200d38684, type: 3}
+  downAttackFrames:
+  - {fileID: 631285101, guid: cda5ba0652d52ac4785e9ea2873cc943, type: 3}
+  - {fileID: -1235497227, guid: cda5ba0652d52ac4785e9ea2873cc943, type: 3}
+  - {fileID: -1113051713, guid: cda5ba0652d52ac4785e9ea2873cc943, type: 3}
 --- !u!114 &8484944337649362339
 MonoBehaviour:
   m_ObjectHideFlags: 0

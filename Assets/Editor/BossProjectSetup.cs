@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -177,6 +178,7 @@ public static class BossProjectSetup
         var visualRoot = new GameObject("VisualRoot").transform; visualRoot.SetParent(root.transform, false);
         var bodyRenderer = Part(visualRoot, "Body", Vector2.zero, new Vector2(.85f,1.9f), Color.white, square, 10);
         var view = root.AddComponent<BossCombatView>(); Set(view,"visualRoot",visualRoot); Set(view,"bodyRenderer",bodyRenderer);
+        ConfigureBossSprites(view, bodyRenderer);
         Set(controller,"presentation",view);
         var hud = BuildHud(root.transform); Set(controller,"hud",hud);
         PrefabUtility.SaveAsPrefabAsset(root, BossPath); Object.DestroyImmediate(root);
@@ -200,11 +202,44 @@ public static class BossProjectSetup
             var renderer = Part(visualRoot,"Body",Vector2.zero,root.GetComponent<CapsuleCollider2D>().size,Color.white,square,10);
             var view = root.GetComponent<BossCombatView>();
             Set(view,"visualRoot",visualRoot); Set(view,"bodyRenderer",renderer);
+            ConfigureBossSprites(view, renderer);
             PrefabUtility.SaveAsPrefabAsset(root,BossPath);
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         AssetDatabase.SaveAssets();
-        Debug.Log("Boss placeholder updated to one rectangle; BossTest scene preserved.");
+        Debug.Log("Boss body updated; BossTest scene preserved.");
+    }
+
+    internal static void ConfigureBossSprites(BossCombatView view, SpriteRenderer renderer)
+    {
+        Sprite[] Frames(string name) => AssetDatabase.LoadAllAssetsAtPath("Assets/Design/Boss/" + name + ".png")
+            .OfType<Sprite>().OrderBy(sprite => sprite.name, StringComparer.Ordinal).ToArray();
+
+        Sprite[] idle = Frames("BossIdle");
+        if (idle.Length == 0) return;
+
+        Sprite[] attack = Frames("BossAttack");
+        var data = new SerializedObject(view);
+        void SetFrames(string field, Sprite[] frames)
+        {
+            SerializedProperty property = data.FindProperty(field);
+            property.arraySize = frames.Length;
+            for (int i = 0; i < frames.Length; i++)
+                property.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
+        }
+
+        SetFrames("idleFrames", idle);
+        SetFrames("walkFrames", Frames("BossWalk"));
+        SetFrames("jumpFrames", Frames("BossJump"));
+        SetFrames("deathFrames", Frames("BossDeath"));
+        SetFrames("attack1Frames", attack.Take(3).ToArray());
+        SetFrames("attack2Frames", attack.Skip(3).Take(3).ToArray());
+        SetFrames("attack3Frames", attack.Skip(6).Take(3).ToArray());
+        SetFrames("downAttackFrames", Frames("BossDownAttack"));
+        data.FindProperty("dashFrame").objectReferenceValue = Frames("BossDash").FirstOrDefault();
+        data.ApplyModifiedPropertiesWithoutUndo();
+        renderer.sprite = idle[0];
+        renderer.transform.localScale = Vector3.one;
     }
 
     [MenuItem("Tools/Boss/Upgrade pattern UX (preserve BossTest scene)")]

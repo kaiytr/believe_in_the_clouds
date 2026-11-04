@@ -8,14 +8,23 @@ public sealed class BossAttackExecutor : MonoBehaviour
     private static readonly WaitForFixedUpdate PhysicsTick = new WaitForFixedUpdate();
     private BossCombatController owner;
     private CombatAfterimageEmitter afterimages;
+    private DownFanImpactEffect bladeEffect;
     private BossCombatSettings Data => owner.Settings;
     public void Initialize(BossCombatController boss)
     {
         owner = boss;
         afterimages = GetComponent<CombatAfterimageEmitter>();
         if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
+        bladeEffect = GetComponent<DownFanImpactEffect>();
+        if (bladeEffect == null) bladeEffect = gameObject.AddComponent<DownFanImpactEffect>();
+        bladeEffect.SetSortingLayer(owner.BodyRenderer.sortingLayerID, owner.BodyRenderer.sortingOrder);
     }
-    public void ClearAfterimages() => afterimages?.Clear();
+
+    public void ClearPresentationEffects()
+    {
+        afterimages?.Clear();
+        bladeEffect?.Clear();
+    }
 
     public bool TryGetMeleeGeometry(out AttackGeometry geometry)
     {
@@ -142,6 +151,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
             warningDuration = Mathf.Max(.001f, warningDuration);
             owner.SetActionCue(label, hint, BossPresentationState.Windup, warningDuration);
+            int animationIndex = Mathf.Max(0, hitIndex - 1);
+            owner.Presentation.ShowMelee(animationIndex);
             float warningStartedAt = Time.time;
             float warningEndsAt = warningStartedAt + warningDuration;
             float lungeDistance = step.windupTime > 0f
@@ -200,8 +211,14 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float activeDuration = Data.MeleeActiveTime / owner.SpeedMultiplier;
             float activeEndsAt = Time.time + activeDuration;
             owner.SetActionCue(label, hint, BossPresentationState.Active, activeDuration);
-            slash = owner.SpawnEffect(Data.SlashPrefab);
-            slash.Show(record.Geometry, Data.AttackOrder, owner.IsBurning);
+            if (owner.Presentation.ShowMelee(animationIndex, activeDuration * .5f))
+                owner.PlayerAttack.PlaySwingEffect(bladeEffect, owner.transform.position,
+                    record.Geometry.Center, record.Geometry.Size, direction);
+            else
+            {
+                slash = owner.SpawnEffect(Data.SlashPrefab);
+                slash.Show(record.Geometry, Data.AttackOrder, owner.IsBurning);
+            }
             while (Time.time < activeEndsAt && owner.IsAttackValid(record))
             {
                 if (owner.Observe(record, record.Geometry) && owner.TryHit(record) && isFinisher)
@@ -284,6 +301,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         if (!owner.IsAttackValid(record)) yield break;
         record.Activate();
         owner.SetActionCue("돌진", AttackHint(record), BossPresentationState.Active, Data.DashDistance / speed);
+        owner.Presentation.ShowDash();
         float remaining = Data.DashDistance;
         bool blocked = false;
         while (remaining > 0.001f && owner.IsAttackValid(record))
@@ -360,6 +378,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             warnings.Add(CreateWarning(shapes[i]));
         }
         owner.SetActionCue("지면 충격파", $"점프로 충격파를 넘으면 믿음 -{Data.BeliefReduction:0}", BossPresentationState.Windup, Data.Windup / owner.SpeedMultiplier);
+        owner.Presentation.ShowDownAttack();
         float elapsed = 0f, duration = Data.Windup / owner.SpeedMultiplier;
         while (elapsed < duration && owner.IsAttackValid(record))
         {
@@ -372,6 +391,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
         if (!owner.IsAttackValid(record)) yield break;
         record.Activate();
         owner.SetActionCue("지면 충격파", $"낮은 파동을 점프로 넘으면 믿음 -{Data.BeliefReduction:0}", BossPresentationState.Active, Data.WaveDistance / (Data.WaveSpeed * owner.SpeedMultiplier));
+        if (owner.Presentation.ShowDownAttack(1f / (12f * owner.SpeedMultiplier)))
+            owner.PlayerAttack.PlayDownAttackEffect(bladeEffect, owner.transform.position, owner.Facing);
         var first = owner.SpawnEffect(Data.WavePrefab);
         var second = owner.SpawnEffect(Data.WavePrefab);
         first.Initialize(owner, record, left);

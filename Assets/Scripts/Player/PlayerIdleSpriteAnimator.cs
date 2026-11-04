@@ -17,6 +17,9 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     [SerializeField] private Sprite[] walkFrames;
     [SerializeField, Min(1f)] private float walkFramesPerSecond = 8f;
 
+    [Header("Dash")]
+    [SerializeField] private Sprite dashFrame;
+
     [Header("Jump")]
     [Tooltip("순서: 상승 / 정점 / 하강.")]
     [SerializeField] private Sprite[] jumpFrames;
@@ -48,6 +51,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D body;
     private PlayerMove movement;
+    private PlayerDash dash;
     private PlayerAttack attack;
     private PlayerHealth health;
     private Sprite originalSprite;
@@ -65,6 +69,7 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         body = GetComponent<Rigidbody2D>();
         movement = GetComponent<PlayerMove>();
+        dash = GetComponent<PlayerDash>();
         attack = GetComponent<PlayerAttack>();
         health = GetComponent<PlayerHealth>();
         originalSprite = spriteRenderer.sprite;
@@ -84,6 +89,12 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
 
         // 부활하면 사망 연출을 다시 재생할 수 있게 초기화한다.
         deadPlayed = false;
+
+        if (dash != null && dash.IsDashing && dashFrame != null)
+        {
+            ShowDashFrame();
+            return;
+        }
 
         bool grounded = movement == null || movement.IsGrounded;
         bool moving = body != null && Mathf.Abs(body.linearVelocity.x) > movementThreshold;
@@ -247,6 +258,13 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
     {
         spriteRenderer.sprite = sprite;
         showingSheetFrame = true;
+    }
+
+    internal void ShowDashFrame()
+    {
+        if (!isActiveAndEnabled || spriteRenderer == null || dashFrame == null) return;
+        activeFrames = null;
+        ApplyFrame(dashFrame);
     }
 
     private static bool HasFrames(Sprite[] frames)

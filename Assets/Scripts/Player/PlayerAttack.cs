@@ -423,13 +423,8 @@ public class PlayerAttack : MonoBehaviour
             if (activeSwing != attack || !isActiveAndEnabled)
                 yield break;
 
-            Vector2 origin = DownFanOrigin(facing);
-
             // 판정과 같은 원점/반경/각도로 칼날 궤적을 그린다.
-            if (spawnDownFanImpact && downFanImpact != null)
-            {
-                downFanImpact.Play(origin, downFanRadius, downFanHalfAngle, facing);
-            }
+            PlayDownAttackEffect(downFanImpact, transform.position, facing);
 
             int hitCount = DoDownFanHit(attack);
             if (hitCount > 0 && rb != null && downFanPlayerBounce > 0f)
@@ -448,7 +443,21 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    private Vector2 DownFanOrigin(float facing) => (Vector2)transform.position +
+    internal void PlayDownAttackEffect(DownFanImpactEffect effect, Vector2 position, float facing)
+    {
+        if (spawnDownFanImpact && effect != null)
+            effect.Play(DownFanOrigin(position, facing), downFanRadius, downFanHalfAngle, facing);
+    }
+
+    internal void PlaySwingEffect(DownFanImpactEffect effect, Vector2 position, Vector2 center, Vector2 size, float facing)
+    {
+        if (spawnSwingSlash && effect != null)
+            effect.PlaySwing(position, center, size, facing);
+    }
+
+    private Vector2 DownFanOrigin(float facing) => DownFanOrigin(transform.position, facing);
+
+    private Vector2 DownFanOrigin(Vector2 position, float facing) => position +
         new Vector2(downFanOriginOffset.x * facing, downFanOriginOffset.y);
 
     private bool IsInDownFan(Vector2 origin, Collider2D hit)
@@ -565,11 +574,7 @@ public class PlayerAttack : MonoBehaviour
                 yield break;
 
             // 판정 박스를 그리는 대신, 타격 지점에 아래 공격과 같은 칼날 궤적을 그린다.
-            if (spawnSwingSlash && downFanImpact != null)
-            {
-                Vector2 center = HitCenter(step, facing);
-                downFanImpact.PlaySwing(transform.position, center, step.hitboxSize, facing);
-            }
+            PlaySwingEffect(downFanImpact, transform.position, HitCenter(step, facing), step.hitboxSize, facing);
 
             int hitCount = DoHit(attack, step, facing);
             if (stopSlide) StopMotion();

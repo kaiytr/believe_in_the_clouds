@@ -396,6 +396,7 @@ MonoBehaviour:
   - {fileID: -2912558134338543859, guid: 00b81cb0034264049962decae96c480f, type: 3}
   - {fileID: 1712548768681341929, guid: 00b81cb0034264049962decae96c480f, type: 3}
   walkFramesPerSecond: 8
+  dashFrame: {fileID: -1306790213, guid: 58137705221c05b4bbb520abb9f84074, type: 3}
   jumpFrames:
   - {fileID: -9062837415071662908, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
   - {fileID: 8245629656952527113, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}

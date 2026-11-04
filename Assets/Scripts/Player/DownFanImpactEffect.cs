@@ -81,6 +81,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
     private float arcBornAt = -999f;
     private float arcLifetimeRuntime = 1f;
     private int sortingLayerId;
+    private int sortingOrderOffset;
 
     private static Sprite sharpStreak;
     private static Material sharedSpriteMaterial;
@@ -117,7 +118,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         arcMaterial = new Material(sharedSpriteMaterial);
         arcRenderer.material = arcMaterial;
         arcRenderer.sortingLayerID = sortingLayerId;
-        arcRenderer.sortingOrder = sortingOrder - 1;
+        arcRenderer.sortingOrder = sortingOrder + sortingOrderOffset - 1;
 
         arcTransform = go.transform;
         go.SetActive(false);
@@ -320,7 +321,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
             renderer.sharedMaterial = sharedSpriteMaterial;
             renderer.sprite = SharpStreakSprite;
             renderer.sortingLayerID = sortingLayerId;
-            renderer.sortingOrder = sortingOrder;
+            renderer.sortingOrder = sortingOrder + sortingOrderOffset;
             renderer.enabled = false;
             go.SetActive(false);
 
@@ -334,7 +335,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         if (particle.Transform == null || particle.Renderer == null)
             return null;
 
-        particle.Renderer.sortingOrder = sortingOrder;
+        particle.Renderer.sortingOrder = sortingOrder + sortingOrderOffset;
         particle.Renderer.sprite = SharpStreakSprite;
         return particle;
     }
@@ -473,11 +474,15 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         }
     }
 
-    /// <summary>플레이어 스프라이트와 같은 정렬 레이어를 쓰도록 맞춘다.</summary>
-    public void SetSortingLayer(int layerId)
+    /// <summary>공격하는 캐릭터의 스프라이트를 기준으로 정렬한다.</summary>
+    public void SetSortingLayer(int layerId, int orderOffset = 0)
     {
         sortingLayerId = layerId;
+        sortingOrderOffset = orderOffset;
         if (arcRenderer != null)
+        {
             arcRenderer.sortingLayerID = layerId;
+            arcRenderer.sortingOrder = sortingOrder + sortingOrderOffset - 1;
+        }
     }
 }
