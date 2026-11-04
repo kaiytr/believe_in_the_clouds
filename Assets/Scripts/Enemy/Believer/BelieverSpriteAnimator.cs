@@ -16,7 +16,7 @@ public sealed class BelieverSpriteAnimator : MonoBehaviour
     private SpriteRenderer visual;
     private EnemyState previousState;
     private float stateTime;
-    private float throwTime;
+    private float attackAnimationTime;
 
     private void Awake()
     {
@@ -31,7 +31,7 @@ public sealed class BelieverSpriteAnimator : MonoBehaviour
     {
         previousState = EnemyState.Idle;
         stateTime = 0f;
-        throwTime = 0f;
+        attackAnimationTime = 0f;
     }
 
     private void LateUpdate()
@@ -45,23 +45,20 @@ public sealed class BelieverSpriteAnimator : MonoBehaviour
             frame = deathSprite;
         else if (state == EnemyState.AttackWindup)
         {
+            attackAnimationTime = 0f;
             float duration = Mathf.Max(.001f, attack.WindupDuration);
             int index = Mathf.FloorToInt(stateTime / duration * prepareFrames.Length);
             frame = prepareFrames[Mathf.Min(index, prepareFrames.Length - 1)];
         }
         else if (state == EnemyState.Attack || state == EnemyState.Recovery)
         {
-            bool continuingThrow = previousState == EnemyState.Attack || previousState == EnemyState.Recovery;
-            throwTime = continuingThrow ? throwTime + Time.deltaTime : 0f;
-            int index = Mathf.FloorToInt(throwTime * 12f);
-            frame = state == EnemyState.Attack || index < attackFrames.Length
-                ? attackFrames[Mathf.Min(index, attackFrames.Length - 1)]
-                : Loop(idleFrames, 5f);
+            bool startingAttack = previousState != EnemyState.Attack && previousState != EnemyState.Recovery;
+            attackAnimationTime = startingAttack ? 0f : attackAnimationTime + Time.deltaTime;
+            int index = Mathf.FloorToInt(attackAnimationTime * 12f);
+            frame = index < attackFrames.Length ? attackFrames[index] : GetLocomotionFrame();
         }
-        else if (Mathf.Abs(body.linearVelocity.x) > .05f)
-            frame = Loop(walkFrames, 9f);
         else
-            frame = Loop(idleFrames, 5f);
+            frame = GetLocomotionFrame();
 
         previousState = state;
         if (frame != null) visual.sprite = frame;
@@ -69,4 +66,8 @@ public sealed class BelieverSpriteAnimator : MonoBehaviour
 
     private Sprite Loop(Sprite[] frames, float framesPerSecond) =>
         frames[Mathf.FloorToInt(stateTime * framesPerSecond) % frames.Length];
+
+    private Sprite GetLocomotionFrame() => Mathf.Abs(body.linearVelocity.x) > .05f
+        ? Loop(walkFrames, 9f)
+        : Loop(idleFrames, 5f);
 }

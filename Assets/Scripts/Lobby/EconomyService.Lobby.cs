@@ -84,7 +84,10 @@ public sealed partial class EconomyService
             FlushReservations(data);
             data.run.area = RunArea.TemporaryStage; data.run.hp = hp; data.run.hasPosition = false;
             data.run.hasStage = true;
-            data.run.stage = new TemporaryStageData { id = "stage:" + branchId, branchId = branchId, role = candidate.role };
+            data.run.stage = new TemporaryStageData {
+                id = "stage:" + branchId, branchId = branchId, role = candidate.role,
+                usesDesignedCombatLevel = candidate.role == BranchRole.Combat
+            };
             return Success(0, 0, data.balance, activeTransactionId);
         });
     }

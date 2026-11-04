@@ -298,6 +298,7 @@ public sealed partial class EconomyService
         {
             deathId = deathId, sourceRevision = profile.revision, phase = EconomyDeathPhase.Captured,
             randomSeed = random.Next(0, int.MaxValue),
+            usesThirdPieceLoss = true,
             awaitingChoice = result != null, hasResult = result != null, result = result?.Copy()
         };
         MergeObservedDefeats(work.statistics);

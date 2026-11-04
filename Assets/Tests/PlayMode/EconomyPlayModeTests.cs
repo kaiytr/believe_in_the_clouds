@@ -77,7 +77,7 @@ public sealed class EconomyPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen()
+    public IEnumerator RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesFourOfThirteen()
     {
         yield return Load("EconomyTest");
         var context = Object.FindFirstObjectByType<TestEconomyContext>(); context.PrepareEquipmentFixture();
@@ -105,7 +105,7 @@ public sealed class EconomyPlayModeTests
         Assert.That(service.Balance + service.PendingBalance, Is.EqualTo(110));
         Assert.That(service.CompleteDeferredDeath(player.GetComponent<PlayerDeathCoordinator>().DeathId).Success, Is.True);
         Assert.That(context.Equipment.EquippedCount, Is.Zero);
-        Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(10));
+        Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(9));
         Assert.That(service.Balance, Is.EqualTo(77)); Assert.That(service.PendingBalance, Is.Zero);
         Assert.That(manager.ActiveDoctrines.Any(item => item.Owner == other), Is.True);
         Assert.That(manager.ActiveDoctrines.Any(item => item.Owner == player.gameObject), Is.False);

@@ -8,6 +8,7 @@ public sealed class BossAttackVisual : MonoBehaviour
     [SerializeField] private bool warning;
     private SpriteRenderer fill;
     private DangerIndicator indicator;
+    private SpriteRenderer sortingReference;
     private BossCombatController cueOwner;
     private BossCombatHud cueHud;
     private string cueText;
@@ -22,6 +23,15 @@ public sealed class BossAttackVisual : MonoBehaviour
     public SpriteRenderer Renderer => fill != null ? fill : GetComponent<SpriteRenderer>();
 
     private void Awake() { fill = GetComponent<SpriteRenderer>(); indicator = GetComponent<DangerIndicator>(); }
+
+    public void SetSortingBehind(SpriteRenderer reference)
+    {
+        if (reference == null)
+            return;
+
+        sortingReference = reference;
+        ApplySortingBehindReference();
+    }
 
     public void Show(AttackGeometry geometry, int order, bool burning = false, Transform followTarget = null)
     {
@@ -45,6 +55,27 @@ public sealed class BossAttackVisual : MonoBehaviour
         {
             outline.sortingOrder = order + 1;
             outline.startColor = outline.endColor = warning ? warningColor : new Color(1f, 0.94f, 0.6f, 1f);
+        }
+        ApplySortingBehindReference();
+    }
+
+    private void ApplySortingBehindReference()
+    {
+        if (sortingReference == null)
+            return;
+
+        if (indicator != null)
+            indicator.SetSortingBehind(sortingReference);
+        else
+        {
+            Renderer.sortingLayerID = sortingReference.sortingLayerID;
+            Renderer.sortingOrder = sortingReference.sortingOrder - 2;
+        }
+
+        if (outline != null)
+        {
+            outline.sortingLayerID = sortingReference.sortingLayerID;
+            outline.sortingOrder = sortingReference.sortingOrder - 1;
         }
     }
 

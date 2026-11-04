@@ -21,6 +21,7 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField, Tooltip("Horizontal player limits for a non-lobby stage.")]
     private float stageMinX = -10f;
     [SerializeField] private float stageMaxX = 10f;
+    [SerializeField] private TemporaryStageExit authoredExit;
     [SerializeField] private bool showTestTools = true;
     public bool IsLobby => isLobby;
     public PlayerHealth Player => player;
@@ -54,7 +55,7 @@ public sealed class LobbySceneController : MonoBehaviour
         BuildUi(); flow.Attach(this);
     }
     public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? -23f : stageMinX, isLobby ? 31f : stageMaxX),
-        Mathf.Clamp(position.y, -1.95f, 8f));
+        Mathf.Clamp(position.y, authoredExit != null ? -3f : -1.95f, 8f));
 
     public void SetPlayable(bool value)
     {
@@ -116,6 +117,13 @@ public sealed class LobbySceneController : MonoBehaviour
         }
         else
         {
+            if (authoredExit != null)
+            {
+                exitBody = authoredExit.GetComponentInChildren<SpriteRenderer>();
+                exitLabel = WorldLabel(generated.transform, "Exit label", "완료 후 출구 사용",
+                    authoredExit.transform.position + Vector3.up * 2.25f, Color.white);
+                return;
+            }
             stageTitle = WorldLabel(generated.transform, "Stage role", LobbyRules.RoleLabel(run.stage.role) + " · 임시 스테이지",
                 new Vector2(0, 1.8f), LobbyBranchInteractable.RoleColor(run.stage.role));
             GameObject exit = new GameObject("ReturnExit"); exit.transform.SetParent(generated.transform); exit.transform.position = new Vector3(8, -.7f);

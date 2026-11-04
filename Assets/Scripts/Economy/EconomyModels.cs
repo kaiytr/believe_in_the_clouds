@@ -95,6 +95,7 @@ public sealed class EconomyDeathRecord
     public bool awaitingChoice;
     public bool hasResult;
     public DeathResultData result;
+    public bool usesThirdPieceLoss;
     public int lostCoins;
     public int lostPieces;
     public List<PieceCount> allPiecesAfterUnequip = new List<PieceCount>();

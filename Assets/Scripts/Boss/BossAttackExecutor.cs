@@ -30,6 +30,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
     {
         var warning = owner.SpawnEffect(Data.WarningPrefab);
         warning.Show(geometry, Data.WarningOrder, followTarget: followOwner ? owner.transform : null);
+        warning.SetSortingBehind(owner.BodyRenderer);
         return warning;
     }
     public void Impact(Vector2 position, bool blocked)

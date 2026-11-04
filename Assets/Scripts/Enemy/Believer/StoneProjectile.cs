@@ -49,8 +49,8 @@ public class StoneProjectile : MonoBehaviour
         if (!initialized)
             return;
 
-        if (sourceAttack == null || sourceAttack.Owner == null || sourceAttack.Owner.IsDead ||
-            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId))
+        if (!resultResolved && (sourceAttack == null || sourceAttack.Owner == null || sourceAttack.Owner.IsDead ||
+            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId)))
         {
             Resolve(AttackOutcome.Cancelled);
             Destroy(gameObject);
@@ -60,43 +60,46 @@ public class StoneProjectile : MonoBehaviour
         float travelled = Vector2.Dot(body.position - spawnPosition, direction);
         if (travelled >= maxDistance)
         {
-            Resolve(sourceAttack.GetOutcomeAtMaximumRange(), completedNormally: true);
+            if (!resultResolved && sourceAttack != null)
+                Resolve(sourceAttack.GetOutcomeAtMaximumRange(), completedNormally: true);
             Destroy(gameObject);
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (resultResolved || sourceAttack == null || sourceAttack.Owner == null ||
-            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId))
+        if (other == null)
             return;
-
-        if (other == sourceAttack.Owner.TargetBodyCollider)
-        {
-            Transform player = sourceAttack.Owner.Target;
-            IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
-            if (damageable == null && player != null)
-                damageable = player.GetComponentInChildren<IDamageable>();
-
-            float attackDamage = damage;
-            DoctrineStats ownerStats = sourceAttack.Owner != null
-                ? sourceAttack.Owner.GetComponent<DoctrineStats>()
-                : null;
-            if (ownerStats != null)
-                attackDamage *= ownerStats.AttackMultiplier;
-            bool applied = damageable != null &&
-                           damageable.TakeDamage(new DamageInfo(attackDamage, DamageSource.Enemy, sourceAttack.Owner.gameObject, "돌 투척"));
-            if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
-            Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
-            Destroy(gameObject);
-            return;
-        }
 
         if ((obstacleLayer.value & (1 << other.gameObject.layer)) != 0)
         {
-            Resolve(AttackOutcome.Blocked);
+            if (!resultResolved && sourceAttack != null && sourceAttack.Owner != null &&
+                sourceAttack.Owner.HasCombatTarget && sourceAttack.IsResolvingAttack(sourceAttackId))
+                Resolve(AttackOutcome.Blocked);
+
             Destroy(gameObject);
+            return;
         }
+
+        if (resultResolved || sourceAttack == null || sourceAttack.Owner == null ||
+            !sourceAttack.Owner.HasCombatTarget || !sourceAttack.IsResolvingAttack(sourceAttackId) ||
+            other != sourceAttack.Owner.TargetBodyCollider)
+            return;
+
+        Transform player = sourceAttack.Owner.Target;
+        IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
+        if (damageable == null && player != null)
+            damageable = player.GetComponentInChildren<IDamageable>();
+
+        float attackDamage = damage;
+        DoctrineStats ownerStats = sourceAttack.Owner.GetComponent<DoctrineStats>();
+        if (ownerStats != null)
+            attackDamage *= ownerStats.AttackMultiplier;
+        bool applied = damageable != null &&
+                       damageable.TakeDamage(new DamageInfo(attackDamage, DamageSource.Enemy, sourceAttack.Owner.gameObject, "돌 투척"));
+        if (applied) sourceAttack.NotifyPlayerHpDamageApplied(sourceAttackId);
+        Resolve(applied ? AttackOutcome.Hit : AttackOutcome.Missed, completedNormally: true);
+        Destroy(gameObject);
     }
 
     private void Resolve(AttackOutcome outcome, bool completedNormally = false)

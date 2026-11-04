@@ -59,7 +59,7 @@ public sealed class TestEconomyContext : MonoBehaviour
         Label(panel.transform, "Title", "재화 시스템 테스트", 27, new Vector2(24, -16), new Vector2(512, 48));
         Label(panel.transform, "Subtitle", "격리된 테스트 저장 · 초기 지급 없음", 16, new Vector2(24, -66), new Vector2(512, 28));
         status = Label(panel.transform, "Status", "", 20, new Vector2(24, -104), new Vector2(512, 110));
-        string[] labels = { "+100 코인", "상점 열기", "개 처치 5~7", "신도 처치 3~5", "간부 처치 7~8", "보스 처치 0", "13조각 준비·2개 장착", "사망 (30% 손실)", "부활", "저장 실패 ON/OFF", "저장 다시 불러오기", "새 빈 테스트 프로필" };
+        string[] labels = { "+100 코인", "상점 열기", "개 처치 5~7", "신도 처치 3~5", "간부 처치 7~8", "보스 처치 0", "13조각 준비·2개 장착", "사망 (조각 1/3 손실)", "부활", "저장 실패 ON/OFF", "저장 다시 불러오기", "새 빈 테스트 프로필" };
         Action[] actions = {
             () => Show(Service.TryGrant(100, "test.manual")),
             () => ShopScreen.Instance.Open(shop, player.gameObject),
@@ -123,7 +123,7 @@ public sealed class TestEconomyContext : MonoBehaviour
         Service.TryGrantPiece("subject.enemy", 7, "test.fixture");
         equipment.TryEquip(new Doctrine(SubjectType.Player, ConditionType.OnDeath, ResultType.IncreaseSpeed), Service);
         equipment.TryEquip(new Doctrine(SubjectType.Player, ConditionType.OnDeath, ResultType.Explode), Service);
-        if (message != null) message.text = "테스트 자료: 전체 13조각(장착 사용 6 포함) · 사망 후 10조각";
+        if (message != null) message.text = "테스트 자료: 전체 13조각(장착 사용 6 포함) · 사망 후 9조각";
     }
     private void ToggleSaveFailure()
     {

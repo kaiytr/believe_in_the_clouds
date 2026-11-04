@@ -102,9 +102,11 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         switch (State.stage.role)
         {
             case BranchRole.Combat:
+                if (!playLoopTestMode && State.stage.usesDesignedCombatLevel)
+                    return ProjectScenes.CombatLevelName(StableCombatSceneIndex(State.stage.id, ProjectScenes.CombatLevelCount) + 1);
                 int index = playLoopTestMode
                     ? State.combatClears % CombatTestScenes.Length
-                    : StableCombatSceneIndex(State.stage.id);
+                    : StableCombatSceneIndex(State.stage.id, CombatTestScenes.Length);
                 return CombatTestScenes[index];
             case BranchRole.Shop: return ShopTestScene;
             case BranchRole.Boss: return BossTestScene;
@@ -112,10 +114,10 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         }
     }
 
-    private static int StableCombatSceneIndex(string stageId)
+    private static int StableCombatSceneIndex(string stageId, int sceneCount)
     {
         byte[] stableId = new System.Guid(LobbyRules.StableId("combat-scene:" + stageId)).ToByteArray();
-        return stableId[0] % CombatTestScenes.Length;
+        return stableId[0] % sceneCount;
     }
 
     private void Update()

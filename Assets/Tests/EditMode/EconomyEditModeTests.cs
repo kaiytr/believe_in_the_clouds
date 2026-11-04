@@ -216,8 +216,8 @@ public sealed class EconomyEditModeTests
         Assert.That(result.Success, Is.True);
         CollectionAssert.AreEqual(new[] { "effects", "unequip", "committed" }, order);
         Assert.That(service.Balance, Is.EqualTo(77)); Assert.That(service.PendingBalance, Is.Zero);
-        Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(10));
-        Assert.That(service.Snapshot().death.lostPieces, Is.EqualTo(3));
+        Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(9));
+        Assert.That(service.Snapshot().death.lostPieces, Is.EqualTo(4));
         service.TryHandleDeath("life:1/death", equipment, () => order.Add("duplicate"));
         Assert.That(completed, Is.EqualTo(1)); Assert.That(equipment.Calls, Is.EqualTo(1));
         Assert.That(service.TryRewardDefeat(EnemyRewardKind.Dog, "after", Vector3.zero).Error, Is.EqualTo(EconomyError.PlayerDead));
@@ -226,13 +226,32 @@ public sealed class EconomyEditModeTests
         Assert.That(service.TryRewardDefeat(EnemyRewardKind.Dog, "new-life", Vector3.zero).Success, Is.True);
     }
 
-    [TestCase(0, 0)] [TestCase(1, 0)] [TestCase(2, 0)] [TestCase(3, 0)]
-    [TestCase(4, 1)] [TestCase(9, 2)] [TestCase(13, 3)]
+    [TestCase(0, 0)] [TestCase(1, 0)] [TestCase(2, 0)] [TestCase(3, 1)]
+    [TestCase(4, 1)] [TestCase(9, 3)] [TestCase(13, 4)]
     public void DeathUsesFloorOfTheTotalRatherThanEachKind(int total, int lost)
     {
         if (total > 0) service.TryGrantPiece("subject.player", total, "fixture");
         service.TryHandleDeath("death", new Equipment(), null);
         Assert.That(EconomyLedger.Total(service.Snapshot().pieces), Is.EqualTo(total - lost));
+    }
+
+    [Test]
+    public void DeathCapturedWithLegacyRuleKeepsItsLossOnRecovery()
+    {
+        var disk = new MemoryEconomyStore();
+        var profile = new EconomyProfileData
+        {
+            hasDeath = true,
+            death = new EconomyDeathRecord { deathId = "legacy-death", phase = EconomyDeathPhase.Captured }
+        };
+        EconomyLedger.Add(profile.pieces, "subject.player", 13);
+        Assert.That(disk.TrySave(profile), Is.True);
+
+        var restored = new EconomyService(disk);
+        Assert.That(restored.Initialize(), Is.True);
+        Assert.That(restored.Snapshot().death.lostPieces, Is.EqualTo(3));
+        Assert.That(restored.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(new EconomyService(disk).Initialize(), Is.True);
     }
 
     private sealed class FailNthStore : IEconomyStore
@@ -256,7 +275,7 @@ public sealed class EconomyEditModeTests
         Assert.That(economy.TrySpend(1, "locked").Error, Is.EqualTo(EconomyError.Busy));
         Assert.That(economy.RetryDeath().Success, Is.True);
         Assert.That(effects, Is.EqualTo(1)); Assert.That(equipment.Calls, Is.EqualTo(1));
-        Assert.That(economy.Balance, Is.EqualTo(70)); Assert.That(economy.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(economy.Balance, Is.EqualTo(70)); Assert.That(economy.CountPiece("subject.player"), Is.EqualTo(9));
         var restored = new EconomyService(disk); restored.Initialize();
         restored.TryHandleDeath("death", equipment, () => effects++);
         Assert.That(restored.Balance, Is.EqualTo(70)); Assert.That(effects, Is.EqualTo(1));
@@ -270,7 +289,7 @@ public sealed class EconomyEditModeTests
         disk.FailAt = disk.Writes + failedDeathWrite;
         economy.TryHandleDeath("death", new Equipment(), null);
         var restored = new EconomyService(disk); Assert.That(restored.Initialize(), Is.True);
-        Assert.That(restored.Balance, Is.EqualTo(71)); Assert.That(restored.CountPiece("result.speed"), Is.EqualTo(7));
+        Assert.That(restored.Balance, Is.EqualTo(71)); Assert.That(restored.CountPiece("result.speed"), Is.EqualTo(6));
         restored.TryHandleDeath("death", new Equipment(), () => Assert.Fail("Death effects replayed"));
         Assert.That(restored.Balance, Is.EqualTo(71));
     }

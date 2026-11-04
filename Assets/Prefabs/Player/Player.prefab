@@ -93,9 +93,9 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 33
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -9095717837082945937, guid: 207ee8102dd4143d288186ef0be518ee, type: 3}
+  m_Sprite: {fileID: 1061527380459089461, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -275,7 +275,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHitReact
   hitCrouchScaleY: 0.75
   hitCrouchDuration: 0.18
-  kneelScaleY: 0.55
 --- !u!114 &6308225462173386905
 MonoBehaviour:
   m_ObjectHideFlags: 0

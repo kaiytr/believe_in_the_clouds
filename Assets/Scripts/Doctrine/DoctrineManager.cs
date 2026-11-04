@@ -47,6 +47,7 @@ public class DoctrineManager : MonoBehaviour
     private readonly List<ActiveDoctrine> activeDoctrines = new List<ActiveDoctrine>();
     private readonly List<CooldownEntry> cooldowns = new List<CooldownEntry>();
     private int notifyDepth;
+    private bool executingExplosion;
 
     // Display-only events. Match/execute logic never depends on these.
     public event Action<ActiveDoctrine> Activated;
@@ -102,15 +103,19 @@ public class DoctrineManager : MonoBehaviour
     }
 
     // Owner-bound registration: only reacts to that object's events.
-    public bool TryActivate(Doctrine doctrine, GameObject owner, out string reason)
+    public bool TryActivate(Doctrine doctrine, GameObject owner, out string reason) =>
+        TryActivate(doctrine, owner, out reason, out _);
+
+    public bool TryActivate(Doctrine doctrine, GameObject owner, out string reason, out ActiveDoctrine entry)
     {
+        entry = null;
         if (!DoctrineValidator.TryValidate(doctrine, owner, out reason))
         {
             Debug.LogWarning($"[Doctrine] Activation failed: {reason}");
             return false;
         }
 
-        ActiveDoctrine entry = new ActiveDoctrine(doctrine.Clone(), owner);
+        entry = new ActiveDoctrine(doctrine.Clone(), owner);
         activeDoctrines.Add(entry);
 
         if (verboseLogs)
@@ -130,6 +135,13 @@ public class DoctrineManager : MonoBehaviour
 
         int index = activeDoctrines.FindIndex(
             a => a.Doctrine != null && a.Doctrine.HasSameRule(doctrine));
+        return DeactivateAt(index);
+    }
+
+    public bool DeactivateEntry(ActiveDoctrine entry) => DeactivateAt(activeDoctrines.IndexOf(entry));
+
+    private bool DeactivateAt(int index)
+    {
         if (index < 0)
         {
             return false;
@@ -142,7 +154,7 @@ public class DoctrineManager : MonoBehaviour
         RemoveCooldownsFor(removed);
         if (verboseLogs)
         {
-            Debug.Log($"[Doctrine] Deactivated: {doctrine}");
+            Debug.Log($"[Doctrine] Deactivated: {removed.Doctrine}");
         }
         Deactivated?.Invoke(removed);
         return true;
@@ -253,12 +265,15 @@ public class DoctrineManager : MonoBehaviour
                     continue;
                 }
 
-                if (IsOnCooldown(entry, target))
+                bool isExplosion = entry.Doctrine.Result == ResultType.Explode;
+                if ((isExplosion && executingExplosion) || IsOnCooldown(entry, target))
                 {
                     continue;
                 }
 
                 bool ok = false;
+                // Explosion damage can synchronously raise OnHit or OnDeath.
+                if (isExplosion) executingExplosion = true;
                 try
                 {
                     ok = DoctrineEffectExecutor.Execute(entry.Doctrine, target, evt.SourceObject);
@@ -276,6 +291,10 @@ public class DoctrineManager : MonoBehaviour
                 {
                     // One doctrine's failure never stops the rest.
                     Debug.LogError($"[Doctrine] Effect exception (continuing): {ex}");
+                }
+                finally
+                {
+                    if (isExplosion) executingExplosion = false;
                 }
 
                 // UI is told "it triggered" regardless of effect success.

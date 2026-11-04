@@ -52,12 +52,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineHud
   bandHeight: 220
   bandColor: {r: 0.76, g: 0.76, b: 0.76, a: 0.94}
-  portraitPosition: {x: 48, y: 22}
-  portraitDiameter: 176
   player: {fileID: 0}
-  doctrinePosition: {x: 238, y: -40}
-  slotSize: {x: 62, y: 62}
-  slotSpacing: 5
+  doctrinePosition: {x: 265, y: -40}
+  slotSize: {x: 112, y: 76}
+  slotSpacing: 16
   previewDoctrines:
   - {fileID: 11400000, guid: 21fb5bde02ee46f4a9c272bcf095f56e, type: 2}
   - {fileID: 11400000, guid: 0f146a8e6fc58304598a0019f52c9116, type: 2}

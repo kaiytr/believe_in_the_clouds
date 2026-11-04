@@ -9,15 +9,24 @@ public static class Currency
     public static int PendingBalance => Service?.PendingBalance ?? 0;
     public static bool IsReady => Service != null && Service.IsReady;
     public static event Action<CurrencyChange> Changed;
+    public static event Action<EconomyDeathRecord> DeathCompleted;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics() { Service = null; Changed = null; }
+    private static void ResetStatics() { Service = null; Changed = null; DeathCompleted = null; }
 
     public static void Bind(EconomyService service)
     {
-        if (Service != null) Service.Changed -= Forward;
+        if (Service != null)
+        {
+            Service.Changed -= Forward;
+            Service.DeathCompleted -= ForwardDeathCompleted;
+        }
         Service = service;
-        if (Service != null) Service.Changed += Forward;
+        if (Service != null)
+        {
+            Service.Changed += Forward;
+            Service.DeathCompleted += ForwardDeathCompleted;
+        }
         Forward(new CurrencyChange(Balance, Balance, PendingBalance, PendingBalance, "profile.bound", null));
     }
 
@@ -27,6 +36,16 @@ public static class Currency
         foreach (Action<CurrencyChange> listener in Changed.GetInvocationList())
         {
             try { listener(change); }
+            catch (Exception ex) { Debug.LogException(ex); }
+        }
+    }
+
+    private static void ForwardDeathCompleted(EconomyDeathRecord death)
+    {
+        if (DeathCompleted == null) return;
+        foreach (Action<EconomyDeathRecord> listener in DeathCompleted.GetInvocationList())
+        {
+            try { listener(death); }
             catch (Exception ex) { Debug.LogException(ex); }
         }
     }

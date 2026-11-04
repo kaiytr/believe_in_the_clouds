@@ -24,6 +24,7 @@ public sealed class TemporaryStageData
     public string branchId;
     public BranchRole role;
     public bool completed;
+    public bool usesDesignedCombatLevel;
     public bool hasChestState;
     public ChestStageState chestState;
 }

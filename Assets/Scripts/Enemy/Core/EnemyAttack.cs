@@ -69,7 +69,8 @@ public abstract class EnemyAttack : MonoBehaviour
         if (owner == null || owner.IsDead)
             return;
 
-        if (phase != AttackPhase.Idle && !HasAttackTarget())
+        if (phase != AttackPhase.Idle &&
+            (!HasAttackTarget() || (phase == AttackPhase.Windup && !IsWindupTargetValid(attackTarget))))
         {
             CancelAttack(true);
             return;
@@ -86,10 +87,11 @@ public abstract class EnemyAttack : MonoBehaviour
         if (!IsReady || target == null || !CanAttack(target))
             return false;
 
-        float direction = target.position.x - transform.position.x;
-        if (Mathf.Abs(direction) < 0.01f)
-            direction = transform.localScale.x >= 0f ? 1f : -1f;
-        lockedDirection = new Vector2(Mathf.Sign(direction), 0f);
+        lockedDirection = GetLockedAttackDirection(target);
+        if (lockedDirection.sqrMagnitude <= 0.0001f)
+            lockedDirection = new Vector2(transform.localScale.x >= 0f ? 1f : -1f, 0f);
+        else
+            lockedDirection.Normalize();
         playerThreatenedDuringWarning = false;
         playerHpDamaged = false;
         attackTarget = target;
@@ -100,10 +102,14 @@ public abstract class EnemyAttack : MonoBehaviour
         phase = AttackPhase.Windup;
 
         owner.LockMovement();
-        owner.SetFacingDirection(lockedDirection.x);
+        owner.SetFacingDirection(Mathf.Abs(lockedDirection.x) > 0.01f
+            ? lockedDirection.x
+            : transform.localScale.x);
         owner.ChangeState(EnemyState.AttackWindup);
         PrepareAttack(target);
         activeIndicator = ShowDangerIndicator();
+        if (activeIndicator != null)
+            activeIndicator.SetSortingBehind(owner.GetComponentInChildren<SpriteRenderer>());
         attackRoutine = StartCoroutine(AttackRoutine(target));
         return true;
     }
@@ -188,6 +194,15 @@ public abstract class EnemyAttack : MonoBehaviour
     }
 
     protected abstract bool CanAttack(Transform target);
+    protected virtual Vector2 GetLockedAttackDirection(Transform target)
+    {
+        float direction = target.position.x - transform.position.x;
+        if (Mathf.Abs(direction) < 0.01f)
+            direction = transform.localScale.x >= 0f ? 1f : -1f;
+        return new Vector2(Mathf.Sign(direction), 0f);
+    }
+
+    protected virtual bool IsWindupTargetValid(Transform target) => true;
     protected virtual void PrepareAttack(Transform target) { }
     protected abstract DangerIndicator ShowDangerIndicator();
     protected abstract bool IsPlayerInThreatRange(Collider2D bodyCollider);

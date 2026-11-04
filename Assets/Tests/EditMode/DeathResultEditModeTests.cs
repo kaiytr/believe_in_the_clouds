@@ -68,7 +68,7 @@ public sealed class DeathResultEditModeTests
         Assert.That(service.CountPiece("subject.player"), Is.EqualTo(13));
         Assert.That(service.RunSnapshot().area, Is.EqualTo(RunArea.Dying));
         Assert.That(service.CompleteDeferredDeath("death").Success, Is.True);
-        Assert.That(service.Balance, Is.EqualTo(70)); Assert.That(service.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(service.Balance, Is.EqualTo(70)); Assert.That(service.CountPiece("subject.player"), Is.EqualTo(9));
         service.CompleteDeferredDeath("death");
         Assert.That(service.Balance, Is.EqualTo(70)); Assert.That(effects, Is.EqualTo(1));
         Assert.That(service.RunSnapshot().area, Is.EqualTo(RunArea.Lobby));

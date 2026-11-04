@@ -88,6 +88,7 @@ public class PlayerDash : MonoBehaviour
     private IEnumerator DashRoutine(float dir)
     {
         isDashing = true;
+        health?.SetDashInvulnerability(true);
         cooldownRemaining = cooldown;
         playerMove.ControlLocked = true;
 
@@ -103,6 +104,7 @@ public class PlayerDash : MonoBehaviour
 
         // 살짝 미끄러지듯 멈춘다 (y는 중력에 맡긴다).
         rb.linearVelocity = new Vector2(dir * dashSpeed * 0.25f, rb.linearVelocity.y);
+        health?.SetDashInvulnerability(false);
         playerMove.ControlLocked = false;
         isDashing = false;
     }
@@ -115,6 +117,7 @@ public class PlayerDash : MonoBehaviour
             if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             if (playerMove != null) playerMove.ControlLocked = false;
         }
+        health?.SetDashInvulnerability(false);
         afterimages?.Clear();
         isDashing = false;
         cooldownRemaining = 0f;

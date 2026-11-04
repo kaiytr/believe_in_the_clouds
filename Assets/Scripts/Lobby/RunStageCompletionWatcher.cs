@@ -5,6 +5,7 @@ using UnityEngine;
 public sealed class RunStageCompletionWatcher : MonoBehaviour
 {
     [SerializeField] private BranchRole role;
+    [SerializeField] private EnemyUnit[] authoredEnemies;
 
     private LobbyFlowRuntime flow;
     private EnemyUnit[] enemies;
@@ -24,7 +25,8 @@ public sealed class RunStageCompletionWatcher : MonoBehaviour
 
         armed = true;
         if (role == BranchRole.Combat)
-            enemies = FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None);
+            enemies = authoredEnemies != null && authoredEnemies.Length > 0
+                ? authoredEnemies : FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None);
         else if (role == BranchRole.Boss)
             boss = FindFirstObjectByType<BossCombatController>();
         else if (role == BranchRole.Shop)

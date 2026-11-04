@@ -104,7 +104,7 @@ public static class EconomyLedger
         if (death.phase == EconomyDeathPhase.Captured) return true;
         int total = Total(death.allPiecesAfterUnequip);
         if (death.lostCoins < 0 || death.lostCoins > EconomySettings.MaxCoins * (long)EconomySettings.DeathLossPercent / 100 ||
-            death.lostPieces != total * EconomySettings.DeathLossPercent / 100 ||
+            death.lostPieces != PieceLoss(death, total) ||
             Total(death.removedPieces) != death.lostPieces || Total(death.remainingPieces) + death.lostPieces != total) return false;
         foreach (PieceCount piece in death.allPiecesAfterUnequip)
             if (piece.count != Count(death.remainingPieces, piece.id) + Count(death.removedPieces, piece.id)) return false;
@@ -120,9 +120,9 @@ public static class EconomyLedger
         death.remainingPieces = CopyPieces(data.pieces);
         death.removedPieces.Clear();
         death.lostCoins = (int)(((long)data.balance + Pending(data)) * EconomySettings.DeathLossPercent / 100);
-        death.lostPieces = Total(data.pieces) * EconomySettings.DeathLossPercent / 100;
-        var random = new System.Random(death.randomSeed);
         int remaining = Total(data.pieces);
+        death.lostPieces = PieceLoss(death, remaining);
+        var random = new System.Random(death.randomSeed);
         for (int i = 0; i < death.lostPieces; i++)
         {
             int index = random.Next(remaining--);
@@ -136,4 +136,8 @@ public static class EconomyLedger
         }
         death.phase = EconomyDeathPhase.LossPrepared;
     }
+
+    // Deaths captured before the rule changed keep their original loss.
+    private static int PieceLoss(EconomyDeathRecord death, int total) =>
+        death.usesThirdPieceLoss ? total / 3 : total * 30 / 100;
 }

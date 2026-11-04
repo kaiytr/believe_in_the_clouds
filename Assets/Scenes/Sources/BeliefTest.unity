@@ -300,7 +300,7 @@ MonoBehaviour:
   cooldown: 2.5
   windupTime: 0.8
   recoveryTime: 0.5
-  attackRange: 6
+  attackRange: 100
   projectilePrefab: {fileID: 9164700331100154157, guid: c679be4d1c54d2d42a8893bdf7938938, type: 3}
   projectileSpawnPoint: {fileID: 772472478}
   projectileSpeed: 8
@@ -940,7 +940,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
-  moveSpeedRatio: 0.5
+  moveSpeedRatio: 1
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1535075229}
   destroyDelay: 1.5

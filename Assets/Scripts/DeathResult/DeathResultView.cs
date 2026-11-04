@@ -18,21 +18,42 @@ public sealed class DeathResultView : MonoBehaviour
         var view = canvas.gameObject.AddComponent<DeathResultView>();
         var dim = Box("Dim background", canvas.transform, new Color(0, 0, 0, .64f), 0, 0, 1, 1);
         dim.GetComponent<Image>().raycastTarget = true;
-        var border = Box("Result frame", dim, Ink, .08f, .10f, .92f, .91f);
-        var wood = Box("Wood trim", border, Wood, .006f, .01f, .994f, .99f);
-        var panel = Box("Result panel", wood, Paper, .012f, .02f, .988f, .98f);
-        var heading = Box("Title board", panel, Ink, .29f, .90f, .71f, 1.10f);
-        var titleFill = Box("Title wood", heading, Wood, .012f, .04f, .988f, .96f);
-        Label(titleFill, "− RESULT −", 34, Paper, 0, 0, 1, 1);
-        var stats = Framed("Play statistics", panel, .025f, .35f, .515f, .84f);
-        Label(stats, "획득한 코인 개수", 23, Ink, .08f, .67f, .70f, .86f, TextAnchor.MiddleLeft);
-        Label(stats, data.statistics.coins + " 개", 23, Ink, .70f, .67f, .94f, .86f, TextAnchor.MiddleRight);
-        Label(stats, "획득한 키워드 개수", 23, Ink, .08f, .46f, .70f, .65f, TextAnchor.MiddleLeft);
-        Label(stats, data.statistics.keywords + " 개", 23, Ink, .70f, .46f, .94f, .65f, TextAnchor.MiddleRight);
+        var compositionObject = new GameObject("Result composition", typeof(RectTransform), typeof(AspectRatioFitter));
+        var composition = compositionObject.GetComponent<RectTransform>();
+        composition.SetParent(dim, false);
+        composition.anchorMin = composition.anchorMax = new Vector2(.5f, .5f);
+        composition.sizeDelta = Vector2.zero;
+        var aspect = compositionObject.GetComponent<AspectRatioFitter>();
+        aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        aspect.aspectRatio = 16f / 9f;
+
+        Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/DeathResultPanel");
+        if (panelSprite != null)
+        {
+            AddFullCanvasArtwork(composition, "Result panel artwork", panelSprite);
+        }
+        else
+        {
+            var border = Box("Result frame", composition, Ink, .08f, .10f, .92f, .91f);
+            var wood = Box("Wood trim", border, Wood, .006f, .01f, .994f, .99f);
+            var panel = Box("Result panel", wood, Paper, .012f, .02f, .988f, .98f);
+            var heading = Box("Title board", panel, Ink, .29f, .90f, .71f, 1.10f);
+            var titleFill = Box("Title wood", heading, Wood, .012f, .04f, .988f, .96f);
+            Label(titleFill, "− RESULT −", 34, Paper, 0, 0, 1, 1);
+            Framed("Play statistics", panel, .025f, .35f, .515f, .84f);
+            Framed("Reserved area", panel, .025f, .055f, .515f, .30f);
+            Framed("Death information", panel, .53f, .055f, .975f, .84f);
+            Label(composition, "− 사망원인 −", 22, Ink, .57f, .70f, .82f, .76f);
+        }
+
+        Label(composition, "획득한 코인 개수", 23, Ink, .178f, .63f, .405f, .68f, TextAnchor.MiddleLeft);
+        Label(composition, data.statistics.coins + " 개", 23, Ink, .425f, .63f, .49f, .68f, TextAnchor.MiddleRight);
+        Label(composition, "획득한 키워드 개수", 23, Ink, .178f, .57f, .405f, .62f, TextAnchor.MiddleLeft);
+        Label(composition, data.statistics.keywords + " 개", 23, Ink, .425f, .57f, .49f, .62f, TextAnchor.MiddleRight);
         long total = 0;
         foreach (EnemyKillCount count in data.statistics.kills) total += count.count;
-        Label(stats, "처치한 개체 수", 23, Ink, .08f, .25f, .70f, .44f, TextAnchor.MiddleLeft);
-        Label(stats, total + " 개체", 23, Ink, .70f, .25f, .94f, .44f, TextAnchor.MiddleRight);
+        Label(composition, "처치한 개체 수", 23, Ink, .178f, .51f, .405f, .56f, TextAnchor.MiddleLeft);
+        Label(composition, total + " 개체", 23, Ink, .425f, .51f, .49f, .56f, TextAnchor.MiddleRight);
         var kills = new StringBuilder();
         foreach (EnemyRewardKind kind in Enum.GetValues(typeof(EnemyRewardKind)))
         {
@@ -41,28 +62,63 @@ public sealed class DeathResultView : MonoBehaviour
             kills.Append(DeathCause.EnemyLabel(kind)).Append(": ").Append(data.statistics.Count(kind))
                 .Append(kind == EnemyRewardKind.Dog ? " 마리" : " 명");
         }
-        Label(stats, kills.ToString(), 18, Ink, .06f, .02f, .94f, .24f);
-        // Deliberately empty: reserved by the supplied layout for future content.
-        Framed("Reserved area", panel, .025f, .055f, .515f, .30f);
-        var right = Framed("Death information", panel, .53f, .055f, .975f, .84f);
-        Label(right, "− 사망 원인 −\n" + data.cause, 22, Ink, .06f, .79f, .94f, .98f);
-        var imageArea = Box("Capture frame", right, new Color(.42f, .36f, .29f), .08f, .37f, .92f, .77f);
+        Label(composition, kills.ToString(), 18, Ink, .178f, .455f, .49f, .50f);
+        Label(composition, data.cause, 15, Ink, .57f, .675f, .82f, .70f);
+
+        var imageArea = Box("Capture frame", composition, new Color(0, 0, 0, 0), .568f, .374f, .82f, .671f);
+        imageArea.GetComponent<Image>().raycastTarget = false;
         imageArea.gameObject.AddComponent<RectMask2D>();
         if (capture != null)
         {
             var image = new GameObject("Gameplay capture", typeof(RectTransform), typeof(RawImage), typeof(AspectRatioFitter));
             image.transform.SetParent(imageArea, false);
+            Place(image.GetComponent<RectTransform>(), 0, 0, 1, 1);
             image.GetComponent<RawImage>().texture = capture;
             image.GetComponent<RawImage>().raycastTarget = false;
             image.GetComponent<AspectRatioFitter>().aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
             image.GetComponent<AspectRatioFitter>().aspectRatio = (float)capture.width / capture.height;
         }
         else Label(imageArea, "화면을 캡처할 수 없습니다", 19, Paper, .03f, .03f, .97f, .97f);
-        view.resume = MenuButton(right, "이어하기", .14f, .235f, .86f, .335f, onContinue);
-        view.exit = MenuButton(right, "저장 및 종료", .14f, .105f, .86f, .205f, onExit);
-        view.error = Label(right, "", 16, new Color(.58f, .12f, .08f), .025f, .005f, .975f, .10f);
+
+        view.resume = ArtworkButton(composition, "UI/DeathResult/DeathResultContinueButton", "이어하기",
+            .588f, .277f, .80f, .351f, onContinue);
+        view.exit = ArtworkButton(composition, "UI/DeathResult/DeathResultSaveExitButton", "저장 및 종료",
+            .588f, .187f, .80f, .259f, onExit);
+        view.error = Label(composition, "", 16, new Color(.58f, .12f, .08f), .56f, .12f, .83f, .18f);
         UiEventSystemBoot.Ensure().SetSelectedGameObject(view.resume.gameObject);
         return view;
+    }
+
+    private static void AddFullCanvasArtwork(Transform parent, string name, Sprite sprite)
+    {
+        var imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        imageObject.transform.SetParent(parent, false);
+        Place(imageObject.GetComponent<RectTransform>(), 0, 0, 1, 1);
+        var image = imageObject.GetComponent<Image>();
+        image.sprite = sprite;
+        image.preserveAspect = false;
+        image.raycastTarget = false;
+    }
+
+    private static Button ArtworkButton(Transform parent, string resourcePath, string label,
+        float x0, float y0, float x1, float y1, Action action)
+    {
+        Sprite sprite = Resources.Load<Sprite>(resourcePath);
+        if (sprite != null) AddFullCanvasArtwork(parent, label + " artwork", sprite);
+        var hitArea = Box(label + " hit area", parent, new Color(1, 1, 1, 0), x0, y0, x1, y1);
+        Image hitImage = hitArea.GetComponent<Image>();
+        hitImage.raycastTarget = true;
+        Button button = hitArea.gameObject.AddComponent<Button>();
+        button.targetGraphic = hitImage;
+        if (sprite == null) Label(hitArea, label, 22, Paper, .03f, .03f, .97f, .97f);
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(1, 1, 1, 0);
+        colors.highlightedColor = new Color(1, 1, 1, .18f);
+        colors.selectedColor = colors.highlightedColor;
+        colors.pressedColor = new Color(.8f, .8f, .8f, .15f);
+        button.colors = colors;
+        button.onClick.AddListener(() => action());
+        return button;
     }
     public void SetBusy(bool value) { resume.interactable = exit.interactable = !value; if (value) error.text = "저장 중…"; }
     public void SetError(string message) { error.text = message; }

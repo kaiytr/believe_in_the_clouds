@@ -42,6 +42,8 @@ public class EnemyContactDamage : MonoBehaviour
             damageable = playerRoot.GetComponentInChildren<IDamageable>();
         if (damageable == null)
             return;
+        if (damageable is PlayerHealth player && (player.IsInvulnerable || player.IsDead))
+            return;
 
         // Table rule: OnAttack triggers only when the hit lands.
         // Owner = enemy root (this may sit on a child part), subject = attacker.

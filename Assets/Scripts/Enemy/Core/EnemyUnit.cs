@@ -93,6 +93,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
     protected virtual void OnEnable()
     {
+        IgnorePhysicalCollisionWithOtherEnemies();
         if (target != null) SetPhysicalCollisionWithPlayerEnabled(false);
     }
 
@@ -459,6 +460,23 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
             return;
 
         SetPhysicalCollisionWithPlayerEnabled(false);
+    }
+
+    private void IgnorePhysicalCollisionWithOtherEnemies()
+    {
+        if (bodyCollider == null || bodyCollider.isTrigger)
+            return;
+
+        EnemyUnit[] enemies = FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None);
+        foreach (EnemyUnit enemy in enemies)
+        {
+            if (enemy == null || enemy == this)
+                continue;
+
+            Collider2D otherBodyCollider = enemy.BodyCollider;
+            if (otherBodyCollider != null && !otherBodyCollider.isTrigger)
+                Physics2D.IgnoreCollision(bodyCollider, otherBodyCollider, true);
+        }
     }
 
     public void SetPhysicalCollisionWithPlayerEnabled(bool enabled)

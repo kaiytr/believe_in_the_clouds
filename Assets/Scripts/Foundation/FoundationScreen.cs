@@ -31,7 +31,7 @@ public class FoundationScreen : MonoBehaviour
     private readonly List<ShopEntry[]> slotRows = new List<ShopEntry[]>();
 
     // 교리별로 현재 장착 중인 조합. 슬롯과 1:1로 동기화한다.
-    private readonly List<Doctrine> equipped = new List<Doctrine>();
+    private readonly List<DoctrineManager.ActiveDoctrine> equipped = new List<DoctrineManager.ActiveDoctrine>();
 
     // 마지막으로 드롭된 교리 (0 = 교리1). 로그/선택 표기용. 클릭으로 바뀌지 않는다.
     private int activeDoctrine;
@@ -136,12 +136,27 @@ public class FoundationScreen : MonoBehaviour
     {
         InteractableBehaviour.Interacted += HandleInteracted;
         UiModal.CloseRequested += HandleCloseRequested;
+        Currency.DeathCompleted += HandleDeathCompleted;
     }
 
     private void OnDisable()
     {
         InteractableBehaviour.Interacted -= HandleInteracted;
         UiModal.CloseRequested -= HandleCloseRequested;
+        Currency.DeathCompleted -= HandleDeathCompleted;
+    }
+
+    private void HandleDeathCompleted(EconomyDeathRecord death)
+    {
+        DoctrineManager manager = DoctrineManager.Instance;
+        for (int i = 0; i < slotRows.Count; i++)
+        {
+            if (equipped[i] != null) manager?.DeactivateEntry(equipped[i]);
+            equipped[i] = null;
+            System.Array.Clear(slotRows[i], 0, ColumnCount);
+        }
+        activeDoctrine = 0;
+        if (IsOpen) Refresh();
     }
 
     private void EnsurePanel()
@@ -387,7 +402,7 @@ public class FoundationScreen : MonoBehaviour
         if (composed != null)
         {
             bool isActive = equipped[doctrineIndex] != null
-                && equipped[doctrineIndex].HasSameRule(composed);
+                && equipped[doctrineIndex].Doctrine.HasSameRule(composed);
             return $"{name}  ·  {DoctrineText.Describe(composed)}{(isActive ? "  (장착 중)" : string.Empty)}";
         }
 
@@ -442,7 +457,7 @@ public class FoundationScreen : MonoBehaviour
         {
             if (equipped[doctrineIndex] != null)
             {
-                manager.Deactivate(equipped[doctrineIndex]);
+                manager.DeactivateEntry(equipped[doctrineIndex]);
                 Debug.Log($"[재단] 교리{doctrineIndex + 1} 해제: 슬롯이 비었음");
                 equipped[doctrineIndex] = null;
             }
@@ -451,7 +466,7 @@ public class FoundationScreen : MonoBehaviour
         }
 
         // 이미 같은 조합이 장착 중이면 그대로 둔다.
-        if (equipped[doctrineIndex] != null && equipped[doctrineIndex].HasSameRule(wanted))
+        if (equipped[doctrineIndex] != null && equipped[doctrineIndex].Doctrine.HasSameRule(wanted))
         {
             return;
         }
@@ -459,20 +474,20 @@ public class FoundationScreen : MonoBehaviour
         // 조합이 바뀌면 기존 것을 먼저 해제한다.
         if (equipped[doctrineIndex] != null)
         {
-            manager.Deactivate(equipped[doctrineIndex]);
+            manager.DeactivateEntry(equipped[doctrineIndex]);
             equipped[doctrineIndex] = null;
         }
 
         // 같은 조합이 다른 교리에 있어도 각각 장착한다.
         // 같은 조각을 여러 교리에 동시에 배치하는 2번 케이스 허용.
 
-        if (!manager.TryActivate(wanted, out string reason))
+        if (!manager.TryActivate(wanted, null, out string reason, out var entry))
         {
             Debug.LogWarning($"[재단] 교리{doctrineIndex + 1} 장착 실패: {reason}");
             return;
         }
 
-        equipped[doctrineIndex] = wanted;
+        equipped[doctrineIndex] = entry;
         Debug.Log($"[재단] 교리{doctrineIndex + 1} 장착: {DoctrineText.Describe(wanted)}");
     }
 

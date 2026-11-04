@@ -4,8 +4,16 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(1100)]
 public sealed class PlayerDeathCoordinator : MonoBehaviour
 {
+    private const float DeathTimeScale = .25f;
+    private const float ZoomDuration = .55f;
+    private const float ZoomLensScale = .6f;
+    private const float ResultDelayAfterDeathAnimation = 2f;
+    private const float DeathGroundSnapDistance = 20f;
+    private const float WalkableGroundNormalMinimum = .65f;
+
     private string lifeId = Guid.NewGuid().ToString("N");
     private IEquipmentAdapter equipment;
     private string persistentLifeId;
@@ -16,6 +24,14 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     private float nextCaptureRetry;
     private bool choosing;
     private bool transitioning;
+    private Camera deathCamera;
+    private Vector3 cameraStartPosition;
+    private Vector3 cameraFocusPosition;
+    private float cameraStartSize;
+    private float cameraStartFieldOfView;
+    private float zoomStartedAt;
+    private Rigidbody2D deathBody;
+    private RigidbodyConstraints2D bodyConstraints;
     public static PlayerDeathCoordinator Active { get; private set; }
     public static bool IsResultOpen => Active != null && Active.HasResult;
     public bool HasResult { get; private set; }
@@ -53,6 +69,14 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     public void CaptureDeath(Action processExistingDeathEffects, string cause = "알 수 없는 원인")
     {
         if (HasResult || IsResultOpen) return;
+        if (TryGetComponent(out deathBody))
+        {
+            bodyConstraints = deathBody.constraints;
+            SnapBodyToGround();
+            deathBody.linearVelocity = Vector2.zero;
+            deathBody.angularVelocity = 0f;
+            deathBody.constraints = RigidbodyConstraints2D.FreezeAll;
+        }
         PrepareDeath(cause);
         HasResult = true; Active = this;
         equipment = equipment ?? new PlayerEquipmentAdapter(gameObject);
@@ -61,17 +85,80 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
         deathEffects = processExistingDeathEffects;
         QueueCapture();
         UiModal.Push(this);
-        Time.timeScale = 0f;
         DisableControls();
         StartCoroutine(ShowResultAfterDeathAnimation());
     }
+
+    private void SnapBodyToGround()
+    {
+        PlayerHealth health = GetComponent<PlayerHealth>();
+        Collider2D bodyCollider = health != null ? health.BodyCollider : GetComponent<Collider2D>();
+        if (deathBody == null || bodyCollider == null)
+            return;
+
+        PlayerMove movement = GetComponent<PlayerMove>();
+        int groundMask = movement != null ? movement.GroundLayer.value : 0;
+        if (groundMask == 0)
+            groundMask = LayerMask.GetMask("Ground");
+        if (groundMask == 0)
+            return;
+
+        Bounds bounds = bodyCollider.bounds;
+        Vector2 origin = bounds.center;
+        var hits = CombatPhysics.Raycast(origin, Vector2.down, DeathGroundSnapDistance, groundMask);
+        float nearestDistance = float.MaxValue;
+        RaycastHit2D groundHit = default;
+        for (int i = 0; i < hits.Count; i++)
+        {
+            RaycastHit2D hit = hits[i];
+            if (hit.collider == null || hit.normal.y < WalkableGroundNormalMinimum ||
+                hit.distance >= nearestDistance)
+                continue;
+
+            nearestDistance = hit.distance;
+            groundHit = hit;
+        }
+
+        if (groundHit.collider == null)
+            return;
+
+        Vector2 position = deathBody.position;
+        position.y += groundHit.point.y - bounds.min.y;
+        deathBody.position = position;
+        Physics2D.SyncTransforms();
+    }
+
     private IEnumerator ShowResultAfterDeathAnimation()
     {
         var animation = GetComponent<PlayerIdleSpriteAnimator>();
-        while (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
-            yield return null;
+        BeginCameraZoom();
+        Time.timeScale = DeathTimeScale;
+        if (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
+        {
+            while (animation != null && animation.isActiveAndEnabled && !animation.IsDeathAnimationComplete)
+                yield return null;
+        }
+
+        yield return new WaitForSecondsRealtime(ResultDelayAfterDeathAnimation);
+        Time.timeScale = 0f;
         view = DeathResultView.Create(Result, capture, Continue, SaveAndExit);
         if (!LastResult.Success) view.SetError("사망 기록 저장 실패 · 저장 공간을 확인한 뒤 다시 시도해 주세요.");
+    }
+
+    private void BeginCameraZoom()
+    {
+        deathCamera = Camera.main;
+        if (deathCamera == null) return;
+
+        Transform cameraTransform = deathCamera.transform;
+        cameraStartPosition = cameraTransform.position;
+        cameraStartSize = deathCamera.orthographicSize;
+        cameraStartFieldOfView = deathCamera.fieldOfView;
+        var health = GetComponent<PlayerHealth>();
+        Vector3 focus = health != null && health.BodyCollider != null ? health.BodyCollider.bounds.center : transform.position;
+        Vector3 offset = focus - cameraStartPosition;
+        cameraFocusPosition = cameraStartPosition + Vector3.ProjectOnPlane(offset, cameraTransform.forward);
+        zoomStartedAt = Time.unscaledTime;
     }
     private void QueueCapture()
     {
@@ -91,7 +178,18 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     private void LateUpdate()
     {
         if (!HasResult || transitioning) return;
-        Time.timeScale = 0f;
+        Time.timeScale = view == null ? DeathTimeScale : 0f;
+        // Run after gameplay camera controllers and hold the close-up under the result.
+        if (deathCamera != null)
+        {
+            float progress = view == null ? Mathf.Clamp01((Time.unscaledTime - zoomStartedAt) / ZoomDuration) : 1f;
+            float blend = Mathf.SmoothStep(0f, 1f, progress);
+            deathCamera.transform.position = Vector3.Lerp(cameraStartPosition, cameraFocusPosition, blend);
+            if (deathCamera.orthographic)
+                deathCamera.orthographicSize = Mathf.Lerp(cameraStartSize, cameraStartSize * ZoomLensScale, blend);
+            else
+                deathCamera.fieldOfView = Mathf.Lerp(cameraStartFieldOfView, cameraStartFieldOfView * ZoomLensScale, blend);
+        }
         DisableControls();
         if (!captureQueued && Time.unscaledTime >= nextCaptureRetry) QueueCapture();
     }
@@ -128,6 +226,13 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
     {
         if (view != null) Destroy(view.gameObject);
         if (capture != null) Destroy(capture);
+        if (deathCamera != null)
+        {
+            deathCamera.transform.position = cameraStartPosition;
+            deathCamera.orthographicSize = cameraStartSize;
+            deathCamera.fieldOfView = cameraStartFieldOfView;
+        }
+        if (deathBody != null) deathBody.constraints = bodyConstraints;
         UiModal.Pop(this);
         if (Active == this) { Active = null; Time.timeScale = 1f; }
     }

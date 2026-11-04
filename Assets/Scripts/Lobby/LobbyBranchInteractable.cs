@@ -10,6 +10,7 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private BoxCollider2D trigger;
     [SerializeField] private Sprite closedDoor;
     [SerializeField] private Sprite combatDoor;
+    [SerializeField] private Sprite bossDoor;
     [SerializeField] private Sprite shopDoor;
     [Tooltip("분기 위 안내와 콜라이더 윗면 사이의 월드 거리.")]
     [SerializeField, Min(0f)] private float promptGap = .8f;
@@ -93,6 +94,7 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
             if (candidate.revealed)
             {
                 if (candidate.role == BranchRole.Combat && combatDoor != null) door = combatDoor;
+                else if (candidate.role == BranchRole.Boss && bossDoor != null) door = bossDoor;
                 else if (candidate.role == BranchRole.Shop && shopDoor != null) door = shopDoor;
             }
             if (body.sprite != door) body.sprite = door;

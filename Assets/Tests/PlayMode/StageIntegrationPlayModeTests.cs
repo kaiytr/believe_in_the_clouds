@@ -44,6 +44,100 @@ public sealed class StageIntegrationPlayModeTests
     private static GameObject Player => GameObject.FindGameObjectWithTag("Player");
 
     [UnityTest]
+    public IEnumerator ContactDamageWaitsForInvulnerabilityEvenWhenThePlayerSleeps()
+    {
+        var player = CreateDoctrineTestPlayer();
+        var enemy = new GameObject("Contact damage test enemy");
+        enemy.transform.position = player.transform.position;
+        enemy.AddComponent<BoxCollider2D>().isTrigger = true;
+        enemy.AddComponent<EnemyContactDamage>();
+        var hitTimes = new List<float>();
+        void ObserveHit(DoctrineEventData evt)
+        {
+            if (evt.Condition == ConditionType.OnHit && evt.SubjectObject == player.gameObject)
+                hitTimes.Add(Time.time);
+        }
+
+        DoctrineEventBus.EventRaised += ObserveHit;
+        try
+        {
+            Physics2D.SyncTransforms();
+            float until = Time.realtimeSinceStartup + 3f;
+            while (hitTimes.Count < 1 && Time.realtimeSinceStartup < until) yield return null;
+            Assert.That(hitTimes.Count, Is.EqualTo(1));
+            Assert.That(player.CurrentHp, Is.EqualTo(95f));
+            Assert.That(player.IsInvulnerable, Is.True);
+
+            player.GetComponent<Rigidbody2D>().Sleep();
+            yield return new WaitForSeconds(.35f);
+            Assert.That(hitTimes.Count, Is.EqualTo(1));
+            Assert.That(player.CurrentHp, Is.EqualTo(95f));
+
+            until = Time.realtimeSinceStartup + 3f;
+            while (hitTimes.Count < 2 && Time.realtimeSinceStartup < until) yield return null;
+            Assert.That(hitTimes.Count, Is.EqualTo(2));
+            Assert.That(hitTimes[1] - hitTimes[0], Is.GreaterThanOrEqualTo(.99f));
+            Assert.That(player.CurrentHp, Is.EqualTo(90f));
+        }
+        finally
+        {
+            DoctrineEventBus.EventRaised -= ObserveHit;
+            Object.Destroy(enemy);
+            Object.Destroy(player.gameObject);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator HitExplosionDamagesThePlayerOnceWithoutStartingAnotherExplosion()
+    {
+        var player = CreateDoctrineTestPlayer();
+        var manager = DoctrineHudBoot.EnsureManagerExists();
+        var rule = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Explode);
+        Assert.That(manager.TryActivate(rule, null, out string reason, out var entry), Is.True, reason);
+        int hits = 0;
+        int explosions = 0;
+        void ObserveHit(DoctrineEventData evt)
+        {
+            if (evt.Condition == ConditionType.OnHit && evt.SubjectObject == player.gameObject) hits++;
+        }
+        void ObserveExplosion(DoctrineManager.ActiveDoctrine active, GameObject target)
+        {
+            if (active == entry && target == player.gameObject) explosions++;
+        }
+
+        DoctrineEventBus.EventRaised += ObserveHit;
+        manager.Triggered += ObserveExplosion;
+        try
+        {
+            Physics2D.SyncTransforms();
+            Assert.That(player.TakeDamage(new DamageInfo(5f, DamageSource.Enemy)), Is.True);
+            Assert.That(explosions, Is.EqualTo(1));
+            Assert.That(hits, Is.EqualTo(2));
+            Assert.That(player.CurrentHp, Is.EqualTo(65f));
+        }
+        finally
+        {
+            manager.Triggered -= ObserveExplosion;
+            DoctrineEventBus.EventRaised -= ObserveHit;
+            manager.DeactivateEntry(entry);
+            Object.Destroy(player.gameObject);
+        }
+        yield return null;
+    }
+
+    private static PlayerHealth CreateDoctrineTestPlayer()
+    {
+        Time.timeScale = 1f;
+        var root = new GameObject("Doctrine test player") { tag = "Player" };
+        root.transform.position = new Vector3(120f, 120f, 0f);
+        root.AddComponent<BoxCollider2D>();
+        var body = root.AddComponent<Rigidbody2D>();
+        body.gravityScale = 0f;
+        body.constraints = RigidbodyConstraints2D.FreezeAll;
+        return root.AddComponent<PlayerHealth>();
+    }
+
+    [UnityTest]
     public IEnumerator AllProjectScenesHaveTheCompletePlayerAndSharedScreens()
     {
         foreach (string path in ProjectScenes.AllPaths)

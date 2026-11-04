@@ -203,7 +203,7 @@ public sealed class LobbyPlayModeTests
         yield return Ready("Lobby");
         Assert.That(Flow.State.id, Is.Not.EqualTo(oldRun)); Assert.That(Flow.State.combatClears, Is.Zero);
         Assert.That(Player.CurrentHp, Is.EqualTo(Player.MaxHp)); Assert.That(Currency.Balance, Is.EqualTo(70));
-        Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(Flow.Service.CountPiece("subject.player"), Is.EqualTo(9));
         Flow.Service.TryHandleDeath(death, null, () => Assert.Fail("Duplicate death"));
         Assert.That(Currency.Balance, Is.EqualTo(70));
     }
@@ -219,6 +219,76 @@ public sealed class LobbyPlayModeTests
         yield return DeathResultReady();
         Player.GetComponent<PlayerDeathCoordinator>().Continue(); yield return Ready("Lobby");
         Assert.That(Currency.Balance, Is.EqualTo(70));
+    }
+
+    [UnityTest] public IEnumerator ConfirmedDeathLosesOneThirdAndClearsTheFoundationOnLobbyReturn()
+    {
+        var foundation = FoundationScreen.Instance;
+        var manager = DoctrineHudBoot.EnsureManagerExists();
+        var rule = new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal);
+        Assert.That(manager.TryActivate(rule, null, out string reason, out var unrelated), Is.True, reason);
+        try
+        {
+            Assert.That(Flow.Service.TryGrantPiece("subject.player", 3, "fixture").Success, Is.True);
+            Assert.That(Flow.Service.TryGrantPiece("condition.hit", 2, "fixture").Success, Is.True);
+            Assert.That(Flow.Service.TryGrantPiece("result.heal", 2, "fixture").Success, Is.True);
+            foundation.Open(Object.FindFirstObjectByType<FoundationInteractable>(), Player.gameObject);
+            PlaceFoundationPiece(foundation, 0, "subject.player");
+            PlaceFoundationPiece(foundation, 0, "condition.hit");
+            PlaceFoundationPiece(foundation, 0, "result.heal");
+            PlaceFoundationPiece(foundation, 1, "subject.player");
+            PlaceFoundationPiece(foundation, 1, "condition.hit");
+            PlaceFoundationPiece(foundation, 1, "result.heal");
+            PlaceFoundationPiece(foundation, 2, "subject.player");
+            Assert.That(manager.ActiveDoctrines.Count, Is.EqualTo(3));
+            Assert.That(foundation.SelectedEntry.Id, Is.EqualTo("subject.player"));
+            foundation.Close();
+
+            Assert.That(Flow.Depart(Combat().BranchId).Success, Is.True);
+            yield return ReadyCombat();
+            Flow.DieForTest();
+            yield return DeathResultReady();
+            Assert.That(EconomyLedger.Total(Flow.Service.Snapshot().pieces), Is.EqualTo(7));
+            Assert.That(manager.ActiveDoctrines.Count, Is.EqualTo(3));
+
+            var death = Player.GetComponent<PlayerDeathCoordinator>();
+            store.FailWrites = true;
+            death.Continue();
+            Assert.That(EconomyLedger.Total(Flow.Service.Snapshot().pieces), Is.EqualTo(7));
+            Assert.That(manager.ActiveDoctrines.Count, Is.EqualTo(3));
+            Assert.That(foundation.SelectedEntry, Is.Not.Null);
+
+            store.FailWrites = false;
+            death.Continue();
+            yield return Ready("Lobby");
+            var saved = Flow.Service.Snapshot();
+            Assert.That(saved.death.lostPieces, Is.EqualTo(2));
+            Assert.That(EconomyLedger.Total(saved.death.allPiecesAfterUnequip), Is.EqualTo(7));
+            Assert.That(EconomyLedger.Total(saved.pieces), Is.EqualTo(5));
+            Assert.That(manager.ActiveDoctrines, Is.EqualTo(new[] { unrelated }));
+
+            foundation.Open(Object.FindFirstObjectByType<FoundationInteractable>(), Player.gameObject);
+            var getSlot = typeof(FoundationScreen).GetMethod("GetSlot", BindingFlags.Instance | BindingFlags.NonPublic);
+            for (int row = 0; row < foundation.DoctrineCount; row++)
+                foreach (var column in new[] { ShopColumn.Subject, ShopColumn.Condition, ShopColumn.Result })
+                    Assert.That(getSlot.Invoke(foundation, new object[] { row, column }), Is.Null);
+        }
+        finally
+        {
+            store.FailWrites = false;
+            foundation.Close();
+            manager.DeactivateEntry(unrelated);
+        }
+    }
+
+    private static void PlaceFoundationPiece(FoundationScreen foundation, int row, string id)
+    {
+        Assert.That(ShopCatalog.TryGet(id, out var entry), Is.True);
+        var catalog = ShopCatalog.GetColumn(entry.Column);
+        int index = Enumerable.Range(0, catalog.Count).Single(i => catalog[i].Id == id);
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        typeof(FoundationScreen).GetMethod("HandleTabClicked", flags).Invoke(foundation, new object[] { entry.Column });
+        typeof(FoundationScreen).GetMethod("HandleItemDroppedOnSlot", flags).Invoke(foundation, new object[] { index, row, entry.Column });
     }
 
     [UnityTest] public IEnumerator VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios()

@@ -331,7 +331,7 @@ public sealed class LobbyEditModeTests
         }
         else Assert.That(service.RetryDeath().Success, Is.True);
         Assert.That(effects, Is.EqualTo(1)); Assert.That(service.Balance, Is.EqualTo(70));
-        Assert.That(service.CountPiece("subject.player"), Is.EqualTo(10));
+        Assert.That(service.CountPiece("subject.player"), Is.EqualTo(9));
         var next = service.RunSnapshot();
         Assert.That(next.id, Is.Not.EqualTo(old.id)); Assert.That(next.combatClears, Is.Zero);
         Assert.That(next.area, Is.EqualTo(RunArea.Lobby)); Assert.That(next.hp, Is.EqualTo(100));

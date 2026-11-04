@@ -50,9 +50,65 @@ public class DogChargeAttack : EnemyAttack
         if (target == null)
             return false;
 
-        float horizontalDistance = Mathf.Abs(target.position.x - transform.position.x);
+        float horizontalOffset = target.position.x - transform.position.x;
+        float direction = Mathf.Abs(horizontalOffset) < 0.01f
+            ? (transform.localScale.x >= 0f ? 1f : -1f)
+            : Mathf.Sign(horizontalOffset);
+        return CanAttackFromDirection(target, direction);
+    }
+
+    protected override bool IsWindupTargetValid(Transform target)
+    {
+        // The charge commits to its original direction once the warning starts.
+        // Only a newly blocked path cancels it; moving out of range is an evade.
+        return target != null && HasClearChargePath(target, LockedFacingDirection);
+    }
+
+    private bool CanAttackFromDirection(Transform target, float direction)
+    {
+        if (target == null)
+            return false;
+
+        float horizontalOffset = target.position.x - transform.position.x;
+        float horizontalDistance = Mathf.Abs(horizontalOffset);
         float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
-        return horizontalDistance <= chargeTriggerRange && verticalDistance <= verticalAttackTolerance;
+        if (horizontalDistance > chargeTriggerRange || verticalDistance > verticalAttackTolerance ||
+            horizontalOffset * direction < -0.01f)
+            return false;
+
+        return HasClearChargePath(target, direction);
+    }
+
+    private bool HasClearChargePath(Transform target, float direction)
+    {
+        Collider2D dogCollider = owner != null ? owner.BodyCollider : null;
+        Collider2D targetCollider = PlayerBodyCollider;
+        if (dogCollider == null || targetCollider == null || obstacleLayer.value == 0)
+            return false;
+
+        Bounds dogBounds = dogCollider.bounds;
+        Bounds targetBounds = targetCollider.bounds;
+        float startX = direction > 0f ? dogBounds.max.x : dogBounds.min.x;
+        float endX = direction > 0f ? targetBounds.min.x : targetBounds.max.x;
+        float distance = (endX - startX) * direction;
+        if (distance <= 0.02f)
+            return true;
+
+        Vector2 origin = new Vector2(startX, dogBounds.center.y);
+        var hits = CombatPhysics.Raycast(origin, Vector2.right * direction, distance, obstacleLayer);
+        for (int i = 0; i < hits.Count; i++)
+        {
+            Collider2D hitCollider = hits[i].collider;
+            if (hitCollider == null || hitCollider == dogCollider || hitCollider == targetCollider ||
+                hitCollider.transform == transform || hitCollider.transform.IsChildOf(transform) ||
+                hitCollider.transform == target || hitCollider.transform.IsChildOf(target))
+                continue;
+
+            if (hits[i].distance < distance - 0.01f)
+                return false;
+        }
+
+        return true;
     }
 
     protected override void PrepareAttack(Transform target)
