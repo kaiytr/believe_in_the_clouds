@@ -17,6 +17,11 @@ public static class DoctrineEffectExecutor
     public const float DefaultExplodeRadius = 3f;
     public const float DefaultAttackBuffDuration = 5f;
 
+    // 폭발 데미지를 적용하는 동안 true. 이 사이에 TakeDamage가 일으키는
+    // OnHit/LowHealth/OnDeath 이벤트는 DoctrineManager가 무시한다.
+    // 없으면 "맞은 적이 또 폭발 → 그 폭발에 맞은 적이 또 폭발" 연쇄로 맵이 쓸린다.
+    public static bool IsApplyingDoctrineDamage { get; private set; }
+
     public static bool IsSupported(ResultType result)
     {
         switch (result)
@@ -165,6 +170,7 @@ public static class DoctrineEffectExecutor
 
     // Table explode: ratio of the exploder's max HP, friends and foes alike (incl. self).
     // damageOverride (>0) replaces the ratio damage (legacy params / tuning).
+    // The visual plays even when damage is 0: the feedback (range flash) is shown regardless.
     public static bool ExecuteExplodeMaxRatio(
         GameObject center,
         float ratio,
@@ -185,6 +191,9 @@ public static class DoctrineEffectExecutor
             damage = maxHp * ratio;
         }
 
+        float effectRadius = radius > 0f ? radius : DefaultExplodeRadius;
+        DoctrineExplodeEffect.Play(center, effectRadius);
+
         if (damage <= 0f)
         {
             return false;
@@ -200,6 +209,8 @@ public static class DoctrineEffectExecutor
         {
             return false;
         }
+
+        DoctrineExplodeEffect.Play(center, radius > 0f ? radius : DefaultExplodeRadius);
 
         List<IHealth> targets = FindTargetsInRadius(center, radius);
         return ApplyExplodeDamage(targets, damage, source, null);
@@ -255,23 +266,31 @@ public static class DoctrineEffectExecutor
             return false;
         }
 
-        int hitCount = 0;
-        foreach (IHealth health in targets)
+        IsApplyingDoctrineDamage = true;
+        try
         {
-            if (health == null || health == exclude)
+            int hitCount = 0;
+            foreach (IHealth health in targets)
             {
-                continue;
+                if (health == null || health == exclude)
+                {
+                    continue;
+                }
+
+                health.TakeDamage(damage, source);
+                hitCount++;
             }
 
-            health.TakeDamage(damage, source);
-            hitCount++;
+            if (VerboseLogs)
+            {
+                Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
+            }
+            return true;
         }
-
-        if (VerboseLogs)
+        finally
         {
-            Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
+            IsApplyingDoctrineDamage = false;
         }
-        return true;
     }
 
     private static float ResolveDuration(float value, float defaultValue)

@@ -201,6 +201,13 @@ public class DoctrineManager : MonoBehaviour
 
     public void NotifyEvent(DoctrineEventData evt)
     {
+        // 폭발 데미지 적용 중에 TakeDamage가 일으키는 OnHit/LowHealth/OnDeath은 무시한다.
+        // 없으면 "맞은 적이 또 폭발 → 그 폭발에 맞은 적이 또 폭발" 연쇄로 맵이 쓸린다.
+        if (DoctrineEffectExecutor.IsApplyingDoctrineDamage)
+        {
+            return;
+        }
+
         // No active doctrines: return without GetComponent/snapshot allocs.
         if (activeDoctrines.Count == 0)
         {
