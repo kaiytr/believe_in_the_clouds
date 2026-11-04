@@ -14,18 +14,17 @@ public class ThrowStoneAttack : EnemyAttack
     [Header("Danger Indicator")]
     [SerializeField] private DangerIndicator dangerIndicatorPrefab;
     [SerializeField, Min(0.01f)] private float indicatorWidth = 0.3f;
-    [SerializeField, Min(0f)] private float verticalAttackTolerance = 1.5f;
 
     private Vector2 launchOrigin;
     private float lockedProjectileDistance;
 
     public float AttackRange => attackRange;
     public bool CanAttackFromCurrentPosition(Transform target) => CanAttack(target);
-    public bool CanEngageTargetFromCurrentPosition(Transform target)
+    public bool CanPursueTargetOnCurrentPlatform(Transform target)
     {
         BelieverEnemy believer = owner as BelieverEnemy;
         return target != null && believer != null &&
-               believer.CanEngageTargetOnCurrentPlatform(target, GetSpawnPosition());
+               believer.CanMoveSafelyToTargetOnCurrentPlatform(target, GetSpawnPosition());
     }
 
     public override bool IsConfigured => base.IsConfigured && projectilePrefab != null &&
@@ -38,10 +37,25 @@ public class ThrowStoneAttack : EnemyAttack
         if (target == null || believer == null)
             return false;
 
-        float horizontalDistance = Mathf.Abs(target.position.x - transform.position.x);
-        float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
-        return horizontalDistance <= attackRange && verticalDistance <= verticalAttackTolerance &&
-               CanEngageTargetFromCurrentPosition(target);
+        Collider2D body = PlayerBodyCollider;
+        if (body == null || !body.enabled)
+            return false;
+
+        Vector2 origin = GetSpawnPosition();
+        Vector2 targetPoint = body.ClosestPoint(origin);
+        return Vector2.Distance(origin, targetPoint) <= attackRange &&
+               believer.HasClearProjectilePath(target, origin, targetPoint);
+    }
+
+    protected override Vector2 GetLockedAttackDirection(Transform target)
+    {
+        Vector2 origin = GetSpawnPosition();
+        Collider2D body = PlayerBodyCollider;
+        Vector2 targetPoint = body != null ? body.ClosestPoint(origin) : (Vector2)target.position;
+        Vector2 direction = targetPoint - origin;
+        if (direction.sqrMagnitude <= 0.0001f)
+            direction = (Vector2)target.position - origin;
+        return direction;
     }
 
     protected override void PrepareAttack(Transform target)
@@ -68,7 +82,8 @@ public class ThrowStoneAttack : EnemyAttack
     private bool IsBodyInThrowLane(Collider2D bodyCollider, Vector2 origin, float length)
     {
         Vector2 center = origin + LockedDirection * (length * 0.5f);
-        return ColliderOverlapsBox(bodyCollider, center, new Vector2(length, indicatorWidth));
+        float angle = Mathf.Atan2(LockedDirection.y, LockedDirection.x) * Mathf.Rad2Deg;
+        return ColliderOverlapsBox(bodyCollider, center, new Vector2(length, indicatorWidth), angle);
     }
 
     public AttackOutcome GetOutcomeAtMaximumRange()
@@ -114,7 +129,6 @@ public class ThrowStoneAttack : EnemyAttack
     private void OnDrawGizmosSelected()
     {
         Vector3 origin = projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;
-        float direction = transform.localScale.x < 0f ? -1f : 1f;
-        Gizmos.DrawLine(origin, origin + Vector3.right * direction * attackRange);
+        Gizmos.DrawWireSphere(origin, attackRange);
     }
 }

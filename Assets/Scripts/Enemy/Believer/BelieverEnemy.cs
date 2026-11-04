@@ -53,11 +53,14 @@ public class BelieverEnemy : EnemyUnit
             return;
         }
 
-        if (!stoneAttack.CanEngageTargetFromCurrentPosition(target))
+        if (!stoneAttack.CanPursueTargetOnCurrentPlatform(target))
         {
             retreatAfterAttack = false;
             StopMovement();
+            FaceTarget();
             ChangeMovementState(EnemyState.Idle);
+            if (stoneAttack.IsReady)
+                stoneAttack.TryAttack(target);
             return;
         }
 
@@ -122,7 +125,7 @@ public class BelieverEnemy : EnemyUnit
             ChangeState(state);
     }
 
-    public bool CanEngageTargetOnCurrentPlatform(Transform candidate, Vector2 attackOrigin)
+    public bool CanMoveSafelyToTargetOnCurrentPlatform(Transform candidate, Vector2 attackOrigin)
     {
         Collider2D enemyBody = BodyCollider;
         Collider2D playerBody = TargetBodyCollider;
@@ -144,12 +147,19 @@ public class BelieverEnemy : EnemyUnit
         perceptionCacheExpiresAt = Time.time + PerceptionCacheDuration;
         hasPerceptionCache = true;
         cachedCanEngage = EvaluateTargetOnCurrentPlatform(enemyBody, playerBody, enemyPosition,
-            playerPosition, attackOrigin);
+            playerPosition);
         return cachedCanEngage;
     }
 
+    public bool HasClearProjectilePath(Transform candidate, Vector2 attackOrigin, Vector2 targetPoint)
+    {
+        Collider2D playerBody = TargetBodyCollider;
+        return candidate != null && candidate == Target && candidate.gameObject.activeInHierarchy &&
+               playerBody != null && playerBody.enabled && !IsBlockedByPlatform(attackOrigin, targetPoint);
+    }
+
     private bool EvaluateTargetOnCurrentPlatform(Collider2D enemyBody, Collider2D playerBody,
-        Vector2 enemyPosition, Vector2 playerPosition, Vector2 attackOrigin)
+        Vector2 enemyPosition, Vector2 playerPosition)
     {
         if (!TryFindGroundUnder(enemyBody, CurrentGroundProbeDrop, out Vector2 enemyGround) ||
             !TryFindGroundUnder(playerBody, PlayerGroundProbeDrop, out Vector2 playerGround) ||
@@ -157,11 +167,7 @@ public class BelieverEnemy : EnemyUnit
             !HasConnectedGroundPath(enemyGround, playerGround))
             return false;
 
-        if (IsBlockedByPlatform(enemyPosition, playerPosition))
-            return false;
-
-        Vector2 projectileLineEnd = new Vector2(playerPosition.x, attackOrigin.y);
-        return !IsBlockedByPlatform(attackOrigin, projectileLineEnd);
+        return !IsBlockedByPlatform(enemyPosition, playerPosition);
     }
 
     private bool HasConnectedGroundPath(Vector2 start, Vector2 end)
