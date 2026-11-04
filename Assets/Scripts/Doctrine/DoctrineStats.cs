@@ -5,6 +5,9 @@ using UnityEngine;
 // Holds multipliers for IncreaseSpeed/IncreaseAttack.
 // PlayerMove reads SpeedMultiplier via ApplyDoctrineSpeed each move;
 // PlayerAttack multiplies step damage by AttackMultiplier.
+//
+// 이속/피해 증가는 "교체식"이다: 다시 발동하면 중첩하지 않고 배율을 덮어쓰고
+// 지속시간만 새로 시작한다. (표 값: 지속 5초 · 쿨 10초)
 public class DoctrineStats : MonoBehaviour
 {
     [Header("Base Attack")]
@@ -15,10 +18,8 @@ public class DoctrineStats : MonoBehaviour
     public float SpeedMultiplier { get; private set; } = 1f;
     public float EffectiveAttack => baseAttack * AttackMultiplier;
 
-    // Persistent (duration <= 0) speed buffs re-applied while the doctrine
-    // stays equipped: e.g. table IncreaseSpeed (+40%, no expiry).
-    private float persistentSpeedBonus = 0f;
-    private float timedSpeedMultiplier = 1f;
+    private Coroutine attackRevert;
+    private Coroutine speedRevert;
 
     public void SetBaseAttack(float value)
     {
@@ -32,10 +33,18 @@ public class DoctrineStats : MonoBehaviour
             return;
         }
 
-        AttackMultiplier *= multiplier;
+        // 교체식: 이전 배율/만료 타이머를 버리고 새로 건다.
+        AttackMultiplier = multiplier;
+
+        if (attackRevert != null)
+        {
+            StopCoroutine(attackRevert);
+            attackRevert = null;
+        }
+
         if (duration > 0f)
         {
-            StartCoroutine(RevertAttackBuff(multiplier, duration));
+            attackRevert = StartCoroutine(RevertAttackBuff(duration));
         }
     }
 
@@ -46,50 +55,63 @@ public class DoctrineStats : MonoBehaviour
             return;
         }
 
-        if (duration <= 0f)
+        // 교체식: 이전 배율/만료 타이머를 버리고 새로 건다.
+        SpeedMultiplier = multiplier;
+
+        if (speedRevert != null)
         {
-            // Persistent buff: fixed table value, re-asserted each use.
-            persistentSpeedBonus = Mathf.Max(persistentSpeedBonus, multiplier);
-            RefreshSpeedMultiplier();
-            return;
+            StopCoroutine(speedRevert);
+            speedRevert = null;
         }
 
-        timedSpeedMultiplier *= multiplier;
-        RefreshSpeedMultiplier();
-        StartCoroutine(RevertSpeedBuff(multiplier, duration));
+        if (duration > 0f)
+        {
+            speedRevert = StartCoroutine(RevertSpeedBuff(duration));
+        }
     }
 
-    public void ClearPersistentSpeedBuff()
+    public void ClearSpeedBuff()
     {
-        persistentSpeedBonus = 0f;
-        RefreshSpeedMultiplier();
+        if (speedRevert != null)
+        {
+            StopCoroutine(speedRevert);
+            speedRevert = null;
+        }
+
+        SpeedMultiplier = 1f;
+    }
+
+    public void ClearAttackBuff()
+    {
+        if (attackRevert != null)
+        {
+            StopCoroutine(attackRevert);
+            attackRevert = null;
+        }
+
+        AttackMultiplier = 1f;
     }
 
     public void ClearAllBuffs()
     {
         StopAllCoroutines();
+        speedRevert = null;
+        attackRevert = null;
         AttackMultiplier = 1f;
-        persistentSpeedBonus = 0f;
-        timedSpeedMultiplier = 1f;
-        RefreshSpeedMultiplier();
+        SpeedMultiplier = 1f;
     }
 
-    private void RefreshSpeedMultiplier()
-    {
-        float persistent = persistentSpeedBonus > 0f ? persistentSpeedBonus : 1f;
-        SpeedMultiplier = persistent * timedSpeedMultiplier;
-    }
-
-    private IEnumerator RevertAttackBuff(float multiplier, float duration)
+    private IEnumerator RevertAttackBuff(float duration)
     {
         yield return new WaitForSeconds(duration);
-        AttackMultiplier = Mathf.Max(0.01f, AttackMultiplier / multiplier);
+        attackRevert = null;
+        AttackMultiplier = 1f;
     }
 
-    private IEnumerator RevertSpeedBuff(float multiplier, float duration)
+    private IEnumerator RevertSpeedBuff(float duration)
     {
         yield return new WaitForSeconds(duration);
-        timedSpeedMultiplier = Mathf.Max(0.01f, timedSpeedMultiplier / multiplier);
-        RefreshSpeedMultiplier();
+        speedRevert = null;
+        SpeedMultiplier = 1f;
     }
 }

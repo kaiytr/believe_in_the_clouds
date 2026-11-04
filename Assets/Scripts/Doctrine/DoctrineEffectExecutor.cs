@@ -5,8 +5,8 @@ using UnityEngine;
 // instead of adding branches per doctrine.
 // Table-fixed values (DoctrineTable) are the defaults:
 //   Explode       = 30% of exploder max HP, friends and foes alike (incl. self)
-//   IncreaseSpeed = x1.4 persistent (re-applied by manager while equipped)
-//   IncreaseAttack= x1.2 for 5s
+//   IncreaseSpeed = x1.4 for 5s, 10s cooldown (replace)
+//   IncreaseAttack= x1.2 for 5s, 10s cooldown (replace)
 //   Heal          = 10% of max HP
 // Doctrine.Magnitude (>0) acts as an explicit damage/amount override when set.
 public static class DoctrineEffectExecutor
@@ -49,7 +49,7 @@ public static class DoctrineEffectExecutor
                 return ExecuteSpeedBuff(
                     target,
                     1f + DoctrineTable.SpeedIncreaseRatio,
-                    0f); // persistent (no revert)
+                    ResolveDuration(doctrine.Duration, DoctrineTable.SpeedBuffDuration));
 
             case ResultType.IncreaseAttack:
                 return ExecuteAttackBuff(
@@ -86,6 +86,8 @@ public static class DoctrineEffectExecutor
         }
 
         health.Heal(amount);
+        // 실제 회복량이 0이어도(이미 가득 참) "교리가 발동했다"는 피드백은 보여준다.
+        DoctrineHealEffect.Play(target);
         return true;
     }
 
@@ -111,6 +113,7 @@ public static class DoctrineEffectExecutor
         }
 
         health.Heal(amount);
+        DoctrineHealEffect.Play(target);
         return true;
     }
 

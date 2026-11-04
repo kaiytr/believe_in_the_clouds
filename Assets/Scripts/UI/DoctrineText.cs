@@ -105,10 +105,10 @@ public static class DoctrineText
                 sb.Append(" (최대체력 30%, 아군·적군 무구분, 5초 쿨타임)");
                 break;
             case ResultType.IncreaseSpeed:
-                sb.Append(" (기본 이속 +40%)");
+                sb.Append(" (기본 이속 +40%, 5초 지속, 10초 쿨타임)");
                 break;
             case ResultType.IncreaseAttack:
-                sb.Append(" (직후 5초간 +20%)");
+                sb.Append(" (직후 5초간 +20%, 10초 쿨타임)");
                 break;
         }
 

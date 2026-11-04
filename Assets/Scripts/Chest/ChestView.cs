@@ -41,10 +41,9 @@ public sealed class ChestView : MonoBehaviour
             rewardLabel.fontSize = 48; rewardLabel.characterSize = .045f;
             rewardLabel.GetComponent<MeshRenderer>().sortingOrder = 30;
         }
-        rewardLabel.text = $"{entry.RarityLabel} · {entry.Label} ×1" +
+        rewardLabel.text = $"{entry.Label} ×1" +
             (reward.appliedCoins < reward.rolledCoins ? "\n코인 보유 한도" : "");
-        rewardLabel.color = reward.rarity == ShopRarity.Rare ? new Color(.4f, .72f, 1) :
-            reward.rarity == ShopRarity.Uncommon ? new Color(.45f, 1, .6f) : new Color(1, .94f, .78f);
+        rewardLabel.color = new Color(1, .94f, .78f);
         rewardLabel.gameObject.SetActive(true); rewardStarted = Time.unscaledTime;
     }
     private void Update()

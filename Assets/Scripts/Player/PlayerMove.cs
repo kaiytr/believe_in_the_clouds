@@ -118,15 +118,15 @@ public class PlayerMove : MonoBehaviour, ISlowable
         slowEndTime = Mathf.Max(slowEndTime, Time.time + duration);
     }
 
-    // Doctrine IncreaseSpeed (+40%): persistent while equipped.
-    public void ApplyDoctrineSpeed(float multiplier)
+    // Doctrine IncreaseSpeed (+40%): 지속 5초 (교체식). duration<=0이면 만료 없음.
+    public void ApplyDoctrineSpeed(float multiplier, float duration = 5f)
     {
         if (doctrineStats == null)
             doctrineStats = GetComponent<DoctrineStats>();
         if (doctrineStats == null || multiplier <= 0f)
             return;
 
-        doctrineStats.ApplySpeedBuff(multiplier, 0f);
+        doctrineStats.ApplySpeedBuff(multiplier, duration);
     }
 
     private void UpdateSlow()
