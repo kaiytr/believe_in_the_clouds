@@ -59,7 +59,9 @@ public class DogChargeAttack : EnemyAttack
 
     protected override bool IsWindupTargetValid(Transform target)
     {
-        return CanAttackFromDirection(target, LockedFacingDirection);
+        // The charge commits to its original direction once the warning starts.
+        // Only a newly blocked path cancels it; moving out of range is an evade.
+        return target != null && HasClearChargePath(target, LockedFacingDirection);
     }
 
     private bool CanAttackFromDirection(Transform target, float direction)

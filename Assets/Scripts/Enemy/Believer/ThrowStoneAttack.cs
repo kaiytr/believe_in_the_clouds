@@ -37,8 +37,6 @@ public class ThrowStoneAttack : EnemyAttack
                believer.CanEngageTargetOnCurrentPlatform(target, GetSpawnPosition());
     }
 
-    protected override bool IsWindupTargetValid(Transform target) => CanAttack(target);
-
     protected override void PrepareAttack(Transform target)
     {
         lockedProjectileDistance = attackRange;
@@ -82,9 +80,6 @@ public class ThrowStoneAttack : EnemyAttack
             Debug.LogError($"{name}: ThrowStoneAttack has an invalid projectile configuration.", this);
             yield break;
         }
-
-        if (!CanAttack(owner.Target))
-            yield break;
 
         MarkAttackAsLaunched();
         Vector2 spawnPosition = GetSpawnPosition();
