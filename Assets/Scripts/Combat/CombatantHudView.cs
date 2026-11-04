@@ -4,6 +4,9 @@ using UnityEngine.UI;
 /// <summary>Shared prefab, styling and world positioning for ordinary enemies and bosses.</summary>
 public sealed class CombatantHudView : MonoBehaviour
 {
+    private const float ReferenceCanvasScale = 0.01f;
+    private const float ReferenceScreenHeight = 1080f;
+
     [SerializeField] private Canvas beliefCanvas, healthCanvas;
     [SerializeField] private Image healthFill, beliefFill, beliefBackground, speechBubble;
     [SerializeField] private Text phrase;
@@ -127,11 +130,13 @@ public sealed class CombatantHudView : MonoBehaviour
     public void Position(Bounds body)
     {
         Camera camera = Camera.main;
-        float scale = .01f;
+        float healthScale = ReferenceCanvasScale;
         if (camera != null && camera.orthographic)
-            scale = Mathf.Max(.0001f, camera.orthographicSize * 2f / 1080f);
-        Place(beliefCanvas, body.center + Vector3.up * (body.extents.y + .95f * scale / .01f), scale, camera);
-        Place(healthCanvas, new Vector3(body.center.x, body.min.y - .52f * scale / .01f, body.center.z), scale, camera);
+            healthScale = Mathf.Max(.0001f, camera.orthographicSize * 2f / ReferenceScreenHeight);
+
+        Place(beliefCanvas, body.center + Vector3.up * (body.extents.y + .95f), ReferenceCanvasScale, camera);
+        Place(healthCanvas, new Vector3(body.center.x,
+            body.min.y - .52f * healthScale / ReferenceCanvasScale, body.center.z), healthScale, camera);
     }
     private static void Place(Canvas canvas, Vector3 position, float scale, Camera camera)
     {
