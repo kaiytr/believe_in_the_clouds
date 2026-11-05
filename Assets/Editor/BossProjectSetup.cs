@@ -390,7 +390,8 @@ public static class BossProjectSetup
         var trigger = new GameObject("Final area entry trigger"); trigger.transform.SetParent(root.transform,false);
         trigger.AddComponent<BoxCollider2D>();
         var entry = trigger.AddComponent<BossEncounterTrigger>();
-        BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(), -18f, 18f, -3.35f, null);
+        BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(),
+            BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, -3.35f, null);
         PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prefabs/Boss/BossEncounter.prefab"); Object.DestroyImmediate(root);
     }
     private static void BuildScene()
@@ -422,8 +423,10 @@ public static class BossProjectSetup
         var entrance = new GameObject("Boss arena entry");
         entrance.AddComponent<BoxCollider2D>();
         BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
-            -12f, 18f, floor, camera, true);
+            BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, floor, camera, true);
         ProjectSceneSynchronization.SynchronizeScene(scene);
+        BossStageSceneryProjectSetup.ConfigureLayout(scene, camera);
+        BossStageSceneryProjectSetup.Decorate(scene);
         EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene,ScenePath);
     }
     private static GameObject Solid(Transform parent, string name, Vector2 position, Vector2 size)

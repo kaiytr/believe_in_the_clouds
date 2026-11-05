@@ -67,7 +67,8 @@ public static class BossArenaProjectSetup
         if (visual == null) visual = gate.AddComponent<SpriteRenderer>();
         visual.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Boss/UnitSquare.png");
         visual.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
-        visual.color = new Color(.65f, .35f, .18f, 1f);
+        visual.color = new Color(.48f, .65f, .76f, .45f);
+        visual.sortingOrder = 4;
         visual.enabled = false;
         return collider;
     }
