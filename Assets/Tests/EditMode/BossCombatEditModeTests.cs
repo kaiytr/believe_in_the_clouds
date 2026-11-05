@@ -150,21 +150,23 @@ public sealed class BossCombatEditModeTests
     }
 
     [Test]
-    public void CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave()
+    public void CloudSettingsRejectUnreachableWhiteCloudAndInvalidLightningAndStoreFasterWave()
     {
         var data = AssetDatabase.LoadAssetAtPath<BossCombatSettings>("Assets/Data/Boss/BossCombatSettings.asset");
         Assert.That(data.WaveSpeed, Is.EqualTo(9f));
         var copy = Object.Instantiate(data);
         try
         {
-            copy.CloudEdgePadding = copy.StormCloudSize.x;
-            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
-            copy.CloudEdgePadding = -.01f;
-            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
-            copy.CloudEdgePadding = data.CloudEdgePadding;
-            copy.ShelterHeight = copy.CloudTopHeight;
+            // The white platform top must stay below the measured base-jump apex minus the landing margin.
+            copy.WhiteCloudTopHeight = copy.ReferenceJumpApex;
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Clouds"));
+            copy.WhiteCloudTopHeight = data.WhiteCloudTopHeight;
+            // The shelter underneath must still fit the body.
+            copy.CloudSize = new Vector2(copy.CloudSize.x, .7f);
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Clouds"));
+            copy.CloudSize = data.CloudSize;
             copy.LightningDuration = 0f;
-            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Cloud lightning"));
+            Assert.That(copy.ValidateSettings(), Has.Some.Contains("Clouds"));
         }
         finally { Object.DestroyImmediate(copy); }
     }
