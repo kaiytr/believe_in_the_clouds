@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ff44f13f810da146875c8a60b222108, type: 3}
+  m_Name: TutorialIntro
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneDefinition
+  sequenceId: tutorial.intro
+  steps:
+  - type: 2
+    actorId: player
+    text:
+    choices: []
+    anchorId: introPlayer
+    movementSpeed: 0
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:
+  - type: 0
+    actorId: player
+    text: "\uC73D... \uC5EC\uAE34..."
+    choices: []
+    anchorId:
+    movementSpeed: 4
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:
+  - type: 0
+    actorId: player
+    text: "\uBD84\uBA85\uD788... \uC5B4\uB5A4 \uBB34\uB9AC\uC5D0\uAC8C \uC7A1\uD600\uC654\uB358
+      \uAC83 \uAE4C\uC9C0\uB294 \uAE30\uC5B5\uB098\uB294\uB370."
+    choices: []
+    anchorId:
+    movementSpeed: 4
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:
+  - type: 0
+    actorId: player
+    text: "\u2026\uC77C\uB2E8 \uC774\uACF3\uC744 \uBE60\uC838\uB098\uC57C\uACA0\uC5B4."
+    choices: []
+    anchorId:
+    movementSpeed: 4
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:
