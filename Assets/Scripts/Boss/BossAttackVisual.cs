@@ -24,6 +24,14 @@ public sealed class BossAttackVisual : MonoBehaviour
 
     private void Awake() { fill = GetComponent<SpriteRenderer>(); indicator = GetComponent<DangerIndicator>(); }
 
+    /// <summary>Projectile warning look: a laser line that thins out until the shot leaves. Drops the rectangle outline.</summary>
+    public void UseThinningLine()
+    {
+        if (indicator == null) return;
+        indicator.UseThinningLine();
+        if (outline != null) outline.enabled = false;
+    }
+
     public void SetSortingBehind(SpriteRenderer reference)
     {
         if (reference == null)

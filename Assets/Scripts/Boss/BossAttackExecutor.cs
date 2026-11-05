@@ -60,6 +60,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
     private IEnumerator Windup(BossAttackRecord record, float duration)
     {
         var warning = CreateWarning(record.Geometry, followOwner: true);
+        if (record.Kind == BossAttackKind.Projectile) warning.UseThinningLine();
         string label = AttackLabel(record);
         owner.SetActionCue(label, AttackHint(record), BossPresentationState.Windup, duration);
         Vector2 previousBossPosition = owner.transform.position;
