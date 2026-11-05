@@ -8,7 +8,9 @@ using System.Text;
 public static class ChestRules
 {
     public const float HoldSeconds = 1.5f;
-    public const float InteractionRadius = 2.5f;
+    // 모든 씬의 상자에 공통 적용되는 상호작용 반경(콜라이더 표면 기준).
+    // 프리팹에 직렬화된 interactRadius 값은 ChestInteractable이 이 값으로 덮어쓴다.
+    public const float InteractionRadius = 1.4f;
     public const int TableVersion = 1;
 
     public static string OpenId(string stageId, string spawnId) =>

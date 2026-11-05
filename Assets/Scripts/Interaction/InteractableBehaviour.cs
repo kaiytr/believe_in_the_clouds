@@ -182,6 +182,6 @@ public abstract class InteractableBehaviour : MonoBehaviour, IInteractable
     protected virtual void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0.4f, 0.9f, 0.6f, 0.5f);
-        Gizmos.DrawWireSphere(transform.position, interactRadius);
+        Gizmos.DrawWireSphere(transform.position, InteractionRadius);
     }
 }

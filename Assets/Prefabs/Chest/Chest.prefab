@@ -99,6 +99,8 @@ MonoBehaviour:
   body: {fileID: 7216479838472559012}
   border: {fileID: 5122860882616602554}
   stateLabel: {fileID: 5196739762632356261}
+  closedSprite: {fileID: 6326216206292943896, guid: 0ec3f39ccc87b884f964ec5dae5bdfa2, type: 3}
+  openedSprite: {fileID: -5002833802931942399, guid: 0ec3f39ccc87b884f964ec5dae5bdfa2, type: 3}
 --- !u!114 &236312140350705627
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -111,7 +113,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 422bf4f1c4dd4e3fbd857f69137f758c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::ChestInteractable
-  interactRadius: 2.5
+  interactRadius: 1.4
   promptText: "E : \uC0C1\uD638\uC791\uC6A9"
   displayName: 
   spawnId: chest-01
@@ -143,7 +145,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.2, y: 0.9, z: 1}
+  m_LocalScale: {x: 2.8, y: 2.8, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7980728315449442201}
@@ -197,8 +199,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -6
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: d923fef7a1f10764bb74f97c25d3daac, type: 3}
-  m_Color: {r: 0.72, g: 0.46, b: 0.2, a: 1}
+  m_Sprite: {fileID: 6326216206292943896, guid: 0ec3f39ccc87b884f964ec5dae5bdfa2, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -423,8 +425,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -7
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: d923fef7a1f10764bb74f97c25d3daac, type: 3}
-  m_Color: {r: 0.32, g: 0.24, b: 0.15, a: 1}
+  m_Sprite: {fileID: 6326216206292943896, guid: 0ec3f39ccc87b884f964ec5dae5bdfa2, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

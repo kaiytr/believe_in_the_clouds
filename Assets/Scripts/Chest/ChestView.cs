@@ -5,6 +5,8 @@ public sealed class ChestView : MonoBehaviour
     [SerializeField] private SpriteRenderer body;
     [SerializeField] private SpriteRenderer border;
     [SerializeField] private TextMesh stateLabel;
+    [SerializeField] private Sprite closedSprite;
+    [SerializeField] private Sprite openedSprite;
     private TextMesh rewardLabel;
     private float rewardStarted;
     private bool lastOpened, lastSelected, hasState;
@@ -22,10 +24,23 @@ public sealed class ChestView : MonoBehaviour
         hasState = true; lastOpened = opened; lastSelected = selected;
         if (body != null)
         {
-            body.color = opened ? new Color(.24f, .18f, .12f) : new Color(.72f, .46f, .2f);
-            body.transform.localScale = new Vector3(1.2f, opened ? .45f : .9f, 1);
+            if (closedSprite != null && openedSprite != null)
+            {
+                body.sprite = opened ? openedSprite : closedSprite;
+                body.color = Color.white;
+            }
+            else
+            {
+                body.color = opened ? new Color(.24f, .18f, .12f) : new Color(.72f, .46f, .2f);
+                body.transform.localScale = new Vector3(1.2f, opened ? .45f : .9f, 1);
+            }
         }
-        if (border != null) border.color = selected ? new Color(1, .88f, .52f) : new Color(.32f, .24f, .15f);
+        if (border != null)
+        {
+            bool legacyFrame = closedSprite == null || openedSprite == null;
+            border.enabled = legacyFrame;
+            if (legacyFrame) border.color = selected ? new Color(1, .88f, .52f) : new Color(.32f, .24f, .15f);
+        }
         if (stateLabel != null) { stateLabel.text = opened ? "열림" : "상자"; stateLabel.color = opened ? Color.gray : new Color(.92f, .86f, .7f); }
     }
 
