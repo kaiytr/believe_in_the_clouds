@@ -41,7 +41,11 @@ public sealed class BossCloudPlatform : MonoBehaviour
         IsWhite = whiteCloud;
         size = shape.Size;
         transform.position = shape.Center;
-        transform.localScale = new Vector3(shape.Size.x, shape.Size.y, 1f);
+        transform.localScale = Vector3.one;
+        SpriteRenderer visual = GetComponent<SpriteRenderer>();
+        visual.drawMode = whiteCloud ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
+        visual.size = shape.Size;
+        visual.color = Color.white;
         gameObject.layer = 0;
         // The prefab collider is only a decoration marker; it must not raise triggers on the moving body.
         GetComponent<BoxCollider2D>().enabled = false;
@@ -68,12 +72,11 @@ public sealed class BossCloudPlatform : MonoBehaviour
         body.interpolation = RigidbodyInterpolation2D.Interpolate;
         body.position = transform.position;
 
-        // Child scale cancels the stretched sprite scale, so collider numbers below are world units.
+        // 루트 배율을 유지해 이미지 크기와 무관하게 실제 착지면을 월드 단위로 맞춘다.
         var landing = new GameObject("Landing surface").transform;
         landing.SetParent(transform, false);
-        landing.localScale = new Vector3(1f / size.x, 1f / size.y, 1f);
         float thickness = Mathf.Min(owner.Settings.WhiteCloudSurfaceThickness, size.y);
-        landing.localPosition = new Vector3(0f, (size.y * .5f - thickness * .5f) / size.y, 0f);
+        landing.localPosition = new Vector3(0f, size.y * .5f - thickness * .5f, 0f);
         landing.gameObject.layer = 0; // switched to the ground layer once a body is above it (UpdateSurfaceLayer)
         surface = landing.gameObject.AddComponent<BoxCollider2D>();
         surface.size = new Vector2(size.x, thickness);

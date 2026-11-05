@@ -84,11 +84,17 @@ public sealed class CutsceneRunnerPlayModeTests
 
         GameObject root = new GameObject("Bubble View Test");
         CutsceneBubbleView view = root.AddComponent<CutsceneBubbleView>();
+        typeof(CutsceneBubbleView).GetField("trackingCamera", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .SetValue(view, camera);
         GameObject actorObject = new GameObject("Speaker");
         CutsceneCharacter actor = actorObject.AddComponent<CutsceneCharacter>();
         actor.transform.position = Vector3.zero;
         view.ShowLine(actor, "한글 대사");
         yield return null;
+        var background = view.BubbleRect.GetComponent<UnityEngine.UI.Image>();
+        Assert.That(background.sprite.texture, Is.SameAs(HudArtworkResources.Load("EnemyBeliefSpeechBubble").Sprite.texture));
+        Assert.That(background.sprite.border.y, Is.GreaterThan(0f));
+        Assert.That(view.BubbleRect.pivot.y, Is.Zero, "말풍선 꼬리를 화자 머리 위에 붙인다.");
         Vector2 firstPosition = view.BubbleRect.anchoredPosition;
 
         actor.transform.position = new Vector3(1.4f, 0.8f, 0f);

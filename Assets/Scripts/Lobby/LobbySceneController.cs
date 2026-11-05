@@ -35,6 +35,8 @@ public sealed class LobbySceneController : MonoBehaviour
     private Text status, message;
     private TextMesh stageTitle, exitLabel;
     private SpriteRenderer exitBody;
+    private TemporaryStageExit stageExit;
+    private bool exitRevealStarted;
     private Button complete, damage, death, grant, reload, fail, fresh;
     private bool playable = true;
 
@@ -86,7 +88,9 @@ public sealed class LobbySceneController : MonoBehaviour
         status.text = isLobby ? $"로비  |  전투 클리어 {run.combatClears}회" + (run.combatClears >= 3 ? " · 보스 후보 해금" : " · 3회부터 보스 후보 등장")
             : run.area == RunArea.Complete ? "임시 보스 완료  |  런 완료 검증 · 정식 엔딩은 후속 연결"
             : run.hasStage ? $"{LobbyRules.RoleLabel(run.stage.role)} 임시 스테이지  |  " +
-                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : "역할 완료 전에는 복귀할 수 없습니다")
+                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : run.stage.role == BranchRole.Shop
+                    ? "상점 이용 후 출구에서 E로 복귀 · 바로 떠날 수도 있습니다"
+                    : "역할 완료 후 출구가 나타납니다")
             : "스테이지 확인 중";
         message.text = flow.Message;
         bool ready = flow.InputReady;
@@ -99,7 +103,37 @@ public sealed class LobbySceneController : MonoBehaviour
         fail.interactable = flow.FixtureStore != null;
         if (!isLobby && exitBody != null && run.hasStage)
         {
-            bool available = run.stage.completed && run.stage.role != BranchRole.Boss;
+            bool isShop = run.stage.role == BranchRole.Shop;
+            bool isCombat = run.stage.role == BranchRole.Combat;
+            bool shouldExist = isShop || isCombat && run.stage.completed;
+            if (isCombat && run.stage.completed && !exitRevealStarted)
+                StartExitReveal();
+
+            LobbyBranchRevealEffect reveal = stageExit != null
+                ? stageExit.GetComponent<LobbyBranchRevealEffect>()
+                : null;
+            bool revealPlaying = reveal != null && reveal.IsPlaying;
+            if (isShop)
+            {
+                exitBody.enabled = true;
+                SetExitLabelVisible(true);
+            }
+            else if (isCombat)
+            {
+                if (!shouldExist) exitBody.enabled = false;
+                else if (exitRevealStarted && !revealPlaying)
+                {
+                    exitBody.enabled = true;
+                    SetExitLabelVisible(true);
+                }
+            }
+            else
+            {
+                exitBody.enabled = false;
+                SetExitLabelVisible(false);
+            }
+
+            bool available = isShop || isCombat && run.stage.completed;
             if (returnDoorSprite != null)
                 exitBody.color = available ? Color.white : new Color(.55f, .55f, .55f);
             else
@@ -122,9 +156,11 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             if (authoredExit != null)
             {
+                stageExit = authoredExit;
                 exitBody = authoredExit.GetComponentInChildren<SpriteRenderer>();
                 exitLabel = WorldLabel(generated.transform, "Exit label", "완료 후 출구 사용",
                     authoredExit.transform.position + Vector3.up * 2.25f, Color.white);
+                InitializeExitPresentation(run);
                 return;
             }
             stageTitle = WorldLabel(generated.transform, "Stage role", LobbyRules.RoleLabel(run.stage.role) + " · 임시 스테이지",
@@ -141,10 +177,40 @@ public sealed class LobbySceneController : MonoBehaviour
             exitBody.sprite = returnDoorSprite != null ? returnDoorSprite : squareSprite;
             exitBody.sharedMaterial = worldMaterial;
             exitBody.sortingOrder = -8;
-            exit.AddComponent<TemporaryStageExit>();
+            stageExit = exit.AddComponent<TemporaryStageExit>();
             exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용",
                 new Vector2(0, returnDoorSprite != null ? 2.25f : 2.7f), Color.white);
+            InitializeExitPresentation(run);
         }
+    }
+
+    private void InitializeExitPresentation(LobbyRunData run)
+    {
+        exitRevealStarted = false;
+        bool showImmediately = run != null && run.stage != null && run.stage.role == BranchRole.Shop;
+        if (exitBody != null) exitBody.enabled = showImmediately;
+        SetExitLabelVisible(showImmediately);
+    }
+
+    private void StartExitReveal()
+    {
+        if (exitRevealStarted || stageExit == null || exitBody == null) return;
+        exitRevealStarted = true;
+        exitBody.enabled = true;
+
+        var effect = stageExit.gameObject.AddComponent<LobbyBranchRevealEffect>();
+        if (!effect.PlayRise(exitBody, exitBody.sprite, Color.white))
+        {
+            Destroy(effect);
+            exitBody.enabled = true;
+            SetExitLabelVisible(true);
+        }
+    }
+
+    private void SetExitLabelVisible(bool visible)
+    {
+        if (exitLabel != null && exitLabel.TryGetComponent(out Renderer labelRenderer))
+            labelRenderer.enabled = visible;
     }
 
     private void SpawnFoundation(Transform parent)

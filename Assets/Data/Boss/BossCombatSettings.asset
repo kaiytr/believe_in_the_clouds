@@ -84,7 +84,7 @@ MonoBehaviour:
   ProjectileLifetime: 3
   ProjectileDamage: 12
   CloudDuration: 3
-  CloudTopHeight: 6
+  CloudTopHeight: 8
   CloudSize: {x: 3, y: 0.42}
   StormCloudSize: {x: 8, y: 1.4}
   StormCloudCountRange: {x: 2, y: 3}
@@ -99,8 +99,8 @@ MonoBehaviour:
   ReferencePlayerHeight: 2
   LightningDuration: 0.45
   LightningDamage: 18
-  LightningSpacing: 0.8
-  LightningWidth: 0.08
+  LightningSpacing: 2
+  LightningWidth: 0.16
   SpikeWarning: 3
   SpikeDuration: 2
   SpikeSize: {x: 1.25, y: 0.8}

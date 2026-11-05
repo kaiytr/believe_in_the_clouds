@@ -1,5 +1,7 @@
 # 컷씬 말풍선 모듈
 
+2026-11-05: 컷씬 말풍선은 기존 `Resources/UI/Hud/EnemyBeliefSpeechBubble.png` 원본 영역을 재사용한다. 별도 말풍선 텍스처를 생성하지 않는다. 테두리·꼬리의 분할 정보를 사용하며 말풍선 아래쪽을 화자의 머리 위에 배치한다.
+
 ## 구성
 
 - `Assets/Scripts/Cutscenes/CutsceneDefinition.cs`: 인스펙터/에셋에서 편집하는 `Dialogue`, `Choice`, `MoveActor`, `HarmlessProjectile`, `ExternalStage` 단계와 배우/앵커 키를 정의합니다.

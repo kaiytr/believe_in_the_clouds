@@ -13,7 +13,6 @@ public sealed class BossCloudLightning : MonoBehaviour
     private BossAttackRecord record;
     private readonly List<BossAttackVisual> warnings = new List<BossAttackVisual>();
     private readonly List<AttackGeometry> rects = new List<AttackGeometry>();
-    private readonly List<GameObject> bolts = new List<GameObject>();
     private float startedAt, deadline, visualEndsAt;
     private bool struck;
 
@@ -129,48 +128,29 @@ public sealed class BossCloudLightning : MonoBehaviour
     private void DrawBolts()
     {
         BossCombatSettings data = owner.Settings;
-        float top = field.StormClouds[0].Bottom;
         foreach (BossCloudPlatform storm in field.StormClouds)
         {
-            int count = Mathf.Max(2, Mathf.CeilToInt(storm.Size.x / data.LightningSpacing));
+            int count = Mathf.Max(1, Mathf.CeilToInt(storm.Size.x / data.LightningSpacing));
             for (int i = 0; i < count; i++)
             {
-                float x = Mathf.Lerp(storm.Left + .08f, storm.Right - .08f, (i + .5f) / count);
+                float x = Mathf.Lerp(storm.Left, storm.Right, (i + .5f) / count);
                 BossCloudPlatform cover = CoveringWhite(x);
                 float endY = cover != null ? cover.Top : field.FloorY;
-                var line = new GameObject("Downward lightning").AddComponent<LineRenderer>();
-                line.transform.SetParent(transform, false);
-                bolts.Add(line.gameObject);
-                line.useWorldSpace = true; line.sharedMaterial = data.EffectMaterial;
-                line.startWidth = line.endWidth = data.LightningWidth;
-                line.startColor = line.endColor = new Color(1f, .94f, .55f);
-                line.sortingOrder = data.AttackOrder + 1;
-                line.positionCount = 9;
-                for (int j = 0; j < 9; j++)
-                {
-                    float jitter = j == 0 || j == 8 ? 0f : (j % 2 == 0 ? -.12f : .12f);
-                    float boltX = x + jitter;
-                    if (cover == null) boltX = AwayFromWhite(boltX);
-                    line.SetPosition(j, new Vector3(boltX, Mathf.Lerp(top, endY, j / 8f), 0f));
-                }
+                var strike = new GameObject("Pixel lightning strike").AddComponent<BossLightningStrikeVisual>();
+                strike.transform.SetParent(transform, false);
+                strike.Initialize(new Vector2(x, storm.Bottom), new Vector2(x, endY),
+                    data.EffectMaterial, data.AttackOrder + 1, data.LightningWidth, data.LightningDuration);
             }
         }
     }
 
     private BossCloudPlatform CoveringWhite(float x)
     {
-        foreach (BossCloudPlatform white in field.WhiteClouds) if (x >= white.Left && x <= white.Right) return white;
+        // 낙뢰의 폭과 계단 모양까지 고려해 보호 구름 아래로 시각 효과가 새지 않게 한다.
+        foreach (BossCloudPlatform white in field.WhiteClouds)
+            if (x >= white.Left - .65f && x <= white.Right + .65f) return white;
         return null;
     }
-
-    private float AwayFromWhite(float x)
-    {
-        foreach (BossCloudPlatform white in field.WhiteClouds)
-            if (x > white.Left - .01f && x < white.Right + .01f)
-                return x < white.Position.x ? white.Left - .01f : white.Right + .01f;
-        return x;
-    }
-
     private void End()
     {
         ClearWarnings();

@@ -31,6 +31,7 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
     private string revealedLabel;
     private bool bodyWasEnabled, frameWasEnabled, labelWasEnabled, captured, restored;
     private bool sank, emerged, landed;
+    private bool riseOnly;
     private float elapsed, depth, groundWidth;
     private GameObject debrisRoot;
     private Sprite shardSprite, dustSprite;
@@ -44,10 +45,22 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
     public bool Play(SpriteRenderer source, SpriteRenderer border, TextMesh roleLabel,
         Sprite targetSprite, Color targetTint, string targetLabel)
     {
+        return Begin(source, border, roleLabel, targetSprite, targetTint, targetLabel, false);
+    }
+
+    public bool PlayRise(SpriteRenderer source, Sprite targetSprite, Color targetTint)
+    {
+        return Begin(source, null, null, targetSprite, targetTint, string.Empty, true);
+    }
+
+    private bool Begin(SpriteRenderer source, SpriteRenderer border, TextMesh roleLabel,
+        Sprite targetSprite, Color targetTint, string targetLabel, bool riseFromBelow)
+    {
         if (captured || source == null || source.sprite == null || targetSprite == null) return false;
 
         body = source; frame = border; label = roleLabel;
         revealedSprite = targetSprite; revealedTint = targetTint; revealedLabel = targetLabel;
+        riseOnly = riseFromBelow;
         bodyWasEnabled = body.enabled;
         frameWasEnabled = frame != null && frame.enabled;
         labelRenderer = label != null ? label.GetComponent<Renderer>() : null;
@@ -74,6 +87,9 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
         body.enabled = false;
         if (frame != null) frame.enabled = false;
         if (labelRenderer != null) labelRenderer.enabled = false;
+        visual.transform.position = riseOnly
+            ? body.transform.position + Vector3.down * depth
+            : body.transform.position;
         BuildDebris(new Vector3(bounds.center.x, bounds.min.y + .025f, body.transform.position.z));
         Emit(6, 7, .5f);
         return true;
@@ -92,6 +108,12 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
 
     private void AnimateDoor()
     {
+        if (riseOnly)
+        {
+            AnimateRise();
+            return;
+        }
+
         if (!sank && elapsed >= RumbleDuration)
         {
             sank = true;
@@ -140,6 +162,41 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
             y = Mathf.Lerp(.09f, 0f, Mathf.SmoothStep(0f, 1f, t));
         }
         visual.transform.position = body.transform.position + new Vector3(x, y, 0f);
+    }
+
+    private void AnimateRise()
+    {
+        float settleAt = RiseDuration;
+        if (!emerged && elapsed >= RiseDuration * .8f)
+        {
+            emerged = true;
+            visual.sprite = revealedSprite;
+            visual.color = revealedTint;
+            Emit(16, 12, 1f);
+        }
+        if (!landed && elapsed >= settleAt)
+        {
+            landed = true;
+            Emit(4, 8, .45f);
+        }
+        if (elapsed >= settleAt + SettleDuration)
+        {
+            RestorePresentation();
+            return;
+        }
+
+        float y;
+        if (elapsed < settleAt)
+        {
+            float t = elapsed / RiseDuration;
+            y = Mathf.Lerp(-depth, .09f, 1f - Mathf.Pow(1f - t, 3f));
+        }
+        else
+        {
+            float t = (elapsed - settleAt) / SettleDuration;
+            y = Mathf.Lerp(.09f, 0f, Mathf.SmoothStep(0f, 1f, t));
+        }
+        visual.transform.position = body.transform.position + Vector3.up * y;
     }
 
     private void BuildDebris(Vector3 ground)

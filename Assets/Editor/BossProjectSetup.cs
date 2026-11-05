@@ -166,8 +166,13 @@ public static class BossProjectSetup
     private static BossCloudPlatform CloudPrefab(bool white)
     {
         var root = new GameObject(white ? "WhiteCloud" : "BlackCloud");
-        var renderer = root.AddComponent<SpriteRenderer>(); renderer.sprite = cloud; renderer.sharedMaterial = material;
-        renderer.color = white ? new Color(.92f, .98f, 1f) : new Color(.16f, .18f, .27f); renderer.sortingOrder = 26;
+        var renderer = root.AddComponent<SpriteRenderer>();
+        renderer.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(white ? BossPresentationAssetSetup.WhiteCloudPath : BossPresentationAssetSetup.StormCloudPath) ?? cloud;
+        renderer.sharedMaterial = material;
+        renderer.color = Color.white;
+        renderer.drawMode = white ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
+        renderer.size = Vector2.one;
+        renderer.sortingOrder = 26;
         var collider = root.AddComponent<BoxCollider2D>(); collider.size = Vector2.one; collider.isTrigger = true;
         root.AddComponent<BossCloudPlatform>();
         var saved = PrefabUtility.SaveAsPrefabAsset(root, Fx + "/" + root.name + ".prefab").GetComponent<BossCloudPlatform>();

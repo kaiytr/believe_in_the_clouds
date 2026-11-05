@@ -28,7 +28,7 @@ public sealed class BossCombatSettings : ScriptableObject
     [Header("Belief lane (independent from regular attacks)")]
     [Tooltip("Seconds from encounter start / phase change / vulnerability entry until the first belief may be selected. Not final balance.")]
     [Min(0f)] public float BeliefInitialDelay = 3f;
-    [Tooltip("Seconds between the end of one belief's activation processing and the next belief selection. Effects (burn window, lightning, observed prophecy) do not extend it. Not final balance.")]
+    [Tooltip("믿음 효과와 판정이 모두 끝난 뒤 다음 믿음을 선택할 때까지의 대기 시간.")]
     [Min(0f)] public float BeliefCooldown = 3f;
     [Tooltip("Minimum seconds a player-observation prophecy waits before a newly started regular attack may close it.")]
     [Min(1f)] public float ProphecyReactionTime = 1f;
@@ -54,7 +54,7 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("Seconds from the lightning warning to the single strike. Independent of phase attack speed.")]
     public float CloudDuration = 3f;
     [Tooltip("Storm cloud top above the arena floor, in world units.")]
-    public float CloudTopHeight = 6f;
+    public float CloudTopHeight = 8f;
     [Tooltip("White (platform) cloud size. The underside must stay above the player's head.")]
     public Vector2 CloudSize = new Vector2(3f, 0.42f);
     public Vector2 StormCloudSize = new Vector2(8f, 1.4f);
@@ -78,8 +78,8 @@ public sealed class BossCombatSettings : ScriptableObject
     public float ReferencePlayerHeight = 2f;
     public float LightningDuration = 0.45f;
     public float LightningDamage = 18f;
-    public float LightningSpacing = 0.8f;
-    public float LightningWidth = 0.08f;
+    public float LightningSpacing = 2f;
+    public float LightningWidth = 0.16f;
 
     [Header("Legacy spike / ground waves")]
     public float SpikeWarning = 3f;
@@ -188,7 +188,9 @@ public sealed class BossCombatSettings : ScriptableObject
             SpriteRenderer renderer = effect.GetComponent<SpriteRenderer>();
             if (renderer == null || renderer.sprite == null || renderer.sharedMaterial == null)
                 errors.Add("Missing sprite/material: " + effect.name);
-            else if (Vector2.Distance(renderer.sprite.bounds.size, Vector2.one) > .005f || effect.transform.localScale != Vector3.one)
+            else if (effect.transform.localScale != Vector3.one ||
+                (effect is BossCloudPlatform ? renderer.drawMode == SpriteDrawMode.Simple || renderer.size.x <= 0f || renderer.size.y <= 0f :
+                Vector2.Distance(renderer.sprite.bounds.size, Vector2.one) > .005f))
                 errors.Add("Effect requires a unit sprite and unit root scale: " + effect.name);
         }
         if (WarningPrefab != null && WarningPrefab.GetComponent<DangerIndicator>() == null)

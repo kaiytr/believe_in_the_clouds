@@ -116,6 +116,37 @@ public sealed class BossPatternReworkPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator OnlyOneBeliefRemainsActiveAndCooldownStartsAfterItsEffectEnds()
+    {
+        data.BurnWindow = .25f;
+        data.BeliefCooldown = .25f;
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 12f);
+        boss.ForcePatternForTest(BossPatternKind.BurnBelief);
+        boss.ForcePatternForTest(BossPatternKind.Dash, cancelRunning: false);
+        Assert.That(boss.IsRegularRunning, Is.True, "일반 공격은 믿음과 독립적으로 진행한다.");
+        boss.ForcePatternForTest(BossPatternKind.CloudBelief, cancelRunning: false);
+        boss.ForcePatternForTest(BossPatternKind.AttackIntentBelief, cancelRunning: false);
+        Assert.That(boss.PatternUseCount(BossPatternKind.CloudBelief), Is.Zero);
+        Assert.That(boss.Prophecies, Is.Empty);
+        yield return new WaitForSeconds(.35f);
+        Assert.That(boss.IsBurning, Is.False);
+        Assert.That(boss.HasActiveBelief, Is.True, "강화가 기록된 공격이 끝나기 전에는 다른 믿음을 겹치지 않는다.");
+        Assert.That(boss.IsPatternEligible(BossPatternKind.CloudBelief), Is.False);
+        yield return Until(() => !boss.HasActiveBelief);
+        data.PhaseOnePool = new[]
+        {
+            new BossPatternWeight(BossPatternKind.MeleeCombo, 1f, 0f),
+            new BossPatternWeight(BossPatternKind.CloudBelief, 1f, 0f)
+        };
+        boss.AutomaticPatterns = true;
+        yield return new WaitForSeconds(.08f);
+        Assert.That(boss.PatternUseCount(BossPatternKind.CloudBelief), Is.Zero, "효과 종료 이후 쿨타임을 기다린다.");
+        yield return Until(() => boss.PatternUseCount(BossPatternKind.CloudBelief) > 0);
+        Assert.That(boss.Clouds.LightningActive, Is.True);
+        Assert.That(boss.ActiveBeliefPhrase, Is.EqualTo("너는 번개를 피하지 못할 것이다."));
+    }
+
+    [UnityTest]
     public IEnumerator AttackProphecyOnlyClosesAtAnAttackStartedAfterTheReactionTime()
     {
         PutPlayer((Vector2)boss.transform.position + Vector2.left * 6f);
@@ -244,6 +275,8 @@ public sealed class BossPatternReworkPlayModeTests
         Assert.That(field.LightningActive, Is.True);
         yield return Until(() => field.Lightning == null || field.Lightning.HasStruck);
         Assert.That(player.CurrentHp, Is.EqualTo(100f - data.LightningDamage), "Overlapping storms deal the strike once.");
+        Assert.That(field.Lightning.GetComponentsInChildren<BossLightningStrikeVisual>(), Is.Not.Empty);
+        Assert.That(field.Lightning.GetComponentsInChildren<LineRenderer>(), Is.Empty);
         Assert.That(boss.AttackHistory.Count(record => record.Kind == BossAttackKind.Lightning && record.Outcome == AttackOutcome.Hit), Is.EqualTo(1));
         yield return Until(() => !field.LightningActive);
 
@@ -264,6 +297,11 @@ public sealed class BossPatternReworkPlayModeTests
         Assert.That(boss.PrepareArenaVisuals(), Is.True);
         BossCloudField field = boss.Clouds; field.SetMotionEnabled(false);
         BossCloudPlatform cloud = field.WhiteClouds[0];
+        SpriteRenderer visual = cloud.GetComponent<SpriteRenderer>();
+        Assert.That(visual.sprite.name, Is.EqualTo("BossWhiteCloud"));
+        Assert.That(visual.color, Is.EqualTo(Color.white));
+        Assert.That(visual.bounds.size.x, Is.EqualTo(cloud.Size.x).Within(.001f));
+        Assert.That(visual.bounds.size.y, Is.EqualTo(cloud.Size.y).Within(.001f));
         foreach (BossCloudPlatform other in field.WhiteClouds.Skip(1)) Move(other, new Vector2(field.LimitsX.y - 2f, other.Position.y));
         Move(cloud, new Vector2(0f, cloud.Position.y)); Physics2D.SyncTransforms();
         // Under the cloud first: the one-way surface is not a floor for a body below it.

@@ -43,6 +43,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private BossCloudField clouds;
     private BossPatternKind activeRegular, activeBeliefPattern;
     private bool regularRunning, regularAttackActive, beliefProcessing, shockwaveReserved, bodyActionActive, initialized;
+    private bool beliefAwaitingEnd;
+    private BossRegularAttackContext runningRegularContext;
     private string phraseCache = "";
     private int phraseSignature = -1;
     private float encounterStartedAt, burnEndsAt;
@@ -84,6 +86,19 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public bool IsPatternRunning => regularRunning || beliefProcessing || (clouds != null && clouds.LightningActive);
     public bool IsRegularRunning => regularRunning;
     public bool IsBeliefProcessing => beliefProcessing;
+    public bool HasActiveBelief => beliefProcessing || prophecies.Count > 0 || HasBurnBelief ||
+        (clouds != null && clouds.LightningActive) || shockwaveReserved || bodyActionActive ||
+        (attacks != null && attacks.ShockwaveTracking > 0);
+    private bool HasBurnBelief
+    {
+        get
+        {
+            if (IsBurning || runningRegularContext != null && runningRegularContext.BurnEnhanced) return true;
+            foreach (BossAttackRecord record in activeAttacks.Values)
+                if (record.BurnEnhanced) return true;
+            return false;
+        }
+    }
     public bool IsShockwavePending => shockwaveReserved;
     public bool IsBodyActionActive => bodyActionActive;
     public BossCloudField Clouds => clouds;
@@ -142,7 +157,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public BossPatternKind ActivePattern => regularRunning || !beliefProcessing ? activeRegular : activeBeliefPattern;
     public BossPatternKind ActiveRegularPattern => activeRegular;
     public BossPatternKind ActiveBeliefPattern => activeBeliefPattern;
-    /// <summary>Speech of every belief effect that is still alive, in activation order.</summary>
+    /// <summary>현재 유지 중인 믿음 한 종류의 문구.</summary>
     public string ActiveBeliefPhrase
     {
         get
@@ -171,12 +186,12 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         {
             case BossBeliefKind.AttackIntent: case BossBeliefKind.NoAttack: case BossBeliefKind.AttackAndDodge: return HasProphecy(kind);
             case BossBeliefKind.Cloud: return clouds != null && clouds.LightningActive;
-            case BossBeliefKind.Burn: return IsBurning;
+            case BossBeliefKind.Burn: return HasBurnBelief;
             case BossBeliefKind.Shockwave: return shockwaveReserved || bodyActionActive || (attacks != null && attacks.ShockwaveTracking > 0);
             default: return false;
         }
     }
-    private void NoteBelief(BossBeliefKind kind) { beliefOrder.Remove(kind); beliefOrder.Add(kind); }
+    private void NoteBelief(BossBeliefKind kind) { beliefOrder.Clear(); beliefOrder.Add(kind); }
     public Font PresentationFont => hud.KoreanFont;
     public bool DebugUiVisible => hud != null && hud.DebugVisible;
     public string CueTitle => cueTitle;
@@ -244,14 +259,19 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
                 SetActionCue("믿음 회복", "다음 공격의 예고를 확인하세요.", BossPresentationState.Idle);
             SetStatus("믿음 회복");
         }
-        if (!automaticPatterns) return;
         float now = Time.time;
+        if (beliefAwaitingEnd && !HasActiveBelief)
+        {
+            beliefAwaitingEnd = false;
+            nextBeliefAt = now + settings.BeliefCooldown;
+        }
+        if (!automaticPatterns) return;
         if (!regularRunning && !shockwaveReserved && !bodyActionActive && now >= nextRegularAt)
         {
             if (ChoosePattern(true, out BossPatternKind regular)) StartRegular(regular);
             else { nextRegularAt = now + .1f; SetStatus("실행 가능한 일반 공격 없음 · 대상 거리/지면/설정 확인"); }
         }
-        if (EncounterStarted && !beliefProcessing && now >= nextBeliefAt)
+        if (EncounterStarted && !HasActiveBelief && !beliefAwaitingEnd && now >= nextBeliefAt)
         {
             if (ChoosePattern(false, out BossPatternKind beliefPattern)) StartBelief(beliefPattern);
             else nextBeliefAt = now + .1f;
@@ -467,6 +487,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         ResolveObservationsBeforeAttack();
         if (token != generation || !CanContinue) return;
         var context = new BossRegularAttackContext(++patternCounter, kind, IsBurning);
+        runningRegularContext = context;
         foreach (BossProphecy prophecy in prophecies)
             if (prophecy.Kind == BossBeliefKind.AttackAndDodge && prophecy.Linked == null)
             { prophecy.Linked = context; context.Dodge = prophecy; break; }
@@ -486,6 +507,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         yield return attacks.Regular(kind, context);
         if (token != generation || !CanContinue) yield break;
         regularAttackActive = false;
+        runningRegularContext = null;
         ResolveDodgeProphecy(context);
         if (token != generation || !CanContinue) yield break;
         float recovery = settings.PatternRecovery / SpeedMultiplier;
@@ -503,6 +525,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     // ---- Belief lane ---------------------------------------------------------------------------------------------
     private void StartBelief(BossPatternKind kind)
     {
+        if (HasActiveBelief || beliefAwaitingEnd) return;
+        beliefAwaitingEnd = true;
         beliefPatternId = ++patternCounter;
         activeBeliefPattern = kind;
         beliefProcessing = true;
@@ -513,8 +537,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
 
     /// <summary>
-    /// Activation processing only. Effects (observed prophecies, the burn window, lightning, travelling waves) outlive it,
-    /// and the cooldown to the next belief starts when this ends.
+    /// 발동 처리가 끝나도 효과/예언/파동이 남아 있으면 다음 믿음을 선택하지 않는다.
+    /// 실제 효과 종료를 Update에서 확인한 뒤 믿음 쿨타임을 시작한다.
     /// </summary>
     private IEnumerator RunBelief(BossPatternKind kind, int token)
     {
@@ -548,7 +572,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         if (token != generation) yield break;
         beliefProcessing = false;
         beliefRoutine = null;
-        nextBeliefAt = Time.time + settings.BeliefCooldown;
         Notify();
     }
 
@@ -712,6 +735,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public bool IsPatternEligible(BossPatternKind candidate)
     {
         if (!TargetValid || !BossPatternSelection.AllowedInPhase(candidate, Phase)) return false;
+        if (!BossPatternSelection.IsRegular(candidate) && HasActiveBelief) return false;
         switch (candidate)
         {
             case BossPatternKind.Projectile:
@@ -822,6 +846,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         Coroutine cancelledRegular = regularRoutine, cancelledBelief = beliefRoutine;
         regularRoutine = beliefRoutine = null;
         regularRunning = beliefProcessing = regularAttackActive = shockwaveReserved = bodyActionActive = false;
+        beliefAwaitingEnd = false;
+        runningRegularContext = null;
         if (cancelledRegular != null && (advancingLanes & LaneRegular) == 0) StopCoroutine(cancelledRegular);
         if (cancelledBelief != null && (advancingLanes & LaneBelief) == 0) StopCoroutine(cancelledBelief);
         prophecies.Clear();

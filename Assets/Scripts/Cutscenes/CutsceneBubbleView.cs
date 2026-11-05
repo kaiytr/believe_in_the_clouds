@@ -41,7 +41,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         choiceSelected = null;
         speakerText.text = currentSpeaker != null ? currentSpeaker.DisplayName : string.Empty;
         bodyText.text = text ?? string.Empty;
-        bodyText.rectTransform.sizeDelta = new Vector2(-70f, 204f);
+        bodyText.rectTransform.sizeDelta = new Vector2(-70f, 194f);
         choicesRoot.gameObject.SetActive(false);
         panelRect.gameObject.SetActive(true);
         UpdatePosition();
@@ -106,6 +106,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         canvas = canvasObject.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.overrideSorting = true;
+        canvas.pixelPerfect = true;
         canvas.sortingOrder = 200;
         canvasRect = canvasObject.GetComponent<RectTransform>();
 
@@ -118,7 +119,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         panel.transform.SetParent(canvasObject.transform, false);
         panelRect = panel.GetComponent<RectTransform>();
         panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0f);
         panelRect.sizeDelta = panelSize;
 
         Image background = panel.GetComponent<Image>();
@@ -135,7 +136,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         speakerRect.pivot = new Vector2(0.5f, 1f);
         speakerRect.anchoredPosition = new Vector2(0f, -30f);
         speakerRect.sizeDelta = new Vector2(-64f, 32f);
-        speakerText.color = new Color32(93, 59, 42, 255);
+        speakerText.color = new Color32(72, 72, 86, 255);
 
         bodyText = CreateText("Dialogue", panelRect, bodyFontSize, FontStyle.Normal);
         bodyText.alignment = TextAnchor.UpperLeft;
@@ -144,8 +145,8 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         bodyRect.anchorMax = new Vector2(0.9f, 1f);
         bodyRect.pivot = new Vector2(0.5f, 1f);
         bodyRect.anchoredPosition = new Vector2(0f, -72f);
-        bodyRect.sizeDelta = new Vector2(-70f, 204f);
-        bodyText.color = new Color32(47, 42, 37, 255);
+        bodyRect.sizeDelta = new Vector2(-70f, 194f);
+        bodyText.color = new Color32(40, 40, 48, 255);
         bodyText.lineSpacing = 1.1f;
 
         GameObject choicesObject = new GameObject("Choices", typeof(RectTransform));
@@ -192,18 +193,18 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         buttonRect.sizeDelta = new Vector2(-8f, 42f);
 
         Image buttonImage = buttonObject.GetComponent<Image>();
-        buttonImage.color = new Color32(239, 226, 204, 255);
+        buttonImage.color = Color.white;
         Button button = buttonObject.GetComponent<Button>();
         button.targetGraphic = buttonImage;
         ColorBlock colors = button.colors;
-        colors.normalColor = new Color32(239, 226, 204, 255);
-        colors.highlightedColor = new Color32(255, 243, 218, 255);
-        colors.pressedColor = new Color32(222, 200, 168, 255);
+        colors.normalColor = new Color32(225, 226, 232, 255);
+        colors.highlightedColor = new Color32(245, 246, 255, 255);
+        colors.pressedColor = new Color32(190, 194, 208, 255);
         button.colors = colors;
 
         Text labelText = CreateText("Label", buttonRect, choiceFontSize, FontStyle.Normal);
         labelText.alignment = TextAnchor.MiddleLeft;
-        labelText.color = new Color32(47, 42, 37, 255);
+        labelText.color = new Color32(40, 40, 48, 255);
         RectTransform labelRect = labelText.rectTransform;
         labelRect.anchorMin = Vector2.zero;
         labelRect.anchorMax = Vector2.one;
@@ -255,14 +256,13 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         Rect safe = Screen.safeArea;
         float scale = canvas != null ? Mathf.Max(0.01f, canvas.scaleFactor) : 1f;
         float halfWidth = panelSize.x * scale * 0.5f;
-        float halfHeight = panelSize.y * scale * 0.5f;
         float minX = safe.xMin + halfWidth + 12f;
         float maxX = safe.xMax - halfWidth - 12f;
-        float minY = safe.yMin + halfHeight + 12f;
-        float maxY = safe.yMax - halfHeight - 12f;
+        float minY = safe.yMin + 12f;
+        float maxY = safe.yMax - panelSize.y * scale - 12f;
 
         screen.x = minX > maxX ? safe.center.x : Mathf.Clamp(screen.x, minX, maxX);
-        screen.y = minY > maxY ? safe.center.y : Mathf.Clamp(screen.y + screenOffset.y, minY, maxY);
+        screen.y = minY > maxY ? safe.yMin + 12f : Mathf.Clamp(screen.y + screenOffset.y * scale, minY, maxY);
 
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 canvasRect, screen, null, out Vector2 local))
@@ -282,71 +282,30 @@ public sealed class CutsceneBubbleView : MonoBehaviour
 
     private static Sprite GetBubbleSprite()
     {
-        if (bubbleSprite != null)
-            return bubbleSprite;
+        if (bubbleSprite != null) return bubbleSprite;
+        HudArtworkSprite artwork = HudArtworkResources.Load("EnemyBeliefSpeechBubble");
+        if (!artwork.IsValid) return null;
 
-        const int width = 256;
-        const int height = 192;
-        Color32[] pixels = new Color32[width * height];
-        Color32 outline = new Color32(91, 65, 49, 255);
-        Color32 fill = new Color32(255, 249, 233, 255);
-
-        Rect outer = Rect.MinMaxRect(3f, 35f, 253f, 190f);
-        Rect inner = Rect.MinMaxRect(7f, 39f, 249f, 186f);
-        Vector2 oa = new Vector2(96f, 38f);
-        Vector2 ob = new Vector2(160f, 38f);
-        Vector2 oc = new Vector2(128f, 4f);
-        Vector2 ia = new Vector2(103f, 40f);
-        Vector2 ib = new Vector2(153f, 40f);
-        Vector2 ic = new Vector2(128f, 12f);
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
-                bool isOuter = InRoundedRect(p, outer, 28f) || InTriangle(p, oa, ob, oc);
-                if (!isOuter)
-                    continue;
-
-                bool isInner = InRoundedRect(p, inner, 24f) || InTriangle(p, ia, ib, ic);
-                pixels[y * width + x] = isInner ? fill : outline;
-            }
-        }
-
-        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true)
-        {
-            name = "Cutscene Bubble",
-            filterMode = FilterMode.Bilinear,
-            wrapMode = TextureWrapMode.Clamp,
-            hideFlags = HideFlags.DontSave
-        };
-        texture.SetPixels32(pixels);
-        texture.Apply(false, true);
-        bubbleSprite = Sprite.Create(texture, new Rect(0f, 0f, width, height),
-            new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect,
-            new Vector4(28f, 28f, 42f, 42f));
-        bubbleSprite.name = "Cutscene Bubble";
+        // 기존 HUD 원본 텍스처/영역을 그대로 사용하고 테두리·꼬리만 분할 보존한다.
+        Sprite source = artwork.Sprite;
+        bubbleSprite = Sprite.Create(source.texture, source.rect, new Vector2(.5f, .5f),
+            source.pixelsPerUnit, 0, SpriteMeshType.FullRect, new Vector4(12f, 24f, 12f, 12f));
+        bubbleSprite.name = "EnemyBeliefSpeechBubble (Cutscene)";
         bubbleSprite.hideFlags = HideFlags.DontSave;
         return bubbleSprite;
     }
 
-    private static bool InRoundedRect(Vector2 point, Rect rect, float radius)
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetArtwork()
     {
-        float x = Mathf.Clamp(point.x, rect.xMin + radius, rect.xMax - radius);
-        float y = Mathf.Clamp(point.y, rect.yMin + radius, rect.yMax - radius);
-        return (point - new Vector2(x, y)).sqrMagnitude <= radius * radius;
+        if (bubbleSprite != null)
+        {
+            if (Application.isPlaying) Destroy(bubbleSprite);
+            else DestroyImmediate(bubbleSprite);
+        }
+        bubbleSprite = null;
+        koreanFont = null;
     }
-
-    private static bool InTriangle(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
-    {
-        float denominator = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
-        float first = ((b.y - c.y) * (point.x - c.x) + (c.x - b.x) * (point.y - c.y)) / denominator;
-        float second = ((c.y - a.y) * (point.x - c.x) + (a.x - c.x) * (point.y - c.y)) / denominator;
-        float third = 1f - first - second;
-        return first >= 0f && second >= 0f && third >= 0f;
-    }
-
     private void OnDestroy()
     {
         Hide();
