@@ -25,20 +25,21 @@
 | `BeliefCooldown` | 3초 | 직전 믿음의 **효과와 판정이 모두 끝난 시점**부터 다음 믿음 선택까지. 화상 강화가 기록된 진행 공격·투사체도 끝나야 다른 믿음을 선택한다 |
 | `ProphecyReactionTime` | 1초 (최소 1) | 관찰형 예언이 발동 후 최소로 보장하는 반응 시간 |
 | `BurnWindow` | 10초 | 화상 강화 유지 시간 |
-| `StormCloudCountRange` | 2~3 | 아레나 준비 시 한 번 정하는 먹구름 수 |
 | `WhiteCloudCount` | 2 | 이동 발판 흰 구름 수 |
 | `StormCloudSpeed` / `WhiteCloudSpeed` | 0.7~1.6 / 0.8~1.5 | 무작위 좌우 이동 속도 범위 (월드 단위/초) |
 | `CloudTurnInterval` | 1.5~4초 | 방향·속도를 다시 뽑는 간격 |
-| `StormCloudSize` | 8×1.4 | 이전 12×1.4에서 줄임. 먹구름 2~3개가 아레나 전체를 가리지 않게 하려는 값 |
+| `StormCloudSize` | 11×2 | 먹구름 최소 크기. 실제 폭은 `max(이 값, 아레나폭/개수×StormCloudCoverage)` |
+| `StormCloudCountRange` / `StormCloudCoverage` / `StormCloudWander` | 3~4 / 1.4 / 1.5 | 먹구름 개수, 폭 여유 배율, 칸 중심에서 벗어날 수 있는 거리. 구름마다 자기 칸 주변에서만 움직여 아레나 가로가 계속 채워진다 |
+| `WhiteCloudVisualExtra` | 0.25 | 흰 구름 그림만 윗면 위로 더 그리는 높이(장식). 착지·보호 판정은 `CloudSize` 기준 |
 | `CloudTopHeight` | 8 | 보스 카메라가 없는 전투의 먹구름 높이 기본값. 보스 아레나에서는 전투 화면 위쪽 여백 0.7유닛을 기준으로 배치 |
-| `CloudSize` | 3×0.42 | 흰 구름 크기 |
-| `WhiteCloudTopHeight` | 2.45 | 흰 구름 윗면(착지면) 높이, 바닥 기준 |
+| `CloudSize` | 3×0.55 | 흰 구름 크기(세로는 그림 원본 비율에 가깝게) |
+| `WhiteCloudTopHeight` | 2.66 | 흰 구름 윗면(착지면) 높이, 바닥 기준 |
 | `WhiteCloudSurfaceThickness` | 0.14 | 단방향 착지 콜라이더 두께 |
-| `ReferenceJumpApex` / `WhiteCloudLandingMargin` / `ReferencePlayerHeight` | 2.96 / 0.5 / 2 | 윗면 높이 검증용 기준값 |
+| `ReferenceJumpApex` / `WhiteCloudLandingMargin` / `ReferencePlayerHeight` | 2.96 / 0.3 / 2 | 윗면 높이 검증용 기준값 |
 
 삭제한 설정: `StareDuration`, `SurpriseWindup`(응시 제거), `BurnPreparation`(화상 준비 없음), `CloudEdgePadding`, `ShelterHeight`(흰 구름은 먹구름 안이 아니라 독립 이동 발판). `CloudWarning`은 `[Obsolete]` 미사용 필드로만 남겼다. 소유 범위 밖 `StageIntegrationPlayModeTests`가 아직 이 이름을 읽어 테스트 어셈블리가 컴파일되도록 하기 위한 것이다.
 
-흰 구름 윗면 높이는 `PlayerMove`(jumpPower 15.64, 중력 9.81×4, 물리 0.02초)로 기본 점프 정점을 계산해 정했다(발 기준 2.961). 윗면 2.45는 정점−착지 여유 0.5 이하이고, 구름 밑면 2.03은 몸 높이 2 위라 구름 아래 보호 구역에 몸 전체가 들어간다. 위에 서도 몸(4.45)이 먹구름 밑면(4.6) 아래다. `ValidateSettings`와 EditMode 테스트가 이 관계를 검사한다.
+흰 구름 윗면 높이는 `PlayerMove`(jumpPower 15.64, 중력 9.81×4, 물리 0.02초)로 기본 점프 정점을 계산해 정했다(발 기준 2.961). 윗면 2.66은 정점−착지 여유 0.3 이하이고, 구름 밑면 2.11은 몸 높이 2 위라 구름 아래 보호 구역에 몸 전체가 들어간다. 위에 서도 몸(4.66)이 먹구름 밑면 아래다(대체 높이 8 기준 6). `ValidateSettings`와 EditMode 테스트가 이 관계를 검사한다.
 
 ## 2. 믿음 규칙
 
@@ -120,3 +121,11 @@ arena.HoldingForIntro                // 봉쇄·구름 준비는 끝났고 전�
 위 개별 세션의 미실행 기록 이후 통합에서 새 설정 EditMode 4개와 직접 관련된 PlayMode 6개를 실제 실행해 통과했다. 구형 StageIntegration 번개 테스트를 갱신했고, 실제 BossTest와 BossEncounter에 기존 BossEncounterTrigger를 유지하는 컷씬 연결을 적용했다. 도입 취소용 CancelIntro API를 추가했다. StageTest는 도입 없이 기존 자동 진입을 유지한다.
 
 전체 보스 테스트를 실행한 것은 아니다. 실행한 케이스와 남은 수동 확인은 Docs/ParallelWorkIntegration_2026-11-05.md를 따른다. 컷씬 연결의 최종 기준은 Docs/CutsceneIntegrationGuide.md다.
+
+## 8. 후속 수정 (`codex/boss-polish`)
+
+- **구름 크기**: 흰 구름 세로 0.42→0.55, 먹구름 8×1.4→11×2. 흰 구름이 두꺼워진 만큼 착지 여유를 0.5→0.3으로 줄여 윗면을 2.66으로 올렸다(밑면이 몸 높이 2 위에 있어야 보호가 성립한다). 먹구름 시작 위치는 개수만큼 칸을 나눠 배치한다.
+- **화살표 제거**: `DangerIndicator`의 방향 화살표 기능 전체와 호출(보스 대시·투사체, 신자 돌 던지기)을 삭제했다. 프리팹에 남은 방향 관련 직렬화 값은 무시된다.
+- **대시 예고**: 보스는 몸 앞쪽 끝에서 시작해 `DashDistance`만큼만 그린다(뒤쪽과 몸 아래를 덮지 않음). 개 돌진 예고도 콜라이더 앞쪽 끝에서 시작하고, 위협 판정도 같은 사각형을 쓴다.
+- **연속 베기**: 보스의 판정과 칼날 이펙트는 플레이어와 완전히 같다(변경 없음, 이펙트도 플레이어의 `PlaySwing` 그대로). 붉은 예고만 그 이펙트가 그리는 부채꼴(`DownFanImpactEffect.SwingFan`, 이펙트와 같은 중심 각도·반경·반각)로 바꿨다(`BossFanWarning`). 참고: 판정 히트박스(사각형)는 이 부채꼴보다 앞쪽으로 더 길어(1타 약 1.7 대 1.2) 부채꼴 밖 가장자리에서도 맞을 수 있다.
+- **컷씬 말풍선**: `CutsceneBubbleView`가 전체 대사/선택지 목록에 맞춰 폭(300~560 설계 단위), 안쪽 여백 좌우 44·아래 58(꼬리 포함)·위 36과 높이를 정한다. 타이핑 중에는 크기가 변하지 않는다(전체 문장 기준). 선택지는 가장 긴 항목에 폭을 맞추고, 길면 줄바꿈하며 항목 높이가 늘어난다.

@@ -158,6 +158,21 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         EnsureRoot();
         EnsureArc();
 
+        if (!SwingFan(playerPos, center, size, facingSign, out float centerAngle, out float radius, out float half))
+            return;
+
+        if (spawnArc && arcTransform != null)
+            DrawArc(playerPos, radius, centerAngle, half);
+
+        EmitSparks(playerPos, radius, centerAngle, half, Time.time, radial: false, facingSign);
+    }
+
+    /// <summary>
+    /// 지상 베기 이펙트가 그리는 부채꼴(중심 각도, 반경, 반각). 이펙트와 보스 공격 예고가 같은 값을 쓴다.
+    /// </summary>
+    public static bool SwingFan(Vector2 playerPos, Vector2 center, Vector2 size, float facingSign,
+        out float centerAngleDeg, out float radius, out float halfAngleDeg)
+    {
         Vector2 toCenter = center - playerPos;
         float distance = toCenter.magnitude;
         if (distance < 0.05f)
@@ -166,17 +181,10 @@ public sealed class DownFanImpactEffect : MonoBehaviour
             distance = toCenter.magnitude;
         }
 
-        float centerAngle = Mathf.Atan2(toCenter.y, toCenter.x) * Mathf.Rad2Deg;
-        float radius = distance + size.magnitude * 0.22f;
-        if (radius <= 0f)
-            return;
-
-        float half = Mathf.Clamp(26f + size.magnitude * 4f, 25f, 45f);
-
-        if (spawnArc && arcTransform != null)
-            DrawArc(playerPos, radius, centerAngle, half);
-
-        EmitSparks(playerPos, radius, centerAngle, half, Time.time, radial: false, facingSign);
+        centerAngleDeg = Mathf.Atan2(toCenter.y, toCenter.x) * Mathf.Rad2Deg;
+        radius = distance + size.magnitude * 0.22f;
+        halfAngleDeg = Mathf.Clamp(26f + size.magnitude * 4f, 25f, 45f);
+        return radius > 0f;
     }
 
     // 스파크를 뿌린다. radial이 true면 아래 공격처럼 바깥으로 튀고,

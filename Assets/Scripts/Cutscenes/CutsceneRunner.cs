@@ -161,7 +161,7 @@ public sealed class CutsceneRunner : MonoBehaviour
                         Fail("화자 '" + step.ActorId + "' 참조가 없습니다.");
                         yield break;
                     }
-                    bubbleView.ShowLine(speaker, string.Empty);
+                    bubbleView.ShowLine(speaker, string.Empty, step.Text);
                     yield return TypeAndWaitForAdvance(step, speaker, step.Text, generation);
                     break;
                 }
@@ -257,7 +257,7 @@ public sealed class CutsceneRunner : MonoBehaviour
         bool consumedTypingClick = false;
 
         dialogueGate.BeginTyping();
-        bubbleView.ShowLine(speaker, string.Empty);
+        bubbleView.ShowLine(speaker, string.Empty, value);
 
         while (shown < total && running && generation == runGeneration)
         {

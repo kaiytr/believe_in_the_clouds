@@ -833,6 +833,20 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         effects.Add(instance.gameObject);
         return instance;
     }
+    /// <summary>Puts an effect built at run time under the owned-effect root so every cancel path cleans it.</summary>
+    public void AdoptEffect(GameObject effect)
+    {
+        if (effect == null) return;
+        if (effectRoot == null)
+        {
+            var root = new GameObject(name + " owned effects");
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, gameObject.scene);
+            effectRoot = root.transform;
+        }
+        effect.transform.SetParent(effectRoot, true);
+        effects.RemoveAll(item => item == null);
+        effects.Add(effect);
+    }
     public void DestroyEffect(GameObject effect)
     {
         if (effect == null) return;

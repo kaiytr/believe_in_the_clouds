@@ -56,10 +56,15 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("Fallback storm cloud top above the arena floor when no boss arena camera is assigned.")]
     public float CloudTopHeight = 8f;
     [Tooltip("White (platform) cloud size. The underside must stay above the player's head.")]
-    public Vector2 CloudSize = new Vector2(3f, 0.42f);
-    public Vector2 StormCloudSize = new Vector2(8f, 1.4f);
+    public Vector2 CloudSize = new Vector2(3f, 0.55f);
+    [Tooltip("Minimum storm cloud size. The width grows so that the clouds together span the arena (see StormCloudCoverage).")]
+    public Vector2 StormCloudSize = new Vector2(11f, 2f);
     [Tooltip("Number of storm clouds chosen once when the arena is prepared (inclusive range).")]
-    public Vector2Int StormCloudCountRange = new Vector2Int(2, 3);
+    public Vector2Int StormCloudCountRange = new Vector2Int(3, 4);
+    [Tooltip("Each storm cloud is at least arenaWidth / count * this wide, so neighbours keep overlapping while they wander.")]
+    [Min(1f)] public float StormCloudCoverage = 1.4f;
+    [Tooltip("How far a storm cloud may drift from its own slot, world units. Keeps the arena covered while clouds move.")]
+    [Min(0f)] public float StormCloudWander = 1.5f;
     public int WhiteCloudCount = 2;
     [Tooltip("Random horizontal speed range, world units / second.")]
     public Vector2 StormCloudSpeed = new Vector2(0.7f, 1.6f);
@@ -67,13 +72,15 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("Random interval before a cloud may reverse / change speed.")]
     public Vector2 CloudTurnInterval = new Vector2(1.5f, 4f);
     [Tooltip("Top of the white cloud (landing surface) above the arena floor. Must stay reachable with the base jump.")]
-    public float WhiteCloudTopHeight = 2.45f;
+    public float WhiteCloudTopHeight = 2.66f;
     [Tooltip("Thickness of the one-way landing collider at the top of a white cloud.")]
     public float WhiteCloudSurfaceThickness = 0.14f;
+    [Tooltip("Extra cloud picture drawn above the standing line (decoration only; shelter and landing use CloudSize).")]
+    [Min(0f)] public float WhiteCloudVisualExtra = 0.25f;
     [Tooltip("Measured base-jump apex (feet rise) from PlayerMove: jumpPower 15.64, gravity 9.81*4, fixed step 0.02 -> 2.961.")]
     public float ReferenceJumpApex = 2.96f;
     [Tooltip("Landing allowance kept below the base-jump apex.")]
-    public float WhiteCloudLandingMargin = 0.5f;
+    public float WhiteCloudLandingMargin = 0.3f;
     [Tooltip("World height of the player body; the shelter under a white cloud must fit it.")]
     public float ReferencePlayerHeight = 2f;
     public float LightningDuration = 0.45f;

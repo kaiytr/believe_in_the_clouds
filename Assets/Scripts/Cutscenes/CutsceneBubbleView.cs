@@ -15,6 +15,14 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     [SerializeField] private Vector2 screenOffset = new Vector2(0f, 18f);
     [SerializeField, Min(12)] private int bodyFontSize = 26;
     [SerializeField, Min(12)] private int choiceFontSize = 22;
+    [Header("Auto size (design units)")]
+    [SerializeField] private Vector2 minPanelSize = new Vector2(300f, 124f);
+    [SerializeField] private float maxPanelWidth = 560f;
+    [SerializeField] private float maxPanelHeight = 520f;
+    [SerializeField] private Vector4 panelPadding = new Vector4(44f, 58f, 44f, 36f); // left, bottom (tail), right, top
+    [SerializeField] private float choiceHeight = 52f;
+    [SerializeField] private float choiceSpacing = 8f;
+    [SerializeField] private float choiceTextPadding = 20f;
 
     private Canvas canvas;
     private RectTransform canvasRect;
@@ -26,22 +34,32 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private float displayScale = 1f;
     private readonly List<GameObject> choices = new List<GameObject>(4);
     private Action<int> choiceSelected;
+    private string lineFull = string.Empty;
+    private string[] choiceLabels = new string[0];
+    private bool choiceMode, layoutDirty = true;
+    private float laidOutScale = -1f;
 
     public bool IsVisible => panelRect != null && panelRect.gameObject.activeSelf;
     public RectTransform BubbleRect => panelRect;
 
     private void Awake() => BuildUi();
 
-    public void ShowLine(CutsceneCharacter currentSpeaker, string text)
+    public void ShowLine(CutsceneCharacter currentSpeaker, string text) => ShowLine(currentSpeaker, text, text);
+
+    /// <summary>The bubble is sized for <paramref name="fullText"/>, so a typewriter that starts empty keeps a stable size.</summary>
+    public void ShowLine(CutsceneCharacter currentSpeaker, string text, string fullText)
     {
         EnsureUi();
         ClearChoices();
         speaker = currentSpeaker;
         choiceSelected = null;
         bodyText.text = text ?? string.Empty;
-        SetDialogueTextArea();
+        lineFull = fullText ?? text ?? string.Empty;
+        choiceMode = false;
+        layoutDirty = true;
         choicesRoot.gameObject.SetActive(false);
         panelRect.gameObject.SetActive(true);
+        ApplyDisplayScale();
         UpdatePosition();
     }
 
@@ -57,16 +75,20 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         ClearChoices();
         speaker = currentSpeaker;
         bodyText.text = string.Empty;
-        SetChoicesArea();
         choiceSelected = onSelected;
         choicesRoot.gameObject.SetActive(true);
         panelRect.gameObject.SetActive(true);
-        ApplyDisplayScale();
 
         int count = options != null ? options.Length : 0;
+        choiceLabels = new string[count];
         for (int i = 0; i < count; i++)
-            CreateChoice(i, options[i] ?? string.Empty);
-
+        {
+            choiceLabels[i] = options[i] ?? string.Empty;
+            CreateChoice(i, choiceLabels[i]);
+        }
+        choiceMode = true;
+        layoutDirty = true;
+        ApplyDisplayScale();
         UpdatePosition();
     }
 
@@ -175,8 +197,6 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         buttonRect.anchorMax = new Vector2(1f, 1f);
         buttonRect.pivot = new Vector2(0.5f, 1f);
         float unitScale = displayScale / Mathf.Max(.01f, canvas.scaleFactor);
-        buttonRect.anchoredPosition = new Vector2(0f, -index * 42f * unitScale);
-        buttonRect.sizeDelta = new Vector2(-4f * unitScale, 40f * unitScale);
 
         Image buttonImage = buttonObject.GetComponent<Image>();
         buttonImage.color = Color.white;
@@ -215,25 +235,6 @@ public sealed class CutsceneBubbleView : MonoBehaviour
                 Destroy(choices[i]);
         }
         choices.Clear();
-    }
-
-    private void SetDialogueTextArea()
-    {
-        RectTransform rect = bodyText.rectTransform;
-        rect.anchorMin = new Vector2(0.08f, 0.24f);
-        rect.anchorMax = new Vector2(0.92f, 0.84f);
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-    }
-
-    private void SetChoicesArea()
-    {
-        RectTransform rect = choicesRoot;
-        rect.anchorMin = new Vector2(0.1f, 0.15f);
-        rect.anchorMax = new Vector2(0.9f, 0.85f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = Vector2.zero;
     }
 
     private void LateUpdate()
@@ -289,28 +290,110 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             ? screenHeight / (2f * trackingCamera.orthographicSize) * CombatantHudView.ReferenceCanvasScale
             : 1f;
         float unitScale = displayScale / canvasScale;
-        panelRect.sizeDelta = panelSize * unitScale;
-        bodyText.fontSize = Mathf.Max(1, Mathf.RoundToInt(bodyFontSize * unitScale));
-        bodyText.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((bodyFontSize - 6) * unitScale));
-        bodyText.resizeTextMaxSize = bodyText.fontSize;
+        // Size depends on the full text / option list and the display scale only, never on typed-so-far characters.
+        if (!layoutDirty && Mathf.Approximately(unitScale, laidOutScale)) return;
+        layoutDirty = false;
+        laidOutScale = unitScale;
+        if (choiceMode) LayoutChoices(unitScale);
+        else LayoutDialogue(unitScale);
+    }
 
-        for (int i = 0; i < choices.Count; i++)
+    // The bubble grows or shrinks around its content: width follows the longest line up to a maximum,
+    // then text wraps and the height follows the wrapped text. All numbers are design units scaled by unitScale.
+    private void LayoutDialogue(float unitScale)
+    {
+        int fontSize = Mathf.Max(1, Mathf.RoundToInt(bodyFontSize * unitScale));
+        bodyText.fontSize = fontSize;
+        bodyText.resizeTextMaxSize = fontSize;
+        bodyText.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((bodyFontSize - 6) * unitScale));
+        float horizontal = (panelPadding.x + panelPadding.z) * unitScale;
+        float vertical = (panelPadding.y + panelPadding.w) * unitScale;
+        float maxTextWidth = maxPanelWidth * unitScale - horizontal;
+        bodyText.verticalOverflow = VerticalWrapMode.Overflow;
+        float wanted = MeasureWidth(bodyText, lineFull, fontSize) + 44f * unitScale;
+        float textWidth = Mathf.Clamp(wanted, Mathf.Max(0f, minPanelSize.x * unitScale - horizontal), maxTextWidth);
+        // Measure against a narrower column and add slack: a real wrap that differs slightly must never clip a line.
+        float textHeight = MeasureHeight(bodyText, lineFull, textWidth * .85f, fontSize) + 28f * unitScale;
+        float panelWidth = textWidth + horizontal;
+        float panelHeight = Mathf.Clamp(textHeight + vertical, minPanelSize.y * unitScale, maxPanelHeight * unitScale);
+        panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
+        Stretch(bodyText.rectTransform, panelPadding, unitScale);
+    }
+
+    private void LayoutChoices(float unitScale)
+    {
+        int fontSize = Mathf.Max(1, Mathf.RoundToInt(choiceFontSize * unitScale));
+        float horizontal = (panelPadding.x + panelPadding.z) * unitScale;
+        float vertical = (panelPadding.y + panelPadding.w) * unitScale;
+        float inset = choiceTextPadding * unitScale;
+        float maxButtonWidth = maxPanelWidth * unitScale - horizontal;
+        float minButtonWidth = Mathf.Max(0f, minPanelSize.x * unitScale - horizontal);
+
+        // One shared width so the stack reads as a list; it fits the longest option.
+        Text sample = choices.Count > 0 && choices[0] != null ? choices[0].GetComponentInChildren<Text>() : bodyText;
+        float buttonWidth = minButtonWidth;
+        for (int i = 0; i < choiceLabels.Length; i++)
+            buttonWidth = Mathf.Max(buttonWidth, MeasureWidth(sample, choiceLabels[i], fontSize) + inset * 2f + 44f * unitScale);
+        buttonWidth = Mathf.Min(buttonWidth, maxButtonWidth);
+
+        float y = 0f;
+        float spacing = choiceSpacing * unitScale;
+        for (int i = 0; i < choices.Count && i < choiceLabels.Length; i++)
         {
             GameObject choice = choices[i];
             if (choice == null) continue;
-            RectTransform buttonRect = choice.GetComponent<RectTransform>();
-            buttonRect.anchoredPosition = new Vector2(0f, -i * 42f * unitScale);
-            buttonRect.sizeDelta = new Vector2(-4f * unitScale, 40f * unitScale);
             Text label = choice.GetComponentInChildren<Text>();
-            if (label != null)
-            {
-                label.fontSize = Mathf.Max(1, Mathf.RoundToInt(choiceFontSize * unitScale));
-                label.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((choiceFontSize - 2) * unitScale));
-                label.resizeTextMaxSize = label.fontSize;
-                label.rectTransform.offsetMin = new Vector2(5f * unitScale, 1f * unitScale);
-                label.rectTransform.offsetMax = new Vector2(-5f * unitScale, -1f * unitScale);
-            }
+            label.verticalOverflow = VerticalWrapMode.Overflow;
+            label.fontSize = fontSize;
+            label.resizeTextMaxSize = fontSize;
+            label.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((choiceFontSize - 2) * unitScale));
+            float textHeight = MeasureHeight(label, choiceLabels[i], (buttonWidth - inset * 2f) * .85f, fontSize) + 22f * unitScale;
+            float height = Mathf.Max(choiceHeight * unitScale, textHeight);
+            RectTransform buttonRect = choice.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(0f, 1f);
+            buttonRect.anchorMax = new Vector2(1f, 1f);
+            buttonRect.pivot = new Vector2(0.5f, 1f);
+            buttonRect.anchoredPosition = new Vector2(0f, -y);
+            buttonRect.sizeDelta = new Vector2(0f, height);
+            label.rectTransform.offsetMin = new Vector2(inset, unitScale);
+            label.rectTransform.offsetMax = new Vector2(-inset, -unitScale);
+            y += height + spacing;
         }
+        float stackHeight = Mathf.Max(0f, y - spacing);
+        float panelHeight = Mathf.Clamp(stackHeight + vertical, minPanelSize.y * unitScale, float.MaxValue);
+        panelRect.sizeDelta = new Vector2(buttonWidth + horizontal, panelHeight);
+        Stretch(choicesRoot, panelPadding, unitScale);
+    }
+
+    private static void Stretch(RectTransform rect, Vector4 padding, float unitScale)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.offsetMin = new Vector2(padding.x * unitScale, padding.y * unitScale);
+        rect.offsetMax = new Vector2(-padding.z * unitScale, -padding.w * unitScale);
+    }
+
+    private static float MeasureWidth(Text text, string content, int fontSize)
+    {
+        if (string.IsNullOrEmpty(content)) return 0f;
+        TextGenerationSettings settings = text.GetGenerationSettings(Vector2.zero);
+        settings.fontSize = fontSize;
+        settings.resizeTextForBestFit = false;
+        settings.horizontalOverflow = HorizontalWrapMode.Overflow;
+        settings.verticalOverflow = VerticalWrapMode.Overflow;
+        return text.cachedTextGeneratorForLayout.GetPreferredWidth(content, settings) / text.pixelsPerUnit;
+    }
+
+    private static float MeasureHeight(Text text, string content, float width, int fontSize)
+    {
+        if (string.IsNullOrEmpty(content)) return 0f;
+        TextGenerationSettings settings = text.GetGenerationSettings(new Vector2(Mathf.Max(1f, width), 0f));
+        settings.fontSize = fontSize;
+        settings.resizeTextForBestFit = false;
+        settings.horizontalOverflow = HorizontalWrapMode.Wrap;
+        settings.verticalOverflow = VerticalWrapMode.Overflow;
+        return text.cachedTextGeneratorForLayout.GetPreferredHeight(content, settings) / text.pixelsPerUnit;
     }
 
     private static Font GetKoreanFont()

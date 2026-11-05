@@ -85,17 +85,20 @@ MonoBehaviour:
   ProjectileDamage: 12
   CloudDuration: 3
   CloudTopHeight: 8
-  CloudSize: {x: 3, y: 0.42}
-  StormCloudSize: {x: 8, y: 1.4}
-  StormCloudCountRange: {x: 2, y: 3}
+  CloudSize: {x: 3, y: 0.55}
+  StormCloudSize: {x: 11, y: 2}
+  StormCloudCountRange: {x: 3, y: 4}
+  StormCloudCoverage: 1.4
+  StormCloudWander: 1.5
   WhiteCloudCount: 2
   StormCloudSpeed: {x: 0.7, y: 1.6}
   WhiteCloudSpeed: {x: 0.8, y: 1.5}
   CloudTurnInterval: {x: 1.5, y: 4}
-  WhiteCloudTopHeight: 2.45
+  WhiteCloudTopHeight: 2.66
   WhiteCloudSurfaceThickness: 0.14
+  WhiteCloudVisualExtra: 0.25
   ReferenceJumpApex: 2.96
-  WhiteCloudLandingMargin: 0.5
+  WhiteCloudLandingMargin: 0.3
   ReferencePlayerHeight: 2
   LightningDuration: 0.45
   LightningDamage: 18

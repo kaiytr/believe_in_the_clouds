@@ -62,8 +62,6 @@ public sealed class BossAttackExecutor : MonoBehaviour
         var warning = CreateWarning(record.Geometry, followOwner: true);
         string label = AttackLabel(record);
         owner.SetActionCue(label, AttackHint(record), BossPresentationState.Windup, duration);
-        if (record.Kind == BossAttackKind.Dash) warning.SetDirection(owner.Facing);
-        else if (record.Kind == BossAttackKind.Projectile) warning.SetDirection();
         Vector2 previousBossPosition = owner.transform.position;
         float elapsed = 0f;
         while (elapsed < duration && owner.IsAttackValid(record) && owner.CanStartNextHit)
@@ -137,11 +135,14 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 attackDirection = Vector2.right * direction;
         var geometry = ComboGeometry(step, direction);
         var record = owner.CreateAttack(BossAttackKind.Melee, hitIndex, geometry, damage, context.DisplayBelief, true, context);
-        BossAttackVisual warning = null, slash = null;
+        BossAttackVisual slash = null;
+        BossFanWarning warning = null;
         bool completed = false;
         try
         {
-            warning = CreateWarning(geometry, followOwner: true);
+            // The telegraph is the same fan the player's blade slash draws (see DownFanImpactEffect.SwingFan).
+            warning = CreateFanWarning();
+            ShowFan(warning, record, direction);
             bool combo = hitIndex > 0;
             string label = combo ? $"연속 베기 {hitIndex}/{OwnerComboCount}" : AttackLabel(record);
             string finisherHint = step.launchUp > 0f ? "피니시 · 적중 시 넉백과 띄우기" : "피니시 · 적중 시 넉백";
@@ -193,8 +194,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
                 SyncMeleeWarning(record, step, direction);
                 owner.Observe(record, record.Geometry);
+                ShowFan(warning, record, direction);
                 warning.SetProgress(elapsed / warningDuration);
-                warning.SetCue(label, warningEndsAt - Time.time, elapsed / warningDuration, owner);
                 yield return PhysicsTick;
             }
 
@@ -251,6 +252,22 @@ public sealed class BossAttackExecutor : MonoBehaviour
         }
     }
 
+    private BossFanWarning CreateFanWarning()
+    {
+        BossFanWarning fan = BossFanWarning.Create(owner.transform, Data.WarningPrefab, owner.BodyRenderer);
+        owner.AdoptEffect(fan.gameObject);
+        return fan;
+    }
+
+    private void ShowFan(BossFanWarning fan, BossAttackRecord record, int direction)
+    {
+        if (fan == null) return;
+        Vector2 origin = owner.transform.position;
+        if (DownFanImpactEffect.SwingFan(origin, record.Geometry.Center, record.Geometry.Size, direction,
+                out float centerAngle, out float radius, out float half))
+            fan.Show(origin, centerAngle, radius, half);
+    }
+
     private void SyncMeleeWarning(BossAttackRecord record, PlayerAttack.ComboStep step, int direction)
     {
         // Follow actual physics movement, including knockback, instead of assuming every requested lunge was completed.
@@ -283,8 +300,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 start = owner.BodyCollider.bounds.center;
         float warningDistance = BossCombatPhysics.ClearDistance(start, size, direction,
             Data.DashDistance, owner, false, out _);
-        var corridor = new AttackGeometry(start + direction * warningDistance * 0.5f,
-            new Vector2(warningDistance + size.x, size.y));
+        // The warning starts at the body's leading edge: nothing is drawn behind or under the boss.
+        var corridor = new AttackGeometry(start + direction * (size.x * 0.5f + warningDistance * 0.5f),
+            new Vector2(warningDistance, size.y));
         var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, context.DisplayBelief, true, context);
         float speed = Data.DashSpeed * owner.SpeedMultiplier;
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
@@ -299,7 +317,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             Vector2 center = owner.BodyCollider.bounds.center;
             float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
             step = BossCombatPhysics.ClearDistance(center, size, direction, step, owner, false, out blocked);
-            var ahead = new AttackGeometry(center + direction * remaining * 0.5f, new Vector2(remaining + size.x, size.y));
+            var ahead = new AttackGeometry(center + direction * (size.x * 0.5f + remaining * 0.5f), new Vector2(remaining, size.y));
             owner.Observe(record, ahead);
             if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
             Color? tint = record.BurnEnhanced ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
