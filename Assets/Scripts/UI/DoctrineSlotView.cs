@@ -17,6 +17,34 @@ public class DoctrineSlotView : MonoBehaviour
     private Color baseBackground;
     private Button button;
 
+    // 교리 목록 두루마리 아트 (Design/Doctrine/교리 1.png → Resources/UI/Doctrine/DoctrineSlot).
+    // Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
+    private static Sprite slotSprite;
+    private static bool slotSpriteLoaded;
+
+    private static Sprite LoadSlotSprite()
+    {
+        if (slotSpriteLoaded)
+        {
+            return slotSprite;
+        }
+
+        slotSpriteLoaded = true;
+        slotSprite = Resources.Load<Sprite>("UI/Doctrine/DoctrineSlot");
+        if (slotSprite == null)
+        {
+            Texture2D texture = Resources.Load<Texture2D>("UI/Doctrine/DoctrineSlot");
+            if (texture != null)
+            {
+                slotSprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                slotSprite.name = "DoctrineSlot";
+            }
+        }
+
+        return slotSprite;
+    }
+
     /// <summary>이 칸이 표시하는 교리. 빈 칸이면 null.</summary>
     public Doctrine Doctrine => doctrine;
 
@@ -34,17 +62,43 @@ public class DoctrineSlotView : MonoBehaviour
 
         if (background != null)
         {
-            background.color = filled ? UiTheme.SlotFill : UiTheme.SlotFillEmpty;
+            Sprite art = LoadSlotSprite();
+            if (art != null)
+            {
+                background.sprite = art;
+                background.type = Image.Type.Simple;
+                background.preserveAspect = false;
+                // 목업처럼 칸 3개가 모두 같은 두루마리로 보이게 한다 (빈 칸은 글자만 없다).
+                background.color = Color.white;
+            }
+            else
+            {
+                background.color = filled ? UiTheme.SlotFill : UiTheme.SlotFillEmpty;
+            }
+
             baseBackground = background.color;
         }
 
         if (label != null)
         {
-            // OS 폰트는 런타임에 만들어져 프리팹에 저장되지 않는다.
-            // 프리팹 인스턴스에서도 한글이 보이도록 매번 지정한다.
+            // 두루마리 아트를 쓰면 칸 안 글자는 표시하지 않는다 (목업처럼 그림만).
+            // 툴팁은 클릭 시 그대로 뜬다.
+            bool hasArt = LoadSlotSprite() != null;
             label.font = UiTheme.GetFont();
-            label.text = string.IsNullOrEmpty(displayName) ? string.Empty : displayName;
+            label.text = hasArt || string.IsNullOrEmpty(displayName) ? string.Empty : displayName;
             label.color = filled ? UiTheme.TextDark : UiTheme.TextMuted;
+            label.gameObject.SetActive(!hasArt && !string.IsNullOrEmpty(displayName));
+
+            // 두루마리 아트는 위쪽에 감긴 막대가 있어 글자를 그 아래 양피지 안쪽에 둔다.
+            if (hasArt && label.rectTransform != null)
+            {
+                label.fontSize = 16;
+                RectTransform labelRect = label.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(8f, 10f);
+                labelRect.offsetMax = new Vector2(-8f, -28f);
+            }
         }
 
         if (triggerFlash != null)
