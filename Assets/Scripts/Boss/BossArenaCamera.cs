@@ -26,16 +26,41 @@ public sealed class BossArenaCamera : MonoBehaviour
     private Vector3 returnPosition;
     private Quaternion explorationRotation;
     private float returnSize;
+    private Bounds configuredBounds;
+    private bool hasConfiguredBounds;
+
+    public void ConfigureWorldBounds(Camera output, Bounds bounds)
+    {
+        if (output != null) view = output;
+        configuredBounds = bounds;
+        hasConfiguredBounds = bounds.size.x > 0f && bounds.size.y > 0f;
+    }
+
+    private bool TryGetArenaBounds(out Bounds bounds)
+    {
+        if (hasConfiguredBounds)
+        {
+            bounds = configuredBounds;
+            return true;
+        }
+        if (cameraBounds != null)
+        {
+            bounds = cameraBounds.bounds;
+            return true;
+        }
+        bounds = default;
+        return false;
+    }
 
     public bool TryGetStormCloudTop(Transform focus, out float topY)
     {
-        if (cameraBounds == null)
+        if (!TryGetArenaBounds(out Bounds bounds))
         {
             topY = 0f;
             return false;
         }
 
-        float centerY = cameraBounds.bounds.center.y + combatVerticalOffset;
+        float centerY = bounds.center.y + combatVerticalOffset;
         float size = combatSize;
         if (focus != null)
             size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(focus.position.y - centerY) + playerMargin),
@@ -47,7 +72,7 @@ public sealed class BossArenaCamera : MonoBehaviour
     public void Enter(Transform actor)
     {
         if (view == null) view = Camera.main;
-        if (view == null || cameraBounds == null || actor == null) return;
+        if (view == null || !TryGetArenaBounds(out _) || actor == null) return;
         player = actor;
         if (!controlling)
         {
@@ -87,9 +112,8 @@ public sealed class BossArenaCamera : MonoBehaviour
     private void LateUpdate()
     {
         if (!controlling || view == null) return;
-        if (fighting && player != null && cameraBounds != null)
+        if (fighting && player != null && TryGetArenaBounds(out Bounds bounds))
         {
-            Bounds bounds = cameraBounds.bounds;
             float centerY = bounds.center.y + combatVerticalOffset;
             float size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(player.position.y - centerY) + playerMargin),
                 combatSize, Mathf.Max(combatSize, maximumCombatSize));
