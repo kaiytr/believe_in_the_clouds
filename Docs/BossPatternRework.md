@@ -30,7 +30,7 @@
 | `StormCloudSpeed` / `WhiteCloudSpeed` | 0.7~1.6 / 0.8~1.5 | 무작위 좌우 이동 속도 범위 (월드 단위/초) |
 | `CloudTurnInterval` | 1.5~4초 | 방향·속도를 다시 뽑는 간격 |
 | `StormCloudSize` | 8×1.4 | 이전 12×1.4에서 줄임. 먹구름 2~3개가 아레나 전체를 가리지 않게 하려는 값 |
-| `CloudTopHeight` | 8 | 먹구름 꼭대기. 기존 6에서 2유닛 높임 |
+| `CloudTopHeight` | 8 | 보스 카메라가 없는 전투의 먹구름 높이 기본값. 보스 아레나에서는 전투 화면 위쪽 여백 0.7유닛을 기준으로 배치 |
 | `CloudSize` | 3×0.42 | 흰 구름 크기 |
 | `WhiteCloudTopHeight` | 2.45 | 흰 구름 윗면(착지면) 높이, 바닥 기준 |
 | `WhiteCloudSurfaceThickness` | 0.14 | 단방향 착지 콜라이더 두께 |
@@ -63,7 +63,7 @@ HUD: 일반 공격의 예고 큐(제목·힌트·타이머)와 믿음의 말풍�
 
 `BossCloudField`(보스 오브젝트에 런타임 부착)가 먹구름 2~3개와 흰 구름 2개를 가진다.
 
-- 먹구름: 장식, 월드 `CloudTopHeight`. 흰 구름: 단방향 착지 발판(키네마틱 `Rigidbody2D` + 얇은 `PlatformEffector2D`, `PlatformLayer`). 둘 다 아레나(`PatternXLimits`) 안에서 무작위 좌우 이동. 겹쳐도 된다.
+- 먹구름: 장식, 보스 전투 카메라 프레임의 위쪽에서 0.7유닛 아래에 배치한다. 전투 카메라 중심은 기존보다 1유닛 낮다. 아레나 카메라가 없는 전투에서는 월드 `CloudTopHeight`를 쓴다. 흰 구름은 단방향 착지 발판(키네마틱 `Rigidbody2D` + 얇은 `PlatformEffector2D`, `PlatformLayer`). 둘 다 아레나(`PatternXLimits`) 안에서 무작위 좌우 이동. 겹쳐도 된다.
 - 공용 `PlayerMove`는 수정하지 않았다. 흰 구름이 위에 선 플레이어를 직접 태운다(발이 윗면에 닿고 상승 속도가 아닐 때 이동량을 그대로 더함). 아래에서 올라올 때 지면 판정이 얇은 면을 바닥으로 읽는 것을 막으려고, 몸이 윗면 위에 있을 때만 면의 레이어를 `PlatformLayer`로 바꾼다. 보스 몸체는 면과 충돌을 무시하고, 보스 장애물 판정은 구름을 제외한다.
 - 번개: `CloudBelief` 발동 시 현재 구름 위치 기준 위험 사각형(먹구름 범위의 합집합에서 흰 구름 아래 보호 구역을 뺀 것)을 예고하고, 그 사각형은 매 프레임 구름을 따라간다. `CloudDuration`(3초) 뒤 그 순간의 같은 사각형으로 한 번 판정한다. 예고와 판정은 같은 기하(`BossCloudField.ComputeDangerRects`)를 쓴다.
 - 보호: 몸 전체가 하나의 흰 구름 아래 보호 구역(바닥~구름 밑면)에 들어와야 한다(기존 `Contains` 기준). 흰 구름 위는 보호되지 않는다. 먹구름이 겹쳐도 보호는 무효화되지 않고, 번개 한 번당 `BossAttackRecord` 하나라서 피해·피격 이벤트·믿음 결과도 한 번이다.

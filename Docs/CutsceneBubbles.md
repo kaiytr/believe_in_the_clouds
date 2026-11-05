@@ -1,12 +1,12 @@
 # 컷씬 말풍선 모듈
 
-2026-11-05: 컷씬 말풍선은 기존 `Resources/UI/Hud/EnemyBeliefSpeechBubble.png` 원본 영역을 재사용한다. 별도 말풍선 텍스처를 생성하지 않는다. 테두리·꼬리의 분할 정보를 사용하며 말풍선 아래쪽을 화자의 머리 위에 배치한다.
+2026-11-05: 컷씬 말풍선은 기존 `Resources/UI/Hud/EnemyBeliefSpeechBubble.png` 원본 영역을 재사용한다. 별도 말풍선 텍스처를 생성하지 않는다. 테두리·꼬리의 분할 정보를 사용하며 말풍선 아래쪽을 화자의 머리 위에 배치한다. 원본 HUD 크기 318×120과 월드 캔버스 비율에 맞춰 화면에서 믿음 말풍선 크기로 표시하고, `ONE Mobile Title` 글꼴로 대사와 선택지를 표시한다. 화자 이름은 표시하지 않는다. 대사와 선택지는 테두리와 아래쪽 꼬리에서 여백을 두고 줄바꿈·자동 맞춤을 하며, 영역 밖으로 넘지 않게 자른다. 타이핑 중인 문장은 한 글자씩 나타나며, 다음 대사로 넘기는 클릭은 다음 줄의 타이핑을 건너뛰지 않는다.
 
 ## 구성
 
 - `Assets/Scripts/Cutscenes/CutsceneDefinition.cs`: 인스펙터/에셋에서 편집하는 `Dialogue`, `Choice`, `MoveActor`, `HarmlessProjectile`, `ExternalStage` 단계와 배우/앵커 키를 정의합니다.
 - `Assets/Scripts/Cutscenes/CutsceneRunner.cs`: 시퀀스를 실행하고 입력 잠금, 클릭 경계, 이동, 외부 단계, 완료/취소 정리를 소유합니다.
-- `Assets/Scripts/Cutscenes/CutsceneBubbleView.cs`: 화자의 머리 위치를 카메라 좌표로 바꾸고 화면 안전 영역 안에 한글 말풍선을 둡니다. 문장은 Text UI의 줄바꿈을 사용합니다.
+- `Assets/Scripts/Cutscenes/CutsceneBubbleView.cs`: 화자의 머리 위치를 카메라 좌표로 바꾸고 화면 안전 영역 안에 한글 말풍선을 둡니다. 패널과 글자는 카메라 줌에 맞춰 기존 믿음 말풍선의 화면 크기와 비율을 따릅니다. 문장은 Text UI의 줄바꿈을 사용합니다.
 - `Assets/Scripts/Cutscenes/CutsceneCharacter.cs`: 표시 이름, 머리 위치, 돌 시작 위치, 배우 연출 상태를 제공합니다.
 - `Assets/Scripts/Cutscenes/CutsceneHarmlessProjectile.cs`: 새로 생성한 투사체 시각 복제본의 콜라이더, Rigidbody2D, MonoBehaviour를 끕니다.
 - `Assets/Scripts/Cutscenes/CutsceneTrigger.cs`: 2D 트리거에서 Player 본체 콜라이더가 구역 안에 전부 들어왔을 때 시퀀스를 한 번 실행합니다.

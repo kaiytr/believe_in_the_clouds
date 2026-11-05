@@ -4,7 +4,7 @@ using UnityEngine.UI;
 /// <summary>Shared prefab, styling and world positioning for ordinary enemies and bosses.</summary>
 public sealed class CombatantHudView : MonoBehaviour
 {
-    private const float ReferenceCanvasScale = 0.01f;
+    public const float ReferenceCanvasScale = 0.01f;
     private const float ReferenceScreenHeight = 1080f;
 
     [SerializeField] private Canvas beliefCanvas, healthCanvas;

@@ -507,6 +507,8 @@ MonoBehaviour:
   explorationControllers: []
   combatSize: 8
   maximumCombatSize: 10.5
+  combatVerticalOffset: -1
+  stormCloudTopMargin: 0.7
   playerMargin: 1.5
   blendDuration: 0.6
   explorationOffset: {x: 1.5, y: 2.2, z: -10}

@@ -74,6 +74,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public bool EncounterStarted { get; private set; }
     public bool WaitingForArenaEntry => arena != null && !arena.HasEntered;
     public Vector2 PatternXLimits => arena != null ? arena.PatternXLimits : settings.ArenaX;
+    public BossArenaCamera ArenaCamera => arena != null ? arena.ArenaCamera : null;
     internal void BindArena(BossEncounterTrigger owner) { arena = owner; }
     internal void UnbindArena(BossEncounterTrigger owner)
     {

@@ -16,6 +16,7 @@ public sealed class BossEncounterTrigger : MonoBehaviour
 
     public bool HasEntered { get; private set; }
     public BossCombatController Boss => boss;
+    public BossArenaCamera ArenaCamera => arenaCamera;
     public bool AutoBeginEncounter { get => autoBeginEncounter; set { autoBeginEncounter = value; HandleBossStatus(); } }
     /// <summary>The player is inside and sealed in, but the fight has not been started yet (waiting for an intro).</summary>
     public bool HoldingForIntro => HasEntered && !autoBeginEncounter && boss != null && !boss.EncounterStarted && !boss.IsDead &&

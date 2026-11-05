@@ -48,7 +48,11 @@ public sealed class BossCloudField : MonoBehaviour
 
         int stormCount = Random.Range(data.StormCloudCountRange.x, data.StormCloudCountRange.y + 1);
         float stormWidth = Mathf.Min(data.StormCloudSize.x, arenaWidth);
-        float stormY = FloorY + data.CloudTopHeight - data.StormCloudSize.y * .5f;
+        float stormTop = FloorY + data.CloudTopHeight;
+        if (boss.ArenaCamera != null && boss.ArenaCamera.TryGetStormCloudTop(
+                boss.PlayerHealth != null ? boss.PlayerHealth.transform : null, out float cameraTop))
+            stormTop = cameraTop;
+        float stormY = stormTop - data.StormCloudSize.y * .5f;
         for (int i = 0; i < stormCount; i++)
         {
             float x = Random.Range(LimitsX.x + stormWidth * .5f, Mathf.Max(LimitsX.x + stormWidth * .5f, LimitsX.y - stormWidth * .5f));

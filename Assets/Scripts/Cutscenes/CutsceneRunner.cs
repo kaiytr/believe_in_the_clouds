@@ -297,7 +297,11 @@ public sealed class CutsceneRunner : MonoBehaviour
         {
             if (Input.GetMouseButtonDown(0) &&
                 dialogueGate.HandleClick() == CutsceneDialogueClickResult.Advanced)
+            {
+                // Keep this advance click from skipping the next line's typewriter in the same frame.
+                yield return null;
                 yield break;
+            }
             yield return null;
         }
     }

@@ -47,11 +47,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9158d9be9b57ee4aa78c58fe4536960, type: 3}
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneBubbleView
-  panelSize: {x: 640, y: 300}
+  panelSize: {x: 318, y: 120}
   screenOffset: {x: 0, y: 18}
-  bodyFontSize: 29
-  speakerFontSize: 21
-  choiceFontSize: 23
+  bodyFontSize: 26
+  choiceFontSize: 22
 --- !u!114 &6287919320172821620
 MonoBehaviour:
   m_ObjectHideFlags: 0

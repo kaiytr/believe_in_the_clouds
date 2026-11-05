@@ -20,6 +20,8 @@
 설정 원본은 Assets/Data/Boss/BossCombatSettings.asset이다.
 CloudTopHeight=8, LightningSpacing=2, LightningWidth=0.16을 적용했다.
 
+후속 화면 조정: 보스 전투 카메라 중심을 기존보다 1유닛 낮추고, 먹구름 윗면은 플레이어 높이에 따른 전투 카메라 확대까지 계산한 화면 위쪽 0.7유닛 아래에 둔다. 컷씬 말풍선은 기존 믿음 말풍선 에셋의 비율과 화면상 크기를 따라가며, 화자 이름 없이 대사와 선택지만 표시한다.
+
 BossPresentationAssetSetup.Apply가 새 구름 이미지 임포트와 BlackCloud/WhiteCloud 프리팹만 갱신한다. BossProjectSetup의 구름 재생성도 같은 이미지와 표시 방식을 사용한다.
 
 구름 프리팹 검증은 원본 이미지가 1×1 유닛인지 강제하지 않고, 루트 배율과 SpriteRenderer의 조절 가능한 표시 크기를 확인한다. 다른 기존 효과의 단위 스프라이트 검증은 유지한다.

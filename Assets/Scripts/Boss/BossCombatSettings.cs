@@ -53,7 +53,7 @@ public sealed class BossCombatSettings : ScriptableObject
     [HideInInspector] public float CloudWarning;
     [Tooltip("Seconds from the lightning warning to the single strike. Independent of phase attack speed.")]
     public float CloudDuration = 3f;
-    [Tooltip("Storm cloud top above the arena floor, in world units.")]
+    [Tooltip("Fallback storm cloud top above the arena floor when no boss arena camera is assigned.")]
     public float CloudTopHeight = 8f;
     [Tooltip("White (platform) cloud size. The underside must stay above the player's head.")]
     public Vector2 CloudSize = new Vector2(3f, 0.42f);

@@ -1580,6 +1580,8 @@ MonoBehaviour:
   - {fileID: 4600000140}
   combatSize: 8
   maximumCombatSize: 10.5
+  combatVerticalOffset: -1
+  stormCloudTopMargin: 0.7
   playerMargin: 1.5
   blendDuration: 0.6
   explorationOffset: {x: 2, y: 0, z: -10}
