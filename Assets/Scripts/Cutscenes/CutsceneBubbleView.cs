@@ -20,9 +20,10 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     [SerializeField] private float maxPanelWidth = 560f;
     [SerializeField] private float maxPanelHeight = 520f;
     [SerializeField] private Vector4 panelPadding = new Vector4(44f, 58f, 44f, 36f); // left, bottom (tail), right, top
-    [SerializeField] private float choiceHeight = 52f;
-    [SerializeField] private float choiceSpacing = 8f;
-    [SerializeField] private float choiceTextPadding = 20f;
+    [SerializeField] private Vector4 choicePadding = new Vector4(60f, 70f, 60f, 48f); // left, bottom (tail), right, top
+    [SerializeField] private float choiceHeight = 60f;
+    [SerializeField] private float choiceSpacing = 10f;
+    [SerializeField] private float choiceTextPadding = 24f;
 
     private Canvas canvas;
     private RectTransform canvasRect;
@@ -38,6 +39,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private string[] choiceLabels = new string[0];
     private bool choiceMode, layoutDirty = true;
     private float laidOutScale = -1f;
+    private int relayoutFrames;
 
     public bool IsVisible => panelRect != null && panelRect.gameObject.activeSelf;
     public RectTransform BubbleRect => panelRect;
@@ -88,6 +90,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         }
         choiceMode = true;
         layoutDirty = true;
+        relayoutFrames = 3;
         ApplyDisplayScale();
         UpdatePosition();
     }
@@ -291,6 +294,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             : 1f;
         float unitScale = displayScale / canvasScale;
         // Size depends on the full text / option list and the display scale only, never on typed-so-far characters.
+        if (relayoutFrames > 0) { relayoutFrames--; layoutDirty = true; }
         if (!layoutDirty && Mathf.Approximately(unitScale, laidOutScale)) return;
         layoutDirty = false;
         laidOutScale = unitScale;
@@ -323,8 +327,8 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private void LayoutChoices(float unitScale)
     {
         int fontSize = Mathf.Max(1, Mathf.RoundToInt(choiceFontSize * unitScale));
-        float horizontal = (panelPadding.x + panelPadding.z) * unitScale;
-        float vertical = (panelPadding.y + panelPadding.w) * unitScale;
+        float horizontal = (choicePadding.x + choicePadding.z) * unitScale;
+        float vertical = (choicePadding.y + choicePadding.w) * unitScale;
         float inset = choiceTextPadding * unitScale;
         float maxButtonWidth = maxPanelWidth * unitScale - horizontal;
         float minButtonWidth = Mathf.Max(0f, minPanelSize.x * unitScale - horizontal);
@@ -333,7 +337,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         Text sample = choices.Count > 0 && choices[0] != null ? choices[0].GetComponentInChildren<Text>() : bodyText;
         float buttonWidth = minButtonWidth;
         for (int i = 0; i < choiceLabels.Length; i++)
-            buttonWidth = Mathf.Max(buttonWidth, MeasureWidth(sample, choiceLabels[i], fontSize) + inset * 2f + 44f * unitScale);
+            buttonWidth = Mathf.Max(buttonWidth, MeasureWidth(sample, choiceLabels[i], fontSize) * 1.06f + inset * 2f + 56f * unitScale);
         buttonWidth = Mathf.Min(buttonWidth, maxButtonWidth);
 
         float y = 0f;
@@ -347,7 +351,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             label.fontSize = fontSize;
             label.resizeTextMaxSize = fontSize;
             label.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((choiceFontSize - 2) * unitScale));
-            float textHeight = MeasureHeight(label, choiceLabels[i], (buttonWidth - inset * 2f) * .85f, fontSize) + 22f * unitScale;
+            float textHeight = MeasureHeight(label, choiceLabels[i], (buttonWidth - inset * 2f) * .8f, fontSize) + 30f * unitScale;
             float height = Mathf.Max(choiceHeight * unitScale, textHeight);
             RectTransform buttonRect = choice.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0f, 1f);
@@ -362,7 +366,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         float stackHeight = Mathf.Max(0f, y - spacing);
         float panelHeight = Mathf.Clamp(stackHeight + vertical, minPanelSize.y * unitScale, float.MaxValue);
         panelRect.sizeDelta = new Vector2(buttonWidth + horizontal, panelHeight);
-        Stretch(choicesRoot, panelPadding, unitScale);
+        Stretch(choicesRoot, choicePadding, unitScale);
     }
 
     private static void Stretch(RectTransform rect, Vector4 padding, float unitScale)
