@@ -984,7 +984,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeedRatio: 0.8
+  moveSpeedRatio: 0.64
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 256269905}
   destroyDelay: 1.5
@@ -1300,7 +1300,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeedRatio: 0.8
+  moveSpeedRatio: 0.64
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 314268081}
   destroyDelay: 1.5
@@ -10211,7 +10211,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeedRatio: 0.8
+  moveSpeedRatio: 0.64
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1262934221}
   destroyDelay: 1.5
@@ -11076,7 +11076,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeedRatio: 0.8
+  moveSpeedRatio: 0.64
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1485868307}
   destroyDelay: 1.5
@@ -12774,7 +12774,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
   maxHp: 30
-  moveSpeedRatio: 1
+  moveSpeedRatio: 0.8
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1945609985}
   destroyDelay: 1.5
