@@ -13,6 +13,10 @@ public sealed class BossAttackRecord
     public AttackGeometry Geometry { get; private set; }
     public float Damage { get; }
     public bool AllowsBurn { get; }
+    /// <summary>Owning regular attack (null for beliefs such as lightning or shockwave).</summary>
+    public BossRegularAttackContext Context { get; }
+    /// <summary>Burn enhancement recorded when the owning regular attack started.</summary>
+    public bool BurnEnhanced => AllowsBurn && Context != null && Context.BurnEnhanced;
     public bool Activated { get; private set; }
     public bool WasThreatened { get; private set; }
     public bool EscapedByMovement { get; private set; }
@@ -27,8 +31,9 @@ public sealed class BossAttackRecord
     public IReadOnlyList<AttackGeometry> WarningGeometry => warningGeometry;
 
     public BossAttackRecord(int generation, int patternId, int id, int hitIndex, BossAttackKind kind,
-        BossBeliefKind belief, AttackGeometry geometry, float damage, bool allowsBurn)
+        BossBeliefKind belief, AttackGeometry geometry, float damage, bool allowsBurn, BossRegularAttackContext context = null)
     {
+        Context = context;
         Generation = generation;
         PatternId = patternId;
         Id = id;

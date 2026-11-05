@@ -15,10 +15,23 @@ public sealed class TemporaryStageExit : InteractableBehaviour, IWorldInteractio
         if (!base.CanInteract(interactor) || flow == null || !flow.InputReady || flow.State.area != RunArea.TemporaryStage || !flow.State.hasStage)
             return false;
 
-        return flow.State.stage.completed && flow.State.stage.role != BranchRole.Boss;
+        LobbyBranchRevealEffect reveal = GetComponent<LobbyBranchRevealEffect>();
+        if (reveal != null && reveal.IsPlaying) return false;
+
+        // Visiting a shop is optional. Allow its return door to complete an
+        // otherwise unused shop stage so the player can always leave.
+        return flow.State.stage.role == BranchRole.Shop ||
+            flow.State.stage.completed && flow.State.stage.role != BranchRole.Boss;
     }
     protected override void OnInteract(GameObject interactor)
     {
-        LobbyFlowRuntime.Instance.ReturnToLobby();
+        LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
+        if (flow == null || flow.State?.stage == null) return;
+
+        if (flow.State.stage.role == BranchRole.Shop && !flow.State.stage.completed &&
+            !flow.CompleteStage().Success)
+            return;
+
+        flow.ReturnToLobby();
     }
 }

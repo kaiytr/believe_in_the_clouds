@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6741053618116744249
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3243630598834789922}
+  - component: {fileID: 3449260894975635804}
+  - component: {fileID: 9123955440747777886}
+  m_Layer: 0
+  m_Name: CutsceneRunner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3243630598834789922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6741053618116744249}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3449260894975635804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6741053618116744249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9158d9be9b57ee4aa78c58fe4536960, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneBubbleView
+  panelSize: {x: 318, y: 120}
+  screenOffset: {x: 0, y: 18}
+  bodyFontSize: 26
+  choiceFontSize: 22
+--- !u!114 &9123955440747777886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6741053618116744249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbca8cc7b03e22742a77dcf595cf0266, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneRunner
+  definition: {fileID: 11400000, guid: 4873e804c146ffb4fa260c05e33f5e34, type: 2}
+  bubbleView: {fileID: 0}
+  playOnStart: 0
+  actors: []
+  anchors: []

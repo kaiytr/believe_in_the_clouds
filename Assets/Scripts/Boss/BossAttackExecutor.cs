@@ -20,8 +20,14 @@ public sealed class BossAttackExecutor : MonoBehaviour
         bladeEffect.SetSortingLayer(owner.BodyRenderer.sortingLayerID, owner.BodyRenderer.sortingOrder);
     }
 
+    /// <summary>Number of shockwave branches still travelling after the body action ended.</summary>
+    public int ShockwaveTracking { get; private set; }
+
     public void ClearPresentationEffects()
     {
+        // Only executor-owned coroutines (the travelling shockwave tracker) live here; the lanes run on the controller.
+        StopAllCoroutines();
+        ShockwaveTracking = 0;
         afterimages?.Clear();
         bladeEffect?.Clear();
     }
@@ -88,19 +94,15 @@ public sealed class BossAttackExecutor : MonoBehaviour
         yield return new WaitForSeconds(Data.Recovery / owner.SpeedMultiplier);
     }
 
-    public IEnumerator Regular(BossPatternKind kind)
+    public IEnumerator Regular(BossPatternKind kind, BossRegularAttackContext context)
     {
         if (!owner.CanStartNextHit) yield break;
-        owner.RecordRegularUse(kind);
-        if (kind == BossPatternKind.MeleeCombo)
-        {
-            yield return MeleeCombo();
-        }
-        else if (kind == BossPatternKind.Dash) yield return Dash();
-        else if (kind == BossPatternKind.Projectile) yield return Projectile();
+        if (kind == BossPatternKind.MeleeCombo) yield return MeleeCombo(context);
+        else if (kind == BossPatternKind.Dash) yield return Dash(context);
+        else if (kind == BossPatternKind.Projectile) yield return Projectile(context);
     }
 
-    private IEnumerator MeleeCombo()
+    private IEnumerator MeleeCombo(BossRegularAttackContext context)
     {
         int stepCount = owner.PlayerAttack != null ? owner.PlayerAttack.ComboCount : 0;
         if (owner.PlayerAttack == null || stepCount < 2)
@@ -123,18 +125,18 @@ public sealed class BossAttackExecutor : MonoBehaviour
                 : Data.MeleeComboDamage[Data.MeleeComboDamage.Length - 1];
             // The player's comboWindow accepts a buffered click; this sequence advances automatically after recovery.
             yield return PlayerMeleeStep(index + 1, index == stepCount - 1, step, direction, damage,
-                warning / owner.SpeedMultiplier, owner.RegularAttackBelief);
+                warning / owner.SpeedMultiplier, context);
         }
     }
 
     private IEnumerator PlayerMeleeStep(int hitIndex, bool isFinisher, PlayerAttack.ComboStep step, int direction,
-        float damage, float warningDuration, BossBeliefKind belief)
+        float damage, float warningDuration, BossRegularAttackContext context)
     {
         if (!owner.CanStartNextHit) yield break;
 
         Vector2 attackDirection = Vector2.right * direction;
         var geometry = ComboGeometry(step, direction);
-        var record = owner.CreateAttack(BossAttackKind.Melee, hitIndex, geometry, damage, belief, true);
+        var record = owner.CreateAttack(BossAttackKind.Melee, hitIndex, geometry, damage, context.DisplayBelief, true, context);
         BossAttackVisual warning = null, slash = null;
         bool completed = false;
         try
@@ -146,8 +148,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
             string hint = combo
                 ? (isFinisher ? finisherHint : "플레이어의 연계 · 표시된 범위에서 벗어나세요.")
                 : AttackHint(record);
-            if (combo && owner.IsBurning) hint += " · 피격 시 화상";
-            else if (combo && belief == BossBeliefKind.AttackAndDodge) hint += $" · 회피하면 믿음 -{Data.BeliefReduction:0}";
+            if (combo && record.BurnEnhanced) hint += " · 피격 시 화상";
+            else if (combo && context.Dodge != null) hint += $" · 회피하면 믿음 -{Data.BeliefReduction:0}";
 
             warningDuration = Mathf.Max(.001f, warningDuration);
             owner.SetActionCue(label, hint, BossPresentationState.Windup, warningDuration);
@@ -217,7 +219,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             else
             {
                 slash = owner.SpawnEffect(Data.SlashPrefab);
-                slash.Show(record.Geometry, Data.AttackOrder, owner.IsBurning);
+                slash.Show(record.Geometry, Data.AttackOrder, record.BurnEnhanced);
             }
             while (Time.time < activeEndsAt && owner.IsAttackValid(record))
             {
@@ -273,29 +275,17 @@ public sealed class BossAttackExecutor : MonoBehaviour
         playerBody.AddForce(new Vector2(direction * step.knockback, step.launchUp), ForceMode2D.Impulse);
     }
 
-    public IEnumerator Melee(float windup, float damage, BossBeliefKind belief, bool facePlayer = true)
-    {
-        if (!owner.CanStartNextHit) yield break;
-        if (owner.PlayerAttack == null || !owner.PlayerAttack.TryGetComboStep(0, out PlayerAttack.ComboStep step))
-        {
-            owner.ShowFeedback("베기 중지 · 플레이어 근접 공격 데이터 없음", new Color(1f, .65f, .45f));
-            yield break;
-        }
-        if (facePlayer) owner.FacePlayer();
-        // Special patterns use the player's first swing through the same movement, warning and hit path as the combo.
-        yield return PlayerMeleeStep(0, false, step, owner.Facing, damage, windup / owner.SpeedMultiplier, belief);
-        yield return Recovery();
-    }
-
-    private IEnumerator Dash()
+    private IEnumerator Dash(BossRegularAttackContext context)
     {
         owner.FacePlayer();
         Vector2 direction = Vector2.right * owner.Facing;
         Vector2 size = owner.BodyCollider.bounds.size;
         Vector2 start = owner.BodyCollider.bounds.center;
-        var corridor = new AttackGeometry(start + direction * Data.DashDistance * 0.5f,
-            new Vector2(Data.DashDistance + size.x, size.y));
-        var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, owner.RegularAttackBelief, true);
+        float warningDistance = BossCombatPhysics.ClearDistance(start, size, direction,
+            Data.DashDistance, owner, false, out _);
+        var corridor = new AttackGeometry(start + direction * warningDistance * 0.5f,
+            new Vector2(warningDistance + size.x, size.y));
+        var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, context.DisplayBelief, true, context);
         float speed = Data.DashSpeed * owner.SpeedMultiplier;
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
         if (!owner.IsAttackValid(record)) yield break;
@@ -312,7 +302,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             var ahead = new AttackGeometry(center + direction * remaining * 0.5f, new Vector2(remaining + size.x, size.y));
             owner.Observe(record, ahead);
             if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
-            Color? tint = owner.IsBurning ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
+            Color? tint = record.BurnEnhanced ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
             afterimages.Emit(Data.DashPrefab, owner.BodyRenderer, Data.AttackOrder, tint);
             owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
             owner.Body.MovePosition(owner.Body.position + direction * step);
@@ -325,25 +315,39 @@ public sealed class BossAttackExecutor : MonoBehaviour
         yield return Recovery();
     }
 
-    private IEnumerator Projectile()
+    /// <summary>
+    /// Plans a projectile from the muzzle toward the player's body center, whatever the height difference.
+    /// False when an obstacle ends the path before it can reach the player.
+    /// </summary>
+    public bool TryPlanProjectile(int facing, out Vector2 origin, out Vector2 direction, out float length, out bool endBlocked, out AttackGeometry geometry)
     {
-        owner.FacePlayer();
-        Vector2 origin = owner.ProjectileOrigin;
-        Vector2 direction = ProjectileAimDirection(origin);
+        origin = owner.ProjectileOriginFor(facing);
+        direction = ProjectileAimDirection(origin, facing);
         float speed = Data.ProjectileSpeed * owner.SpeedMultiplier;
         float lifetime = Data.ProjectileLifetime / owner.SpeedMultiplier;
         float maxDistance = Mathf.Min(Data.ProjectileDistance, speed * lifetime);
-        float length = BossCombatPhysics.ClearDistance(origin, Vector2.one * Data.ProjectileDiameter, direction,
-            maxDistance, owner, true, out bool endBlocked);
-        // Include the projectile's cap so the visible warning encloses all swept damage.
-        var geometry = AttackGeometry.Corridor(origin - direction * Data.ProjectileDiameter * 0.5f,
-            direction, length + Data.ProjectileDiameter, Data.ProjectileDiameter);
-        var record = owner.CreateAttack(BossAttackKind.Projectile, 0, geometry, Data.ProjectileDamage, owner.RegularAttackBelief, true);
-        yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
-        if (!owner.IsAttackValid(record)) yield break;
-        origin = owner.ProjectileOrigin;
         length = BossCombatPhysics.ClearDistance(origin, Vector2.one * Data.ProjectileDiameter, direction,
             maxDistance, owner, true, out endBlocked);
+        // Include the projectile's cap so the visible warning encloses all swept damage.
+        geometry = AttackGeometry.Corridor(origin - direction * Data.ProjectileDiameter * 0.5f,
+            direction, length + Data.ProjectileDiameter, Data.ProjectileDiameter);
+        return geometry.Overlaps(owner.PlayerCollider);
+    }
+
+    private IEnumerator Projectile(BossRegularAttackContext context)
+    {
+        owner.FacePlayer();
+        float speed = Data.ProjectileSpeed * owner.SpeedMultiplier;
+        float lifetime = Data.ProjectileLifetime / owner.SpeedMultiplier;
+        if (!TryPlanProjectile(owner.Facing, out Vector2 origin, out Vector2 direction, out float length, out bool endBlocked, out AttackGeometry geometry))
+        {
+            yield return Recovery();
+            yield break;
+        }
+
+        var record = owner.CreateAttack(BossAttackKind.Projectile, 0, geometry, Data.ProjectileDamage, context.DisplayBelief, true, context);
+        yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
+        if (!owner.IsAttackValid(record)) yield break;
         record.Activate();
         owner.SetActionCue("투사체", AttackHint(record), BossPresentationState.Active, lifetime);
         var projectile = owner.SpawnEffect(Data.ProjectilePrefab);
@@ -352,16 +356,17 @@ public sealed class BossAttackExecutor : MonoBehaviour
         yield return Recovery();
     }
 
-    private Vector2 ProjectileAimDirection(Vector2 origin)
+    private Vector2 ProjectileAimDirection(Vector2 origin, int facing)
     {
-        Bounds target = owner.PlayerCollider.bounds;
-        // Boss and player occupy the same combat plane. Aim at the player's horizontal
-        // position while preserving the muzzle height so distance cannot change the slope.
-        Vector2 aimPoint = new Vector2(target.center.x, origin.y);
-        Vector2 direction = (aimPoint - origin).normalized;
-        return direction.sqrMagnitude < 0.01f ? Vector2.right * owner.Facing : direction;
+        // The aim line is locked at fire time and may be diagonal; the warning, the flight and the sweep share it.
+        Vector2 direction = ((Vector2)owner.PlayerCollider.bounds.center - origin).normalized;
+        return direction.sqrMagnitude < 0.01f ? Vector2.right * facing : direction;
     }
 
+    /// <summary>
+    /// Belief body action: windup, downward swing and recovery. The waves keep travelling in an executor-owned
+    /// tracker after this returns, so releasing the body does not cut the belief's own hazard.
+    /// </summary>
     public IEnumerator Shockwave()
     {
         Vector2 foot = new Vector2(owner.BodyCollider.bounds.center.x, owner.BodyCollider.bounds.min.y);
@@ -397,6 +402,13 @@ public sealed class BossAttackExecutor : MonoBehaviour
         var second = owner.SpawnEffect(Data.WavePrefab);
         first.Initialize(owner, record, left);
         second.Initialize(owner, record, right);
+        ShockwaveTracking++;
+        StartCoroutine(TrackShockwave(record, first, second));
+        yield return Recovery();
+    }
+
+    private IEnumerator TrackShockwave(BossAttackRecord record, BossGroundWave first, BossGroundWave second)
+    {
         while (owner.IsAttackValid(record) && (!first.Finished || !second.Finished))
         {
             // A union observation prevents one branch from erasing the other's threat.
@@ -407,7 +419,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
         owner.CompleteAttack(record, first.Blocked || second.Blocked ? BossAttackEndReason.Wall : BossAttackEndReason.Completed);
         owner.DestroyEffect(first != null ? first.gameObject : null);
         owner.DestroyEffect(second != null ? second.gameObject : null);
-        yield return Recovery();
+        ShockwaveTracking = Mathf.Max(0, ShockwaveTracking - 1);
     }
 
     private int OwnerComboCount => owner.PlayerAttack != null ? Mathf.Max(1, owner.PlayerAttack.ComboCount) : 1;
@@ -417,12 +429,10 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
     private string AttackHint(BossAttackRecord record)
     {
-        if (owner.IsBurning) return $"피격 시 화상 · 이 공격을 회피하면 믿음 -{Data.BeliefReduction:0}";
-        if (record.Belief == BossBeliefKind.AttackAndDodge) return $"연결 공격을 회피하면 믿음 -{Data.BeliefReduction:0}";
+        if (record.BurnEnhanced) return $"피격 시 화상 · 이 공격을 회피하면 믿음 -{Data.BeliefReduction:0}";
+        if (record.Context != null && record.Context.Dodge != null) return $"연결 공격을 회피하면 믿음 -{Data.BeliefReduction:0}";
         if (record.Kind == BossAttackKind.Projectile) return "조준 고정 · 표시된 직선에서 벗어나세요.";
         if (record.Kind == BossAttackKind.Dash) return "돌진 방향 고정 · 붉은 경로에서 벗어나세요.";
-        if (owner.ActivePattern == BossPatternKind.ShockwaveBelief) return "베기를 피한 뒤, 지면 충격파를 점프로 넘으세요.";
-        if (owner.ActivePattern == BossPatternKind.NoAttackBelief) return "응시 종료 · 곧 베기! 붉은 범위에서 벗어나세요.";
         return "붉은 예고 범위에서 벗어나세요.";
     }
 }

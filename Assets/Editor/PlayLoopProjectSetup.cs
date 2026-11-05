@@ -88,7 +88,7 @@ public static class PlayLoopProjectSetup
 
     private static void AddRunScenesToBuildSettings()
     {
-        EditorBuildSettings.scenes = ProjectScenes.GameplayPaths.Concat(new[] { ProjectScenes.Title })
+        EditorBuildSettings.scenes = new[] { ProjectScenes.Title }.Concat(ProjectScenes.GameplayPaths)
             .Select(path => new EditorBuildSettingsScene(path, true)).ToArray();
     }
 }

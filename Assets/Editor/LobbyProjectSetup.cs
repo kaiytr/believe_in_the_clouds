@@ -22,7 +22,8 @@ public static class LobbyProjectSetup
         BuildScene();
         var scenes = EditorBuildSettings.scenes.Where(scene => scene.path != LobbyPath &&
             scene.path != "Assets/Scenes/Gameplay/TemporaryStage.unity").ToList();
-        scenes.Insert(0, new EditorBuildSettingsScene(LobbyPath, true));
+        int titleIndex = scenes.FindIndex(scene => scene.path == ProjectScenes.Title);
+        scenes.Insert(titleIndex >= 0 ? titleIndex + 1 : 0, new EditorBuildSettingsScene(LobbyPath, true));
         EditorBuildSettings.scenes = scenes.ToArray();
         AssetDatabase.SaveAssets();
         Debug.Log("Lobby built; removed event stage excluded. Existing scene registrations are preserved.");

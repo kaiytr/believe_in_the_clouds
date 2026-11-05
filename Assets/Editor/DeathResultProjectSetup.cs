@@ -18,9 +18,8 @@ public static class DeathResultProjectSetup
             new GameObject("[Title]", typeof(TitleScreen));
             EditorSceneManager.SaveScene(scene, TitlePath);
             var scenes = EditorBuildSettings.scenes.Where(item => item.path != TitlePath).ToList();
-            // Preserve the existing Lobby build entry. Title is a destination, not
-            // a replacement for the project's current initial game flow.
-            scenes.Add(new EditorBuildSettingsScene(TitlePath, true));
+            // Start builds at the title while keeping all existing gameplay entries.
+            scenes.Insert(0, new EditorBuildSettingsScene(TitlePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
         }

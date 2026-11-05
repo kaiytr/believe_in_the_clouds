@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ff44f13f810da146875c8a60b222108, type: 3}
+  m_Name: TutorialAfterBelieverDeath
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneDefinition
+  sequenceId: tutorial.believer.after-death
+  steps:
+  - type: 0
+    actorId: player
+    text: "\u2026"
+    choices: []
+    anchorId:
+    movementSpeed: 4
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:
+  - type: 0
+    actorId: player
+    text: "\uC8C4\uC1A1\uD558\uAC8C \uB410\uC2B5\uB2C8\uB2E4."
+    choices: []
+    anchorId:
+    movementSpeed: 4
+    typingCharactersPerSecond: 30
+    harmlessProjectilePrefab: {fileID: 0}
+    projectileDuration: 0.55
+    projectileArcHeight: 0.6
+    externalStageId:

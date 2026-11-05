@@ -15,6 +15,7 @@ public static class BossProjectSetup
     public const string BossPath = "Assets/Prefabs/Boss/Boss.prefab";
     public const string ScenePath = ProjectScenes.BossTest;
     private const string ShockwaveMaterialPath = "Assets/Art/Boss/WhiteGroundShockwave.mat";
+    private const string EnemyProjectileSpritePath = "Assets/Art/Enemy/EnemyProjectile.png";
     private const string Art = "Assets/Art/Boss";
     private const string Fx = "Assets/Prefabs/Boss/Effects";
     private static Material material;
@@ -44,7 +45,10 @@ public static class BossProjectSetup
         data.SlashPrefab = Effect("BossSlash", slash, new Color(1f, 0.92f, 0.55f, 1f));
         data.DashPrefab = AfterimageEffect("BossDashTrail", square, new Color(1f, 0.86f, 0.45f, 0.3f));
         data.ImpactPrefab = Effect("BossImpact", disc, new Color(1f, 0.95f, 0.75f, 1f), false, false);
-        var projectile = Effect("BossProjectile", disc, new Color(1f, 0.83f, 0.3f, 1f), false, false);
+        Sprite enemyProjectileSprite = AssetDatabase.LoadAssetAtPath<Sprite>(EnemyProjectileSpritePath);
+        if (enemyProjectileSprite == null)
+            throw new InvalidOperationException("Enemy projectile sprite is missing.");
+        var projectile = Effect("BossProjectile", enemyProjectileSprite, Color.white, false, false);
         GameObject edit = PrefabUtility.LoadPrefabContents(AssetDatabase.GetAssetPath(projectile));
         var rigidbody = edit.AddComponent<Rigidbody2D>();
         rigidbody.bodyType = RigidbodyType2D.Kinematic; rigidbody.gravityScale = 0f;
@@ -162,8 +166,13 @@ public static class BossProjectSetup
     private static BossCloudPlatform CloudPrefab(bool white)
     {
         var root = new GameObject(white ? "WhiteCloud" : "BlackCloud");
-        var renderer = root.AddComponent<SpriteRenderer>(); renderer.sprite = cloud; renderer.sharedMaterial = material;
-        renderer.color = white ? new Color(.92f, .98f, 1f) : new Color(.16f, .18f, .27f); renderer.sortingOrder = 26;
+        var renderer = root.AddComponent<SpriteRenderer>();
+        renderer.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(white ? BossPresentationAssetSetup.WhiteCloudPath : BossPresentationAssetSetup.StormCloudPath) ?? cloud;
+        renderer.sharedMaterial = material;
+        renderer.color = Color.white;
+        renderer.drawMode = white ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
+        renderer.size = Vector2.one;
+        renderer.sortingOrder = 26;
         var collider = root.AddComponent<BoxCollider2D>(); collider.size = Vector2.one; collider.isTrigger = true;
         root.AddComponent<BossCloudPlatform>();
         var saved = PrefabUtility.SaveAsPrefabAsset(root, Fx + "/" + root.name + ".prefab").GetComponent<BossCloudPlatform>();
@@ -386,7 +395,9 @@ public static class BossProjectSetup
         var trigger = new GameObject("Final area entry trigger"); trigger.transform.SetParent(root.transform,false);
         trigger.AddComponent<BoxCollider2D>();
         var entry = trigger.AddComponent<BossEncounterTrigger>();
-        BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(), -18f, 18f, -3.35f, null);
+        BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(),
+            BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, -3.35f, null);
+        CutsceneSceneInstaller.ConfigureBossIntroduction(entry);
         PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prefabs/Boss/BossEncounter.prefab"); Object.DestroyImmediate(root);
     }
     private static void BuildScene()
@@ -418,8 +429,11 @@ public static class BossProjectSetup
         var entrance = new GameObject("Boss arena entry");
         entrance.AddComponent<BoxCollider2D>();
         BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
-            -12f, 18f, floor, camera, true);
+            BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, floor, camera, true);
+        CutsceneSceneInstaller.ConfigureBossIntroduction(entrance.GetComponent<BossEncounterTrigger>());
         ProjectSceneSynchronization.SynchronizeScene(scene);
+        BossStageSceneryProjectSetup.ConfigureLayout(scene, camera);
+        BossStageSceneryProjectSetup.Decorate(scene);
         EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene,ScenePath);
     }
     private static GameObject Solid(Transform parent, string name, Vector2 position, Vector2 size)

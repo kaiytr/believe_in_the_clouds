@@ -10,6 +10,8 @@ public sealed class BossArenaCamera : MonoBehaviour
     [SerializeField] private Behaviour[] explorationControllers = new Behaviour[0];
     [SerializeField, Min(.1f)] private float combatSize = 8f;
     [SerializeField, Min(.1f)] private float maximumCombatSize = 10.5f;
+    [SerializeField] private float combatVerticalOffset = -1f;
+    [SerializeField, Min(0f)] private float stormCloudTopMargin = .7f;
     [SerializeField, Min(0f)] private float playerMargin = 1.5f;
     [SerializeField, Min(.01f)] private float blendDuration = .6f;
     [SerializeField] private Vector3 explorationOffset = new Vector3(1.5f, 2.2f, -10f);
@@ -24,6 +26,23 @@ public sealed class BossArenaCamera : MonoBehaviour
     private Vector3 returnPosition;
     private Quaternion explorationRotation;
     private float returnSize;
+
+    public bool TryGetStormCloudTop(Transform focus, out float topY)
+    {
+        if (cameraBounds == null)
+        {
+            topY = 0f;
+            return false;
+        }
+
+        float centerY = cameraBounds.bounds.center.y + combatVerticalOffset;
+        float size = combatSize;
+        if (focus != null)
+            size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(focus.position.y - centerY) + playerMargin),
+                combatSize, Mathf.Max(combatSize, maximumCombatSize));
+        topY = centerY + size - stormCloudTopMargin;
+        return true;
+    }
 
     public void Enter(Transform actor)
     {
@@ -71,12 +90,13 @@ public sealed class BossArenaCamera : MonoBehaviour
         if (fighting && player != null && cameraBounds != null)
         {
             Bounds bounds = cameraBounds.bounds;
-            float size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(player.position.y - bounds.center.y) + playerMargin),
+            float centerY = bounds.center.y + combatVerticalOffset;
+            float size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(player.position.y - centerY) + playerMargin),
                 combatSize, Mathf.Max(combatSize, maximumCombatSize));
             float blend = 1f - Mathf.Exp(-Time.unscaledDeltaTime * 5f / blendDuration);
             view.orthographicSize = Mathf.Lerp(view.orthographicSize, size, blend);
             float x = ConfineX(player.position.x, bounds.min.x, bounds.max.x, view.orthographicSize * view.aspect);
-            Vector3 position = new Vector3(x, bounds.center.y, view.transform.position.z);
+            Vector3 position = new Vector3(x, centerY, view.transform.position.z);
             view.transform.position = Vector3.Lerp(view.transform.position, position, blend);
             view.transform.rotation = Quaternion.Slerp(view.transform.rotation, Quaternion.identity, blend);
         }

@@ -158,6 +158,29 @@ public class BelieverEnemy : EnemyUnit
                playerBody != null && playerBody.enabled && !IsBlockedByPlatform(attackOrigin, targetPoint);
     }
 
+    public float GetProjectileClearDistance(Vector2 attackOrigin, Vector2 direction, float maxDistance,
+        float projectileDiameter)
+    {
+        if (direction.sqrMagnitude <= 0.0001f || maxDistance <= 0f)
+            return 0f;
+
+        direction.Normalize();
+        float clearDistance = maxDistance;
+        List<RaycastHit2D> hits = CombatPhysics.Cast(attackOrigin, Vector2.one * projectileDiameter,
+            direction, maxDistance, platformMask, circle: true);
+        for (int i = 0; i < hits.Count; i++)
+        {
+            if (hits[i].collider == null ||
+                (platformMask.value & (1 << hits[i].collider.gameObject.layer)) == 0)
+                continue;
+
+            if (hits[i].distance < clearDistance)
+                clearDistance = Mathf.Max(0f, hits[i].distance - 0.01f);
+        }
+
+        return clearDistance;
+    }
+
     private bool EvaluateTargetOnCurrentPlatform(Collider2D enemyBody, Collider2D playerBody,
         Vector2 enemyPosition, Vector2 playerPosition)
     {

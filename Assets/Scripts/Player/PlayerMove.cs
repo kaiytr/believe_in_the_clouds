@@ -7,7 +7,8 @@ public class PlayerMove : MonoBehaviour, ISlowable
     [SerializeField] private float moveSpeed = 5f;
 
     [Header("점프")]
-    [SerializeField] private float jumpPower = 10f;
+    // 0.74 유닛 타일 4칸: 중력 배율 4, 0.02초 물리 틱에서 약 2.96 유닛 상승.
+    [SerializeField] private float jumpPower = 15.64f;
 
     [Header("바닥 체크")]
     [SerializeField] private Transform groundCheck;
