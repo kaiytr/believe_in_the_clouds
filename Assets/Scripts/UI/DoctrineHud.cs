@@ -592,7 +592,7 @@ public class DoctrineHud : MonoBehaviour
         {
             Transform child = canvas.transform.GetChild(i);
             if (child.name != "PlayerHudBand" && child.name != "PlayerStrengthBackground"
-                && child.name != "PlayerPortrait")
+                && child.name != "PlayerPortrait" && child.name != "DoctrineRow")
                 continue;
 
             child.gameObject.SetActive(false);
@@ -658,16 +658,20 @@ public class DoctrineHud : MonoBehaviour
     private void BuildDoctrineRow()
     {
         GameObject row = new GameObject("DoctrineRow", typeof(RectTransform));
-        row.transform.SetParent(bandRect, false);
+        // 체력바 배경(PlayerStrengthBackground)보다 먼저 그려지도록 캔버스 맨 뒤에 둔다.
+        // 밴드 안에 두면 밴드가 배경보다 위에 있어 두루마리가 체력바를 덮는다.
+        row.transform.SetParent(canvas.transform, false);
         doctrineRow = row.GetComponent<RectTransform>();
-        doctrineRow.anchorMin = new Vector2(0f, 1f);
-        doctrineRow.anchorMax = new Vector2(0f, 1f);
+        doctrineRow.anchorMin = new Vector2(0f, 0f);
+        doctrineRow.anchorMax = new Vector2(0f, 0f);
         doctrineRow.pivot = new Vector2(0f, 1f);
-        doctrineRow.anchoredPosition = doctrinePosition;
+        // 기존에는 밴드 위쪽 모서리(anchor/pivot 모두 위)에서 y만큼 위로 올린 위치였다.
+        // 캔버스 좌하단 기준으로는 밴드 높이에 y를 더하면 같은 화면 위치가 된다.
+        doctrineRow.anchoredPosition = new Vector2(doctrinePosition.x, bandHeight + doctrinePosition.y);
         doctrineRow.sizeDelta = new Vector2(slotSize.x, slotSize.y);
 
-        // 목업처럼 HP 바가 두루마리 아래쪽을 덮도록 바를 앞에 그린다.
-        row.transform.SetSiblingIndex(0);
+        // 체력바 뒤로 보낸다. 이후에 그려지는 배경/게이지가 두루마리 아래쪽을 덮는다.
+        row.transform.SetAsFirstSibling();
     }
 
     private void BuildHpBar()
