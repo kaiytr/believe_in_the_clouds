@@ -270,9 +270,47 @@ public class DoctrineHud : MonoBehaviour
 
     private void HandleTriggered(DoctrineManager.ActiveDoctrine entry, GameObject target)
     {
+        if (entry == null || entry.Doctrine == null)
+            return;
+
         int index = FindSlotIndex(entry.Doctrine);
-        if (index >= 0 && index < slots.Count)
-            slots[index].PlayTriggerFlash();
+        if (index < 0 || index >= slots.Count)
+            return;
+
+        DoctrineSlotView slot = slots[index];
+        slot.PlayTriggerFlash();
+
+        // Triggered는 효과 성공 여부와 무관하게 호출된다.
+        // 실제로 쿨타임이 걸린 경우에만 마스크를 표시한다.
+        float duration = DoctrineManager.GetCooldownSeconds(entry.Doctrine);
+        float remaining = manager != null ? manager.GetCooldownRemaining(entry, target) : 0f;
+        if (duration > 0f && remaining > 0f)
+            slot.StartCooldown(remaining, duration);
+    }
+
+    private DoctrineManager.ActiveDoctrine FindActiveEntry(Doctrine doctrine)
+    {
+        if (manager == null || doctrine == null)
+            return null;
+
+        IReadOnlyList<DoctrineManager.ActiveDoctrine> active = manager.ActiveDoctrines;
+        for (int i = 0; i < active.Count; i++)
+        {
+            DoctrineManager.ActiveDoctrine entry = active[i];
+            if (entry == null || entry.Doctrine == null)
+                continue;
+
+            if (!entry.Doctrine.HasSameRule(doctrine))
+                continue;
+
+            // CollectDoctrines와 같은 기준: 다른 존재에 묶인 교리는 HUD에 없다.
+            if (entry.Owner != null && (player == null || entry.Owner != player.gameObject))
+                continue;
+
+            return entry;
+        }
+
+        return null;
     }
 
     private int FindSlotIndex(Doctrine doctrine)
@@ -319,6 +357,17 @@ public class DoctrineHud : MonoBehaviour
             slot.Bind(doctrine, label, true);
             slot.Clicked -= HandleSlotClicked;
             slot.Clicked += HandleSlotClicked;
+
+            // 다른 교리가 해제되는 등으로 슬롯을 다시 만들어도
+            // 진행 중인 쿨타임 마스크가 사라지지 않게 실제 남은 시간을 복원한다.
+            DoctrineManager.ActiveDoctrine activeEntry = FindActiveEntry(doctrine);
+            float cooldownSeconds = DoctrineManager.GetCooldownSeconds(doctrine);
+            float cooldownRemaining = activeEntry != null && manager != null
+                ? manager.GetCooldownRemaining(activeEntry)
+                : 0f;
+            if (cooldownSeconds > 0f && cooldownRemaining > 0f)
+                slot.StartCooldown(cooldownRemaining, cooldownSeconds);
+
             slots.Add(slot);
         }
 
