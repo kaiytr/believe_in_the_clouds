@@ -2,6 +2,20 @@
 
 기준 커밋 `3ac32d0e458a7f8f5662f1c236106a9951e91db6`에서 `codex/level-layouts` 작업으로 적용했다. 입력 자료는 `레벨디자인.xlsx`이며, 시트·셀 서식·문구를 표준 라이브러리로 확인했다. 병합 셀과 도형은 없었다.
 
+## 다른 컴퓨터로 전달하기
+
+작업 브랜치와 `/private/tmp/believe-clouds-level-layouts` 경로는 이 컴퓨터에만 있다. 다른 컴퓨터에서 같은 원격 브랜치를 확인할 수 있다고 가정하지 않도록, 이 브랜치의 커밋만 담은 Git bundle을 별도로 전달한다. bundle에는 이 브랜치의 커밋과 브랜치 참조만 포함하며, Puri·Leesc·다른 세션의 변경은 포함하지 않는다. 기준 커밋은 프로젝트의 세션 공통 기준인 `3ac32d0e458a7f8f5662f1c236106a9951e91db6`이다.
+
+받는 컴퓨터에서 기준 커밋이 있는 저장소를 사용하고, 같은 이름의 로컬 브랜치가 없는지 확인한 뒤 다음처럼 가져온다.
+
+```sh
+git bundle verify /path/to/level-layouts-transfer.bundle
+git fetch /path/to/level-layouts-transfer.bundle codex/level-layouts:refs/heads/codex/level-layouts
+git switch codex/level-layouts
+```
+
+`git bundle verify`에서 기준 커밋이 없다고 나오면, 먼저 공통 저장소에서 그 기준 커밋을 가져온다. 같은 이름의 브랜치가 이미 있으면 덮어쓰지 말고 해당 브랜치의 커밋을 비교한 뒤 통합 담당이 선택한다. 원격 푸시나 다른 브랜치 병합 없이 bundle 파일만 별도로 전달한다.
+
 ## 시트와 범례
 
 | 엑셀 시트 | 씬 |
@@ -92,7 +106,7 @@ Unity Editor/BatchMode, EditMode/PlayMode 테스트, 자동 플레이는 실행�
 
 ## 통합 담당 인수인계
 
-- 이 브랜치는 `codex/level-layouts`이며 보스·컷씬 브랜치와 별도로 기준 커밋에서 작업했다. 다른 브랜치를 가져오거나 병합하지 않았다.
+- 이 브랜치는 `codex/level-layouts`이며 보스·컷씬 브랜치와 별도로 기준 커밋에서 작업했다. 다른 브랜치를 가져오거나 병합하지 않았다. 다른 컴퓨터에는 인수인계 bundle을 전달해 위 절차로 가져온다.
 - Tutorial 씬에는 컷씬 앵커와 `TutorialStoryBeliever` 식별만 추가했다. 컷씬 모듈과의 실제 연결은 세 브랜치 통합 후 담당 세션에서 수행한다.
 - Lobby 라우팅/후보 배열의 기존 참조를 유지했다. ShopTest에는 엑셀의 출구 표식에 대응하는 기존 오브젝트가 없어 후속 흐름 결정이 필요하다.
 - 보스 씬, 공용 프리팹·아틀라스·런타임 스크립트, ProjectSettings, Packages는 수정하지 않았다.
