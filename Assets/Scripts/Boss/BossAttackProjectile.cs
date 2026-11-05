@@ -17,7 +17,12 @@ public sealed class BossAttackProjectile : MonoBehaviour
         visual = GetComponent<BossAttackVisual>();
         Present();
     }
-    private void Present() => visual.Show(new AttackGeometry(position, Vector2.one * owner.Settings.ProjectileDiameter, 0f, true), owner.Settings.AttackOrder, owner.IsBurning);
+    private void Present()
+    {
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        visual.Show(new AttackGeometry(position, Vector2.one * owner.Settings.ProjectileDiameter, angle, true),
+            owner.Settings.AttackOrder, owner.IsBurning);
+    }
     private void FixedUpdate()
     {
         if (owner == null || !owner.IsAttackValid(record)) { gameObject.SetActive(false); return; }
