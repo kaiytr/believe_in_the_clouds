@@ -13,8 +13,17 @@ public static class CombatUiResources
     {
         preferred = string.IsNullOrEmpty(preferred) ? "Malgun Gothic" : preferred;
         if (fonts.TryGetValue(preferred, out Font cached)) return cached;
+
+        // 프로젝트에 넣은 폰트(Assets/Resources/Font)를 우선 사용한다.
+        Font bundled = Resources.Load<Font>("Font/ONE Mobile Title");
+        if (bundled != null && bundled.HasCharacter('너'))
+        {
+            fonts[preferred] = bundled;
+            return bundled;
+        }
+
         if (installedFonts == null) installedFonts = new HashSet<string>(Font.GetOSInstalledFontNames());
-        foreach (string family in new[] { preferred, "맑은 고딕", "Noto Sans CJK KR", "Apple SD Gothic Neo" })
+        foreach (string family in new[] { preferred, "ONE Mobile Title", "맑은 고딕", "Noto Sans CJK KR", "Apple SD Gothic Neo" })
         {
             if (!installedFonts.Contains(family)) continue;
             Font font = Font.CreateDynamicFontFromOSFont(family, 19);

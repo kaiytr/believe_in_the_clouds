@@ -77,14 +77,22 @@ public static class UiTheme
         }
     }
 
-    // 한글 폰트. OS에 있는 폰트를 우선 사용하고, 없으면 내장 폰트로 떨어진다.
+    // 한글 폰트. 프로젝트에 넣은 ONE Mobile Title을 우선 사용하고,
+    // 없으면 OS 폰트 → 내장 폰트 순서로 떨어진다.
     public static Font GetFont()
     {
         if (cachedFont != null)
             return cachedFont;
 
+        cachedFont = Resources.Load<Font>("Font/ONE Mobile Title");
+        if (cachedFont != null)
+        {
+            cachedFont.RequestCharactersInTexture(string.Empty, FontSize, FontStyle.Normal);
+            return cachedFont;
+        }
+
         string[] installedFonts = Font.GetOSInstalledFontNames();
-        string[] preferredFonts = { "Malgun Gothic", "맑은 고딕", "Noto Sans CJK KR", "Arial" };
+        string[] preferredFonts = { "ONE Mobile Title", "Malgun Gothic", "맑은 고딕", "Noto Sans CJK KR", "Arial" };
         foreach (string preferredFont in preferredFonts)
         {
             if (System.Array.IndexOf(installedFonts, preferredFont) >= 0)
