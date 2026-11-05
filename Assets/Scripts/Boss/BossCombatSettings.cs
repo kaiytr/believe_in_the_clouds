@@ -56,8 +56,8 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("Fallback storm cloud top above the arena floor when no boss arena camera is assigned.")]
     public float CloudTopHeight = 8f;
     [Tooltip("White (platform) cloud size. The underside must stay above the player's head.")]
-    public Vector2 CloudSize = new Vector2(3f, 0.42f);
-    public Vector2 StormCloudSize = new Vector2(8f, 1.4f);
+    public Vector2 CloudSize = new Vector2(3f, 0.55f);
+    public Vector2 StormCloudSize = new Vector2(11f, 2f);
     [Tooltip("Number of storm clouds chosen once when the arena is prepared (inclusive range).")]
     public Vector2Int StormCloudCountRange = new Vector2Int(2, 3);
     public int WhiteCloudCount = 2;
@@ -67,13 +67,13 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("Random interval before a cloud may reverse / change speed.")]
     public Vector2 CloudTurnInterval = new Vector2(1.5f, 4f);
     [Tooltip("Top of the white cloud (landing surface) above the arena floor. Must stay reachable with the base jump.")]
-    public float WhiteCloudTopHeight = 2.45f;
+    public float WhiteCloudTopHeight = 2.66f;
     [Tooltip("Thickness of the one-way landing collider at the top of a white cloud.")]
     public float WhiteCloudSurfaceThickness = 0.14f;
     [Tooltip("Measured base-jump apex (feet rise) from PlayerMove: jumpPower 15.64, gravity 9.81*4, fixed step 0.02 -> 2.961.")]
     public float ReferenceJumpApex = 2.96f;
     [Tooltip("Landing allowance kept below the base-jump apex.")]
-    public float WhiteCloudLandingMargin = 0.5f;
+    public float WhiteCloudLandingMargin = 0.3f;
     [Tooltip("World height of the player body; the shelter under a white cloud must fit it.")]
     public float ReferencePlayerHeight = 2f;
     public float LightningDuration = 0.45f;

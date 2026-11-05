@@ -4,24 +4,16 @@ using UnityEngine;
 public class DangerIndicator : MonoBehaviour
 {
     [SerializeField, Min(0f)] private float initialWarningAlpha = 0.12f;
-    [SerializeField] private Color directionColor = new Color(1f, 0.88f, 0.65f, 1f);
-    [SerializeField, Min(0.001f)] private float directionWidth = 0.055f;
-    [SerializeField, Min(0)] private int directionSortingOffset = 2;
 
     private Transform followTarget;
-    private Vector2 lockedDirection;
     private Vector2 followOffset;
     private float followAngle;
     private Vector2 indicatorSize;
     private Vector2 indicatorCenter;
-    private Vector2 markerDirection;
     private bool followTargetEnabled;
-    private bool hasDirection;
     private SpriteRenderer fill;
     private SpriteRenderer sortingReference;
-    private LineRenderer directionMarker;
     private float fullAlpha = 0.3f;
-    private readonly Vector3[] directionPoints = new Vector3[5];
 
     private void Awake()
     {
@@ -49,21 +41,6 @@ public class DangerIndicator : MonoBehaviour
         transform.position = center;
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
         transform.localScale = new Vector3(size.x, size.y, 1f);
-        UpdateDirectionMarker();
-    }
-
-    public void SetupFollowing(Transform followTarget, Vector2 direction, Vector2 size,
-        bool showDirectionMarker = true)
-    {
-        this.followTarget = followTarget;
-        lockedDirection = direction.normalized;
-        indicatorSize = size;
-        followOffset = lockedDirection * (indicatorSize.x * 0.5f);
-        followAngle = Mathf.Atan2(lockedDirection.y, lockedDirection.x) * Mathf.Rad2Deg;
-        followTargetEnabled = true;
-        SetDirection(showDirectionMarker ? lockedDirection : Vector2.zero);
-        UpdateFollowPosition();
-        SetProgress(0f);
     }
 
     // Follows an already-computed warning shape while keeping its locked offset and angle.
@@ -91,22 +68,6 @@ public class DangerIndicator : MonoBehaviour
         Color color = fill.color;
         color.a = Mathf.Lerp(Mathf.Min(initialWarningAlpha, fullAlpha), fullAlpha, Mathf.Clamp01(progress));
         fill.color = color;
-    }
-
-    public void SetDirection(Vector2 direction)
-    {
-        if (direction.sqrMagnitude <= 0.0001f)
-        {
-            hasDirection = false;
-            if (directionMarker != null)
-                directionMarker.enabled = false;
-            return;
-        }
-
-        markerDirection = direction.normalized;
-        hasDirection = true;
-        EnsureDirectionMarker();
-        UpdateDirectionMarker();
     }
 
     public void SetSortingBehind(SpriteRenderer reference)
@@ -148,28 +109,6 @@ public class DangerIndicator : MonoBehaviour
         transform.position = indicatorCenter;
         transform.rotation = Quaternion.Euler(0f, 0f, followAngle);
         transform.localScale = new Vector3(indicatorSize.x, indicatorSize.y, 1f);
-        UpdateDirectionMarker();
-    }
-
-    private void EnsureDirectionMarker()
-    {
-        if (directionMarker != null)
-        {
-            directionMarker.enabled = true;
-            return;
-        }
-
-        var markerObject = new GameObject("Attack direction");
-        markerObject.transform.SetParent(transform, false);
-        directionMarker = markerObject.AddComponent<LineRenderer>();
-        directionMarker.useWorldSpace = true;
-        directionMarker.sharedMaterial = fill != null ? fill.sharedMaterial : null;
-        directionMarker.startColor = directionMarker.endColor = directionColor;
-        directionMarker.startWidth = directionMarker.endWidth = directionWidth;
-        directionMarker.sortingLayerID = fill != null ? fill.sortingLayerID : 0;
-        directionMarker.sortingOrder = (fill != null ? fill.sortingOrder : 0) + directionSortingOffset;
-        directionMarker.positionCount = 5;
-        ApplySortingBehindReference();
     }
 
     private void ApplySortingBehindReference()
@@ -184,29 +123,5 @@ public class DangerIndicator : MonoBehaviour
             fill.sortingLayerID = sortingReference.sortingLayerID;
             fill.sortingOrder = sortingReference.sortingOrder - 2;
         }
-
-        if (directionMarker != null)
-        {
-            directionMarker.sortingLayerID = sortingReference.sortingLayerID;
-            directionMarker.sortingOrder = sortingReference.sortingOrder - 1;
-        }
-    }
-
-    private void UpdateDirectionMarker()
-    {
-        if (!hasDirection || directionMarker == null)
-            return;
-
-        directionMarker.enabled = true;
-        float length = Mathf.Min(0.3f, indicatorSize.x * 0.25f);
-        Vector2 tip = indicatorCenter + markerDirection * length;
-        Vector2 side = new Vector2(-markerDirection.y, markerDirection.x);
-        float head = Mathf.Min(0.18f, indicatorSize.y * 0.35f);
-        directionPoints[0] = indicatorCenter - markerDirection * length;
-        directionPoints[1] = tip;
-        directionPoints[2] = tip - markerDirection * head + side * head;
-        directionPoints[3] = tip;
-        directionPoints[4] = tip - markerDirection * head - side * head;
-        directionMarker.SetPositions(directionPoints);
     }
 }

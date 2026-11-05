@@ -86,7 +86,6 @@ public class ThrowStoneAttack : EnemyAttack
         float angle = Mathf.Atan2(LockedDirection.y, LockedDirection.x) * Mathf.Rad2Deg;
         Vector2 center = lockedOrigin + LockedDirection * (lockedProjectileDistance * 0.5f);
         indicator.Setup(center, angle, new Vector2(lockedProjectileDistance, indicatorWidth));
-        indicator.SetDirection(LockedDirection);
         return indicator;
     }
 

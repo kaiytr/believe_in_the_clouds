@@ -142,13 +142,6 @@ public sealed class BossAttackVisual : MonoBehaviour
             remaining > 0f ? cueText + $" · {remaining:0.0}초" : cueText, warningColor, cueRemainingFraction);
     }
 
-    public void SetDirection(float sign = 1f)
-    {
-        float angle = geometry.Angle * Mathf.Deg2Rad;
-        Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * Mathf.Sign(sign);
-        indicator?.SetDirection(direction);
-    }
-
     public void Fade(float duration)
     {
         wantsCue = false;

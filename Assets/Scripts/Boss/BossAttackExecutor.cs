@@ -62,8 +62,6 @@ public sealed class BossAttackExecutor : MonoBehaviour
         var warning = CreateWarning(record.Geometry, followOwner: true);
         string label = AttackLabel(record);
         owner.SetActionCue(label, AttackHint(record), BossPresentationState.Windup, duration);
-        if (record.Kind == BossAttackKind.Dash) warning.SetDirection(owner.Facing);
-        else if (record.Kind == BossAttackKind.Projectile) warning.SetDirection();
         Vector2 previousBossPosition = owner.transform.position;
         float elapsed = 0f;
         while (elapsed < duration && owner.IsAttackValid(record) && owner.CanStartNextHit)
@@ -214,8 +212,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float activeEndsAt = Time.time + activeDuration;
             owner.SetActionCue(label, hint, BossPresentationState.Active, activeDuration);
             if (owner.Presentation.ShowMelee(animationIndex, activeDuration * .5f))
-                owner.PlayerAttack.PlaySwingEffect(bladeEffect, owner.transform.position,
-                    record.Geometry.Center, record.Geometry.Size, direction);
+                // The slash is clipped to the very rectangle that was warned and is judged.
+                owner.PlayerAttack.PlaySwingWithinEffect(bladeEffect, owner.transform.position,
+                    record.Geometry.Center, record.Geometry.Size, record.Geometry.Angle, direction);
             else
             {
                 slash = owner.SpawnEffect(Data.SlashPrefab);
@@ -283,8 +282,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 start = owner.BodyCollider.bounds.center;
         float warningDistance = BossCombatPhysics.ClearDistance(start, size, direction,
             Data.DashDistance, owner, false, out _);
-        var corridor = new AttackGeometry(start + direction * warningDistance * 0.5f,
-            new Vector2(warningDistance + size.x, size.y));
+        // The warning starts at the body's leading edge: nothing is drawn behind or under the boss.
+        var corridor = new AttackGeometry(start + direction * (size.x * 0.5f + warningDistance * 0.5f),
+            new Vector2(warningDistance, size.y));
         var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, context.DisplayBelief, true, context);
         float speed = Data.DashSpeed * owner.SpeedMultiplier;
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
@@ -299,7 +299,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             Vector2 center = owner.BodyCollider.bounds.center;
             float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
             step = BossCombatPhysics.ClearDistance(center, size, direction, step, owner, false, out blocked);
-            var ahead = new AttackGeometry(center + direction * remaining * 0.5f, new Vector2(remaining + size.x, size.y));
+            var ahead = new AttackGeometry(center + direction * (size.x * 0.5f + remaining * 0.5f), new Vector2(remaining, size.y));
             owner.Observe(record, ahead);
             if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
             Color? tint = record.BurnEnhanced ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;

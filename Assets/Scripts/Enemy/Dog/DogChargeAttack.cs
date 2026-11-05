@@ -82,8 +82,19 @@ public class DogChargeAttack : EnemyAttack
         Collider2D targetCollider = PlayerBodyCollider;
         float clearDistance = GetClearChargeDistance(direction, out _);
         return targetCollider != null &&
-               IsBodyInChargeCorridor(targetCollider, transform.position, direction, clearDistance) &&
+               IsBodyInChargeCorridor(targetCollider, ChargeOrigin(direction), direction, clearDistance) &&
                HasClearChargePath(target, direction);
+    }
+
+    // The corridor starts at the dog's leading edge so the warning never reaches back over or behind its body.
+    private Vector2 ChargeOrigin(float direction)
+    {
+        Collider2D dogCollider = owner != null ? owner.BodyCollider : null;
+        if (dogCollider == null)
+            return transform.position;
+
+        Bounds bounds = dogCollider.bounds;
+        return new Vector2(direction > 0f ? bounds.max.x : bounds.min.x, transform.position.y);
     }
 
     private float GetClearChargeDistance(float direction, out bool blocked)
@@ -156,7 +167,7 @@ public class DogChargeAttack : EnemyAttack
     protected override void PrepareAttack(Transform target)
     {
         lockedDirectionX = LockedFacingDirection;
-        lockedChargeOrigin = transform.position;
+        lockedChargeOrigin = ChargeOrigin(lockedDirectionX);
         lockedChargeDistance = GetClearChargeDistance(lockedDirectionX, out lockedChargeBlockedByObstacle);
         hasResolvedPlayerContact = false;
         playerContactAppliedHarm = false;

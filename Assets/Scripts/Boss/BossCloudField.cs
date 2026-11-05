@@ -55,7 +55,10 @@ public sealed class BossCloudField : MonoBehaviour
         float stormY = stormTop - data.StormCloudSize.y * .5f;
         for (int i = 0; i < stormCount; i++)
         {
-            float x = Random.Range(LimitsX.x + stormWidth * .5f, Mathf.Max(LimitsX.x + stormWidth * .5f, LimitsX.y - stormWidth * .5f));
+            // One slot per storm cloud: with 3 clouds the arena starts almost fully covered, then they wander and overlap.
+            float slot = arenaWidth / stormCount;
+            float x = LimitsX.x + slot * (i + .5f) + Random.Range(-slot * .1f, slot * .1f);
+            x = Mathf.Clamp(x, LimitsX.x + stormWidth * .5f, Mathf.Max(LimitsX.x + stormWidth * .5f, LimitsX.y - stormWidth * .5f));
             var cloud = Instantiate(data.BlackCloudPrefab, root);
             cloud.name = "Storm cloud " + (i + 1);
             cloud.Initialize(boss, false, new AttackGeometry(new Vector2(x, stormY), new Vector2(stormWidth, data.StormCloudSize.y)));
