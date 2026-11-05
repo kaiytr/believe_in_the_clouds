@@ -34,6 +34,27 @@ public static class CombatUiResources
         return null;
     }
 
+    // 믿음 말풍선 전용 폰트: 그리운 심심체 (Griun Simsimche).
+    // Assets/Font/Griun＿Simsimche－Rg.ttf를 런타임용으로 복사한 Resources 사본을 사용한다.
+    // HasCharacter 검사 없이 번들 폰트를 우선해, OS 폰트(맑은 고딕 등)로 대체되는 것을 막는다.
+    public static Font BeliefFont(string preferred = "Malgun Gothic")
+    {
+        Font bundled = Resources.Load<Font>("Font/GriunSimsimche");
+        if (bundled != null)
+        {
+            return bundled;
+        }
+
+        // 새 폰트를 못 찾으면 기존 ONE Mobile Title로 대체한다.
+        Font fallback = Resources.Load<Font>("Font/ONE Mobile Title");
+        if (fallback != null)
+        {
+            return fallback;
+        }
+
+        return KoreanFont(preferred);
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Reset()
     {

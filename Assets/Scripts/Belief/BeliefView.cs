@@ -16,7 +16,7 @@ public sealed class BeliefView : MonoBehaviour
         owner = GetComponent<EnemyUnit>();
         if (view == null) view = CombatantHudView.Create(transform);
         if (view == null || !view.IsConfigured) return false;
-        view.Initialize(CombatUiResources.KoreanFont());
+        view.Initialize(CombatUiResources.BeliefFont());
         controller.BeliefChanged += HandleBeliefChanged;
         controller.StateChanged += HandleStateChanged;
         hidden = false;
