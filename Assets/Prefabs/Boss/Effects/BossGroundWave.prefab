@@ -40,7 +40,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1675031097166673933}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -214,7 +214,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1d315a27cd0606c4aa48028539218aa5, type: 2}
+  - {fileID: 2100000, guid: 500650e1c0fe469a807f5d9ae1dd7904, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -238,7 +238,7 @@ SpriteRenderer:
   m_SortingOrder: 24
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: fd9e7fc55724088448644e5b290ac044, type: 3}
-  m_Color: {r: 1, g: 0.89, b: 0.4, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -260,7 +260,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossAttackVisual
   outline: {fileID: 5374037909104080910}
-  baseColor: {r: 1, g: 0.89, b: 0.4, a: 1}
+  baseColor: {r: 1, g: 1, b: 1, a: 1}
   warning: 0
 --- !u!114 &4984771641606881301
 MonoBehaviour:

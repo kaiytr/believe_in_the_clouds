@@ -19,8 +19,15 @@ public sealed class BossGroundWave : MonoBehaviour
         owner = boss; record = attack; path = lockedPath; ground = path.Points[0]; direction = path.Direction;
         visual = GetComponent<BossAttackVisual>();
         Present();
+        gameObject.AddComponent<BossShockwaveEffect>().Initialize(this, visual.Renderer,
+            owner.Settings.WaveSize, direction, owner.Settings.EffectMaterial);
     }
-    private void Present() => visual.Show(new AttackGeometry(ground + Vector2.up * (owner.Settings.WaveSize.y * 0.5f + 0.02f), owner.Settings.WaveSize), owner.Settings.AttackOrder);
+    private void Present()
+    {
+        visual.Show(new AttackGeometry(ground + Vector2.up * (owner.Settings.WaveSize.y * 0.5f + 0.02f), owner.Settings.WaveSize), owner.Settings.AttackOrder);
+        // BossAttackVisual.Show enables its base renderer; the shader-driven child owns the visible wave.
+        visual.Renderer.enabled = false;
+    }
     private void FixedUpdate()
     {
         if (Finished || owner == null || !owner.IsAttackValid(record)) return;

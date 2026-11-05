@@ -14,6 +14,7 @@ public static class BossProjectSetup
     public const string SettingsPath = "Assets/Data/Boss/BossCombatSettings.asset";
     public const string BossPath = "Assets/Prefabs/Boss/Boss.prefab";
     public const string ScenePath = ProjectScenes.BossTest;
+    private const string ShockwaveMaterialPath = "Assets/Art/Boss/WhiteGroundShockwave.mat";
     private const string Art = "Assets/Art/Boss";
     private const string Fx = "Assets/Prefabs/Boss/Effects";
     private static Material material;
@@ -52,8 +53,15 @@ public static class BossProjectSetup
         edit.AddComponent<BossAttackProjectile>();
         data.ProjectilePrefab = PrefabUtility.SaveAsPrefabAsset(edit, Fx + "/BossProjectile.prefab").GetComponent<BossAttackProjectile>();
         PrefabUtility.UnloadPrefabContents(edit);
-        var waveVisual = Effect("BossGroundWave", wave, new Color(1f, 0.89f, 0.4f, 1f));
+        var waveVisual = Effect("BossGroundWave", wave, Color.white, false, false);
         edit = PrefabUtility.LoadPrefabContents(AssetDatabase.GetAssetPath(waveVisual));
+        var shockwaveMaterial = AssetDatabase.LoadAssetAtPath<Material>(ShockwaveMaterialPath);
+        if (shockwaveMaterial == null)
+        {
+            PrefabUtility.UnloadPrefabContents(edit);
+            throw new InvalidOperationException("WhiteGroundShockwave shader material is missing.");
+        }
+        edit.GetComponent<SpriteRenderer>().sharedMaterial = shockwaveMaterial;
         edit.AddComponent<BossGroundWave>();
         data.WavePrefab = PrefabUtility.SaveAsPrefabAsset(edit, Fx + "/BossGroundWave.prefab").GetComponent<BossGroundWave>();
         PrefabUtility.UnloadPrefabContents(edit);
