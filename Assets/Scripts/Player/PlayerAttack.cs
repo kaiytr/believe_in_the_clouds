@@ -183,6 +183,10 @@ public class PlayerAttack : MonoBehaviour
     private readonly List<Collider2D> hitBuffer = new List<Collider2D>(32);
     private readonly List<RaycastHit2D> attemptBuffer = new List<RaycastHit2D>(32);
     private PlayerAttackContext activeSwing;
+    private const float HitStopTimeScale = .05f;
+    private bool hitStopActive;
+    private float hitStopPreviousScale;
+    private int hitStopGeneration;
 
     public bool IsAttacking => isAttacking || isAirAttacking;
     public bool IsAirAttacking => isAirAttacking;
@@ -294,6 +298,7 @@ public class PlayerAttack : MonoBehaviour
             attackRoutine = null;
         }
 
+        EndHitStop();
         activeSwing?.Dispose();
         activeSwing = null;
         StopMotion();
@@ -692,11 +697,32 @@ public class PlayerAttack : MonoBehaviour
 
     private IEnumerator HitStop(float duration)
     {
-        float previousScale = Time.timeScale;
-        if (PlayerDeathCoordinator.IsResultOpen) yield break;
-        Time.timeScale = 0.05f;
-        yield return new WaitForSecondsRealtime(duration);
-        if (!PlayerDeathCoordinator.IsResultOpen) Time.timeScale = previousScale;
+        EndHitStop();
+        if (duration <= 0f || Time.timeScale <= 0f || PlayerDeathCoordinator.IsResultOpen ||
+            health != null && health.IsDead) yield break;
+
+        hitStopPreviousScale = Time.timeScale;
+        int generation = ++hitStopGeneration;
+        hitStopActive = true;
+        Time.timeScale = HitStopTimeScale;
+        try
+        {
+            yield return new WaitForSecondsRealtime(duration);
+        }
+        finally
+        {
+            // 중단된 이전 히트스톱의 정리가 새 히트스톱을 끝내지 않게 한다.
+            if (generation == hitStopGeneration) EndHitStop();
+        }
+    }
+
+    // 중첩 코루틴 중단 시 finally 실행 여부에 기대지 않고 취소 경로에서도 호출한다.
+    internal void EndHitStop()
+    {
+        if (!hitStopActive) return;
+        hitStopActive = false;
+        if (!PlayerDeathCoordinator.IsResultOpen && Mathf.Approximately(Time.timeScale, HitStopTimeScale))
+            Time.timeScale = hitStopPreviousScale;
     }
 
     private void OnDisable()
