@@ -9,16 +9,22 @@ public class MagicCircleAttack : EnemyAttack
     [Header("Magic Circle")]
     [SerializeField] private MagicCircle magicCirclePrefab;
     [SerializeField, Min(0.01f)] private float circleRadius = 1.5f;
-    [SerializeField, Min(0f)] private float circleVisualDuration = 0.8f;
+    [Tooltip("Height of the zone (and of the warning column) above the floor.")]
+    [SerializeField, Min(0.1f)] private float zoneHeight = 1.6f;
+    [Tooltip("How long the floor zone stays after it is laid.")]
+    [SerializeField, Min(0.1f)] private float zoneDuration = 4f;
+    [Tooltip("Seconds between damage ticks while standing in the zone.")]
+    [SerializeField, Min(0.05f)] private float damageInterval = 1f;
 
     [Header("Slow")]
     [SerializeField, Range(0f, 1f)] private float slowMultiplier = 0.5f;
-    [SerializeField, Min(0f)] private float slowDuration = 2f;
+    [Tooltip("The slow is refreshed while standing in the zone and wears off this long after leaving it.")]
+    [SerializeField, Min(0f)] private float slowLinger = 0.4f;
 
     [Header("Danger Indicator")]
     [SerializeField] private DangerIndicator dangerIndicatorPrefab;
 
-    private Vector2 lockedTargetPosition;
+    private Vector2 lockedTargetPosition; // floor point under the target, where the zone is laid
 
     public float AttackRange => attackRange;
     // The rear challenge needs an actual two-second opportunity before the AI can turn.
@@ -35,23 +41,39 @@ public class MagicCircleAttack : EnemyAttack
 
     protected override void PrepareAttack(Transform target)
     {
-        lockedTargetPosition = target.position;
+        lockedTargetPosition = FindFloorPoint(target);
     }
+
+    // The zone lies on the floor under the target even when the target is airborne when the warning starts.
+    private Vector2 FindFloorPoint(Transform target)
+    {
+        Collider2D body = PlayerBodyCollider;
+        if (body == null) return target.position;
+        Bounds bounds = body.bounds;
+        PlayerMove move = target.GetComponentInParent<PlayerMove>();
+        int mask = move != null ? move.GroundLayer.value : Physics2D.DefaultRaycastLayers;
+        Vector2 probe = new Vector2(bounds.center.x, bounds.min.y + 0.25f);
+        RaycastHit2D hit = Physics2D.Raycast(probe, Vector2.down, 8f, mask);
+        return new Vector2(bounds.center.x, hit.collider != null ? hit.point.y : bounds.min.y);
+    }
+
+    private Vector2 ZoneCenter => lockedTargetPosition + new Vector2(0f, zoneHeight * 0.5f);
+    private Vector2 ZoneSize => new Vector2(circleRadius * 2f, zoneHeight);
 
     protected override DangerIndicator ShowDangerIndicator()
     {
         if (dangerIndicatorPrefab == null)
             return null;
 
-        float diameter = circleRadius * 2f;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.Setup(lockedTargetPosition, 0f, new Vector2(diameter, diameter));
+        indicator.UseGroundColumn();
+        indicator.Setup(ZoneCenter, 0f, ZoneSize);
         return indicator;
     }
 
     protected override bool IsPlayerInThreatRange(Collider2D bodyCollider)
     {
-        return ColliderOverlapsCircle(bodyCollider, lockedTargetPosition, circleRadius);
+        return ColliderOverlapsBox(bodyCollider, ZoneCenter, ZoneSize);
     }
 
     protected override IEnumerator ExecuteAttackRoutine()
@@ -66,10 +88,12 @@ public class MagicCircleAttack : EnemyAttack
         MagicCircle circle = Instantiate(magicCirclePrefab, lockedTargetPosition, Quaternion.identity);
         bool harmfulEffectApplied = circle.Activate(
             circleRadius,
+            zoneHeight,
             damage * DoctrineAttackMultiplier,
             slowMultiplier,
-            slowDuration,
-            circleVisualDuration,
+            slowLinger,
+            damageInterval,
+            zoneDuration,
             PlayerBodyCollider,
             out bool hpDamageApplied, gameObject);
         if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);

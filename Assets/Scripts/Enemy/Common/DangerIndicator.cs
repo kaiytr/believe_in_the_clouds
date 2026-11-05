@@ -22,6 +22,10 @@ public class DangerIndicator : MonoBehaviour
     private bool thinningLine;
     private float lineFactor = 1f;
 
+    // Ground column warning: a box standing on the floor, hot pink at the bottom and fading to a faint wash upward.
+    private static Sprite groundColumnSprite;
+    private bool groundColumn;
+
     private void Awake()
     {
         fill = GetComponent<SpriteRenderer>();
@@ -86,6 +90,44 @@ public class DangerIndicator : MonoBehaviour
         return softLineSprite;
     }
 
+    /// <summary>Switch to the ground column look (zone attacks). Presentation only; the caller supplies the box.</summary>
+    public void UseGroundColumn()
+    {
+        if (fill == null) fill = GetComponent<SpriteRenderer>();
+        if (fill == null) return;
+        groundColumn = true;
+        fill.sprite = GroundColumnSprite();
+        fill.color = new Color(1f, 1f, 1f, .5f);
+    }
+
+    // 1x1 world unit sprite: the color and alpha are baked top to bottom, with a bright line along the floor.
+    private static Sprite GroundColumnSprite()
+    {
+        if (groundColumnSprite != null) return groundColumnSprite;
+        const int size = 64;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.DontSave,
+            name = "DangerGroundColumn"
+        };
+        var pixels = new Color32[size * size];
+        Color top = new Color(.62f, .5f, 1f), bottom = new Color(1f, .12f, .5f), line = new Color(1f, .8f, .88f);
+        for (int y = 0; y < size; y++)
+        {
+            float depth = 1f - (y + .5f) / size; // 0 at the top, 1 at the floor
+            Color color = Color.Lerp(top, bottom, depth);
+            float alpha = Mathf.Lerp(.14f, .85f, Mathf.Pow(depth, 2f));
+            if (y < 3) { color = line; alpha = .95f; }
+            for (int x = 0; x < size; x++)
+                pixels[y * size + x] = new Color32((byte)(color.r * 255f), (byte)(color.g * 255f), (byte)(color.b * 255f), (byte)(alpha * 255f));
+        }
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+        groundColumnSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(.5f, .5f), size);
+        groundColumnSprite.hideFlags = HideFlags.DontSave;
+        return groundColumnSprite;
+    }
+
     private void ApplyScale() =>
         transform.localScale = new Vector3(indicatorSize.x, indicatorSize.y * (thinningLine ? lineFactor : 1f), 1f);
 
@@ -112,6 +154,11 @@ public class DangerIndicator : MonoBehaviour
             return;
 
         progress = Mathf.Clamp01(progress);
+        if (groundColumn)
+        {
+            fill.color = new Color(1f, 1f, 1f, Mathf.Lerp(.5f, 1f, progress));
+            return;
+        }
         Color color = fill.color;
         if (thinningLine)
         {
