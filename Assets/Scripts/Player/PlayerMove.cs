@@ -1,5 +1,11 @@
 using UnityEngine;
 
+/// <summary>Ground that moves by itself (e.g. a boss cloud). Standing on it must not read as the player walking.</summary>
+public interface IMovingGround
+{
+    float GroundVelocityX { get; }
+}
+
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMove : MonoBehaviour, ISlowable
 {
@@ -32,6 +38,10 @@ public class PlayerMove : MonoBehaviour, ISlowable
 
     /// <summary>바닥에 닿아 있는지. 공중 공격 가능 여부 판단용.</summary>
     public bool IsGrounded => isGrounded;
+    /// <summary>Horizontal speed of the moving ground under the feet (0 on ordinary ground).</summary>
+    public float GroundVelocityX { get; private set; }
+    /// <summary>True while the player is holding a horizontal direction.</summary>
+    public bool HasMoveInput => moveInput != 0f;
     public LayerMask GroundLayer => groundLayer;
 
     public float BaseMoveSpeed => moveSpeed;
@@ -89,8 +99,12 @@ public class PlayerMove : MonoBehaviour, ISlowable
         }
 
         // 물리 쿼리는 물리 틱에서만. Update에서 매 프레임 돌리면 렌더 fps에 비례해 낭비된다.
-        isGrounded = groundCheck != null &&
-            Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        Collider2D ground = groundCheck != null
+            ? Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer)
+            : null;
+        isGrounded = ground != null;
+        IMovingGround moving = ground != null ? ground.GetComponentInParent<IMovingGround>() : null;
+        GroundVelocityX = moving != null ? moving.GroundVelocityX : 0f;
 
         if (jumpRequested)
         {

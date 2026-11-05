@@ -97,7 +97,11 @@ public sealed class PlayerIdleSpriteAnimator : MonoBehaviour
         }
 
         bool grounded = movement == null || movement.IsGrounded;
-        bool moving = body != null && Mathf.Abs(body.linearVelocity.x) > movementThreshold;
+        // A moving platform carries the body, so its velocity says nothing about walking; use the input there.
+        bool onMovingGround = movement != null && grounded && Mathf.Abs(movement.GroundVelocityX) > .01f;
+        bool moving = onMovingGround
+            ? movement.HasMoveInput
+            : body != null && Mathf.Abs(body.linearVelocity.x) > movementThreshold;
         bool attacking = attack != null && attack.IsAttacking;
 
         // 공중 아래 공격이 가장 우선. 3프레임을 한 번 재생하고 마지막 프레임을 유지한다.

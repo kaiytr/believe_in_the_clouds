@@ -5,7 +5,7 @@ using UnityEngine;
 // White clouds additionally own a thin one-way landing surface and carry whoever stands on it,
 // so the shared PlayerMove never has to know about moving platforms.
 [RequireComponent(typeof(BoxCollider2D))]
-public sealed class BossCloudPlatform : MonoBehaviour
+public sealed class BossCloudPlatform : MonoBehaviour, IMovingGround
 {
     private BossCombatController owner;
     private BossCloudField field;
@@ -144,6 +144,8 @@ public sealed class BossCloudPlatform : MonoBehaviour
         if (delta.x == 0f) return;
         CarryRider(delta);
         body.MovePosition(from + delta);
+        carryVelocityX = delta.x / Mathf.Max(.0001f, Time.fixedDeltaTime);
+        carryStamp = Time.fixedTime;
     }
 
     // The base ground check overlaps a small circle around the feet. A thin one-way surface that is
@@ -155,6 +157,11 @@ public sealed class BossCloudPlatform : MonoBehaviour
         int layer = above ? platformLayer : 0;
         if (surface.gameObject.layer != layer) surface.gameObject.layer = layer;
     }
+
+    private float carryVelocityX, carryStamp = -1f;
+    /// <summary>Horizontal speed of this cloud's last step; 0 once it has stopped moving.</summary>
+    public float GroundVelocityX =>
+        IsWhite && Time.fixedTime - carryStamp <= Time.fixedDeltaTime * 2.5f ? carryVelocityX : 0f;
 
     public float SurfaceTop => surface != null ? surface.bounds.max.y : Top;
 
