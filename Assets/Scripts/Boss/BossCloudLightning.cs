@@ -1,15 +1,29 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>A single deadline and strike. No trigger callbacks or delayed damage.</summary>
+/// <summary>
+/// One lightning activation over the persistent clouds: a warning that follows the moving clouds, a single
+/// deadline strike, then a short bolt visual. The warning and the damage test share the field's danger
+/// rectangles, and one record guarantees at most one hit / one belief outcome per strike.
+/// </summary>
 public sealed class BossCloudLightning : MonoBehaviour
 {
     private BossCombatController owner;
+    private BossCloudField field;
     private BossAttackRecord record;
     private readonly List<BossAttackVisual> warnings = new List<BossAttackVisual>();
+    private readonly List<AttackGeometry> rects = new List<AttackGeometry>();
+    private readonly List<GameObject> bolts = new List<GameObject>();
+    private float startedAt, deadline, visualEndsAt;
     private bool struck;
-    public AttackGeometry Shelter { get; private set; }
+
     public bool HasStruck => struck;
+    public float Remaining => struck ? 0f : Mathf.Max(0f, deadline - Time.time);
+    public BossAttackRecord Record => record;
+    public IReadOnlyList<AttackGeometry> DangerRects => rects;
+    /// <summary>Compatibility: shelter under the first white cloud (all shelters: <see cref="BossCloudField.WhiteClouds"/>).</summary>
+    public AttackGeometry Shelter =>
+        field != null && field.WhiteClouds.Count > 0 ? field.ShelterOf(field.WhiteClouds[0]) : default;
 
     // The entire real body must fit beneath the white cloud;
     // tolerance only absorbs floating point round-off, not a gameplay margin.
@@ -23,72 +37,150 @@ public sealed class BossCloudLightning : MonoBehaviour
         return bounds.min.x >= min.x - epsilon && bounds.max.x <= max.x + epsilon &&
             bounds.min.y >= min.y - epsilon && bounds.max.y <= max.y + epsilon;
     }
-    public bool ContainsPlayer() => owner != null && Contains(Shelter, owner.PlayerCollider);
+    public bool ContainsPlayer() => owner != null && field != null && field.IsInsideShelter(owner.PlayerCollider);
 
-    public void Initialize(BossCombatController boss, BossAttackRecord attack, AttackGeometry shelter)
+    public bool Initialize(BossCombatController boss, BossCloudField cloudField)
     {
-        owner = boss; record = attack; Shelter = shelter;
-        Vector2 min = attack.Geometry.Center - attack.Geometry.Size * .5f;
-        Vector2 max = attack.Geometry.Center + attack.Geometry.Size * .5f;
-        Vector2 safeMin = shelter.Center - shelter.Size * .5f;
-        Vector2 safeMax = shelter.Center + shelter.Size * .5f;
-        AddDanger(new Vector2(min.x, min.y), new Vector2(safeMin.x, max.y));
-        AddDanger(new Vector2(safeMax.x, min.y), max);
-        AddDanger(new Vector2(safeMin.x, safeMax.y), new Vector2(safeMax.x, max.y));
+        owner = boss; field = cloudField;
+        field.ComputeDangerRects(rects);
+        if (rects.Count == 0 && field.StormClouds.Count == 0) return false;
+        startedAt = Time.time;
+        deadline = startedAt + boss.Settings.CloudDuration;
+        // The record carries a single bounding shape for diagnostics; hit tests use the live rectangles.
+        record = boss.CreateAttack(BossAttackKind.Lightning, 0, Bounding(rects), boss.Settings.LightningDamage, BossBeliefKind.Cloud, false, null, observeNow: false);
+        SyncWarnings();
+        return true;
     }
-    private void AddDanger(Vector2 min, Vector2 max)
+
+    private static AttackGeometry Bounding(List<AttackGeometry> shapes)
     {
-        if (max.x <= min.x || max.y <= min.y) return;
-        var warning = owner.GetComponent<BossAttackExecutor>().CreateWarning(new AttackGeometry((min + max) * .5f, max - min));
-        warnings.Add(warning);
+        if (shapes.Count == 0) return new AttackGeometry(Vector2.zero, Vector2.one);
+        Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = new Vector2(float.MinValue, float.MinValue);
+        foreach (AttackGeometry shape in shapes)
+        {
+            min = Vector2.Min(min, shape.Center - shape.Size * .5f);
+            max = Vector2.Max(max, shape.Center + shape.Size * .5f);
+        }
+        return new AttackGeometry((min + max) * .5f, max - min);
     }
-    private GameObject Child(string label)
+
+    private bool OverlapsDanger(Collider2D body)
     {
-        var child = new GameObject(label); child.transform.SetParent(transform, false); return child;
+        if (body == null) return false;
+        foreach (AttackGeometry rect in rects) if (rect.Overlaps(body)) return true;
+        return false;
     }
-    private LineRenderer Line(string label, Color color, float width)
+
+    private void FixedUpdate()
     {
-        var line = Child(label).AddComponent<LineRenderer>();
-        line.useWorldSpace = true; line.sharedMaterial = owner.Settings.EffectMaterial;
-        line.startWidth = line.endWidth = width; line.startColor = line.endColor = color;
-        line.sortingOrder = owner.Settings.AttackOrder + 1;
-        return line;
+        if (owner == null || field == null) return;
+        if (struck)
+        {
+            if (Time.time >= visualEndsAt) End();
+            return;
+        }
+        if (!owner.IsAttackValid(record)) { End(); return; }
+        field.ComputeDangerRects(rects);
+        Collider2D body = owner.PlayerCollider;
+        record.Observe(OverlapsDanger(body), body.bounds.center);
+        if (Time.time >= deadline) Strike(body);
     }
-    public void UpdateWarning(float remaining)
+
+    private void LateUpdate()
     {
-        if (struck) return;
-        float progress = 1f - Mathf.Clamp01(remaining / (owner.Settings.CloudWarning + owner.Settings.CloudDuration));
-        foreach (var warning in warnings) warning.SetProgress(progress);
+        if (struck || owner == null || field == null) return;
+        field.ComputeDangerRects(rects);
+        SyncWarnings();
     }
-    public void Strike()
+
+    private void SyncWarnings()
     {
-        if (struck || owner == null || !owner.IsAttackValid(record)) return;
+        BossAttackExecutor attacks = owner.GetComponent<BossAttackExecutor>();
+        while (warnings.Count < rects.Count) warnings.Add(attacks.CreateWarning(rects[warnings.Count]));
+        float progress = 1f - Mathf.Clamp01(Remaining / Mathf.Max(.0001f, owner.Settings.CloudDuration));
+        for (int i = 0; i < warnings.Count; i++)
+        {
+            if (i >= rects.Count) { if (warnings[i] != null) warnings[i].gameObject.SetActive(false); continue; }
+            if (warnings[i] == null) warnings[i] = attacks.CreateWarning(rects[i]);
+            warnings[i].gameObject.SetActive(true);
+            warnings[i].Show(rects[i], owner.Settings.WarningOrder);
+            warnings[i].SetProgress(progress);
+        }
+    }
+
+    private void Strike(Collider2D body)
+    {
+        // Sync at the deadline: a cloud moved this step must use its actual current collider.
+        Physics2D.SyncTransforms();
+        field.ComputeDangerRects(rects);
+        bool exposed = OverlapsDanger(body);
+        bool sheltered = !exposed && field.OverlapsStormRange(body) && field.IsInsideShelter(body);
+        struck = true;
+        visualEndsAt = Time.time + owner.Settings.LightningDuration;
+        record.Activate();
         // DestroyEffect disables immediately: no red warning remains on the strike frame.
         ClearWarnings();
-        struck = true;
-        var data = owner.Settings;
-        Vector2 min = record.Geometry.Center - record.Geometry.Size * .5f;
-        Vector2 max = record.Geometry.Center + record.Geometry.Size * .5f;
-        float safeLeft = Shelter.Center.x - Shelter.Size.x * .5f;
-        float safeRight = Shelter.Center.x + Shelter.Size.x * .5f;
-        int count = Mathf.Max(2, Mathf.CeilToInt(record.Geometry.Size.x / data.LightningSpacing));
-        for (int i = 0; i < count; i++)
+        DrawBolts();
+        if (exposed) owner.TryHit(record);
+        else if (sheltered) record.ProtectFromLightning();
+        owner.CompleteAttack(record, BossAttackEndReason.Completed);
+    }
+
+    private void DrawBolts()
+    {
+        BossCombatSettings data = owner.Settings;
+        float top = field.StormClouds[0].Bottom;
+        foreach (BossCloudPlatform storm in field.StormClouds)
         {
-            float x = Mathf.Lerp(min.x + .08f, max.x - .08f, (i + .5f) / count);
-            bool shieldedColumn = x >= safeLeft && x <= safeRight;
-            float endY = shieldedColumn ? Shelter.Center.y + Shelter.Size.y * .5f + data.CloudSize.y : min.y;
-            var line = Line("Downward lightning", new Color(1f,.94f,.55f), data.LightningWidth);
-            line.positionCount = 9;
-            for (int j = 0; j < 9; j++)
+            int count = Mathf.Max(2, Mathf.CeilToInt(storm.Size.x / data.LightningSpacing));
+            for (int i = 0; i < count; i++)
             {
-                float jitter = j == 0 || j == 8 ? 0f : (j % 2 == 0 ? -.12f : .12f);
-                float boltX = Mathf.Clamp(x + jitter, min.x, max.x);
-                if (!shieldedColumn) boltX = x < safeLeft ? Mathf.Min(boltX, safeLeft - .01f) : Mathf.Max(boltX, safeRight + .01f);
-                line.SetPosition(j, new Vector3(boltX, Mathf.Lerp(max.y, endY, j / 8f), 0f));
+                float x = Mathf.Lerp(storm.Left + .08f, storm.Right - .08f, (i + .5f) / count);
+                BossCloudPlatform cover = CoveringWhite(x);
+                float endY = cover != null ? cover.Top : field.FloorY;
+                var line = new GameObject("Downward lightning").AddComponent<LineRenderer>();
+                line.transform.SetParent(transform, false);
+                bolts.Add(line.gameObject);
+                line.useWorldSpace = true; line.sharedMaterial = data.EffectMaterial;
+                line.startWidth = line.endWidth = data.LightningWidth;
+                line.startColor = line.endColor = new Color(1f, .94f, .55f);
+                line.sortingOrder = data.AttackOrder + 1;
+                line.positionCount = 9;
+                for (int j = 0; j < 9; j++)
+                {
+                    float jitter = j == 0 || j == 8 ? 0f : (j % 2 == 0 ? -.12f : .12f);
+                    float boltX = x + jitter;
+                    if (cover == null) boltX = AwayFromWhite(boltX);
+                    line.SetPosition(j, new Vector3(boltX, Mathf.Lerp(top, endY, j / 8f), 0f));
+                }
             }
         }
     }
+
+    private BossCloudPlatform CoveringWhite(float x)
+    {
+        foreach (BossCloudPlatform white in field.WhiteClouds) if (x >= white.Left && x <= white.Right) return white;
+        return null;
+    }
+
+    private float AwayFromWhite(float x)
+    {
+        foreach (BossCloudPlatform white in field.WhiteClouds)
+            if (x > white.Left - .01f && x < white.Right + .01f)
+                return x < white.Position.x ? white.Left - .01f : white.Right + .01f;
+        return x;
+    }
+
+    private void End()
+    {
+        ClearWarnings();
+        if (field != null) field.LightningEnded(this);
+        Destroy(gameObject);
+    }
+
     private void OnDisable() => ClearWarnings();
+    private void OnDestroy() { if (field != null) field.LightningEnded(this); }
+
     private void ClearWarnings()
     {
         foreach (var warning in warnings) if (warning != null && owner != null) owner.DestroyEffect(warning.gameObject);

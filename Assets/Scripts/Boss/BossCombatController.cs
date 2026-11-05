@@ -18,15 +18,17 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     [SerializeField] private bool allowManualEvadeInjection;
     [SerializeField] private bool showAttackGizmos;
 
-    private readonly Dictionary<BossPatternKind, int> patternUses = new Dictionary<BossPatternKind, int>();
+    private const int LaneRegular = 1, LaneBelief = 2;
+    private readonly Dictionary<BossPatternKind, int> regularUses = new Dictionary<BossPatternKind, int>();
+    private readonly Dictionary<BossPatternKind, int> beliefUses = new Dictionary<BossPatternKind, int>();
     private readonly Dictionary<int, BossAttackRecord> activeAttacks = new Dictionary<int, BossAttackRecord>();
     private readonly List<BossAttackRecord> history = new List<BossAttackRecord>();
-    private readonly HashSet<long> windowAttackIds = new HashSet<long>();
+    private readonly List<BossProphecy> prophecies = new List<BossProphecy>();
+    private readonly List<BossBeliefKind> beliefOrder = new List<BossBeliefKind>(4);
     private readonly List<GameObject> effects = new List<GameObject>();
     private readonly List<float> candidateWeights = new List<float>(9);
-    private System.Predicate<BossPatternKind> eligibleAny, eligibleRegular;
-    private float nextPatternSearchAt;
-    private static readonly WaitForSeconds SelectionRetry = new WaitForSeconds(.1f);
+    private System.Predicate<BossPatternKind> eligibleAny;
+    private float nextRegularAt, nextBeliefAt;
     private Rigidbody2D body;
     private CapsuleCollider2D bodyCollider;
     private PlayerHealth playerHealth;
@@ -34,14 +36,17 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private PlayerCombatEvents playerEvents;
     private EnemyContactDamage[] contactDamageComponents;
     private BossSharedBelief belief;
-    private Coroutine patternRoutine;
-    private bool advancingPattern;
+    // Two independent lanes: regular attacks and beliefs never share a routine, pattern id, cancel flag or cooldown.
+    private Coroutine regularRoutine, beliefRoutine;
+    private int advancingLanes;
     private Transform effectRoot;
-    private BossBeliefKind activeBelief;
-    private BossPatternKind activePattern;
-    private bool patternRunning, signalWindow, playerActed, initialized;
-    private float windowStartedAt, encounterStartedAt, burnEndsAt, conditionEndsAt, conditionDuration;
-    private int generation = 1, patternId, nextAttackId = 1, facing = 1, initialFacing;
+    private BossCloudField clouds;
+    private BossPatternKind activeRegular, activeBeliefPattern;
+    private bool regularRunning, regularAttackActive, beliefProcessing, shockwaveReserved, bodyActionActive, initialized;
+    private string phraseCache = "";
+    private int phraseSignature = -1;
+    private float encounterStartedAt, burnEndsAt;
+    private int generation = 1, regularPatternId, beliefPatternId, patternCounter, nextAttackId = 1, facing = 1, initialFacing;
     private int lastAcceptedComboPatternId = -1;
     private float currentHp;
     private Vector3 spawnPosition, playerSpawnPosition, playerSpawnScale;
@@ -68,14 +73,33 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public bool WaitingForArenaEntry => arena != null && !arena.HasEntered;
     public Vector2 PatternXLimits => arena != null ? arena.PatternXLimits : settings.ArenaX;
     internal void BindArena(BossEncounterTrigger owner) { arena = owner; }
-    internal void UnbindArena(BossEncounterTrigger owner) { if (arena == owner) arena = null; }
+    internal void UnbindArena(BossEncounterTrigger owner)
+    {
+        if (arena != owner) return;
+        arena = null;
+        ReleaseArenaVisuals();
+    }
     public bool IsVulnerable => belief != null && belief.IsVulnerable;
-    public bool IsPatternRunning => patternRunning;
+    /// <summary>Any lane busy: a regular attack, a belief being activated, or a lightning still in progress.</summary>
+    public bool IsPatternRunning => regularRunning || beliefProcessing || (clouds != null && clouds.LightningActive);
+    public bool IsRegularRunning => regularRunning;
+    public bool IsBeliefProcessing => beliefProcessing;
+    public bool IsShockwavePending => shockwaveReserved;
+    public bool IsBodyActionActive => bodyActionActive;
+    public BossCloudField Clouds => clouds;
+    public IReadOnlyList<BossProphecy> Prophecies => prophecies;
+    public bool HasProphecy(BossBeliefKind kind)
+    {
+        foreach (BossProphecy prophecy in prophecies) if (prophecy.Kind == kind) return true;
+        return false;
+    }
     public bool AutomaticPatterns { get => automaticPatterns; set { automaticPatterns = value; Notify(); } }
     public bool AllowManualEvadeInjection { get => allowManualEvadeInjection; set => allowManualEvadeInjection = value; }
     public int Generation => generation;
     public int CombatGeneration => generation;
-    public int PatternId => patternId;
+    /// <summary>Id of the latest regular attack (records of a combo share it).</summary>
+    public int PatternId => regularPatternId;
+    public int BeliefPatternId => beliefPatternId;
     public int Facing => facing;
     public float CurrentHp => currentHp;
     public float MaxHp => settings != null ? settings.MaxHp : 0f;
@@ -102,8 +126,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public float VulnerableRemaining => belief != null ? belief.Remaining(Time.time) : 0f;
     public float BurnRemaining => Mathf.Max(0f, burnEndsAt - Time.time);
     public bool IsBurning => EncounterStarted && BurnRemaining > 0f;
-    public float ConditionRemaining => Mathf.Max(0f, conditionEndsAt - Time.time);
-    public float ConditionProgress => conditionDuration > 0f ? 1f - ConditionRemaining / conditionDuration : 0f;
     public float SpeedMultiplier => Phase == BossPhase.Two ? settings.PhaseTwoSpeedMultiplier : 1f;
     public float DamageMultiplier
     {
@@ -115,9 +137,46 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             return phaseMultiplier * doctrineMultiplier;
         }
     }
-    public string ActivePatternName => patternRunning ? PatternName(activePattern) : "대기";
-    public BossPatternKind ActivePattern => activePattern;
-    public string ActiveBeliefPhrase => BeliefPhrase(activeBelief);
+    public string ActivePatternName => regularRunning && beliefProcessing ? PatternName(activeRegular) + " + " + PatternName(activeBeliefPattern) :
+        regularRunning ? PatternName(activeRegular) : beliefProcessing ? PatternName(activeBeliefPattern) : "대기";
+    public BossPatternKind ActivePattern => regularRunning || !beliefProcessing ? activeRegular : activeBeliefPattern;
+    public BossPatternKind ActiveRegularPattern => activeRegular;
+    public BossPatternKind ActiveBeliefPattern => activeBeliefPattern;
+    /// <summary>Speech of every belief effect that is still alive, in activation order.</summary>
+    public string ActiveBeliefPhrase
+    {
+        get
+        {
+            int signature = 0;
+            for (int i = beliefOrder.Count - 1; i >= 0; i--)
+                if (!IsBeliefActive(beliefOrder[i])) beliefOrder.RemoveAt(i);
+            foreach (BossBeliefKind kind in beliefOrder) signature = signature * 8 + (int)kind;
+            if (signature != phraseSignature)
+            {
+                phraseSignature = signature;
+                var phrases = new List<string>(beliefOrder.Count);
+                foreach (BossBeliefKind kind in beliefOrder)
+                {
+                    string phrase = BeliefPhrase(kind);
+                    if (phrase.Length > 0 && !phrases.Contains(phrase)) phrases.Add(phrase);
+                }
+                phraseCache = string.Join(" ", phrases);
+            }
+            return phraseCache;
+        }
+    }
+    public bool IsBeliefActive(BossBeliefKind kind)
+    {
+        switch (kind)
+        {
+            case BossBeliefKind.AttackIntent: case BossBeliefKind.NoAttack: case BossBeliefKind.AttackAndDodge: return HasProphecy(kind);
+            case BossBeliefKind.Cloud: return clouds != null && clouds.LightningActive;
+            case BossBeliefKind.Burn: return IsBurning;
+            case BossBeliefKind.Shockwave: return shockwaveReserved || bodyActionActive || (attacks != null && attacks.ShockwaveTracking > 0);
+            default: return false;
+        }
+    }
+    private void NoteBelief(BossBeliefKind kind) { beliefOrder.Remove(kind); beliefOrder.Add(kind); }
     public Font PresentationFont => hud.KoreanFont;
     public bool DebugUiVisible => hud != null && hud.DebugVisible;
     public string CueTitle => cueTitle;
@@ -137,14 +196,20 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     public Vector2 AttackOrigin => attackOrigin.position;
     public Vector2 ProjectileOrigin => projectileOrigin.position;
+    /// <summary>Muzzle position as it will be once the boss faces <paramref name="forFacing"/>.</summary>
+    public Vector2 ProjectileOriginFor(int forFacing)
+    {
+        Vector3 local = projectileOrigin.localPosition;
+        local.x = Mathf.Abs(local.x) * forFacing;
+        return projectileOrigin.parent != null ? (Vector2)projectileOrigin.parent.TransformPoint(local) : (Vector2)local;
+    }
     public bool TargetValid => playerHealth != null && !playerHealth.IsDead && playerHealth.isActiveAndEnabled && PlayerCollider != null && PlayerCollider.enabled;
     public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && TargetValid;
-    public bool CanStartNextHit => CanContinue && (activeBelief != BossBeliefKind.Burn || IsBurning);
+    public bool CanStartNextHit => CanContinue;
 
     private void Awake()
     {
         eligibleAny = IsPatternEligible;
-        eligibleRegular = candidate => BossPatternSelection.IsRegular(candidate) && IsPatternEligible(candidate);
         body = GetComponent<Rigidbody2D>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
         contactDamageComponents = GetComponentsInChildren<EnemyContactDamage>(true);
@@ -160,7 +225,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         belief = new BossSharedBelief(settings.MaxBelief);
         initialized = true;
     }
-    private void Start() { if (startOnAwake && !EncounterStarted) BeginEncounter(); }
+    // A boss bound to an arena starts only through the arena (or an explicit BeginEncounter after an intro).
+    private void Start() { if (startOnAwake && !EncounterStarted && arena == null) BeginEncounter(); }
     private void Update()
     {
         if (!EncounterStarted || IsDead) return;
@@ -174,14 +240,21 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         }
         if (belief.Tick(Time.time, settings.BeliefRecoveryRatio))
         {
-            if (!patternRunning)
+            if (!regularRunning && !bodyActionActive)
                 SetActionCue("믿음 회복", "다음 공격의 예고를 확인하세요.", BossPresentationState.Idle);
             SetStatus("믿음 회복");
         }
-        if (automaticPatterns && !patternRunning && Time.time >= nextPatternSearchAt)
+        if (!automaticPatterns) return;
+        float now = Time.time;
+        if (!regularRunning && !shockwaveReserved && !bodyActionActive && now >= nextRegularAt)
         {
-            if (ChoosePattern(false, out BossPatternKind selected)) StartPattern(selected);
-            else { nextPatternSearchAt = Time.time + .1f; SetStatus("실행 가능한 패턴 없음 · 대상 거리/지면/설정 확인"); }
+            if (ChoosePattern(true, out BossPatternKind regular)) StartRegular(regular);
+            else { nextRegularAt = now + .1f; SetStatus("실행 가능한 일반 공격 없음 · 대상 거리/지면/설정 확인"); }
+        }
+        if (EncounterStarted && !beliefProcessing && now >= nextBeliefAt)
+        {
+            if (ChoosePattern(false, out BossPatternKind beliefPattern)) StartBelief(beliefPattern);
+            else nextBeliefAt = now + .1f;
         }
     }
     public List<string> ValidateEncounter()
@@ -218,11 +291,35 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         presentation.Initialize(this);
         hud.Initialize(this);
         encounterStartedAt = Time.time;
+        PrepareArenaVisuals();
+        nextRegularAt = 0f;
+        nextBeliefAt = Time.time + settings.BeliefInitialDelay;
         EncounterStarted = true;
         SetContactDamageSuppressed(false);
         SetPresentation(BossPresentationState.Idle);
         SetStatus("전투 시작");
     }
+    /// <summary>
+    /// Idempotent: creates the persistent storm clouds and white platforms for this arena (never starts combat,
+    /// contact damage, patterns or lightning). Safe to call before BeginEncounter, e.g. while an intro cutscene plays.
+    /// </summary>
+    public bool PrepareArenaVisuals()
+    {
+        if (IsDead || settings == null || !isActiveAndEnabled || bodyCollider == null) return false;
+        if (clouds == null)
+        {
+            clouds = GetComponent<BossCloudField>();
+            if (clouds == null) clouds = gameObject.AddComponent<BossCloudField>();
+        }
+        return clouds.Prepare(this);
+    }
+
+    /// <summary>Removes the arena clouds and any lightning (arena released, boss dead, scene ending).</summary>
+    public void ReleaseArenaVisuals()
+    {
+        if (clouds != null) clouds.Release();
+    }
+
     private bool BindPlayer()
     {
         GameObject actor = GameObject.FindGameObjectWithTag("Player");
@@ -274,7 +371,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         CancelCombat(false);
         Phase = BossPhase.Two;
-        patternUses.Clear();
+        regularUses.Clear();
+        beliefUses.Clear();
         SetPresentation(BossPresentationState.Idle);
         presentation.FlashPhaseChange();
         SetStatus("2페이즈");
@@ -286,7 +384,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         currentHp = Mathf.Min(currentHp, MaxHp * settings.PhaseTwoHealthRatio);
         EnterPhaseTwo();
     }
-    public void ForcePatternForTest(BossPatternKind pattern)
+    public void ForcePatternForTest(BossPatternKind pattern, bool cancelRunning = true)
     {
         if (!CanContinue) return;
         automaticPatterns = false;
@@ -295,8 +393,9 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             if (BossPatternSelection.AllowedInPhase(pattern, BossPhase.Two)) ForcePhaseTwoForTest();
             else { SetStatus("1페이즈 전용 패턴 · R 재시작 후 실행"); return; }
         }
-        CancelCombat(false);
-        StartPattern(pattern);
+        if (cancelRunning) CancelCombat(false);
+        if (BossPatternSelection.IsRegular(pattern)) { if (!regularRunning) StartRegular(pattern); }
+        else if (!beliefProcessing) StartBelief(pattern);
     }
     public void PauseAndCancelForTest()
     { automaticPatterns = false; CancelCombat(false); SetStatus("단일 패턴 대기"); }
@@ -310,7 +409,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         Phase = BossPhase.One;
         currentHp = MaxHp;
         belief.Reset();
-        patternUses.Clear();
+        regularUses.Clear();
+        beliefUses.Clear();
         history.Clear();
         feedbackEndsAt = 0f;
         facing = initialFacing;
@@ -357,24 +457,132 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         else SetStatus(reason);
         ShowFeedback($"믿음 -{before - CurrentBelief:0} · {reason}", new Color(.5f, 1f, .77f));
     }
-    private void StartPattern(BossPatternKind pattern)
+    // ---- Regular-attack lane -------------------------------------------------------------------------------------
+    private void StartRegular(BossPatternKind kind)
     {
-        nextPatternSearchAt = 0f;
-        activePattern = pattern;
-        activeBelief = BossBeliefKind.None;
-        patternId++;
-        patternRunning = true;
-        if (!BossPatternSelection.IsRegular(pattern)) RecordUse(pattern);
+        // A reserved / running shockwave owns the body: no new regular attack may begin until it is released.
+        if (regularRunning || shockwaveReserved || bodyActionActive) return;
         int token = generation;
-        Coroutine routine = StartCoroutine(ExecutePattern(pattern, token));
-        if (token == generation && patternRunning) patternRoutine = routine;
+        // A newly starting regular attack closes observation prophecies that have waited their minimum reaction time.
+        ResolveObservationsBeforeAttack();
+        if (token != generation || !CanContinue) return;
+        var context = new BossRegularAttackContext(++patternCounter, kind, IsBurning);
+        foreach (BossProphecy prophecy in prophecies)
+            if (prophecy.Kind == BossBeliefKind.AttackAndDodge && prophecy.Linked == null)
+            { prophecy.Linked = context; context.Dodge = prophecy; break; }
+        regularPatternId = context.PatternId;
+        activeRegular = kind;
+        regularRunning = true;
+        nextRegularAt = 0f;
+        RecordUse(regularUses, kind);
+        Coroutine routine = StartCoroutine(ExecuteLane(RunRegular(kind, context, token), token, LaneRegular));
+        if (token == generation && regularRunning) regularRoutine = routine;
     }
-    private IEnumerator ExecutePattern(BossPatternKind pattern, int token)
+
+    private IEnumerator RunRegular(BossPatternKind kind, BossRegularAttackContext context, int token)
     {
-        // Advance and dispose nested attack iterators together with their owning pattern.
+        SetStatus("패턴: " + PatternName(kind));
+        regularAttackActive = true;
+        yield return attacks.Regular(kind, context);
+        if (token != generation || !CanContinue) yield break;
+        regularAttackActive = false;
+        ResolveDodgeProphecy(context);
+        if (token != generation || !CanContinue) yield break;
+        float recovery = settings.PatternRecovery / SpeedMultiplier;
+        if (!bodyActionActive)
+            SetActionCue("패턴 종료 · 반격 기회", "다음 공격의 예고를 확인하세요.", BossPresentationState.Recovery, recovery);
+        yield return new WaitForSeconds(recovery);
+        if (token != generation) yield break;
+        regularRunning = false;
+        regularRoutine = null;
+        if (!bodyActionActive)
+            SetActionCue("다음 패턴 대기", "공격 예고를 보고 대응하세요.", BossPresentationState.Idle);
+        Notify();
+    }
+
+    // ---- Belief lane ---------------------------------------------------------------------------------------------
+    private void StartBelief(BossPatternKind kind)
+    {
+        beliefPatternId = ++patternCounter;
+        activeBeliefPattern = kind;
+        beliefProcessing = true;
+        RecordUse(beliefUses, kind);
+        int token = generation;
+        Coroutine routine = StartCoroutine(ExecuteLane(RunBelief(kind, token), token, LaneBelief));
+        if (token == generation && beliefProcessing) beliefRoutine = routine;
+    }
+
+    /// <summary>
+    /// Activation processing only. Effects (observed prophecies, the burn window, lightning, travelling waves) outlive it,
+    /// and the cooldown to the next belief starts when this ends.
+    /// </summary>
+    private IEnumerator RunBelief(BossPatternKind kind, int token)
+    {
+        switch (kind)
+        {
+            case BossPatternKind.AttackIntentBelief:
+                ArmProphecy(BossBeliefKind.AttackIntent, "공격 예언", $"다음 일반 공격 전까지 공격하지 않으면 믿음 -{settings.BeliefReduction:0}");
+                break;
+            case BossPatternKind.NoAttackBelief:
+                ArmProphecy(BossBeliefKind.NoAttack, "공격 금지 예언", $"다음 일반 공격 전에 공격하면 믿음 -{settings.BeliefReduction:0}");
+                break;
+            case BossPatternKind.AttackAndDodgeBelief:
+                ArmProphecy(BossBeliefKind.AttackAndDodge, "공격·회피 예언", $"다음 일반 공격을 회피하면 믿음 -{settings.BeliefReduction:0}");
+                break;
+            case BossPatternKind.BurnBelief:
+                burnEndsAt = Time.time + settings.BurnWindow;
+                NoteBelief(BossBeliefKind.Burn);
+                ShowFeedback($"화상 강화 · {settings.BurnWindow:0}초간 새 공격에 화상", new Color(1f, .62f, .3f));
+                break;
+            case BossPatternKind.CloudBelief:
+                if (clouds != null && clouds.BeginLightning())
+                {
+                    NoteBelief(BossBeliefKind.Cloud);
+                    ShowFeedback($"먹구름 번개 · {settings.CloudDuration:0}초 뒤 · 흰 구름 아래나 범위 밖으로", new Color(.75f, .85f, 1f));
+                }
+                break;
+            case BossPatternKind.ShockwaveBelief:
+                yield return RunShockwaveBelief(token);
+                break;
+        }
+        if (token != generation) yield break;
+        beliefProcessing = false;
+        beliefRoutine = null;
+        nextBeliefAt = Time.time + settings.BeliefCooldown;
+        Notify();
+    }
+
+    private void ArmProphecy(BossBeliefKind kind, string title, string hint)
+    {
+        prophecies.Add(new BossProphecy(kind, Time.time));
+        NoteBelief(kind);
+        ShowFeedback(title + " · " + hint, new Color(.82f, .88f, 1f));
+    }
+
+    // The shockwave swing needs the boss body: it waits for the current regular attack to finish (never cutting a combo),
+    // meanwhile no new regular attack may start, then performs the swing without adding a regular attack.
+    private IEnumerator RunShockwaveBelief(int token)
+    {
+        shockwaveReserved = true;
+        NoteBelief(BossBeliefKind.Shockwave);
+        while (token == generation && CanContinue && regularAttackActive) yield return null;
+        if (token != generation || !CanContinue) yield break;
+        bodyActionActive = true;
+        yield return attacks.Shockwave();
+        if (token != generation) yield break;
+        bodyActionActive = false;
+        shockwaveReserved = false;
+        if (!regularRunning)
+            SetActionCue("다음 패턴 대기", "공격 예고를 보고 대응하세요.", BossPresentationState.Idle);
+    }
+
+    // ---- Lane runner: advances nested iterators and disposes them with their owner ---------------------------------
+    private IEnumerator ExecuteLane(IEnumerator root, int token, int lane)
+    {
         var pending = new Stack<IEnumerator>();
-        pending.Push(RunPattern(pattern, token));
+        pending.Push(root);
         Exception failure = null;
+        bool interrupted = false;
         try
         {
             while (pending.Count > 0 && token == generation && CanContinue)
@@ -384,12 +592,12 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
                 object next = null;
                 try
                 {
-                    advancingPattern = true;
+                    advancingLanes |= lane;
                     moved = current.MoveNext();
                     if (moved) next = current.Current;
                 }
                 catch (Exception exception) { failure = exception; break; }
-                finally { advancingPattern = false; }
+                finally { advancingLanes &= ~lane; }
 
                 if (token != generation || !CanContinue) break;
 
@@ -401,21 +609,22 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
                 else if (next is IEnumerator child) pending.Push(child);
                 else yield return next;
             }
+            interrupted = pending.Count > 0;
         }
         finally
         {
             while (pending.Count > 0) DisposePatternIterator(pending.Pop());
-            bool ownsPattern = token == generation;
-            if (ownsPattern && patternRunning)
+            bool ownsLane = token == generation;
+            if (ownsLane && (interrupted || failure != null))
             {
-                patternRoutine = null;
+                if (lane == LaneRegular) regularRoutine = null; else beliefRoutine = null;
                 CancelCombat(false);
             }
-            if (ownsPattern && failure != null)
+            if (ownsLane && failure != null)
             {
                 automaticPatterns = false;
                 SetStatus("패턴 실행 오류 · Console 확인");
-                Debug.LogError($"{name}: {Phase} / {PatternName(pattern)} stopped.\n{failure}", this);
+                Debug.LogError($"{name}: {Phase} / {(lane == LaneRegular ? "regular" : "belief")} lane stopped.\n{failure}", this);
             }
         }
     }
@@ -424,120 +633,51 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         try { (iterator as IDisposable)?.Dispose(); }
         catch (Exception exception) { Debug.LogException(exception, this); }
     }
-    private IEnumerator RunPattern(BossPatternKind pattern, int token)
+
+    // ---- Prophecy resolution -------------------------------------------------------------------------------------
+    private void ResolveObservationsBeforeAttack()
     {
-        SetStatus("패턴: " + PatternName(pattern));
-        switch (pattern)
-        {
-            case BossPatternKind.MeleeCombo: case BossPatternKind.Dash: case BossPatternKind.Projectile:
-                yield return attacks.Regular(pattern); break;
-            case BossPatternKind.AttackIntentBelief:
-                activeBelief = BossBeliefKind.AttackIntent;
-                BeginSignalWindow();
-                yield return Stare(settings.StareDuration);
-                EndSignalWindow();
-                if (token == generation && CanContinue && !playerActed) ReduceBelief(settings.BeliefReduction, "응시 중 공격하지 않음");
-                else if (token == generation && CanContinue) ShowFeedback("공격을 감지했습니다 · 믿음 유지", new Color(1f, .8f, .45f));
-                break;
-            case BossPatternKind.CloudBelief:
-                activeBelief = BossBeliefKind.Cloud;
-                yield return hazards.Clouds();
-                break;
-            case BossPatternKind.BurnBelief:
-                activeBelief = BossBeliefKind.Burn;
-                SetConditionTimer(settings.BurnPreparation);
-                SetActionCue("화상 강화 준비", "강화 후 공격을 피하면 믿음 감소 · 피격 시 화상", BossPresentationState.Charging, settings.BurnPreparation);
-                yield return new WaitForSeconds(settings.BurnPreparation);
-                if (token != generation || !CanContinue) yield break;
-                burnEndsAt = Time.time + settings.BurnWindow;
-                conditionEndsAt = 0f;
-                while (CanContinue && IsBurning && token == generation)
-                {
-                    if (!ChoosePattern(true, out BossPatternKind regular)) { SetStatus("강화: 실행 가능한 일반 공격 대기"); yield return SelectionRetry; continue; }
-                    yield return attacks.Regular(regular);
-                }
-                burnEndsAt = 0f;
-                break;
-            case BossPatternKind.AttackAndDodgeBelief:
-                activeBelief = BossBeliefKind.AttackAndDodge;
-                yield return Stare(settings.StareDuration);
-                while (token == generation && CanContinue)
-                {
-                    if (ChoosePattern(true, out BossPatternKind followup))
-                    { yield return attacks.Regular(followup); break; }
-                    SetStatus("응시 완료 · 실행 가능한 일반 공격 대기");
-                    yield return SelectionRetry;
-                }
-                break;
-            case BossPatternKind.NoAttackBelief:
-                activeBelief = BossBeliefKind.NoAttack;
-                BeginSignalWindow();
-                yield return StareWithMeleeWarning();
-                break;
-            case BossPatternKind.ShockwaveBelief:
-                activeBelief = BossBeliefKind.Shockwave;
-                yield return attacks.Melee(settings.Windup, settings.MeleeDamage, BossBeliefKind.None);
-                if (token == generation && CanContinue) yield return attacks.Shockwave();
-                break;
-        }
-        if (token != generation || !CanContinue) yield break;
-        activeBelief = BossBeliefKind.None;
-        EndSignalWindow();
-        conditionEndsAt = 0f;
-        SetActionCue("패턴 종료 · 반격 기회", "다음 공격의 예고를 확인하세요.", BossPresentationState.Recovery, settings.PatternRecovery / SpeedMultiplier);
-        yield return new WaitForSeconds(settings.PatternRecovery / SpeedMultiplier);
-        if (token != generation) yield break;
-        patternRunning = false;
-        patternRoutine = null;
-        SetActionCue("다음 패턴 대기", "공격 예고를 보고 대응하세요.", BossPresentationState.Idle);
-        Notify();
-    }
-    private IEnumerator Stare(float duration)
-    {
-        SetConditionTimer(duration);
-        SetActionCue(ActivePatternName, activeBelief == BossBeliefKind.AttackIntent ?
-            $"공격하지 않고 기다리면 믿음 -{settings.BeliefReduction:0}" :
-            $"응시 뒤 이어지는 공격을 회피하면 믿음 -{settings.BeliefReduction:0}", BossPresentationState.Stare, duration);
-        while (CanContinue && ConditionRemaining > 0f) { FacePlayer(); yield return null; }
-        conditionEndsAt = 0f;
-    }
-    private IEnumerator StareWithMeleeWarning()
-    {
-        if (!attacks.TryGetMeleeGeometry(out AttackGeometry geometry)) yield break;
+        if (prophecies.Count == 0) return;
         int token = generation;
-        SetConditionTimer(settings.StareDuration);
-        SetActionCue("공격 금지 예언 · 응시", $"지금 공격하면 믿음 -{settings.BeliefReduction:0} · 응시 직후 베기", BossPresentationState.Stare, settings.StareDuration);
-        BossAttackVisual preview = attacks.CreateWarning(geometry, followOwner: true);
-        try
+        List<BossProphecy> due = null;
+        foreach (BossProphecy prophecy in prophecies)
+            if (prophecy.IsObservation && Time.time - prophecy.StartedAt >= settings.ProphecyReactionTime)
+                (due ?? (due = new List<BossProphecy>(2))).Add(prophecy);
+        if (due == null) return;
+        foreach (BossProphecy prophecy in due)
         {
-            while (CanContinue && ConditionRemaining > 0f && token == generation)
+            if (token != generation) return;
+            prophecies.Remove(prophecy);
+            if (prophecy.Kind == BossBeliefKind.AttackIntent)
             {
-                FacePlayer();
-                if (attacks.TryGetMeleeGeometry(out geometry))
-                    preview.Show(geometry, settings.WarningOrder, followTarget: transform);
-                preview.SetProgress(ConditionProgress);
-                preview.SetCue("응시 후 베기", ConditionRemaining, ConditionProgress, this);
-                yield return null;
+                if (!prophecy.PlayerActed) ReduceBelief(settings.BeliefReduction, "공격 예언 · 공격하지 않음");
+                else ShowFeedback("공격을 감지했습니다 · 믿음 유지", new Color(1f, .8f, .45f));
             }
+            else if (!prophecy.Reduced && !prophecy.PlayerActed)
+                ShowFeedback("공격하지 않았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
         }
-        finally
-        {
-            DestroyEffect(preview != null ? preview.gameObject : null);
-            if (token == generation)
-            {
-                EndSignalWindow();
-                conditionEndsAt = 0f;
-            }
-        }
-        if (token == generation && CanContinue && !playerActed)
-            ShowFeedback("응시 중 공격하지 않았습니다 · 믿음 유지", new Color(1f, .8f, .45f));
-        if (token == generation && CanContinue)
-            yield return attacks.Melee(settings.SurpriseWindup, settings.MeleeDamage * 1.15f, BossBeliefKind.None, false);
     }
-    private void BeginSignalWindow()
-    { windowAttackIds.Clear(); playerActed = false; signalWindow = true; windowStartedAt = Time.time; }
-    private void EndSignalWindow() { signalWindow = false; windowAttackIds.Clear(); }
-    public void SetConditionTimer(float duration) { conditionDuration = duration; conditionEndsAt = Time.time + duration; Notify(); }
+
+    // A three-hit combo is one attack: the prophecy is settled once, after the whole attack is over.
+    private void ResolveDodgeProphecy(BossRegularAttackContext context)
+    {
+        BossProphecy prophecy = context.Dodge;
+        if (prophecy == null || !prophecies.Contains(prophecy)) return;
+        bool hit = false, evaded = false, threatened = false, cancelled = false;
+        foreach (BossAttackRecord record in context.Records)
+        {
+            hit |= record.Outcome == AttackOutcome.Hit;
+            evaded |= record.Outcome == AttackOutcome.EvadedByPlayer;
+            cancelled |= record.Outcome == AttackOutcome.Cancelled;
+            threatened |= record.WasThreatened;
+        }
+        if (hit) { prophecies.Remove(prophecy); ShowFeedback("공격 적중 · 믿음 유지", new Color(1f, .5f, .42f)); }
+        else if (cancelled) prophecies.Remove(prophecy);
+        else if (evaded) { prophecies.Remove(prophecy); ReduceBelief(settings.BeliefReduction, "예언된 공격 회피 성공"); }
+        else if (!threatened) prophecy.Linked = null; // no real threat happened: stays pending for the next attack
+        else prophecies.Remove(prophecy);
+    }
+
     private void HandlePlayerSignal(PlayerCombatSignal signal)
     {
         if (!EncounterStarted || IsDead || !TargetValid || signal.Actor != playerHealth.gameObject || signal.Target != gameObject ||
@@ -547,36 +687,64 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             if (allowManualEvadeInjection) SetStatus("수동 회피 신호 #" + signal.AttackId + " · 실제 결과/믿음에 미반영");
             return;
         }
-        if (!signalWindow || signal.OccurredAt < windowStartedAt || ConditionRemaining <= 0f) return;
         bool eligible = settings.AttackSignalMode == BossAttackSignalMode.Either ||
             settings.AttackSignalMode == BossAttackSignalMode.Attempt && signal.Type == PlayerCombatSignalType.AttackAttempt ||
             settings.AttackSignalMode == BossAttackSignalMode.HitConfirmed && signal.Type == PlayerCombatSignalType.HitConfirmed;
-        if (!eligible || !windowAttackIds.Add(signal.AttackId)) return;
-        playerActed = true;
-        if (activeBelief == BossBeliefKind.NoAttack && windowAttackIds.Count == 1)
-            ReduceBelief(settings.BeliefReduction, "응시 중 공격함");
+        if (!eligible) return;
+        int token = generation;
+        for (int i = 0; i < prophecies.Count && token == generation; i++)
+        {
+            BossProphecy prophecy = prophecies[i];
+            if (!prophecy.IsObservation || signal.OccurredAt < prophecy.StartedAt || !prophecy.AttackIds.Add(signal.AttackId)) continue;
+            prophecy.PlayerActed = true;
+            if (prophecy.Kind == BossBeliefKind.NoAttack && !prophecy.Reduced)
+            {
+                prophecy.Reduced = true;
+                ReduceBelief(settings.BeliefReduction, "공격 금지 예언 · 공격함");
+            }
+        }
     }
-    private bool ChoosePattern(bool regularOnly, out BossPatternKind pattern) => BossPatternSelection.TryChoose(
-        Phase == BossPhase.One ? settings.PhaseOnePool : settings.PhaseTwoPool, patternUses,
-        regularOnly ? eligibleRegular : eligibleAny,
-        UnityEngine.Random.value, out pattern, candidateWeights);
+
+    private bool ChoosePattern(bool regularLane, out BossPatternKind pattern) => BossPatternSelection.TryChooseLane(
+        Phase == BossPhase.One ? settings.PhaseOnePool : settings.PhaseTwoPool, regularLane,
+        regularLane ? regularUses : beliefUses, eligibleAny, UnityEngine.Random.value, out pattern, candidateWeights);
+
     public bool IsPatternEligible(BossPatternKind candidate)
     {
         if (!TargetValid || !BossPatternSelection.AllowedInPhase(candidate, Phase)) return false;
-        if (candidate == BossPatternKind.CloudBelief || candidate == BossPatternKind.ShockwaveBelief)
-            return BossCombatPhysics.FindGround(candidate == BossPatternKind.CloudBelief ? (Vector2)PlayerCollider.bounds.min : (Vector2)bodyCollider.bounds.center,
-                0.1f, 8f, this, out _);
-        return true;
+        switch (candidate)
+        {
+            case BossPatternKind.Projectile:
+                int toward = PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1;
+                return attacks != null && attacks.TryPlanProjectile(toward, out _, out _, out _, out _, out _);
+            case BossPatternKind.AttackIntentBelief: return !HasProphecy(BossBeliefKind.AttackIntent);
+            case BossPatternKind.NoAttackBelief: return !HasProphecy(BossBeliefKind.NoAttack);
+            case BossPatternKind.AttackAndDodgeBelief: return !HasProphecy(BossBeliefKind.AttackAndDodge);
+            case BossPatternKind.BurnBelief: return !IsBurning;
+            case BossPatternKind.CloudBelief: return clouds != null && clouds.IsPrepared && !clouds.LightningActive;
+            case BossPatternKind.ShockwaveBelief:
+                return !shockwaveReserved && !bodyActionActive && (attacks == null || attacks.ShockwaveTracking == 0) &&
+                    BossCombatPhysics.FindGround(bodyCollider.bounds.center, 0.1f, 8f, this, out _);
+            default: return true;
+        }
     }
-    public void RecordRegularUse(BossPatternKind pattern) { if (BossPatternSelection.IsRegular(pattern)) RecordUse(pattern); }
-    private void RecordUse(BossPatternKind pattern) { patternUses[pattern] = PatternUseCount(pattern) + 1; }
-    public int PatternUseCount(BossPatternKind pattern) => patternUses.TryGetValue(pattern, out int count) ? count : 0;
-    public BossAttackRecord CreateAttack(BossAttackKind kind, int hitIndex, AttackGeometry geometry, float damage,
-        BossBeliefKind attackBelief, bool burn)
+    private static void RecordUse(Dictionary<BossPatternKind, int> uses, BossPatternKind pattern)
+    { uses[pattern] = (uses.TryGetValue(pattern, out int count) ? count : 0) + 1; }
+    public int PatternUseCount(BossPatternKind pattern)
     {
-        var record = new BossAttackRecord(generation, patternId, nextAttackId++, hitIndex, kind, attackBelief, geometry, damage * DamageMultiplier, burn);
+        var uses = BossPatternSelection.IsRegular(pattern) ? regularUses : beliefUses;
+        return uses.TryGetValue(pattern, out int count) ? count : 0;
+    }
+    public BossAttackRecord CreateAttack(BossAttackKind kind, int hitIndex, AttackGeometry geometry, float damage,
+        BossBeliefKind attackBelief, bool burn, BossRegularAttackContext context = null, bool observeNow = true)
+    {
+        int owningPattern = context != null ? context.PatternId : beliefPatternId;
+        var record = new BossAttackRecord(generation, owningPattern, nextAttackId++, hitIndex, kind, attackBelief, geometry,
+            damage * DamageMultiplier, burn, context);
+        context?.Records.Add(record);
         activeAttacks.Add(record.Id, record);
-        Observe(record, geometry);
+        // Multi-shape attacks (lightning) observe their own live shapes; a bounding box would invent a threat.
+        if (observeNow) Observe(record, geometry);
         return record;
     }
     public bool IsAttackValid(BossAttackRecord record) => record != null && record.Generation == generation && !record.IsComplete && CanContinue && activeAttacks.ContainsKey(record.Id);
@@ -598,9 +766,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         if (!accepted) return false;
         if (isComboHit) lastAcceptedComboPatternId = record.PatternId;
         record.AcceptDamage();
-        ShowFeedback($"피격 -{record.Damage:0}" + (record.AllowsBurn && IsBurning ? " · 화상 발생" : ""), new Color(1f, .5f, .42f));
+        ShowFeedback($"피격 -{record.Damage:0}" + (record.BurnEnhanced ? " · 화상 발생" : ""), new Color(1f, .5f, .42f));
         attacks.Impact(PlayerCollider.bounds.center, false);
-        if (record.AllowsBurn && IsBurning)
+        // Only an attack that recorded the enhancement at its start, and whose damage was actually accepted, burns.
+        if (record.BurnEnhanced)
         {
             BossBurnEffect burn = playerHealth.GetComponent<BossBurnEffect>();
             if (burn == null) burn = playerHealth.gameObject.AddComponent<BossBurnEffect>();
@@ -617,21 +786,14 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         activeAttacks.Remove(record.Id);
         history.Add(record);
         if (history.Count > 64) history.RemoveAt(0);
+        // Dodge prophecies settle once per whole regular attack (ResolveDodgeProphecy), not per hit.
         if (record.Outcome == AttackOutcome.EvadedByPlayer &&
-            (record.Belief == BossBeliefKind.Burn || record.Belief == BossBeliefKind.AttackAndDodge ||
-             record.Belief == BossBeliefKind.Shockwave && record.Kind == BossAttackKind.Shockwave))
+            (record.BurnEnhanced || record.Kind == BossAttackKind.Shockwave || record.Kind == BossAttackKind.Lightning))
             ReduceBelief(settings.BeliefReduction, AttackName(record.Kind) + " 회피 성공");
         else if (record.Outcome == AttackOutcome.EvadedByPlayer)
             ShowFeedback(AttackName(record.Kind) + " 회피 성공", new Color(.6f, .85f, 1f));
         AttackResolved?.Invoke(record);
         Notify();
-    }
-    public BossBeliefKind RegularAttackBelief => activeBelief == BossBeliefKind.Burn || activeBelief == BossBeliefKind.AttackAndDodge ? activeBelief : BossBeliefKind.None;
-    public void ResolveCloudShelter(bool sheltered)
-    {
-        if (!CanContinue || activeBelief != BossBeliefKind.Cloud) return;
-        if (sheltered) ReduceBelief(settings.BeliefReduction, "흰 구름 아래 대피 성공");
-        else ShowFeedback("보호 범위 밖 · 번개 발동 · 믿음 유지", new Color(1f, .68f, .45f));
     }
     public T SpawnEffect<T>(T prefab) where T : Component
     {
@@ -653,15 +815,18 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         effect.SetActive(false);
         Destroy(effect);
     }
+    // Global cancel (phase change, vulnerability, death, disable, target loss): both lanes, every prophecy,
+    // the burn window, lightning and shockwave reservation go together. Persistent clouds stay.
     private void CancelCombat(bool removeBurn)
     {
-        Coroutine cancelled = patternRoutine;
-        patternRoutine = null;
-        patternRunning = false;
-        if (cancelled != null && !advancingPattern) StopCoroutine(cancelled);
-        EndSignalWindow();
-        activeBelief = BossBeliefKind.None;
-        burnEndsAt = conditionEndsAt = 0f;
+        Coroutine cancelledRegular = regularRoutine, cancelledBelief = beliefRoutine;
+        regularRoutine = beliefRoutine = null;
+        regularRunning = beliefProcessing = regularAttackActive = shockwaveReserved = bodyActionActive = false;
+        if (cancelledRegular != null && (advancingLanes & LaneRegular) == 0) StopCoroutine(cancelledRegular);
+        if (cancelledBelief != null && (advancingLanes & LaneBelief) == 0) StopCoroutine(cancelledBelief);
+        prophecies.Clear();
+        beliefOrder.Clear();
+        burnEndsAt = 0f;
         cueDuration = cueEndsAt = 0f;
         cueTitle = "전투 대기"; cueHint = "공격 예고를 보고 대응하세요.";
         CueState = BossPresentationState.Idle;
@@ -669,9 +834,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
         activeAttacks.Clear();
         generation++;
-        nextPatternSearchAt = 0f;
+        nextRegularAt = 0f;
+        nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0f);
         if (hazards != null) hazards.Cancel();
         if (attacks != null) attacks.ClearPresentationEffects();
+        if (clouds != null) clouds.CancelLightning();
         if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
         effects.Clear();
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
@@ -685,6 +852,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         EncounterStarted = false;
         SetContactDamageSuppressed(true);
         CancelCombat(true);
+        ReleaseArenaVisuals();
         body.linearVelocity = Vector2.zero;
         body.simulated = false;
         bodyCollider.enabled = false;
@@ -730,12 +898,12 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             case BossPatternKind.MeleeCombo: return "연속 베기";
             case BossPatternKind.Dash: return "돌진";
             case BossPatternKind.Projectile: return "투사체";
-            case BossPatternKind.AttackIntentBelief: return "공격 예언 · 응시";
-            case BossPatternKind.CloudBelief: return "먹구름 · 번개 대피";
+            case BossPatternKind.AttackIntentBelief: return "공격 예언";
+            case BossPatternKind.CloudBelief: return "먹구름 · 번개";
             case BossPatternKind.BurnBelief: return "화상 강화";
-            case BossPatternKind.AttackAndDodgeBelief: return "응시 후 공격";
+            case BossPatternKind.AttackAndDodgeBelief: return "공격·회피 예언";
             case BossPatternKind.NoAttackBelief: return "공격 금지 예언";
-            case BossPatternKind.ShockwaveBelief: return "베기 후 충격파";
+            case BossPatternKind.ShockwaveBelief: return "지면 충격파";
             default: return "대기";
         }
     }
@@ -755,6 +923,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         EncounterStarted = false;
         SetContactDamageSuppressed(true);
         CancelCombat(true);
+        ReleaseArenaVisuals();
         if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
         if (presentation != null) presentation.SetState(IsDead ? BossPresentationState.Dead : BossPresentationState.Idle);
         Notify();
