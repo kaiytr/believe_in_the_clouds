@@ -237,6 +237,49 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         Message = "빈 메모리 테스트 프로필 · 기존 저장 파일은 유지됩니다.";
     }
 
+    public bool PrepareStandaloneShopTest(PlayerHealth testPlayer)
+    {
+        if (testPlayer == null || IsTransitioning || Service == null || !Service.IsReady) return false;
+
+        BindService();
+        RefreshState();
+        if (State != null && IsActiveRunStage(BranchRole.Shop)) return true;
+
+        // ShopTest를 에디터에서 직접 실행한 경우에만 사용할 격리된 테스트 런이다.
+        // 실제 플레이 데이터와 재화 저장소는 변경하지 않는다.
+        FixtureStore = new MemoryEconomyStore();
+        EconomyRuntime.Instance.SetService(new EconomyService(FixtureStore));
+        boundService = null;
+        BindService();
+
+        CurrencyResult result = Report(Service.TryInitializeRun(testPlayer.MaxHp));
+        if (!result.Success) return false;
+        result = Report(Service.TryConfigurePlayLoopTestCandidates());
+        if (!result.Success) return false;
+        result = Report(Service.TryGrant(100, "shop.test.standalone", "shop-test:coins:" + State.id));
+        if (!result.Success) return false;
+
+        LobbyRunData run = Service.RunSnapshot();
+        BranchCandidate shop = null;
+        for (int i = 0; run != null && i < run.candidates.Count; i++)
+        {
+            if (run.candidates[i].role == BranchRole.Shop)
+            {
+                shop = run.candidates[i];
+                break;
+            }
+        }
+        if (shop == null) return false;
+
+        result = Report(Service.TryRevealBranch(shop.id));
+        if (!result.Success) return false;
+        result = Report(Service.TryDepartBranch(shop.id, testPlayer.CurrentHp));
+        if (!result.Success) return false;
+
+        Message = "상점 단독 테스트 · 메모리 저장소 사용 중";
+        return IsActiveRunStage(BranchRole.Shop);
+    }
+
     public void StartPlayLoopTest()
     {
         playLoopTestMode = true;

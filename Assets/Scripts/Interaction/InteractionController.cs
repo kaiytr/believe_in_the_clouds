@@ -189,11 +189,15 @@ public class InteractionController : MonoBehaviour
                 continue;
             }
 
-            if (t.GetComponent(componentType) == null)
+            // 이름 힌트는 기존 상호작용 대상의 종류를 덮어쓰지 않는다.
+            // 예: ShopReturnExit에는 이미 TemporaryStageExit이 있으므로 상점으로 승격하지 않는다.
+            if (t.GetComponent<InteractableBehaviour>() != null)
             {
-                t.gameObject.AddComponent(componentType);
-                Debug.Log($"[상호작용] '{t.name}' 오브젝트를 {label}으로 자동 등록했습니다.");
+                continue;
             }
+
+            t.gameObject.AddComponent(componentType);
+            Debug.Log($"[상호작용] '{t.name}' 오브젝트를 {label}으로 자동 등록했습니다.");
         }
     }
 
