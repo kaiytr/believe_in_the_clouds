@@ -135,11 +135,14 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 attackDirection = Vector2.right * direction;
         var geometry = ComboGeometry(step, direction);
         var record = owner.CreateAttack(BossAttackKind.Melee, hitIndex, geometry, damage, context.DisplayBelief, true, context);
-        BossAttackVisual warning = null, slash = null;
+        BossAttackVisual slash = null;
+        BossFanWarning warning = null;
         bool completed = false;
         try
         {
-            warning = CreateWarning(geometry, followOwner: true);
+            // The telegraph is the same fan the player's blade slash draws (see DownFanImpactEffect.SwingFan).
+            warning = CreateFanWarning();
+            ShowFan(warning, record, direction);
             bool combo = hitIndex > 0;
             string label = combo ? $"연속 베기 {hitIndex}/{OwnerComboCount}" : AttackLabel(record);
             string finisherHint = step.launchUp > 0f ? "피니시 · 적중 시 넉백과 띄우기" : "피니시 · 적중 시 넉백";
@@ -191,8 +194,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
                 SyncMeleeWarning(record, step, direction);
                 owner.Observe(record, record.Geometry);
+                ShowFan(warning, record, direction);
                 warning.SetProgress(elapsed / warningDuration);
-                warning.SetCue(label, warningEndsAt - Time.time, elapsed / warningDuration, owner);
                 yield return PhysicsTick;
             }
 
@@ -212,9 +215,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float activeEndsAt = Time.time + activeDuration;
             owner.SetActionCue(label, hint, BossPresentationState.Active, activeDuration);
             if (owner.Presentation.ShowMelee(animationIndex, activeDuration * .5f))
-                // The blade fills the same box that was warned and is judged (the player's combo hitbox, unchanged).
-                owner.PlayerAttack.PlaySwingWithinEffect(bladeEffect, owner.transform.position,
-                    record.Geometry.Center, record.Geometry.Size, record.Geometry.Angle, direction);
+                owner.PlayerAttack.PlaySwingEffect(bladeEffect, owner.transform.position,
+                    record.Geometry.Center, record.Geometry.Size, direction);
             else
             {
                 slash = owner.SpawnEffect(Data.SlashPrefab);
@@ -248,6 +250,22 @@ public sealed class BossAttackExecutor : MonoBehaviour
                 owner.CompleteAttack(record, BossAttackEndReason.Cancelled);
             }
         }
+    }
+
+    private BossFanWarning CreateFanWarning()
+    {
+        BossFanWarning fan = BossFanWarning.Create(owner.transform, Data.WarningPrefab, owner.BodyRenderer);
+        owner.AdoptEffect(fan.gameObject);
+        return fan;
+    }
+
+    private void ShowFan(BossFanWarning fan, BossAttackRecord record, int direction)
+    {
+        if (fan == null) return;
+        Vector2 origin = owner.transform.position;
+        if (DownFanImpactEffect.SwingFan(origin, record.Geometry.Center, record.Geometry.Size, direction,
+                out float centerAngle, out float radius, out float half))
+            fan.Show(origin, centerAngle, radius, half);
     }
 
     private void SyncMeleeWarning(BossAttackRecord record, PlayerAttack.ComboStep step, int direction)

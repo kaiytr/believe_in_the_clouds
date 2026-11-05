@@ -18,10 +18,13 @@ public sealed class BossCloudPlatform : MonoBehaviour
     private int direction = 1;
     private bool moving;
     private int platformLayer;
+    private float visualLift;
 
     public bool IsWhite { get; private set; }
     /// <summary>Logical center. White clouds use the physics body so damage and landing read the same position.</summary>
-    public Vector2 Position => body != null ? body.position : (Vector2)transform.position;
+    public Vector2 Position => body != null ? body.position - new Vector2(0f, visualLift) : (Vector2)transform.position;
+    /// <summary>Distance the picture's centre sits above the logical centre (extra puff above the standing line).</summary>
+    public float VisualLift => visualLift;
     public Vector2 Size => size;
     public float Left => Position.x - size.x * .5f;
     public float Right => Position.x + size.x * .5f;
@@ -40,11 +43,12 @@ public sealed class BossCloudPlatform : MonoBehaviour
         owner = boss;
         IsWhite = whiteCloud;
         size = shape.Size;
-        transform.position = shape.Center;
+        visualLift = whiteCloud ? boss.Settings.WhiteCloudVisualExtra * .5f : 0f;
+        transform.position = shape.Center + new Vector2(0f, visualLift);
         transform.localScale = Vector3.one;
         SpriteRenderer visual = GetComponent<SpriteRenderer>();
-        visual.drawMode = whiteCloud ? SpriteDrawMode.Tiled : SpriteDrawMode.Sliced;
-        visual.size = shape.Size;
+        visual.drawMode = SpriteDrawMode.Sliced;
+        visual.size = shape.Size + new Vector2(0f, visualLift * 2f);
         visual.color = Color.white;
         gameObject.layer = 0;
         // The prefab collider is only a decoration marker; it must not raise triggers on the moving body.
@@ -76,7 +80,7 @@ public sealed class BossCloudPlatform : MonoBehaviour
         var landing = new GameObject("Landing surface").transform;
         landing.SetParent(transform, false);
         float thickness = Mathf.Min(owner.Settings.WhiteCloudSurfaceThickness, size.y);
-        landing.localPosition = new Vector3(0f, size.y * .5f - thickness * .5f, 0f);
+        landing.localPosition = new Vector3(0f, size.y * .5f - thickness * .5f - visualLift, 0f);
         landing.gameObject.layer = 0; // switched to the ground layer once a body is above it (UpdateSurfaceLayer)
         surface = landing.gameObject.AddComponent<BoxCollider2D>();
         surface.size = new Vector2(size.x, thickness);

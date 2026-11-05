@@ -455,12 +455,6 @@ public class PlayerAttack : MonoBehaviour
             effect.PlaySwing(position, center, size, facing);
     }
 
-    internal void PlaySwingWithinEffect(DownFanImpactEffect effect, Vector2 position, Vector2 center, Vector2 size, float boxAngle, float facing)
-    {
-        if (spawnSwingSlash && effect != null)
-            effect.PlaySwingWithin(position, center, size, boxAngle, facing);
-    }
-
     private Vector2 DownFanOrigin(float facing) => DownFanOrigin(transform.position, facing);
 
     private Vector2 DownFanOrigin(Vector2 position, float facing) => position +

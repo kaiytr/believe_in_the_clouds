@@ -86,6 +86,7 @@ public sealed class BossPatternReworkPlayModeTests
     private int Count(BossAttackKind kind) => boss.AttackHistory.Count(record => record.Kind == kind);
     private static void Move(BossCloudPlatform cloud, Vector2 position)
     {
+        position.y += cloud.VisualLift;
         cloud.transform.position = position;
         var body = cloud.GetComponent<Rigidbody2D>();
         if (body != null) body.position = position;
@@ -244,7 +245,7 @@ public sealed class BossPatternReworkPlayModeTests
         Assert.That(boss.PrepareArenaVisuals(), Is.True);
         BossCloudField field = boss.Clouds;
         var storms = field.StormClouds.ToArray(); var whites = field.WhiteClouds.ToArray();
-        Assert.That(storms.Length, Is.InRange(2, 3)); Assert.That(whites.Length, Is.EqualTo(2));
+        Assert.That(storms.Length, Is.InRange(3, 4)); Assert.That(whites.Length, Is.EqualTo(2));
         Assert.That(boss.PrepareArenaVisuals(), Is.True);
         CollectionAssert.AreEqual(storms, field.StormClouds.ToArray(), "Preparing twice must not respawn clouds.");
         boss.ForcePhaseTwoForTest(); yield return null;
@@ -333,7 +334,7 @@ public sealed class BossPatternReworkPlayModeTests
         Assert.That(player.CurrentHp, Is.EqualTo(100f));
         boss.BeginEncounter(); boss.BeginEncounter();
         Assert.That(boss.EncounterStarted, Is.True);
-        Assert.That(boss.Clouds.StormClouds.Count, Is.InRange(2, 3), "Beginning the fight keeps the prepared clouds.");
+        Assert.That(boss.Clouds.StormClouds.Count, Is.InRange(3, 4), "Beginning the fight keeps the prepared clouds.");
         Assert.That(entry.HoldingForIntro, Is.False);
     }
 

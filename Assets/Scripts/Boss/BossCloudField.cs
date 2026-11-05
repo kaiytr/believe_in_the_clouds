@@ -47,7 +47,7 @@ public sealed class BossCloudField : MonoBehaviour
         float arenaWidth = LimitsX.y - LimitsX.x;
 
         int stormCount = Random.Range(data.StormCloudCountRange.x, data.StormCloudCountRange.y + 1);
-        float stormWidth = Mathf.Min(data.StormCloudSize.x, arenaWidth);
+        float stormWidth = Mathf.Min(arenaWidth, Mathf.Max(data.StormCloudSize.x, arenaWidth / stormCount * data.StormCloudCoverage));
         float stormTop = FloorY + data.CloudTopHeight;
         if (boss.ArenaCamera != null && boss.ArenaCamera.TryGetStormCloudTop(
                 boss.PlayerHealth != null ? boss.PlayerHealth.transform : null, out float cameraTop))
@@ -57,12 +57,16 @@ public sealed class BossCloudField : MonoBehaviour
         {
             // One slot per storm cloud: with 3 clouds the arena starts almost fully covered, then they wander and overlap.
             float slot = arenaWidth / stormCount;
-            float x = LimitsX.x + slot * (i + .5f) + Random.Range(-slot * .1f, slot * .1f);
-            x = Mathf.Clamp(x, LimitsX.x + stormWidth * .5f, Mathf.Max(LimitsX.x + stormWidth * .5f, LimitsX.y - stormWidth * .5f));
+            float slotCenter = LimitsX.x + slot * (i + .5f);
+            float half = stormWidth * .5f;
+            // Each cloud drifts only around its own slot, so together they keep covering almost the whole arena.
+            var drift = new Vector2(Mathf.Max(LimitsX.x, slotCenter - half - data.StormCloudWander),
+                Mathf.Min(LimitsX.y, slotCenter + half + data.StormCloudWander));
+            float x = Mathf.Clamp(slotCenter, drift.x + half, Mathf.Max(drift.x + half, drift.y - half));
             var cloud = Instantiate(data.BlackCloudPrefab, root);
             cloud.name = "Storm cloud " + (i + 1);
             cloud.Initialize(boss, false, new AttackGeometry(new Vector2(x, stormY), new Vector2(stormWidth, data.StormCloudSize.y)));
-            cloud.Bind(this, LimitsX, data.StormCloudSpeed, data.CloudTurnInterval);
+            cloud.Bind(this, drift, data.StormCloudSpeed, data.CloudTurnInterval);
             storms.Add(cloud);
         }
 
