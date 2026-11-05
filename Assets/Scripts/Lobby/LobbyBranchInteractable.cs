@@ -14,6 +14,9 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private Sprite shopDoor;
     [Tooltip("분기 위 안내와 콜라이더 윗면 사이의 월드 거리.")]
     [SerializeField, Min(0f)] private float promptGap = .8f;
+    private LobbyBranchRevealEffect revealEffect;
+
+    public bool IsRevealing => revealEffect != null && revealEffect.IsPlaying;
 
     public Transform PromptAnchor => transform;
     public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
@@ -61,6 +64,7 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     {
         get
         {
+            if (IsRevealing) return "분기 공개 중…";
             BranchCandidate data = Candidate;
             if (data == null) return "분기를 확인할 수 없습니다.";
             if (data.revealed) return "E : " + LobbyRules.RoleLabel(data.role) + " 출발 · 공개됨";
@@ -70,18 +74,27 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
         }
     }
 
-    public override bool CanInteract(GameObject interactor) => base.CanInteract(interactor) && Candidate != null &&
+    public override bool CanInteract(GameObject interactor) => !IsRevealing && base.CanInteract(interactor) && Candidate != null &&
         LobbyFlowRuntime.Instance != null && LobbyFlowRuntime.Instance.InputReady && LobbyFlowRuntime.Instance.Scene.IsLobby;
     protected override void OnInteract(GameObject interactor) { LobbyFlowRuntime.Instance.Depart(BranchId); }
     public void InteractSecondary(GameObject interactor)
     {
-        if (CanInteract(interactor) && IsInRange(interactor.transform.position)) LobbyFlowRuntime.Instance.Reveal(BranchId);
+        if (!CanInteract(interactor) || !IsInRange(interactor.transform.position) || Candidate.revealed) return;
+
+        CurrencyResult result = LobbyFlowRuntime.Instance.Reveal(BranchId);
+        BranchCandidate committed = Candidate;
+        if (!result.Success || committed == null || !committed.revealed || body == null) return;
+
+        revealEffect = gameObject.AddComponent<LobbyBranchRevealEffect>();
+        Color tint = closedDoor != null ? Color.white : RoleColor(committed.role);
+        if (!revealEffect.Play(body, border, label, DoorFor(committed), tint, LobbyRules.RoleLabel(committed.role)))
+            Destroy(revealEffect);
     }
 
     private void Update()
     {
         BranchCandidate candidate = Candidate;
-        if (candidate == null || body == null) return;
+        if (candidate == null || body == null || IsRevealing) return;
 
         string roleLabel = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
         if (label != null && label.text != roleLabel) label.text = roleLabel;
@@ -90,13 +103,7 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
             LobbyFlowRuntime.Instance.InputReady && IsInRange(LobbyFlowRuntime.Instance.Scene.Player.transform.position);
         if (closedDoor != null)
         {
-            Sprite door = closedDoor;
-            if (candidate.revealed)
-            {
-                if (candidate.role == BranchRole.Combat && combatDoor != null) door = combatDoor;
-                else if (candidate.role == BranchRole.Boss && bossDoor != null) door = bossDoor;
-                else if (candidate.role == BranchRole.Shop && shopDoor != null) door = shopDoor;
-            }
+            Sprite door = DoorFor(candidate);
             if (body.sprite != door) body.sprite = door;
             Color tint = candidate.revealed ? Color.white : new Color(.88f, .88f, .88f);
             body.color = selected ? Color.Lerp(tint, new Color(1f, .9f, .55f), .3f) : tint;
@@ -108,6 +115,16 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
         {
             border.color = selected ? new Color(1f, .9f, .55f) : new Color(.19f, .23f, .3f);
         }
+    }
+
+    private Sprite DoorFor(BranchCandidate candidate)
+    {
+        if (closedDoor == null) return body != null ? body.sprite : null;
+        if (!candidate.revealed) return closedDoor;
+        if (candidate.role == BranchRole.Combat && combatDoor != null) return combatDoor;
+        if (candidate.role == BranchRole.Boss && bossDoor != null) return bossDoor;
+        if (candidate.role == BranchRole.Shop && shopDoor != null) return shopDoor;
+        return closedDoor;
     }
 
     private void ResolvePrefabReferences()
