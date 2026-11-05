@@ -21,7 +21,7 @@ public sealed class BossAttackProjectile : MonoBehaviour
     {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         visual.Show(new AttackGeometry(position, Vector2.one * owner.Settings.ProjectileDiameter, angle, true),
-            owner.Settings.AttackOrder, owner.IsBurning);
+            owner.Settings.AttackOrder, record.BurnEnhanced);
     }
     private void FixedUpdate()
     {

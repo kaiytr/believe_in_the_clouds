@@ -132,7 +132,10 @@ public sealed class BossDebugPanel : MonoBehaviour
             (boss.StatusMessage.StartsWith("패턴:") ? "단계: " + boss.CueTitle : boss.StatusMessage);
         latest.text = tools.LatestSignal;
         if (!showDetails) return;
-        details.Clear().Append("세대 ").Append(boss.Generation).Append(" / 패턴 ").Append(boss.PatternId);
+        details.Clear().Append("세대 ").Append(boss.Generation).Append(" / 일반 ").Append(boss.PatternId).Append(" / 믿음 ").Append(boss.BeliefPatternId);
+        details.Append("\n예언 ").Append(boss.Prophecies.Count).Append(" / 화상 강화 ").Append(boss.IsBurning ? boss.BurnRemaining.ToString("0.0") + "초" : "없음")
+            .Append(" / 번개 ").Append(boss.Clouds != null && boss.Clouds.LightningActive ? "진행" : "없음")
+            .Append(" / 충격파 ").Append(boss.IsShockwavePending ? "예약·진행" : "없음");
         foreach (var record in boss.ActiveAttacks)
             details.Append("\n#").Append(record.Id).Append(' ').Append(record.Kind)
                 .Append(record.Activated ? " 활성" : " 예고").Append(" / 위협 ").Append(record.WasThreatened ? "있음" : "없음")

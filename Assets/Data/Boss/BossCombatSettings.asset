@@ -64,8 +64,9 @@ MonoBehaviour:
   Recovery: 0.45
   PhaseTwoSpeedMultiplier: 1
   PhaseTwoDamageMultiplier: 1
-  StareDuration: 3
-  SurpriseWindup: 0.18
+  BeliefInitialDelay: 3
+  BeliefCooldown: 3
+  ProphecyReactionTime: 1
   MeleeActiveTime: 0.12
   MeleeDamage: 14
   MeleeComboDamage:
@@ -82,13 +83,20 @@ MonoBehaviour:
   ProjectileDistance: 24
   ProjectileLifetime: 3
   ProjectileDamage: 12
-  CloudWarning: 0.5
   CloudDuration: 3
   CloudTopHeight: 6
-  CloudEdgePadding: 0.25
-  CloudSize: {x: 3, y: 0.7}
-  StormCloudSize: {x: 12, y: 1.4}
-  ShelterHeight: 2.8
+  CloudSize: {x: 3, y: 0.42}
+  StormCloudSize: {x: 8, y: 1.4}
+  StormCloudCountRange: {x: 2, y: 3}
+  WhiteCloudCount: 2
+  StormCloudSpeed: {x: 0.7, y: 1.6}
+  WhiteCloudSpeed: {x: 0.8, y: 1.5}
+  CloudTurnInterval: {x: 1.5, y: 4}
+  WhiteCloudTopHeight: 2.45
+  WhiteCloudSurfaceThickness: 0.14
+  ReferenceJumpApex: 2.96
+  WhiteCloudLandingMargin: 0.5
+  ReferencePlayerHeight: 2
   LightningDuration: 0.45
   LightningDamage: 18
   LightningSpacing: 0.8
@@ -110,7 +118,6 @@ MonoBehaviour:
     m_Bits: 64
   PlatformLayer: 6
   ArenaX: {x: -17, y: 17}
-  BurnPreparation: 5
   BurnWindow: 10
   BurnDuration: 5
   BurnTickInterval: 1
