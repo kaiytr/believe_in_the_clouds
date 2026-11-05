@@ -44,14 +44,17 @@ public sealed class CutsceneBubbleView : MonoBehaviour
 
     private void Awake() => BuildUi();
 
-    public void ShowLine(CutsceneCharacter currentSpeaker, string text)
+    public void ShowLine(CutsceneCharacter currentSpeaker, string text) => ShowLine(currentSpeaker, text, text);
+
+    /// <summary>The bubble is sized for <paramref name="fullText"/>, so a typewriter that starts empty keeps a stable size.</summary>
+    public void ShowLine(CutsceneCharacter currentSpeaker, string text, string fullText)
     {
         EnsureUi();
         ClearChoices();
         speaker = currentSpeaker;
         choiceSelected = null;
         bodyText.text = text ?? string.Empty;
-        lineFull = text ?? string.Empty;
+        lineFull = fullText ?? text ?? string.Empty;
         choiceMode = false;
         layoutDirty = true;
         choicesRoot.gameObject.SetActive(false);
