@@ -10,6 +10,11 @@ public sealed class CombatantHudView : MonoBehaviour
     [SerializeField] private Canvas beliefCanvas, healthCanvas;
     [SerializeField] private Image healthFill, beliefFill, beliefBackground, speechBubble;
     [SerializeField] private Text phrase;
+    private GaugeChip healthChip;
+    // The bar follows the body's width: clearly wider than the body, never wider than the full-size art.
+    private const float BarToBodyRatio = 2.4f, MinBarWidth = 1.8f;
+    /// <summary>Bosses keep the original full-size bar instead of following the body width.</summary>
+    public bool FullSizeBar { get; set; }
     public Canvas BeliefCanvas => beliefCanvas;
     public Canvas HealthCanvas => healthCanvas;
     public Image HealthFill => healthFill;
@@ -100,6 +105,7 @@ public sealed class CombatantHudView : MonoBehaviour
             beliefFill.fillMethod = Image.FillMethod.Horizontal;
             beliefFill.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
+        healthChip = GaugeChip.Attach(healthFill);
     }
 
     private static void ApplyArtwork(Image target, string assetName)
@@ -116,8 +122,12 @@ public sealed class CombatantHudView : MonoBehaviour
         target.preserveAspect = false;
         target.raycastTarget = false;
     }
-    public void UpdateHealth(float current, float maximum) => healthFill.fillAmount =
-        maximum > 0f ? Mathf.Clamp01(current / maximum) : 0f;
+    public void UpdateHealth(float current, float maximum)
+    {
+        float normalized = maximum > 0f ? Mathf.Clamp01(current / maximum) : 0f;
+        if (healthChip != null) healthChip.Set(normalized);
+        else healthFill.fillAmount = normalized;
+    }
     public void UpdateBelief(float normalized, bool vulnerable, string text)
     {
         beliefFill.fillAmount = vulnerable ? 0f : Mathf.Clamp01(normalized);
@@ -135,8 +145,14 @@ public sealed class CombatantHudView : MonoBehaviour
             healthScale = Mathf.Max(.0001f, camera.orthographicSize * 2f / ReferenceScreenHeight);
 
         Place(beliefCanvas, body.center + Vector3.up * (body.extents.y + .95f), ReferenceCanvasScale, camera);
-        Place(healthCanvas, new Vector3(body.center.x,
-            body.min.y - .52f * healthScale / ReferenceCanvasScale, body.center.z), healthScale, camera);
+        Vector3 healthPosition = new Vector3(body.center.x, body.min.y - .52f * healthScale / ReferenceCanvasScale, body.center.z);
+        float fullWidth = healthCanvas.GetComponent<RectTransform>().sizeDelta.x * healthScale;
+        if (!FullSizeBar && fullWidth > .0001f)
+        {
+            float width = Mathf.Min(fullWidth, Mathf.Max(MinBarWidth, body.size.x * BarToBodyRatio));
+            healthScale *= width / fullWidth;
+        }
+        Place(healthCanvas, healthPosition, healthScale, camera);
     }
     private static void Place(Canvas canvas, Vector3 position, float scale, Camera camera)
     {

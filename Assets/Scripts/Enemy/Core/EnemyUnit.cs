@@ -383,6 +383,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
         float facing = FacingDirection;
         currentHp = Mathf.Max(0f, currentHp - finalDamage);
         beliefView?.UpdateHealth(currentHp, maxHp);
+        PlayHitFeedback(damageInfo, enemyBounds);
         if (DoctrineEventBus.HasListeners)
         {
             DoctrineEventBus.Raise(ConditionType.OnHit, gameObject, damageInfo.Attacker);
@@ -399,6 +400,20 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
                 previousHp - currentHp, Time.time, enemyBounds, playerBounds, facing));
         playerAttack?.ConfirmHit(this, previousHp - currentHp, damageInfo.HitIndex);
         return true;
+    }
+
+    // Burst at the contact point, thrown away from whoever hit, plus a short white flash of the body.
+    private void PlayHitFeedback(DamageInfo damageInfo, Bounds bodyBounds)
+    {
+        Vector2 center = bodyBounds.size != Vector3.zero ? (Vector2)bodyBounds.center : (Vector2)transform.position;
+        Vector2 from = damageInfo.Attacker != null ? (Vector2)damageInfo.Attacker.transform.position
+            : center - new Vector2(FacingDirection, 0f);
+        Vector2 direction = center - from;
+        Vector2 contact = bodyCollider != null ? bodyCollider.ClosestPoint(from) : center;
+        SpriteRenderer sprite = GetComponentInChildren<SpriteRenderer>();
+        float size = Mathf.Clamp(bodyBounds.size.x, .6f, 3f);
+        CombatHitEffect.Spawn(Vector2.Lerp(contact, center, .4f), direction, sprite, size / 1.2f);
+        CombatSpriteFlash.Of(gameObject)?.Flash(.09f);
     }
 
     protected virtual void Die()

@@ -13,6 +13,7 @@ public sealed class BossGameplayHud : MonoBehaviour
     public void Initialize(BossCombatController boss, Font font)
     {
         owner = boss;
+        worldView.FullSizeBar = true;
         worldView.Initialize(font);
         Refresh();
     }

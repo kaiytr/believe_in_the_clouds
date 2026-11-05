@@ -7,8 +7,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     [SerializeField] private float maxHp = 100f;
 
     [Header("Invulnerability")]
-    [SerializeField] private float invulnerabilityDuration = 1f;
-    [SerializeField] private float blinkInterval = 0.2f;
+    [Tooltip("Seconds of invulnerability after a hit.")]
+    [SerializeField] private float invulnerabilityDuration = 0.6f;
     [SerializeField] private Collider2D bodyCollider;
 
     [Header("Doctrine Link")]
@@ -20,8 +20,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     private bool isDashInvulnerable;
     private bool lowHealthNotified;
     private Coroutine invulnerabilityRoutine;
-    private SpriteRenderer[] spriteRenderers;
-    private bool[] originalRendererStates;
     private PlayerDeathCoordinator deathCoordinator;
     public event System.Action<PlayerHealth> HealthChanged;
 
@@ -50,11 +48,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             bodyCollider = GetComponent<Collider2D>();
         if (bodyCollider == null || bodyCollider.isTrigger)
             Debug.LogError($"{name}: Assign one non-trigger Player body Collider2D on the Player root.", this);
-
-        spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
-        originalRendererStates = new bool[spriteRenderers.Length];
-        for (int i = 0; i < spriteRenderers.Length; i++)
-            originalRendererStates[i] = spriteRenderers[i].enabled;
     }
 
     private void Start() { deathCoordinator.BeginLife(); }
@@ -82,6 +75,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             return false;
 
         currentHp = Mathf.Max(0f, currentHp - damage);
+        PlayerHitVignette.Pulse(maxHp > 0f ? damage / maxHp : 0f);
         if (currentHp <= 0f)
         {
             Currency.Service?.BlockDefeatRewards();
@@ -133,7 +127,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         currentHp = maxHp;
         isInvulnerable = false;
         lowHealthNotified = false;
-        RestoreRenderers();
         deathCoordinator?.BeginLife();
         NotifyHealthChanged();
     }
@@ -145,7 +138,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         if (invulnerabilityRoutine != null) StopCoroutine(invulnerabilityRoutine);
         invulnerabilityRoutine = null;
         currentHp = value; isInvulnerable = false; lowHealthNotified = IsLowHealth;
-        RestoreRenderers();
         return true;
     }
 
@@ -171,17 +163,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     private IEnumerator InvulnerabilityRoutine()
     {
-        float elapsed = 0f;
-        bool visible = true;
-        while (elapsed < invulnerabilityDuration)
-        {
-            visible = !visible;
-            SetRenderersVisible(visible);
-            yield return new WaitForSeconds(blinkInterval);
-            elapsed += blinkInterval;
-        }
+        yield return new WaitForSeconds(invulnerabilityDuration);
 
-        RestoreRenderers();
         isInvulnerable = false;
         invulnerabilityRoutine = null;
         // Resume trigger-stay callbacks even if the player stood still during immunity.
@@ -189,29 +172,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         if (body != null) body.WakeUp();
     }
 
-    private void SetRenderersVisible(bool visible)
-    {
-        for (int i = 0; i < spriteRenderers.Length; i++)
-        {
-            if (originalRendererStates[i])
-                spriteRenderers[i].enabled = visible;
-        }
-    }
-
-    private void RestoreRenderers()
-    {
-        if (spriteRenderers == null || originalRendererStates == null)
-            return;
-
-        for (int i = 0; i < spriteRenderers.Length; i++)
-            spriteRenderers[i].enabled = originalRendererStates[i];
-    }
 
     private void Die(GameObject source, string cause)
     {
         isInvulnerable = true;
         isDashInvulnerable = false;
-        RestoreRenderers();
         Debug.Log("[Player] Dead");
 
         deathCoordinator.CaptureDeath(() =>
@@ -219,11 +184,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             if (DoctrineEventBus.HasListeners)
                 DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
         }, cause);
-    }
-
-    private void OnDisable()
-    {
-        RestoreRenderers();
     }
 
     private void OnDestroy() { DoctrineManager.Instance?.ClearForOwner(gameObject); }

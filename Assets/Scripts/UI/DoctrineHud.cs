@@ -44,6 +44,7 @@ public class DoctrineHud : MonoBehaviour
     private RectTransform doctrineRow;
     private RectTransform bandRect;
     private Image hpFill;
+    private GaugeChip hpChip;
     private bool built;
 
     [Header("교리 효과 툴팁 (좌측 상단)")]
@@ -206,9 +207,9 @@ public class DoctrineHud : MonoBehaviour
 
         if (hpFill != null)
         {
-            hpFill.fillAmount = player.MaxHp > 0f
-                ? Mathf.Clamp01(player.CurrentHp / player.MaxHp)
-                : 0f;
+            float hpRatio = player.MaxHp > 0f ? Mathf.Clamp01(player.CurrentHp / player.MaxHp) : 0f;
+            if (hpChip != null) hpChip.Set(hpRatio);
+            else hpFill.fillAmount = hpRatio;
         }
     }
 
@@ -733,6 +734,7 @@ public class DoctrineHud : MonoBehaviour
         hpFill.fillMethod = Image.FillMethod.Horizontal;
         hpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
         hpFill.fillAmount = 1f;
+        hpChip = GaugeChip.Attach(hpFill);
     }
 
     private void BuildCurrencyBadge()

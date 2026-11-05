@@ -373,6 +373,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         float before = currentHp;
         float threshold = MaxHp * settings.PhaseTwoHealthRatio;
         currentHp = Mathf.Max(Phase == BossPhase.One ? threshold : 0f, currentHp - damage);
+        PlayHitFeedback(info);
         if (currentHp <= 0f) Die();
         else if (Phase == BossPhase.One && currentHp <= threshold) EnterPhaseTwo();
         attack?.ConfirmHit(this, before - currentHp, info.HitIndex);
@@ -387,6 +388,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         }
         Notify();
         return true;
+    }
+    // Same burst and white flash as ordinary enemies, scaled up for the boss body.
+    private void PlayHitFeedback(DamageInfo info)
+    {
+        Bounds body = BodyCollider != null ? BodyCollider.bounds : new Bounds(transform.position, Vector3.one);
+        Vector2 from = info.Attacker != null ? (Vector2)info.Attacker.transform.position : (Vector2)body.center - Vector2.right * Facing;
+        Vector2 contact = BodyCollider != null ? BodyCollider.ClosestPoint(from) : (Vector2)body.center;
+        CombatHitEffect.Spawn(Vector2.Lerp(contact, body.center, .4f), (Vector2)body.center - from, BodyRenderer, Mathf.Clamp(body.size.x / 1.2f, 1f, 2.2f));
+        CombatSpriteFlash.Of(gameObject)?.Flash(.09f);
     }
     private void EnterPhaseTwo()
     {
