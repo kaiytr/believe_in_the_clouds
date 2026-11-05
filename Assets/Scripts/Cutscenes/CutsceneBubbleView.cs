@@ -16,13 +16,13 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     [SerializeField, Min(12)] private int bodyFontSize = 26;
     [SerializeField, Min(12)] private int choiceFontSize = 22;
     [Header("Auto size (design units)")]
-    [SerializeField] private Vector2 minPanelSize = new Vector2(200f, 78f);
-    [SerializeField] private float maxPanelWidth = 440f;
-    [SerializeField] private float maxPanelHeight = 340f;
-    [SerializeField] private Vector4 panelPadding = new Vector4(24f, 34f, 24f, 18f); // left, bottom (tail), right, top
-    [SerializeField] private float choiceHeight = 40f;
-    [SerializeField] private float choiceSpacing = 2f;
-    [SerializeField] private float choiceTextPadding = 8f;
+    [SerializeField] private Vector2 minPanelSize = new Vector2(260f, 100f);
+    [SerializeField] private float maxPanelWidth = 500f;
+    [SerializeField] private float maxPanelHeight = 460f;
+    [SerializeField] private Vector4 panelPadding = new Vector4(32f, 42f, 32f, 24f); // left, bottom (tail), right, top
+    [SerializeField] private float choiceHeight = 48f;
+    [SerializeField] private float choiceSpacing = 6f;
+    [SerializeField] private float choiceTextPadding = 14f;
 
     private Canvas canvas;
     private RectTransform canvasRect;
@@ -306,9 +306,11 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         float horizontal = (panelPadding.x + panelPadding.z) * unitScale;
         float vertical = (panelPadding.y + panelPadding.w) * unitScale;
         float maxTextWidth = maxPanelWidth * unitScale - horizontal;
-        float wanted = MeasureWidth(bodyText, lineFull, fontSize) + 6f * unitScale;
+        bodyText.verticalOverflow = VerticalWrapMode.Overflow;
+        float wanted = MeasureWidth(bodyText, lineFull, fontSize) + 28f * unitScale;
         float textWidth = Mathf.Clamp(wanted, Mathf.Max(0f, minPanelSize.x * unitScale - horizontal), maxTextWidth);
-        float textHeight = MeasureHeight(bodyText, lineFull, textWidth, fontSize) + 4f * unitScale;
+        // Measure against a narrower column and add slack: a real wrap that differs slightly must never clip a line.
+        float textHeight = MeasureHeight(bodyText, lineFull, textWidth * .9f, fontSize) + 16f * unitScale;
         float panelWidth = textWidth + horizontal;
         float panelHeight = Mathf.Clamp(textHeight + vertical, minPanelSize.y * unitScale, maxPanelHeight * unitScale);
         panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
@@ -328,7 +330,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         Text sample = choices.Count > 0 && choices[0] != null ? choices[0].GetComponentInChildren<Text>() : bodyText;
         float buttonWidth = minButtonWidth;
         for (int i = 0; i < choiceLabels.Length; i++)
-            buttonWidth = Mathf.Max(buttonWidth, MeasureWidth(sample, choiceLabels[i], fontSize) + inset * 2f + 6f * unitScale);
+            buttonWidth = Mathf.Max(buttonWidth, MeasureWidth(sample, choiceLabels[i], fontSize) + inset * 2f + 28f * unitScale);
         buttonWidth = Mathf.Min(buttonWidth, maxButtonWidth);
 
         float y = 0f;
@@ -338,10 +340,11 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             GameObject choice = choices[i];
             if (choice == null) continue;
             Text label = choice.GetComponentInChildren<Text>();
+            label.verticalOverflow = VerticalWrapMode.Overflow;
             label.fontSize = fontSize;
             label.resizeTextMaxSize = fontSize;
             label.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((choiceFontSize - 2) * unitScale));
-            float textHeight = MeasureHeight(label, choiceLabels[i], buttonWidth - inset * 2f, fontSize) + 6f * unitScale;
+            float textHeight = MeasureHeight(label, choiceLabels[i], (buttonWidth - inset * 2f) * .9f, fontSize) + 14f * unitScale;
             float height = Mathf.Max(choiceHeight * unitScale, textHeight);
             RectTransform buttonRect = choice.GetComponent<RectTransform>();
             buttonRect.anchorMin = new Vector2(0f, 1f);

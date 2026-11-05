@@ -212,9 +212,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float activeEndsAt = Time.time + activeDuration;
             owner.SetActionCue(label, hint, BossPresentationState.Active, activeDuration);
             if (owner.Presentation.ShowMelee(animationIndex, activeDuration * .5f))
-                // The slash is clipped to the very rectangle that was warned and is judged.
-                owner.PlayerAttack.PlaySwingWithinEffect(bladeEffect, owner.transform.position,
-                    record.Geometry.Center, record.Geometry.Size, record.Geometry.Angle, direction);
+                owner.PlayerAttack.PlaySwingEffect(bladeEffect, owner.transform.position,
+                    record.Geometry.Center, record.Geometry.Size, direction);
             else
             {
                 slash = owner.SpawnEffect(Data.SlashPrefab);
