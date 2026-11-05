@@ -179,6 +179,74 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         EmitSparks(playerPos, radius, centerAngle, half, Time.time, radial: false, facingSign);
     }
 
+    /// <summary>
+    /// 회전된 판정 사각형 안에만 들어가는 칼날 궤적을 그린다(보스 연속 베기용).
+    /// 아크 중심은 공격자 위치, 반경/각도는 사각형 경계에서 잘라 예고 범위와 실제 판정 범위를 벗어나지 않는다.
+    /// </summary>
+    public void PlaySwingWithin(Vector2 origin, Vector2 boxCenter, Vector2 boxSize, float boxAngleDeg, float facingSign = 1f)
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        Vector2 toCenter = boxCenter - origin;
+        if (toCenter.sqrMagnitude < 0.0001f)
+        {
+            PlaySwing(origin, boxCenter, boxSize, facingSign);
+            return;
+        }
+
+        Vector2 direction = toCenter.normalized;
+        float centerAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        const float step = 0.02f;
+        float near = -1f, far = -1f;
+        for (float t = 0f; t <= 12f; t += step)
+        {
+            if (!InsideBox(origin + direction * t, boxCenter, boxSize, boxAngleDeg))
+            {
+                if (near >= 0f) break;
+                continue;
+            }
+            if (near < 0f) near = t;
+            far = t;
+        }
+
+        if (far <= 0.1f)
+        {
+            PlaySwing(origin, boxCenter, boxSize, facingSign);
+            return;
+        }
+
+        float radius = far * 0.97f;
+        float sideLimit = 70f;
+        for (int sign = -1; sign <= 1; sign += 2)
+        {
+            float reach = 0f;
+            for (float angle = 1f; angle <= 70f; angle += 1f)
+            {
+                float rad = (centerAngle + sign * angle) * Mathf.Deg2Rad;
+                Vector2 point = origin + new Vector2(Mathf.Cos(rad), Mathf.Sin(rad)) * radius;
+                if (!InsideBox(point, boxCenter, boxSize, boxAngleDeg))
+                    break;
+                reach = angle;
+            }
+            sideLimit = Mathf.Min(sideLimit, reach);
+        }
+
+        float half = Mathf.Max(6f, sideLimit * 0.95f);
+        float innerRatio = Mathf.Clamp(Mathf.Max(near, 0f) / Mathf.Max(0.01f, radius), 0.3f, 0.8f);
+        EnsureRoot();
+        EnsureArc();
+        if (spawnArc && arcTransform != null)
+            DrawArc(origin, radius, centerAngle, half, innerRatio);
+        EmitSparks(origin, radius, centerAngle, half, Time.time, radial: false, facingSign);
+    }
+
+    private static bool InsideBox(Vector2 point, Vector2 center, Vector2 size, float angleDeg)
+    {
+        Vector2 local = Quaternion.Euler(0f, 0f, -angleDeg) * (point - center);
+        return Mathf.Abs(local.x) <= size.x * 0.5f && Mathf.Abs(local.y) <= size.y * 0.5f;
+    }
+
     // 스파크를 뿌린다. radial이 true면 아래 공격처럼 바깥으로 튀고,
     // false면 지상 베기처럼 궤접선 방향으로 흘러 칼자국처럼 보인다.
     private void EmitSparks(Vector2 origin, float radius, float centerAngleDeg, float halfAngleDeg,
@@ -230,7 +298,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
 
     // 판정을 따라가는 얇은 초승달 띠를 만든다.
     // 양 끝은 알파 0, 안쪽은 어둡고 바깥쪽은 밝게 해서 칼날 모서리처럼 보이게 한다.
-    private void DrawArc(Vector2 origin, float radius, float centerAngleDeg, float halfAngleDeg)
+    private void DrawArc(Vector2 origin, float radius, float centerAngleDeg, float halfAngleDeg, float innerRatioOverride = -1f)
     {
         const int segments = 28;
 
@@ -242,7 +310,7 @@ public sealed class DownFanImpactEffect : MonoBehaviour
         }
         mesh.Clear();
 
-        float innerRadius = radius * Mathf.Clamp01(arcInnerRatio);
+        float innerRadius = radius * Mathf.Clamp01(innerRatioOverride >= 0f ? innerRatioOverride : arcInnerRatio);
         float half = halfAngleDeg * Mathf.Clamp01(arcAngleScale);
         float start = centerAngleDeg - half;
         float sweep = half * 2f;

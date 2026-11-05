@@ -212,8 +212,9 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float activeEndsAt = Time.time + activeDuration;
             owner.SetActionCue(label, hint, BossPresentationState.Active, activeDuration);
             if (owner.Presentation.ShowMelee(animationIndex, activeDuration * .5f))
-                owner.PlayerAttack.PlaySwingEffect(bladeEffect, owner.transform.position,
-                    record.Geometry.Center, record.Geometry.Size, direction);
+                // The blade fills the same box that was warned and is judged (the player's combo hitbox, unchanged).
+                owner.PlayerAttack.PlaySwingWithinEffect(bladeEffect, owner.transform.position,
+                    record.Geometry.Center, record.Geometry.Size, record.Geometry.Angle, direction);
             else
             {
                 slash = owner.SpawnEffect(Data.SlashPrefab);
