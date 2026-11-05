@@ -103,6 +103,16 @@ public sealed class BossEncounterTrigger : MonoBehaviour
         }
     }
 
+    // 도입 연출 취소는 전투를 시작하거나 기존 전투를 종료하지 않는다.
+    public void CancelIntro()
+    {
+        if (!HasEntered || boss != null && boss.EncounterStarted) return;
+        HasEntered = false;
+        enteredPlayer = null;
+        boss?.ReleaseArenaVisuals();
+        HandleBossStatus();
+    }
+
     private void OnDisable()
     {
         if (boss != null) boss.StatusChanged -= HandleBossStatus;

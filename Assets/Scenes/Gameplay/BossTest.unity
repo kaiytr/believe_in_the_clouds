@@ -667,6 +667,91 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1071644616
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4600000101}
+    m_Modifications:
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6741053618116744249, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_Name
+      value: BossIntroductionCutscene
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.data[0].id
+      value: boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.data[0].character
+      value:
+      objectReference: {fileID: 1145974080}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+--- !u!114 &1071644617 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+  m_PrefabInstance: {fileID: 1071644616}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbca8cc7b03e22742a77dcf595cf0266, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneRunner
+--- !u!4 &1071644618 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+  m_PrefabInstance: {fileID: 1071644616}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1090951938
 GameObject:
   m_ObjectHideFlags: 0
@@ -860,19 +945,44 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1145974080}
   m_SourcePrefab: {fileID: 100100000, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
 --- !u!114 &1145974078 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1771533817734296141, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
   m_PrefabInstance: {fileID: 1145974077}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 1145974079}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 127bfdb724e741d09c9e1768ca8812bc, type: 3}
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatController
+--- !u!1 &1145974079 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+  m_PrefabInstance: {fileID: 1145974077}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1145974080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145974079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e2c8b36f1c9754aa11d876b8b969fc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneCharacter
+  displayName: "\uBCF4\uC2A4"
+  headAnchor: {fileID: 0}
+  fallbackHeadOffset: {x: 0, y: 1.5, z: 0}
+  projectileOrigin: {fileID: 0}
+  enemy: {fileID: 0}
 --- !u!1 &1502305282
 GameObject:
   m_ObjectHideFlags: 0
@@ -1361,6 +1471,7 @@ GameObject:
   - component: {fileID: 4600000102}
   - component: {fileID: 4600000103}
   - component: {fileID: 4600000104}
+  - component: {fileID: 4600000105}
   m_Layer: 0
   m_Name: Boss arena entry
   m_TagString: Untagged
@@ -1384,6 +1495,7 @@ Transform:
   - {fileID: 4600000111}
   - {fileID: 4600000121}
   - {fileID: 4600000131}
+  - {fileID: 1071644618}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!61 &4600000102
@@ -1449,6 +1561,7 @@ MonoBehaviour:
   - {fileID: 4600000112}
   - {fileID: 4600000122}
   arenaCamera: {fileID: 4600000104}
+  autoBeginEncounter: 0
 --- !u!114 &4600000104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1473,6 +1586,24 @@ MonoBehaviour:
   explorationFixedY: 1
   clampExplorationX: 1
   explorationXLimits: {x: -42, y: 48}
+--- !u!114 &4600000105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4600000100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1e6a9c8243ff68428a332be8039e64f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneBossEncounterCoordinator
+  arena: {fileID: 4600000103}
+  introRunner: {fileID: 1071644617}
+  introDefinition: {fileID: 11400000, guid: 4873e804c146ffb4fa260c05e33f5e34, type: 2}
+  onCloudPreparationRequested:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4600000110
 GameObject:
   m_ObjectHideFlags: 0

@@ -111,3 +111,9 @@ arena.HoldingForIntro                // 봉쇄·구름 준비는 끝났고 전�
 - 컷씬: 위 4절 흐름대로 `AutoBeginEncounter=false`를 BossTest/StageTest 아레나에 설정하고 `ArenaEntered`에서 컷씬을 시작한다(해당 씬 저장은 통합 담당). 컷씬 중 플레이어 입력 잠금은 컷씬 쪽 책임이다.
 - 밸런스: 믿음 간격 3초, 번개 3초, 먹구름 8폭 등은 모두 설정에서 조절한다.
 - 알려진 제한: 얇은 단방향 면은 몸이 면보다 약간 위로 올라온 순간부터 지면 판정을 받는다(점프로 면을 통과하는 중 한 틱 겹칠 수 있음). 먹구름은 모두 같은 높이다. 충격파는 파동이 도달하는 동안 일반 공격 루프를 막지 않는다(본체 해제 후 이어짐).
+
+## 8. 병렬 작업 통합 후 보완 (2026-11-05)
+
+위 개별 세션의 미실행 기록 이후 통합에서 새 설정 EditMode 4개와 직접 관련된 PlayMode 6개를 실제 실행해 통과했다. 구형 StageIntegration 번개 테스트를 갱신했고, 실제 BossTest와 BossEncounter에 기존 BossEncounterTrigger를 유지하는 컷씬 연결을 적용했다. 도입 취소용 CancelIntro API를 추가했다. StageTest는 도입 없이 기존 자동 진입을 유지한다.
+
+전체 보스 테스트를 실행한 것은 아니다. 실행한 케이스와 남은 수동 확인은 Docs/ParallelWorkIntegration_2026-11-05.md를 따른다. 컷씬 연결의 최종 기준은 Docs/CutsceneIntegrationGuide.md다.

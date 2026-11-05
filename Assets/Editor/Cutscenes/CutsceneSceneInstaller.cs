@@ -11,6 +11,12 @@ public static class CutsceneSceneInstaller
     private const string RunnerPrefabPath = "Assets/Prefabs/Cutscenes/CutsceneRunner.prefab";
     private const string CutsceneDataRoot = "Assets/Data/Cutscenes/";
 
+    public static void InstallAllForIntegration()
+    {
+        InstallBossIntroductionForIntegration();
+        InstallTutorialFlowForIntegration();
+    }
+
     [MenuItem("Tools/Cutscenes/Install Tutorial Flow")]
     public static void InstallTutorialFlow()
     {
@@ -20,6 +26,11 @@ public static class CutsceneSceneInstaller
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             return;
 
+        InstallTutorialFlowForIntegration();
+    }
+
+    public static void InstallTutorialFlowForIntegration()
+    {
         Scene scene = EditorSceneManager.OpenScene(TutorialScenePath, OpenSceneMode.Single);
         Transform anchors = GameObject.Find("TutorialCutsceneAnchors")?.transform;
         PlayerHealth playerHealth = FindPlayerHealth();
@@ -101,93 +112,87 @@ public static class CutsceneSceneInstaller
     [MenuItem("Tools/Cutscenes/Install Boss Introduction")]
     public static void InstallBossIntroduction()
     {
-        if (!EditorUtility.DisplayDialog("Install Boss Introduction",
-                "This modifies only BossEncounter.prefab. Continue?", "Install", "Cancel"))
+        if (!EditorUtility.DisplayDialog("보스 도입 컷씬 설치",
+                "BossEncounter 프리팹과 BossTest 씬에 도입 컷씬을 연결합니다.", "설치", "취소"))
             return;
+        if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            InstallBossIntroductionForIntegration();
+    }
 
+    public static void InstallBossIntroductionForIntegration()
+    {
         GameObject contents = PrefabUtility.LoadPrefabContents(BossEncounterPrefabPath);
-        if (contents == null)
-        {
-            Debug.LogError("Could not load " + BossEncounterPrefabPath);
-            return;
-        }
-
         try
         {
-            BossEncounterTrigger oldTrigger = contents.GetComponentInChildren<BossEncounterTrigger>(true);
-            CutsceneBossEncounterCoordinator coordinator =
-                contents.GetComponentInChildren<CutsceneBossEncounterCoordinator>(true);
-            BossCombatController boss = oldTrigger != null
-                ? ReadBoss(oldTrigger)
-                : coordinator != null ? coordinator.EncounterBoss : null;
-            BoxCollider2D entry = oldTrigger != null ? oldTrigger.GetComponent<BoxCollider2D>()
-                : coordinator != null ? coordinator.EntryCollider : null;
-            Collider2D[] gates = oldTrigger != null ? ReadGates(oldTrigger)
-                : coordinator != null ? coordinator.Gates : null;
-            BossArenaCamera camera = oldTrigger != null ? ReadCamera(oldTrigger)
-                : coordinator != null ? coordinator.ArenaCamera : null;
-
-            if (boss == null || entry == null || gates == null)
-            {
-                Debug.LogError("Boss install stopped: BossEncounterTrigger refs to Boss, entry collider, or gates are missing.");
-                return;
-            }
-
-            CutsceneDefinition intro = LoadDefinition("BossIntroduction");
-            GameObject runnerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RunnerPrefabPath);
-            if (intro == null || runnerPrefab == null)
-            {
-                Debug.LogError("Boss intro data or CutsceneRunner prefab is missing.");
-                return;
-            }
-
-            SerializedObject bossObject = new SerializedObject(boss);
-            SerializedProperty startOnAwake = bossObject.FindProperty("startOnAwake");
-            if (startOnAwake == null)
-            {
-                Debug.LogError("BossCombatController.startOnAwake was not found; refusing to install an auto-starting intro.");
-                return;
-            }
-            startOnAwake.boolValue = false;
-            bossObject.ApplyModifiedPropertiesWithoutUndo();
-
-            CutsceneCharacter bossCharacter = EnsureCharacter(boss.gameObject, "보스");
-            Transform runnerTransform = contents.transform.Find("BossIntroductionCutscene");
-            CutsceneRunner runner = runnerTransform != null
-                ? runnerTransform.GetComponent<CutsceneRunner>() : null;
-            if (runner == null)
-            {
-                GameObject runnerInstance = PrefabUtility.InstantiatePrefab(runnerPrefab, contents.scene) as GameObject;
-                if (runnerInstance == null)
-                {
-                    Debug.LogError("CutsceneRunner prefab could not be instantiated.");
-                    return;
-                }
-                runnerInstance.name = "BossIntroductionCutscene";
-                runnerInstance.transform.SetParent(contents.transform, false);
-                runner = runnerInstance.GetComponent<CutsceneRunner>();
-            }
-
-            runner.SetDefaultDefinition(intro);
-            runner.SetActorBindings(new CutsceneActorBinding("boss", bossCharacter));
-
-            if (coordinator == null)
-                coordinator = Undo.AddComponent<CutsceneBossEncounterCoordinator>(contents);
-            coordinator.Configure(boss, entry, gates, camera, runner, intro);
-
-            if (oldTrigger != null)
-                Object.DestroyImmediate(oldTrigger, true);
-
+            BossEncounterTrigger arena = contents.GetComponentInChildren<BossEncounterTrigger>(true);
+            if (!ConfigureBossIntroduction(arena))
+                throw new System.InvalidOperationException("BossEncounter 도입 컷씬 참조가 없습니다.");
             PrefabUtility.SaveAsPrefabAsset(contents, BossEncounterPrefabPath);
-            AssetDatabase.SaveAssets();
-            Debug.Log("Installed the boss introduction handoff in " + BossEncounterPrefabPath);
         }
         finally
         {
             PrefabUtility.UnloadPrefabContents(contents);
         }
+
+        // BossTest는 BossEncounter 전체가 아닌 Boss 프리팹과 독립 아레나를 사용한다.
+        Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/Gameplay/BossTest.unity", OpenSceneMode.Single);
+        BossEncounterTrigger sceneArena = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            BossEncounterTrigger candidate = root.GetComponentInChildren<BossEncounterTrigger>(true);
+            if (candidate != null) { sceneArena = candidate; break; }
+        }
+        if (!ConfigureBossIntroduction(sceneArena))
+            throw new System.InvalidOperationException("BossTest 도입 컷씬 참조가 없습니다.");
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        AssetDatabase.SaveAssets();
+        Debug.Log("BossEncounter와 BossTest에 기존 아레나를 유지한 도입 컷씬을 연결했습니다.");
     }
 
+    public static bool ConfigureBossIntroduction(BossEncounterTrigger arena)
+    {
+        BossCombatController boss = arena != null ? ReadBoss(arena) : null;
+        CutsceneDefinition intro = LoadDefinition("BossIntroduction");
+        GameObject runnerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RunnerPrefabPath);
+        if (boss == null || intro == null || runnerPrefab == null)
+        {
+            Debug.LogError("보스 도입 설치 중단: 아레나/보스/도입 데이터/Runner 프리팹을 확인하세요.");
+            return false;
+        }
+
+        var bossObject = new SerializedObject(boss);
+        bossObject.FindProperty("startOnAwake").boolValue = false;
+        bossObject.ApplyModifiedPropertiesWithoutUndo();
+        var arenaObject = new SerializedObject(arena);
+        arenaObject.FindProperty("autoBeginEncounter").boolValue = false;
+        arenaObject.ApplyModifiedPropertiesWithoutUndo();
+
+        CutsceneCharacter bossCharacter = EnsureCharacter(boss.gameObject, "보스");
+        Transform runnerTransform = arena.transform.Find("BossIntroductionCutscene");
+        CutsceneRunner runner = runnerTransform != null ? runnerTransform.GetComponent<CutsceneRunner>() : null;
+        if (runner == null)
+        {
+            GameObject runnerInstance = PrefabUtility.InstantiatePrefab(runnerPrefab, arena.gameObject.scene) as GameObject;
+            if (runnerInstance == null) return false;
+            runnerInstance.name = "BossIntroductionCutscene";
+            runnerInstance.transform.SetParent(arena.transform, false);
+            runner = runnerInstance.GetComponent<CutsceneRunner>();
+        }
+
+        runner.SetDefaultDefinition(intro);
+        runner.SetActorBindings(new CutsceneActorBinding("boss", bossCharacter));
+        CutsceneBossEncounterCoordinator coordinator = arena.GetComponent<CutsceneBossEncounterCoordinator>();
+        if (coordinator == null) coordinator = Undo.AddComponent<CutsceneBossEncounterCoordinator>(arena.gameObject);
+        coordinator.Configure(arena, runner, intro);
+        EditorUtility.SetDirty(runner);
+        EditorUtility.SetDirty(coordinator);
+        if (PrefabUtility.IsPartOfPrefabInstance(runner))
+            PrefabUtility.RecordPrefabInstancePropertyModifications(runner);
+        if (PrefabUtility.IsPartOfPrefabInstance(coordinator))
+            PrefabUtility.RecordPrefabInstancePropertyModifications(coordinator);
+        return true;
+    }
     private static void EnsureEncounterTrigger(Transform anchor, CutsceneRunner runner,
         CutsceneDefinition definition)
     {
@@ -204,7 +209,7 @@ public static class CutsceneSceneInstaller
         if (collider == null)
             collider = Undo.AddComponent<BoxCollider2D>(triggerTransform.gameObject);
         collider.isTrigger = true;
-        collider.size = new Vector2(2.6f, 3.5f);
+        collider.size = new Vector2(6f, 4f);
 
         CutsceneTrigger trigger = triggerTransform.GetComponent<CutsceneTrigger>();
         if (trigger == null)

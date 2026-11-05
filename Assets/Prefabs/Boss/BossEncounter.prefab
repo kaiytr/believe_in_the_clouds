@@ -1,234 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &758039714956035726
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7976448068658282420}
-  m_Layer: 0
-  m_Name: BossEncounter
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7976448068658282420
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 758039714956035726}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2647726107904111041}
-  - {fileID: 6968761096307038909}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2602216514672747795
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6968761096307038909}
-  - component: {fileID: 5071011259458829818}
-  - component: {fileID: 6084462513718281962}
-  - component: {fileID: 4600000104}
-  m_Layer: 0
-  m_Name: Final area entry trigger
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6968761096307038909
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2602216514672747795}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.5, y: 2, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4600000111}
-  - {fileID: 4600000121}
-  - {fileID: 4600000131}
-  m_Father: {fileID: 7976448068658282420}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!61 &5071011259458829818
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2602216514672747795}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0, y: 0}
-    oldSize: {x: 0, y: 0}
-    newSize: {x: 0, y: 0}
-    adaptiveTilingThreshold: 0
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 45, y: 16}
-  m_EdgeRadius: 0
---- !u!114 &6084462513718281962
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2602216514672747795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ecd8512e2d584e9e8f8a130c63ab91ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossEncounterTrigger
-  boss: {fileID: 8928313556254072267}
-  gates:
-  - {fileID: 4600000112}
-  - {fileID: 4600000122}
-  arenaCamera: {fileID: 4600000104}
---- !u!1001 &7165927941555154822
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 7976448068658282420}
-    m_Modifications:
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-      propertyPath: m_Name
-      value: Boss
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
---- !u!4 &2647726107904111041 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-  m_PrefabInstance: {fileID: 7165927941555154822}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &8928313556254072267 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1771533817734296141, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
-  m_PrefabInstance: {fileID: 7165927941555154822}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 127bfdb724e741d09c9e1768ca8812bc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatController
---- !u!114 &4600000104
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2602216514672747795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 29658207ae35411a9055675d5dbe5bde, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossArenaCamera
-  view: {fileID: 0}
-  cameraBounds: {fileID: 4600000132}
-  explorationControllers: []
-  combatSize: 8
-  maximumCombatSize: 10.5
-  playerMargin: 1.5
-  blendDuration: 0.6
-  explorationOffset: {x: 1.5, y: 2.2, z: -10}
-  explorationFixedY: 0
-  clampExplorationX: 0
-  explorationXLimits: {x: -18, y: 18}
 --- !u!1 &4600000110
 GameObject:
   m_ObjectHideFlags: 0
@@ -262,52 +33,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6968761096307038909}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!61 &4600000112
-BoxCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4600000110}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
-    newSize: {x: 1, y: 1}
-    adaptiveTilingThreshold: 0.5
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
-  m_EdgeRadius: 0
 --- !u!212 &4600000113
 SpriteRenderer:
   serializedVersion: 2
@@ -367,46 +92,13 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &4600000120
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4600000121}
-  - component: {fileID: 4600000123}
-  - component: {fileID: 4600000122}
-  m_Layer: 6
-  m_Name: Far seal
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4600000121
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4600000120}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22.75, y: -0.8499999, z: 0}
-  m_LocalScale: {x: 0.5, y: 10, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6968761096307038909}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!61 &4600000122
+--- !u!61 &4600000112
 BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4600000120}
+  m_GameObject: {fileID: 4600000110}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -446,6 +138,39 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!1 &4600000120
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4600000121}
+  - component: {fileID: 4600000123}
+  - component: {fileID: 4600000122}
+  m_Layer: 6
+  m_Name: Far seal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4600000121
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4600000120}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 22.75, y: -0.8499999, z: 0}
+  m_LocalScale: {x: 0.5, y: 10, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6968761096307038909}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4600000123
 SpriteRenderer:
   serializedVersion: 2
@@ -505,6 +230,52 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!61 &4600000122
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4600000120}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &4600000130
 GameObject:
   m_ObjectHideFlags: 0
@@ -583,3 +354,363 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 45, y: 20}
   m_EdgeRadius: 0
+--- !u!1 &758039714956035726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7976448068658282420}
+  m_Layer: 0
+  m_Name: BossEncounter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7976448068658282420
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 758039714956035726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2647726107904111041}
+  - {fileID: 6968761096307038909}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2602216514672747795
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6968761096307038909}
+  - component: {fileID: 5071011259458829818}
+  - component: {fileID: 6084462513718281962}
+  - component: {fileID: 4600000104}
+  - component: {fileID: 6996659031274966338}
+  m_Layer: 0
+  m_Name: Final area entry trigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6968761096307038909
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2602216514672747795}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10.5, y: 2, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4600000111}
+  - {fileID: 4600000121}
+  - {fileID: 4600000131}
+  - {fileID: 5218885799101729793}
+  m_Father: {fileID: 7976448068658282420}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!61 &5071011259458829818
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2602216514672747795}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 45, y: 16}
+  m_EdgeRadius: 0
+--- !u!114 &6084462513718281962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2602216514672747795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ecd8512e2d584e9e8f8a130c63ab91ec, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossEncounterTrigger
+  boss: {fileID: 8928313556254072267}
+  gates:
+  - {fileID: 4600000112}
+  - {fileID: 4600000122}
+  arenaCamera: {fileID: 4600000104}
+  autoBeginEncounter: 0
+--- !u!114 &4600000104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2602216514672747795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29658207ae35411a9055675d5dbe5bde, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossArenaCamera
+  view: {fileID: 0}
+  cameraBounds: {fileID: 4600000132}
+  explorationControllers: []
+  combatSize: 8
+  maximumCombatSize: 10.5
+  playerMargin: 1.5
+  blendDuration: 0.6
+  explorationOffset: {x: 1.5, y: 2.2, z: -10}
+  explorationFixedY: 0
+  clampExplorationX: 0
+  explorationXLimits: {x: -18, y: 18}
+--- !u!114 &6996659031274966338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2602216514672747795}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1e6a9c8243ff68428a332be8039e64f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneBossEncounterCoordinator
+  arena: {fileID: 6084462513718281962}
+  introRunner: {fileID: 2013189307055676797}
+  introDefinition: {fileID: 11400000, guid: 4873e804c146ffb4fa260c05e33f5e34, type: 2}
+  onCloudPreparationRequested:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1001 &7165927941555154822
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7976448068658282420}
+    m_Modifications:
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      propertyPath: m_Name
+      value: Boss
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5583476598459804491}
+  m_SourcePrefab: {fileID: 100100000, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+--- !u!1 &1706377704484071683 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8420666994216109701, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+  m_PrefabInstance: {fileID: 7165927941555154822}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5583476598459804491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1706377704484071683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e2c8b36f1c9754aa11d876b8b969fc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneCharacter
+  displayName: "\uBCF4\uC2A4"
+  headAnchor: {fileID: 0}
+  fallbackHeadOffset: {x: 0, y: 1.5, z: 0}
+  projectileOrigin: {fileID: 0}
+  enemy: {fileID: 0}
+--- !u!4 &2647726107904111041 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+  m_PrefabInstance: {fileID: 7165927941555154822}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8928313556254072267 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1771533817734296141, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
+  m_PrefabInstance: {fileID: 7165927941555154822}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1706377704484071683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 127bfdb724e741d09c9e1768ca8812bc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatController
+--- !u!1001 &7308924534766735907
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 6968761096307038909}
+    m_Modifications:
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6741053618116744249, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: m_Name
+      value: BossIntroductionCutscene
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.data[0].id
+      value: boss
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+      propertyPath: actors.Array.data[0].character
+      value:
+      objectReference: {fileID: 5583476598459804491}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+--- !u!114 &2013189307055676797 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+  m_PrefabInstance: {fileID: 7308924534766735907}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbca8cc7b03e22742a77dcf595cf0266, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneRunner
+--- !u!4 &5218885799101729793 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3243630598834789922, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
+  m_PrefabInstance: {fileID: 7308924534766735907}
+  m_PrefabAsset: {fileID: 0}

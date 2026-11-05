@@ -1,6 +1,9 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-500)]
 public sealed class CutsceneTutorialFlow : MonoBehaviour
 {
     [Header("Sequences")]
@@ -15,6 +18,11 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
     [SerializeField] private CutsceneCharacter storyBeliever;
     [SerializeField] private CutsceneDeathWatcher deathWatcher;
 
+    private readonly List<(Behaviour component, bool enabled)> heldBehaviours = new List<(Behaviour, bool)>();
+    private Rigidbody2D heldBody;
+    private bool bodyWasSimulated;
+    private bool holdingBeliever;
+
     public CutsceneRunner Runner => runner;
     public CutsceneDefinition IntroDefinition => introDefinition;
     public CutsceneDefinition EncounterDefinition => encounterDefinition;
@@ -26,6 +34,7 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
             runner = GetComponent<CutsceneRunner>();
         if (deathWatcher == null)
             deathWatcher = GetComponent<CutsceneDeathWatcher>();
+        HoldBeliever();
     }
 
     private void OnEnable()
@@ -38,10 +47,16 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
     {
         if (runner != null)
             runner.Completed -= HandleCompleted;
+        ReleaseBeliever();
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
+        // 로비 런타임의 씬 초기화/위치 복원을 끝낸 뒤 시작 독백을 재생한다.
+        yield return null;
+        LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
+        while (flow != null && flow.Scene != null && flow.Scene.gameObject.scene == gameObject.scene && !flow.InputReady)
+            yield return null;
         if (playIntroOnStart && runner != null && introDefinition != null)
             runner.Play(introDefinition, GetPlayerHealth(), false);
     }
@@ -73,7 +88,50 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
             deathWatcher == null || storyBeliever == null)
             return;
 
+        ReleaseBeliever();
         deathWatcher.BeginWatching(storyBeliever.Enemy, GetPlayerHealth(), runner, afterDeathDefinition);
+    }
+
+    private void HoldBeliever()
+    {
+        EnemyUnit enemy = storyBeliever != null ? storyBeliever.Enemy : null;
+        if (holdingBeliever || enemy == null || enemy.IsDead) return;
+        holdingBeliever = true;
+        Hold(enemy);
+        foreach (EnemyAttack attack in enemy.GetComponentsInChildren<EnemyAttack>(true)) Hold(attack);
+        foreach (EnemyContactDamage contact in enemy.GetComponentsInChildren<EnemyContactDamage>(true)) Hold(contact);
+        foreach (BeliefView view in enemy.GetComponentsInChildren<BeliefView>(true)) Hold(view);
+        heldBody = enemy.GetComponent<Rigidbody2D>();
+        if (heldBody != null)
+        {
+            bodyWasSimulated = heldBody.simulated;
+            heldBody.simulated = false;
+        }
+    }
+
+    private void Hold(Behaviour component)
+    {
+        heldBehaviours.Add((component, component.enabled));
+        component.enabled = false;
+    }
+
+    private void ReleaseBeliever()
+    {
+        if (!holdingBeliever) return;
+        holdingBeliever = false;
+        if (heldBody != null)
+        {
+            heldBody.linearVelocity = Vector2.zero;
+            heldBody.simulated = bodyWasSimulated;
+        }
+        heldBody = null;
+        for (int i = heldBehaviours.Count - 1; i >= 0; i--)
+        {
+            var state = heldBehaviours[i];
+            if (state.component != null && !state.component.enabled && state.enabled)
+                state.component.enabled = true;
+        }
+        heldBehaviours.Clear();
     }
 
     private PlayerHealth GetPlayerHealth()

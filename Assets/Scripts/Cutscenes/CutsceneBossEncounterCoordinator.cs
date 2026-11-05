@@ -2,189 +2,129 @@ using System;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[RequireComponent(typeof(BoxCollider2D))]
+[RequireComponent(typeof(BossEncounterTrigger))]
+[DefaultExecutionOrder(-550)]
 public sealed class CutsceneBossEncounterCoordinator : MonoBehaviour
 {
-    [Header("Arena entry")]
-    [SerializeField] private BossCombatController boss;
-    [SerializeField] private BoxCollider2D entry;
-    [SerializeField] private Collider2D[] gates = Array.Empty<Collider2D>();
-    [SerializeField] private BossArenaCamera arenaCamera;
-
-    [Header("Introduction")]
+    [SerializeField] private BossEncounterTrigger arena;
     [SerializeField] private CutsceneRunner introRunner;
     [SerializeField] private CutsceneDefinition introDefinition;
     [SerializeField] private UnityEngine.Events.UnityEvent onCloudPreparationRequested =
         new UnityEngine.Events.UnityEvent();
 
-    private bool hasEntered;
     private bool beginEncounterAttempted;
-    private bool gatesClosed;
+    private PlayerHealth enteredPlayer;
 
-    public bool HasEntered => hasEntered;
+    public bool HasEntered => arena != null && arena.HasEntered;
     public bool BeginEncounterAttempted => beginEncounterAttempted;
-    public BossCombatController EncounterBoss => boss;
-    public BoxCollider2D EntryCollider => entry;
-    public Collider2D[] Gates => gates;
-    public BossArenaCamera ArenaCamera => arenaCamera;
+    public BossCombatController EncounterBoss => arena != null ? arena.Boss : null;
     public event Action<CutsceneBossEncounterCoordinator> CloudPreparationRequested;
 
     private void Awake()
     {
-        if (entry == null)
-            entry = GetComponent<BoxCollider2D>();
-        if (entry != null)
-            entry.isTrigger = true;
-        if (boss == null)
-            boss = GetComponentInChildren<BossCombatController>(true);
-        if (arenaCamera == null)
-            arenaCamera = GetComponent<BossArenaCamera>();
-        if (introRunner == null)
-            introRunner = GetComponentInChildren<CutsceneRunner>(true);
-        SetGates(false);
+        if (arena == null) arena = GetComponent<BossEncounterTrigger>();
+        if (introRunner == null) introRunner = GetComponentInChildren<CutsceneRunner>(true);
+        if (arena != null) arena.AutoBeginEncounter = false;
     }
 
-    private void OnEnable()
-    {
-        SubscribeRunner();
-    }
+    private void OnEnable() => Subscribe();
 
-    public void Configure(BossCombatController encounterBoss, BoxCollider2D entryCollider,
-        Collider2D[] arenaGates, BossArenaCamera cameraRig,
-        CutsceneRunner sequenceRunner, CutsceneDefinition sequence)
+    public void Configure(BossEncounterTrigger encounterArena, CutsceneRunner sequenceRunner,
+        CutsceneDefinition sequence)
     {
-        UnsubscribeRunner();
-        boss = encounterBoss;
-        entry = entryCollider;
-        gates = arenaGates ?? Array.Empty<Collider2D>();
-        arenaCamera = cameraRig;
+        Unsubscribe();
+        arena = encounterArena;
         introRunner = sequenceRunner;
         introDefinition = sequence;
-        SubscribeRunner();
+        if (arena != null) arena.AutoBeginEncounter = false;
+        Subscribe();
     }
 
-    private void SubscribeRunner()
+    private void Subscribe()
     {
-        if (!isActiveAndEnabled || introRunner == null)
-            return;
-        introRunner.Completed -= HandleIntroCompleted;
-        introRunner.Cancelled -= HandleIntroCancelled;
-        introRunner.Completed += HandleIntroCompleted;
-        introRunner.Cancelled += HandleIntroCancelled;
-    }
-
-    private void UnsubscribeRunner()
-    {
-        if (introRunner == null)
-            return;
-        introRunner.Completed -= HandleIntroCompleted;
-        introRunner.Cancelled -= HandleIntroCancelled;
-    }
-
-    private void OnTriggerEnter2D(Collider2D other) => TryEnter(other);
-    private void OnTriggerStay2D(Collider2D other) => TryEnter(other);
-
-    private void TryEnter(Collider2D other)
-    {
-        if (hasEntered || boss == null || boss.IsDead || introRunner == null ||
-            introDefinition == null || other == null || entry == null)
-            return;
-
-        LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
-        if (flow != null && flow.IsActiveRunStage(BranchRole.Boss) && !flow.InputReady)
-            return;
-
-        PlayerHealth player = other.GetComponentInParent<PlayerHealth>();
-        if (player == null || player.IsDead || !player.CompareTag("Player") ||
-            other != player.BodyCollider || boss.EncounterStarted)
-            return;
-
-        Bounds playerBounds = player.BodyCollider.bounds;
-        Bounds entryBounds = entry.bounds;
-        if (playerBounds.min.x < entryBounds.min.x + 0.05f ||
-            playerBounds.max.x > entryBounds.max.x - 0.05f)
-            return;
-
-        hasEntered = true;
-        SetGates(true);
-        arenaCamera?.Enter(player.transform);
-        NotifyCloudPreparation();
-
-        if (!introRunner.Play(introDefinition, player, false))
-            RollBackEntry();
-    }
-
-    private void NotifyCloudPreparation()
-    {
-        try { onCloudPreparationRequested?.Invoke(); }
-        catch (Exception ex) { Debug.LogException(ex, this); }
-
-        Action<CutsceneBossEncounterCoordinator> handlers = CloudPreparationRequested;
-        if (handlers == null)
-            return;
-
-        foreach (Delegate callback in handlers.GetInvocationList())
+        if (!isActiveAndEnabled) return;
+        if (arena != null)
         {
-            try { ((Action<CutsceneBossEncounterCoordinator>)callback)(this); }
-            catch (Exception ex) { Debug.LogException(ex, this); }
+            arena.ArenaEntered -= HandleArenaEntered;
+            arena.ArenaEntered += HandleArenaEntered;
         }
+        if (introRunner != null)
+        {
+            introRunner.Completed -= HandleIntroCompleted;
+            introRunner.Cancelled -= HandleIntroCancelled;
+            introRunner.Completed += HandleIntroCompleted;
+            introRunner.Cancelled += HandleIntroCancelled;
+        }
+    }
+
+    private void Unsubscribe()
+    {
+        if (arena != null) arena.ArenaEntered -= HandleArenaEntered;
+        if (introRunner == null) return;
+        introRunner.Completed -= HandleIntroCompleted;
+        introRunner.Cancelled -= HandleIntroCancelled;
+    }
+
+    private void HandleArenaEntered()
+    {
+        BossCombatController boss = EncounterBoss;
+        if (boss == null || boss.IsDead || boss.EncounterStarted || beginEncounterAttempted) return;
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        enteredPlayer = playerObject != null ? playerObject.GetComponent<PlayerHealth>() : null;
+        if (enteredPlayer == null || enteredPlayer.IsDead || introRunner == null || introDefinition == null)
+        {
+            arena.CancelIntro();
+            return;
+        }
+
+        // 아레나가 봉쇄와 구름 준비를 끝낸 뒤에만 알림과 대사를 시작한다.
+        try { onCloudPreparationRequested?.Invoke(); }
+        catch (Exception exception) { Debug.LogException(exception, this); }
+        Action<CutsceneBossEncounterCoordinator> handlers = CloudPreparationRequested;
+        if (handlers != null)
+            foreach (Delegate callback in handlers.GetInvocationList())
+                try { ((Action<CutsceneBossEncounterCoordinator>)callback)(this); }
+                catch (Exception exception) { Debug.LogException(exception, this); }
+
+        if (!introRunner.Play(introDefinition, enteredPlayer, false)) arena.CancelIntro();
     }
 
     private void HandleIntroCompleted(CutsceneRunner completedRunner)
     {
-        if (!hasEntered || completedRunner == null ||
-            completedRunner.LastCompletedDefinition != introDefinition || beginEncounterAttempted)
-            return;
-
-        // Cloud preparation happens at entry; the existing encounter begins only after this signal.
+        BossCombatController boss = EncounterBoss;
+        if (!HasEntered || boss == null || completedRunner == null ||
+            completedRunner.LastCompletedDefinition != introDefinition || beginEncounterAttempted ||
+            enteredPlayer == null || enteredPlayer.IsDead) return;
         beginEncounterAttempted = true;
-        if (!boss.IsDead && !boss.EncounterStarted)
-            boss.BeginEncounter();
-
+        if (!boss.IsDead && !boss.EncounterStarted) boss.BeginEncounter();
         if (!boss.EncounterStarted)
-            RollBackEntry();
+        {
+            beginEncounterAttempted = false;
+            arena.CancelIntro();
+        }
     }
 
     private void HandleIntroCancelled(CutsceneRunner cancelledRunner)
     {
-        if (hasEntered && cancelledRunner != null &&
-            cancelledRunner.LastCancelledDefinition == introDefinition)
-            RollBackEntry();
+        if (cancelledRunner == null || cancelledRunner.LastCancelledDefinition != introDefinition) return;
+        beginEncounterAttempted = false;
+        arena?.CancelIntro();
+        enteredPlayer = null;
     }
 
-    private void SetGates(bool closed)
+    private void Update()
     {
-        gatesClosed = closed;
-        foreach (Collider2D gate in gates)
-        {
-            if (gate == null)
-                continue;
-            gate.isTrigger = !closed;
-            SpriteRenderer visual = gate.GetComponent<SpriteRenderer>();
-            if (visual != null)
-                visual.enabled = closed;
-        }
-    }
-
-    private void RollBackEntry()
-    {
-        hasEntered = false;
-        if (!beginEncounterAttempted || boss == null || !boss.EncounterStarted)
-            beginEncounterAttempted = false;
-        SetGates(false);
-        arenaCamera?.Exit();
+        if (introRunner != null && introRunner.IsRunning && enteredPlayer != null && enteredPlayer.IsDead)
+            introRunner.Cancel();
     }
 
     private void OnDisable()
     {
-        if (introRunner != null)
-            introRunner.Cancel();
-        UnsubscribeRunner();
-
-        if (gatesClosed)
-            SetGates(false);
-        arenaCamera?.Exit();
+        if (introRunner != null && introRunner.IsRunning) introRunner.Cancel();
+        Unsubscribe();
+        arena?.CancelIntro();
+        enteredPlayer = null;
     }
 
-    private void OnDestroy() => UnsubscribeRunner();
+    private void OnDestroy() => Unsubscribe();
 }

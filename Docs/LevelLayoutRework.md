@@ -110,3 +110,9 @@ Unity Editor/BatchMode, EditMode/PlayMode 테스트, 자동 플레이는 실행�
 - Tutorial 씬에는 컷씬 앵커와 `TutorialStoryBeliever` 식별만 추가했다. 컷씬 모듈과의 실제 연결은 세 브랜치 통합 후 담당 세션에서 수행한다.
 - Lobby 라우팅/후보 배열의 기존 참조를 유지했다. ShopTest에는 엑셀의 출구 표식에 대응하는 기존 오브젝트가 없어 후속 흐름 결정이 필요하다.
 - 보스 씬, 공용 프리팹·아틀라스·런타임 스크립트, ProjectSettings, Packages는 수정하지 않았다.
+
+## 병렬 작업 통합 후 보완 (2026-11-05)
+
+최종 커밋 45c38e8은 이후 origin/codex/level-layouts에도 전달되어, 통합 담당은 bundle 대신 같은 커밋을 원격에서 fetch해 반영했다. Tutorial의 앵커와 기존 신도에 컷씬을 연결했고, ShopTest AB열 출구는 기존 TemporaryStageExit/로비 복귀 문을 씬에 배치해 authoredExit로 연결했다. 위 출구 미결 사항은 처리됐다.
+
+통합 설치 후에도 전용 배치 검사와 기존 Transform 유지 확인을 통과했다. 실행한 최소 검증과 수동 확인 범위는 Docs/ParallelWorkIntegration_2026-11-05.md를 따른다.

@@ -54,8 +54,10 @@ public sealed class BossPatternReworkPlayModeTests
     {
         var controller = Object.FindFirstObjectByType<BossCombatController>();
         if (controller != null) controller.AutomaticPatterns = false;
+        var intro = Object.FindFirstObjectByType<CutsceneBossEncounterCoordinator>();
+        if (intro != null) intro.enabled = false;
         var trigger = Object.FindFirstObjectByType<BossEncounterTrigger>();
-        if (trigger != null && holdIntro) trigger.AutoBeginEncounter = false;
+        if (trigger != null) trigger.AutoBeginEncounter = !holdIntro;
     }
 
     private static void Set(object target, string field, object value)

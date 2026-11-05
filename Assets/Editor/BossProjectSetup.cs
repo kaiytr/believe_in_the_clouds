@@ -392,6 +392,7 @@ public static class BossProjectSetup
         var entry = trigger.AddComponent<BossEncounterTrigger>();
         BossArenaProjectSetup.Configure(entry, boss.GetComponent<BossCombatController>(),
             BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, -3.35f, null);
+        CutsceneSceneInstaller.ConfigureBossIntroduction(entry);
         PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prefabs/Boss/BossEncounter.prefab"); Object.DestroyImmediate(root);
     }
     private static void BuildScene()
@@ -424,6 +425,7 @@ public static class BossProjectSetup
         entrance.AddComponent<BoxCollider2D>();
         BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
             BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, floor, camera, true);
+        CutsceneSceneInstaller.ConfigureBossIntroduction(entrance.GetComponent<BossEncounterTrigger>());
         ProjectSceneSynchronization.SynchronizeScene(scene);
         BossStageSceneryProjectSetup.ConfigureLayout(scene, camera);
         BossStageSceneryProjectSetup.Decorate(scene);

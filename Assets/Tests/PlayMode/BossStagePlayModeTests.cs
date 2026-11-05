@@ -40,6 +40,10 @@ public sealed class BossStagePlayModeTests
 
     private static void PauseBoss(Scene scene, LoadSceneMode mode)
     {
+        var intro = Object.FindFirstObjectByType<CutsceneBossEncounterCoordinator>();
+        if (intro != null) intro.enabled = false;
+        var arena = Object.FindFirstObjectByType<BossEncounterTrigger>();
+        if (arena != null) arena.AutoBeginEncounter = true;
         BossCombatController controller = Object.FindFirstObjectByType<BossCombatController>();
         if (controller != null) controller.AutomaticPatterns = false;
     }

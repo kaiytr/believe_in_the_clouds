@@ -552,30 +552,41 @@ public sealed class StageIntegrationPlayModeTests
         yield return EnterStageBoss();
         var boss = Object.FindFirstObjectByType<BossCombatController>();
         var player = Player.GetComponent<PlayerHealth>();
-        // Use the actual StageTest settings, prefabs, terrain and collider at their authored values.
+        BossCloudField field = boss.Clouds;
+        field.SetMotionEnabled(false);
+        float x = field.LimitsX.x + 6f;
+        void MoveCloud(BossCloudPlatform cloud, float targetX)
+        {
+            Vector2 position = new Vector2(targetX, cloud.Position.y);
+            cloud.transform.position = position;
+            var body = cloud.GetComponent<Rigidbody2D>();
+            if (body != null) body.position = position;
+        }
+
+        foreach (BossCloudPlatform storm in field.StormClouds) MoveCloud(storm, x);
         for (int attempt = 0; attempt < 3; attempt++)
         {
             boss.PauseAndCancelForTest();
             player.ResetHealth();
-            PutPlayer(new Vector2(-4f, -2.3f));
+            foreach (BossCloudPlatform white in field.WhiteClouds) MoveCloud(white, field.LimitsX.y - 2f);
+            if (attempt != 1) MoveCloud(field.WhiteClouds[0], x);
+            Physics2D.SyncTransforms();
+            Vector2 center = new Vector2(x, field.FloorY + 1f);
+            PutPlayer((Vector2)Player.transform.position + center - (Vector2)player.BodyCollider.bounds.center);
             boss.ForcePatternForTest(BossPatternKind.CloudBelief);
-            yield return Until(() => Object.FindFirstObjectByType<BossCloudLightning>() != null);
-            var lightning = Object.FindFirstObjectByType<BossCloudLightning>();
-            var clouds = Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None);
-            Assert.That(clouds.Length, Is.EqualTo(2));
-            var white = clouds.Single(item => item.IsWhite).GetComponent<SpriteRenderer>().bounds;
-            Assert.That(white.min.x, Is.EqualTo(lightning.Shelter.Center.x - lightning.Shelter.Size.x * .5f).Within(.001f));
-            Assert.That(white.max.x, Is.EqualTo(lightning.Shelter.Center.x + lightning.Shelter.Size.x * .5f).Within(.001f));
-            Vector2 offset = attempt == 1 ? Vector2.left * (lightning.Shelter.Size.x * .5f + .1f) : Vector2.zero;
-            PutPlayer((Vector2)Player.transform.position + lightning.Shelter.Center + offset - (Vector2)player.BodyCollider.bounds.center);
+            yield return Until(() => field.LightningActive);
+            BossCloudLightning lightning = field.Lightning;
+            Assert.That(field.StormClouds.Count, Is.InRange(2, 3));
+            Assert.That(field.WhiteClouds.Count, Is.EqualTo(2));
             float belief = boss.CurrentBelief;
             if (attempt == 2)
             {
                 boss.PauseAndCancelForTest();
-                yield return new WaitForSeconds(boss.Settings.CloudWarning + boss.Settings.CloudDuration + .1f);
+                yield return new WaitForSeconds(boss.Settings.CloudDuration + .1f);
                 Assert.That(player.CurrentHp, Is.EqualTo(100f));
-                Assert.That(Object.FindFirstObjectByType<BossCloudLightning>(), Is.Null);
-                Assert.That(Object.FindObjectsByType<BossCloudPlatform>(FindObjectsSortMode.None), Is.Empty);
+                Assert.That(field.LightningActive, Is.False);
+                Assert.That(field.IsPrepared, Is.True, "전투 취소는 상시 구름을 없애지 않는다.");
+                Assert.That(field.WhiteClouds.Count, Is.EqualTo(2));
                 continue;
             }
             yield return Until(() => lightning.HasStruck);
@@ -583,10 +594,9 @@ public sealed class StageIntegrationPlayModeTests
             Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(), Is.Null);
             Assert.That(player.CurrentHp, Is.EqualTo(attempt == 0 ? 100f : 100f - boss.Settings.LightningDamage));
             Assert.That(boss.CurrentBelief, Is.EqualTo(attempt == 0 ? belief - boss.Settings.BeliefReduction : belief));
-            yield return Until(() => !boss.IsPatternRunning);
+            yield return Until(() => !field.LightningActive);
         }
     }
-
     [UnityTest]
     public IEnumerator VisualCaptureStageLayoutSharedUiAndPlayerAfterimages()
     {

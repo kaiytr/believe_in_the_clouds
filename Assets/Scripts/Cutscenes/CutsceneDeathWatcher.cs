@@ -29,7 +29,7 @@ public sealed class CutsceneDeathWatcher : MonoBehaviour
 
     private void Update()
     {
-        if (!watching || played || target == null || runner == null)
+        if (!watching || played || target == null || runner == null || player == null || player.IsDead)
             return;
 
         // A disabled or unloaded enemy is not a death. Only EnemyUnit's real death state qualifies.

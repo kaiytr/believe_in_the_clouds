@@ -42,7 +42,14 @@ public sealed class BossCombatPlayModeTests
         boss.PauseAndCancelForTest(); player.ResetHealth();
     }
     private static void PauseOnLoad(Scene scene, LoadSceneMode mode)
-    { var controller = Object.FindFirstObjectByType<BossCombatController>(); if (controller != null) controller.AutomaticPatterns = false; }
+    {
+        var intro = Object.FindFirstObjectByType<CutsceneBossEncounterCoordinator>();
+        if (intro != null) intro.enabled = false;
+        var arena = Object.FindFirstObjectByType<BossEncounterTrigger>();
+        if (arena != null) arena.AutoBeginEncounter = true;
+        var controller = Object.FindFirstObjectByType<BossCombatController>();
+        if (controller != null) controller.AutomaticPatterns = false;
+    }
     private static void Set(object target,string field,object value)
     { target.GetType().GetField(field,BindingFlags.Instance|BindingFlags.NonPublic).SetValue(target,value); }
     private void PutPlayer(Vector2 position, bool freeze = true)

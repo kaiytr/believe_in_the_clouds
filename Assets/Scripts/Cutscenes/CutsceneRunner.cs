@@ -317,8 +317,10 @@ public sealed class CutsceneRunner : MonoBehaviour
             while (running && generation == runGeneration &&
                    (actor.transform.position - target).sqrMagnitude > 0.0004f)
             {
-                actor.SetWorldPosition(Vector3.MoveTowards(actor.transform.position, target,
-                    speed * Time.unscaledDeltaTime));
+                Vector3 next = Vector3.MoveTowards(actor.transform.position, target, speed * Time.unscaledDeltaTime);
+                if (actor.Enemy != null && actor.Body != null)
+                    actor.Body.linearVelocity = (next - actor.transform.position) / Mathf.Max(.0001f, Time.unscaledDeltaTime);
+                actor.SetWorldPosition(next);
                 yield return null;
             }
         }
@@ -326,6 +328,7 @@ public sealed class CutsceneRunner : MonoBehaviour
         if (running && generation == runGeneration)
         {
             actor.SetWorldPosition(target);
+            if (actor.Enemy != null && actor.Body != null) actor.Body.linearVelocity = Vector2.zero;
             actor.SetCutscenePose(CutscenePose.Idle);
         }
     }
@@ -398,7 +401,6 @@ public sealed class CutsceneRunner : MonoBehaviour
         playerDash = player.GetComponent<PlayerDash>();
         playerBody = player.GetComponent<Rigidbody2D>();
 
-        previousControlLocked = playerMove != null && playerMove.ControlLocked;
         playerDashWasEnabled = playerDash != null && playerDash.enabled;
 
         if (playerAttack != null && playerAttack.IsAttacking)
@@ -410,6 +412,8 @@ public sealed class CutsceneRunner : MonoBehaviour
             dashDisabledForCutscene = true;
         }
 
+        // 취소한 공격/대시가 소유하던 잠금은 복원하지 않는다.
+        previousControlLocked = playerMove != null && playerMove.ControlLocked;
         if (playerMove != null)
             playerMove.ControlLocked = previousControlLocked;
         if (playerBody != null)
