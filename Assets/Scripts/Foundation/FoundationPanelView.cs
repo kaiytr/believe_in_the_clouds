@@ -184,7 +184,6 @@ public class FoundationPanelView : MonoBehaviour
         borderRect.pivot = new Vector2(0.5f, 0.5f);
         borderRect.anchoredPosition = Vector2.zero;
         borderRect.sizeDelta = new Vector2(1344f, 800f);
-        borderRect.localScale = Vector3.one * 0.7f;
 
         GameObject panel = UiTheme.CreateImage("Panel", border.transform, PanelBackground);
         RectTransform panelRect = panel.GetComponent<RectTransform>();
