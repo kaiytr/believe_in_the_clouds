@@ -15,6 +15,7 @@ public class ThrowStoneAttack : EnemyAttack
     [SerializeField] private DangerIndicator dangerIndicatorPrefab;
     [SerializeField, Min(0.01f)] private float indicatorWidth = 0.3f;
 
+    private Vector2 lockedOrigin;
     private Vector2 launchOrigin;
     private float lockedProjectileDistance;
 
@@ -43,7 +44,15 @@ public class ThrowStoneAttack : EnemyAttack
 
         Vector2 origin = GetSpawnPosition();
         Vector2 targetPoint = body.ClosestPoint(origin);
-        return Vector2.Distance(origin, targetPoint) <= attackRange &&
+        Vector2 toTarget = targetPoint - origin;
+        float targetDistance = toTarget.magnitude;
+        Vector2 direction = targetDistance > 0.0001f
+            ? toTarget / targetDistance
+            : new Vector2(transform.localScale.x >= 0f ? 1f : -1f, 0f);
+        float clearDistance = believer.GetProjectileClearDistance(origin, direction, attackRange,
+            projectilePrefab != null ? projectilePrefab.CollisionDiameter : 0f);
+
+        return targetDistance <= attackRange && targetDistance <= clearDistance + 0.01f &&
                believer.HasClearProjectilePath(target, origin, targetPoint);
     }
 
@@ -60,7 +69,12 @@ public class ThrowStoneAttack : EnemyAttack
 
     protected override void PrepareAttack(Transform target)
     {
-        lockedProjectileDistance = attackRange;
+        lockedOrigin = GetSpawnPosition();
+        BelieverEnemy believer = owner as BelieverEnemy;
+        lockedProjectileDistance = believer != null
+            ? believer.GetProjectileClearDistance(lockedOrigin, LockedDirection, attackRange,
+                projectilePrefab != null ? projectilePrefab.CollisionDiameter : 0f)
+            : attackRange;
     }
 
     protected override DangerIndicator ShowDangerIndicator()
@@ -68,15 +82,17 @@ public class ThrowStoneAttack : EnemyAttack
         if (dangerIndicatorPrefab == null)
             return null;
 
-        Transform origin = projectileSpawnPoint != null ? projectileSpawnPoint : transform;
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.SetupFollowing(origin, LockedDirection, new Vector2(lockedProjectileDistance, indicatorWidth));
+        float angle = Mathf.Atan2(LockedDirection.y, LockedDirection.x) * Mathf.Rad2Deg;
+        Vector2 center = lockedOrigin + LockedDirection * (lockedProjectileDistance * 0.5f);
+        indicator.Setup(center, angle, new Vector2(lockedProjectileDistance, indicatorWidth));
+        indicator.SetDirection(LockedDirection);
         return indicator;
     }
 
     protected override bool IsPlayerInThreatRange(Collider2D bodyCollider)
     {
-        return IsBodyInThrowLane(bodyCollider, GetSpawnPosition(), lockedProjectileDistance);
+        return IsBodyInThrowLane(bodyCollider, lockedOrigin, lockedProjectileDistance);
     }
 
     private bool IsBodyInThrowLane(Collider2D bodyCollider, Vector2 origin, float length)
@@ -104,8 +120,8 @@ public class ThrowStoneAttack : EnemyAttack
         }
 
         MarkAttackAsLaunched();
-        Vector2 spawnPosition = GetSpawnPosition();
-        launchOrigin = spawnPosition;
+        Vector2 spawnPosition = lockedOrigin;
+        launchOrigin = lockedOrigin;
         float angle = Mathf.Atan2(LockedDirection.y, LockedDirection.x) * Mathf.Rad2Deg;
         StoneProjectile projectile = Instantiate(
             projectilePrefab,

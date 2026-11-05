@@ -24,6 +24,9 @@ public class DogChargeAttack : EnemyAttack
     private CombatAfterimageEmitter afterimages;
     private static readonly WaitForFixedUpdate PhysicsTick = new WaitForFixedUpdate();
     private float lockedDirectionX;
+    private Vector2 lockedChargeOrigin;
+    private float lockedChargeDistance;
+    private bool lockedChargeBlockedByObstacle;
     private Vector2 chargeStartPosition;
     private bool isCharging;
     private bool hasResolvedPlayerContact;
@@ -76,7 +79,46 @@ public class DogChargeAttack : EnemyAttack
             horizontalOffset * direction < -0.01f)
             return false;
 
-        return HasClearChargePath(target, direction);
+        Collider2D targetCollider = PlayerBodyCollider;
+        float clearDistance = GetClearChargeDistance(direction, out _);
+        return targetCollider != null &&
+               IsBodyInChargeCorridor(targetCollider, transform.position, direction, clearDistance) &&
+               HasClearChargePath(target, direction);
+    }
+
+    private float GetClearChargeDistance(float direction, out bool blocked)
+    {
+        blocked = false;
+        Collider2D dogCollider = owner != null ? owner.BodyCollider : null;
+        if (dogCollider == null || obstacleLayer.value == 0)
+            return 0f;
+
+        Bounds bounds = dogCollider.bounds;
+        Vector2 center = bounds.center;
+        Vector2 size = bounds.size;
+        float clearDistance = chargeDistance;
+        var hits = CombatPhysics.Cast(center, size, Vector2.right * direction, chargeDistance,
+            obstacleLayer.value, circle: false);
+        for (int i = 0; i < hits.Count; i++)
+        {
+            Collider2D hitCollider = hits[i].collider;
+            if (hitCollider == null || hitCollider.isTrigger ||
+                hitCollider.transform == transform || hitCollider.transform.IsChildOf(transform))
+                continue;
+
+            // The supporting floor is beneath the dog, not a wall in its charge path.
+            if (hitCollider.bounds.max.y <= center.y - size.y * 0.5f + 0.04f ||
+                Vector2.Dot(hits[i].normal, Vector2.right * direction) >= -0.05f)
+                continue;
+
+            if (hits[i].distance < clearDistance)
+            {
+                clearDistance = Mathf.Max(0f, hits[i].distance - 0.01f);
+                blocked = true;
+            }
+        }
+
+        return clearDistance;
     }
 
     private bool HasClearChargePath(Transform target, float direction)
@@ -114,6 +156,8 @@ public class DogChargeAttack : EnemyAttack
     protected override void PrepareAttack(Transform target)
     {
         lockedDirectionX = LockedFacingDirection;
+        lockedChargeOrigin = transform.position;
+        lockedChargeDistance = GetClearChargeDistance(lockedDirectionX, out lockedChargeBlockedByObstacle);
         hasResolvedPlayerContact = false;
         playerContactAppliedHarm = false;
         blockedByObstacle = false;
@@ -126,24 +170,23 @@ public class DogChargeAttack : EnemyAttack
             return null;
 
         DangerIndicator indicator = Instantiate(dangerIndicatorPrefab);
-        indicator.SetupFollowing(
-            transform,
-            new Vector2(lockedDirectionX, 0f),
-            new Vector2(chargeDistance, indicatorHeight),
-            showDirectionMarker: false);
+        Vector2 center = lockedChargeOrigin + Vector2.right * (lockedDirectionX * lockedChargeDistance * 0.5f);
+        indicator.Setup(center, 0f, new Vector2(lockedChargeDistance, indicatorHeight));
         return indicator;
     }
 
     protected override bool IsPlayerInThreatRange(Collider2D bodyCollider)
     {
-        Vector2 origin = transform.position;
-        return IsBodyInChargeCorridor(bodyCollider, origin);
+        return IsBodyInChargeCorridor(bodyCollider, lockedChargeOrigin, lockedDirectionX, lockedChargeDistance);
     }
 
-    private bool IsBodyInChargeCorridor(Collider2D bodyCollider, Vector2 origin)
+    private bool IsBodyInChargeCorridor(Collider2D bodyCollider, Vector2 origin, float direction, float distance)
     {
-        Vector2 center = origin + new Vector2(lockedDirectionX * chargeDistance * 0.5f, 0f);
-        return ColliderOverlapsBox(bodyCollider, center, new Vector2(chargeDistance, indicatorHeight));
+        if (bodyCollider == null || distance <= 0f)
+            return false;
+
+        Vector2 center = origin + Vector2.right * (direction * distance * 0.5f);
+        return ColliderOverlapsBox(bodyCollider, center, new Vector2(distance, indicatorHeight));
     }
 
     protected override IEnumerator ExecuteAttackRoutine()
@@ -168,23 +211,30 @@ public class DogChargeAttack : EnemyAttack
             yield break;
         }
 
-        float maximumChargeTime = chargeDistance / chargeSpeed + 0.25f;
+        float maximumChargeTime = lockedChargeDistance / chargeSpeed + 0.25f;
         float elapsed = 0f;
         while (!blockedByObstacle && !hasResolvedPlayerContact &&
-               Mathf.Abs(body.position.x - chargeStartPosition.x) < chargeDistance &&
+               Mathf.Abs(body.position.x - chargeStartPosition.x) < lockedChargeDistance &&
                elapsed < maximumChargeTime)
         {
             if (owner == null || owner.IsDead)
                 break;
 
-            body.linearVelocity = new Vector2(lockedDirectionX * chargeSpeed, body.linearVelocity.y);
+            float travelled = Mathf.Abs(body.position.x - chargeStartPosition.x);
+            float stepDistance = Mathf.Min(lockedChargeDistance - travelled, chargeSpeed * Time.fixedDeltaTime);
+            float stepSpeed = stepDistance / Time.fixedDeltaTime;
+            body.linearVelocity = new Vector2(lockedDirectionX * stepSpeed, body.linearVelocity.y);
             SpawnAfterimage();
             elapsed += Time.fixedDeltaTime;
             yield return PhysicsTick;
         }
 
+        if (!blockedByObstacle && lockedChargeBlockedByObstacle &&
+            Mathf.Abs(body.position.x - chargeStartPosition.x) >= lockedChargeDistance - 0.02f)
+            blockedByObstacle = true;
+
         chargeCompleted = !blockedByObstacle && !hasResolvedPlayerContact &&
-                          Mathf.Abs(body.position.x - chargeStartPosition.x) >= chargeDistance - 0.02f;
+                          Mathf.Abs(body.position.x - chargeStartPosition.x) >= lockedChargeDistance - 0.02f;
         body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         owner.SetPhysicalCollisionWithPlayerEnabled(false);
         isCharging = false;
@@ -205,7 +255,7 @@ public class DogChargeAttack : EnemyAttack
         {
             Collider2D playerBody = PlayerBodyCollider;
             bool outsideOriginalCorridor = playerBody != null &&
-                                           !IsBodyInChargeCorridor(playerBody, chargeStartPosition);
+                !IsBodyInChargeCorridor(playerBody, lockedChargeOrigin, lockedDirectionX, lockedChargeDistance);
             ReportOutcome(WasPlayerThreatenedDuringWarning && outsideOriginalCorridor
                 ? AttackOutcome.EvadedByPlayer
                 : AttackOutcome.Missed, completedNormally: true);

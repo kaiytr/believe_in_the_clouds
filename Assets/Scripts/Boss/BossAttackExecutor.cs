@@ -293,8 +293,10 @@ public sealed class BossAttackExecutor : MonoBehaviour
         Vector2 direction = Vector2.right * owner.Facing;
         Vector2 size = owner.BodyCollider.bounds.size;
         Vector2 start = owner.BodyCollider.bounds.center;
-        var corridor = new AttackGeometry(start + direction * Data.DashDistance * 0.5f,
-            new Vector2(Data.DashDistance + size.x, size.y));
+        float warningDistance = BossCombatPhysics.ClearDistance(start, size, direction,
+            Data.DashDistance, owner, false, out _);
+        var corridor = new AttackGeometry(start + direction * warningDistance * 0.5f,
+            new Vector2(warningDistance + size.x, size.y));
         var record = owner.CreateAttack(BossAttackKind.Dash, 0, corridor, Data.DashDamage, owner.RegularAttackBelief, true);
         float speed = Data.DashSpeed * owner.SpeedMultiplier;
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
@@ -338,12 +340,15 @@ public sealed class BossAttackExecutor : MonoBehaviour
         // Include the projectile's cap so the visible warning encloses all swept damage.
         var geometry = AttackGeometry.Corridor(origin - direction * Data.ProjectileDiameter * 0.5f,
             direction, length + Data.ProjectileDiameter, Data.ProjectileDiameter);
+        if (!geometry.Overlaps(owner.PlayerCollider))
+        {
+            yield return Recovery();
+            yield break;
+        }
+
         var record = owner.CreateAttack(BossAttackKind.Projectile, 0, geometry, Data.ProjectileDamage, owner.RegularAttackBelief, true);
         yield return Windup(record, Data.Windup / owner.SpeedMultiplier);
         if (!owner.IsAttackValid(record)) yield break;
-        origin = owner.ProjectileOrigin;
-        length = BossCombatPhysics.ClearDistance(origin, Vector2.one * Data.ProjectileDiameter, direction,
-            maxDistance, owner, true, out endBlocked);
         record.Activate();
         owner.SetActionCue("투사체", AttackHint(record), BossPresentationState.Active, lifetime);
         var projectile = owner.SpawnEffect(Data.ProjectilePrefab);
