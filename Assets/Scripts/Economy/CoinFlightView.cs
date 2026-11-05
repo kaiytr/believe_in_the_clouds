@@ -20,6 +20,7 @@ public sealed class CoinFlightView : MonoBehaviour
     private EconomySettings settings;
     private Canvas canvas;
     private RectTransform canvasRect;
+    private Sprite droppedCoinSprite;
     private readonly Queue<Flight> waiting = new Queue<Flight>();
     private readonly List<Flight> active = new List<Flight>();
     private readonly Stack<Image> pool = new Stack<Image>();
@@ -32,6 +33,9 @@ public sealed class CoinFlightView : MonoBehaviour
     public void Initialize(EconomyService economy, EconomySettings presentationSettings)
     {
         service = economy; settings = presentationSettings;
+        droppedCoinSprite = Resources.Load<Sprite>("UI/Hud/DroppedCoin");
+        if (droppedCoinSprite == null)
+            Debug.LogError("Missing dropped coin artwork at Resources/UI/Hud/DroppedCoin.png.");
         canvas = gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 150; // HUD 100, shop/modal 200.
@@ -184,13 +188,13 @@ public sealed class CoinFlightView : MonoBehaviour
         if (pool.Count > 0) token = pool.Pop();
         else
         {
-            token = UiTheme.CreateImage("Coin", transform, settings.tokenColor).GetComponent<Image>();
-            token.sprite = UiTheme.CircleSprite;
+            token = UiTheme.CreateImage("Coin", transform, Color.white).GetComponent<Image>();
             token.raycastTarget = false;
             CreatedCount++;
         }
+        token.sprite = droppedCoinSprite != null ? droppedCoinSprite : UiTheme.CircleSprite;
         token.rectTransform.sizeDelta = Vector2.one * Mathf.Max(1f, settings.tokenDiameter);
-        token.color = settings.tokenColor;
+        token.color = Color.white;
         token.gameObject.SetActive(true);
         token.enabled = false;
         return token;
