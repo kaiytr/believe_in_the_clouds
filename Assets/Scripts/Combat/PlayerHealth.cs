@@ -8,7 +8,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
     [Header("Invulnerability")]
     [SerializeField] private float invulnerabilityDuration = 1f;
-    [SerializeField] private float blinkInterval = 0.1f;
+    [SerializeField] private float blinkInterval = 0.2f;
     [SerializeField] private Collider2D bodyCollider;
 
     [Header("Doctrine Link")]
