@@ -454,22 +454,23 @@ public class DoctrineHud : MonoBehaviour
         textsRect.offsetMin = new Vector2(52f, 40f);
         textsRect.offsetMax = new Vector2(-56f, -34f);
 
+        // 제목/본문을 왼쪽 정렬한 채 두루마리 안쪽에서 세로 중앙에 묶는다.
+        VerticalLayoutGroup layout = texts.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(0, 0, 0, 0);
+        layout.spacing = 8f;
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
         tooltipTitle = UiTheme.CreateText("TooltipTitle", texts.transform, string.Empty,
             24, tooltipTextColor, TextAnchor.UpperLeft);
-        RectTransform titleRect = tooltipTitle.rectTransform;
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0f, 1f);
-        titleRect.anchoredPosition = Vector2.zero;
-        titleRect.sizeDelta = new Vector2(0f, 36f);
+        tooltipTitle.horizontalOverflow = HorizontalWrapMode.Overflow;
 
         tooltipBody = UiTheme.CreateText("TooltipBody", texts.transform, string.Empty,
             20, tooltipTextColor, TextAnchor.UpperLeft);
-        RectTransform bodyRect = tooltipBody.rectTransform;
-        bodyRect.anchorMin = Vector2.zero;
-        bodyRect.anchorMax = Vector2.one;
-        bodyRect.offsetMin = new Vector2(0f, 0f);
-        bodyRect.offsetMax = new Vector2(0f, -42f);
+        tooltipBody.horizontalOverflow = HorizontalWrapMode.Wrap;
 
         root.SetActive(false);
         tooltipObject = root;
