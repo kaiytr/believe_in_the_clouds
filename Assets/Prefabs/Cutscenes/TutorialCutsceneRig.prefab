@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6287919320172821620}
   - component: {fileID: 1865232554747804037}
   - component: {fileID: 566262445660429538}
+  - component: {fileID: 7741290388113642051}
   m_Layer: 0
   m_Name: TutorialCutsceneRig
   m_TagString: Untagged
@@ -104,3 +105,17 @@ MonoBehaviour:
   playerCharacter: {fileID: 0}
   storyBeliever: {fileID: 0}
   deathWatcher: {fileID: 1865232554747804037}
+--- !u!114 &7741290388113642051
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4749688234510726264}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a60e364e2cf4de39cc637b3e9267d99, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::TutorialTipProviderAdapter
+  runner: {fileID: 6287919320172821620}
+  tipPresenter: {fileID: 0}

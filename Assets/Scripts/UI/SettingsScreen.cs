@@ -43,6 +43,8 @@ public class SettingsScreen : MonoBehaviour
     private bool isOpen;
     private bool isFullscreen;
     private int openedFrame;
+    private float resumedTimeScale = 1f;
+    private bool pausedBySettings;
 
     private readonly List<Sprite> generatedSprites = new List<Sprite>();
 
@@ -124,6 +126,12 @@ public class SettingsScreen : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ESC 설정이 게임을 멈췄는지. 다른 UI(상점/TIP 등)가 열려 있거나
+    /// 컷씬·사망 연출 중에는 ESC를 눌러도 설정이 열리지 않는다.
+    /// </summary>
+    public bool IsPausedBySettings => pausedBySettings;
+
     public void Open()
     {
         if (isOpen)
@@ -144,6 +152,16 @@ public class SettingsScreen : MonoBehaviour
         canvasObject.SetActive(true);
         UiEventSystemBoot.Ensure();
         UiModal.Push(this);
+
+        // ESC 설정이 열리면 게임을 멈춘다. 이미 멈춰 있으면(사망 연출 등)
+        // 그 상태를 건드리지 않고, 닫을 때도 복원하지 않는다.
+        pausedBySettings = false;
+        if (Time.timeScale > 0f)
+        {
+            resumedTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            pausedBySettings = true;
+        }
     }
 
     public void Close()
@@ -159,6 +177,13 @@ public class SettingsScreen : MonoBehaviour
             canvasObject.SetActive(false);
         }
         UiModal.Pop(this);
+        if (pausedBySettings)
+        {
+            pausedBySettings = false;
+            // 닫는 동안 다른 연출이 멈췄으면(사망 등) 덮어쓰지 않는다.
+            if (Time.timeScale <= 0f)
+                Time.timeScale = Mathf.Max(0.01f, resumedTimeScale);
+        }
         PlayerPrefs.Save();
     }
 
