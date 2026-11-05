@@ -51,11 +51,16 @@ public class FoundationPanelView : MonoBehaviour
 
     private const int InitialDoctrineGroups = 3; // 처음에 보여주는 교리 수 (열린 1 + 잠긴 2)
 
+    // 제단 글자 크기. 큰 글자/작은 글자, 조합 슬롯 라벨, 조합 설명 순.
+    private const int LargeTextSize = 30;
+    private const int SmallTextSize = 14;
+    private const int ComboSlotTextSize = 28;
+    private const int ComboDescriptionTextSize = 18;
+
     private Canvas canvas;
     private GameObject content;
     private RectTransform listRoot;
     private Text emptyText;
-    private Text countText;
     private bool isOpen;
 
     // 새 제단 스킨(Assets/Resources/Foundation). 통 배경 PNG를 잘라낸 조각.
@@ -316,7 +321,7 @@ public class FoundationPanelView : MonoBehaviour
         RectTransform scrollRect = scroll.GetComponent<RectTransform>();
         scrollRect.anchorMin = Vector2.zero;
         scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = new Vector2(9f, 30f);
+        scrollRect.offsetMin = new Vector2(9f, 14f);
         scrollRect.offsetMax = new Vector2(-7f, -63f);
 
         ScrollRect scroller = scroll.AddComponent<ScrollRect>();
@@ -357,20 +362,10 @@ public class FoundationPanelView : MonoBehaviour
 
         // 목록이 비었을 때 안내 문구. 스크롤 영역 위에 고정으로 띄운다.
         // (목록 컨텐츠는 비면 높이가 0이라 그 안에 두면 보이지 않는다.)
-        emptyText = UiTheme.CreateText("Empty", viewport.transform, string.Empty, 19,
+        emptyText = UiTheme.CreateText("Empty", viewport.transform, string.Empty, LargeTextSize,
             new Color(0.30f, 0.21f, 0.13f, 1f), TextAnchor.MiddleCenter);
         UiTheme.Stretch(emptyText.rectTransform, 20f);
         emptyText.gameObject.SetActive(false);
-
-        // 인벤토리 개수 요약은 목록 박스 하단 안쪽 여백에 한 줄로 둔다.
-        countText = UiTheme.CreateText("Count", left.transform, string.Empty, 13,
-            new Color(0.30f, 0.21f, 0.13f, 1f), TextAnchor.MiddleCenter);
-        RectTransform countRect = countText.rectTransform;
-        countRect.anchorMin = new Vector2(0f, 0f);
-        countRect.anchorMax = new Vector2(1f, 0f);
-        countRect.pivot = new Vector2(0.5f, 0f);
-        countRect.anchoredPosition = new Vector2(0f, 6f);
-        countRect.sizeDelta = new Vector2(-16f, 20f);
     }
 
     private void BuildTab(Transform parent, ShopColumn column, string label, float x, float width)
@@ -455,13 +450,13 @@ public class FoundationPanelView : MonoBehaviour
 
         // 조각은 개수만큼 한 줄씩 따로 표시하므로 "×N"을 붙이지 않는다.
         // 사진처럼 제목은 크게 굵게, 설명은 작게.
-        string text = $"<size=24><b>{data.Label}</b></size>";
+        string text = $"<size={LargeTextSize}><b>{data.Label}</b></size>";
         if (!string.IsNullOrEmpty(data.Detail))
         {
-            text += $"\n<size=14><color=#5A4632>{data.Detail}</color></size>";
+            text += $"\n<size={SmallTextSize}><color=#5A4632>{data.Detail}</color></size>";
         }
 
-        Text label = UiTheme.CreateText("Label", card.transform, text, 21,
+        Text label = UiTheme.CreateText("Label", card.transform, text, LargeTextSize,
             TabTextActive, TextAnchor.MiddleLeft);
         label.font = UiTheme.GetFont();
         label.fontStyle = FontStyle.Normal;
@@ -640,11 +635,7 @@ public class FoundationPanelView : MonoBehaviour
 
     public void SetCountSummary(string summary)
     {
-        if (countText != null)
-        {
-            countText.font = UiTheme.GetFont();
-            countText.text = summary ?? string.Empty;
-        }
+        // 왼쪽 목록의 "인벤토리 — 주어 N · 조건 N · 결과 N" 요약 줄은 표시하지 않는다.
     }
 
     // 슬롯에 실제 조각이 들어 있는지 (강조색 계산용). 교리 수를 따라 늘어난다.
@@ -689,7 +680,7 @@ public class FoundationPanelView : MonoBehaviour
         bool filled = !string.IsNullOrEmpty(label);
         text.font = UiTheme.GetFont();
         text.fontStyle = filled ? FontStyle.Bold : FontStyle.Normal;
-        text.fontSize = filled ? 20 : 16;
+        text.fontSize = filled ? ComboSlotTextSize : SmallTextSize;
         text.text = filled ? label : string.Empty;
 
         SetSlotFilled(doctrineIndex, column, filled);
@@ -865,7 +856,7 @@ public class FoundationPanelView : MonoBehaviour
         descriptionLayout.minHeight = 46f;
 
         Text text = UiTheme.CreateText("Text", description.transform,
-            $"교리{number}  ·  발동되면 무슨 일이 벌어지는지", 16,
+            $"교리{number}  ·  발동되면 무슨 일이 벌어지는지", ComboDescriptionTextSize,
             SlotText, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform, 10f);
 
@@ -900,7 +891,7 @@ public class FoundationPanelView : MonoBehaviour
             : column == ShopColumn.Condition ? "Alter_Combination_Condition"
             : "Alter_Combination_Result");
 
-        Text text = UiTheme.CreateText("Label", slot.transform, string.Empty, 20,
+        Text text = UiTheme.CreateText("Label", slot.transform, string.Empty, ComboSlotTextSize,
             SlotText, TextAnchor.MiddleCenter);
         UiTheme.Stretch(text.rectTransform, 12f);
 

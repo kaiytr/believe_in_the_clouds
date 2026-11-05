@@ -16,9 +16,9 @@ public class DoctrineHud : MonoBehaviour
     [SerializeField] private PlayerHealth player;
 
     [Header("교리 슬롯")]
-    [SerializeField] private Vector2 doctrinePosition = new Vector2(238f, -40f);
-    [SerializeField] private Vector2 slotSize = new Vector2(88f, 108f);
-    [SerializeField] private float slotSpacing = 7f;
+    [SerializeField] private Vector2 doctrinePosition = new Vector2(252f, 6f);
+    [SerializeField] private Vector2 slotSize = new Vector2(118f, 130f);
+    [SerializeField] private float slotSpacing = 20f;
     [Tooltip("활성 교리가 없을 때 확인용 교리 에셋을 표시한다.")]
     [SerializeField] private List<DoctrineDefinition> previewDoctrines = new List<DoctrineDefinition>();
     [SerializeField] private DoctrineSlotView slotPrefab;
@@ -309,13 +309,14 @@ public class DoctrineHud : MonoBehaviour
         List<Doctrine> doctrines = CollectDoctrines();
         for (int i = 0; i < doctrines.Count; i++)
         {
+            Doctrine doctrine = doctrines[i];
             DoctrineSlotView slot = CreateSlot();
             if (slot == null)
                 continue;
 
             // 목업의 "교리1, 교리2..." 이름과 규칙 요약을 함께 표시한다.
-            string label = $"교리{i + 1}\n{DoctrineText.ShortName(doctrines[i])}";
-            slot.Bind(doctrines[i], label, true);
+            string label = $"교리{i + 1}\n{DoctrineText.ShortName(doctrine)}";
+            slot.Bind(doctrine, label, true);
             slot.Clicked -= HandleSlotClicked;
             slot.Clicked += HandleSlotClicked;
             slots.Add(slot);
@@ -664,6 +665,9 @@ public class DoctrineHud : MonoBehaviour
         doctrineRow.pivot = new Vector2(0f, 1f);
         doctrineRow.anchoredPosition = doctrinePosition;
         doctrineRow.sizeDelta = new Vector2(slotSize.x, slotSize.y);
+
+        // 목업처럼 HP 바가 두루마리 아래쪽을 덮도록 바를 앞에 그린다.
+        row.transform.SetSiblingIndex(0);
     }
 
     private void BuildHpBar()
