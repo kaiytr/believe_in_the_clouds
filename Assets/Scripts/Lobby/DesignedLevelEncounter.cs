@@ -9,6 +9,7 @@ public sealed class DesignedLevelEncounter : MonoBehaviour
     [SerializeField] private Camera view;
     [SerializeField] private LobbyCameraFollow exploration;
     [SerializeField] private BoxCollider2D entranceSeal, farSeal;
+    [SerializeField] private float arenaMinY = -5f, arenaMaxY = 7f;
     private bool locked, cleared;
     private float explorationSize;
 
@@ -58,8 +59,9 @@ public sealed class DesignedLevelEncounter : MonoBehaviour
         {
             float left = entranceSeal.transform.position.x;
             float right = farSeal.transform.position.x;
-            view.orthographicSize = Mathf.Max(explorationSize, (right - left + 1.5f) / (2f * view.aspect));
-            view.transform.position = new Vector3((left + right) * .5f, 1f, -10f);
+            view.orthographicSize = Mathf.Max(explorationSize, Mathf.Max(
+                (right - left + 1.5f) / (2f * view.aspect), (arenaMaxY - arenaMinY) * .5f));
+            view.transform.position = new Vector3((left + right) * .5f, (arenaMinY + arenaMaxY) * .5f, -10f);
         }
     }
 

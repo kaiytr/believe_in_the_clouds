@@ -641,6 +641,69 @@ TextureImporter:
   - first:
       213: 188700006
     second: InteriorColumnBase
+  - first:
+      213: 188700100
+    second: InteriorGround0_0
+  - first:
+      213: 188700101
+    second: InteriorGround1_0
+  - first:
+      213: 188700102
+    second: InteriorGround2_0
+  - first:
+      213: 188700103
+    second: InteriorGround3_0
+  - first:
+      213: 188700104
+    second: InteriorGround0_1
+  - first:
+      213: 188700105
+    second: InteriorGround1_1
+  - first:
+      213: 188700106
+    second: InteriorGround2_1
+  - first:
+      213: 188700107
+    second: InteriorGround3_1
+  - first:
+      213: 188700108
+    second: InteriorGround0_2
+  - first:
+      213: 188700109
+    second: InteriorGround1_2
+  - first:
+      213: 188700110
+    second: InteriorGround2_2
+  - first:
+      213: 188700111
+    second: InteriorGround3_2
+  - first:
+      213: 188700112
+    second: InteriorGround0_3
+  - first:
+      213: 188700113
+    second: InteriorGround1_3
+  - first:
+      213: 188700114
+    second: InteriorGround2_3
+  - first:
+      213: 188700115
+    second: InteriorGround3_3
+  - first:
+      213: 188700200
+    second: InteriorLedgeLeft
+  - first:
+      213: 188700201
+    second: InteriorLedgeRight
+  - first:
+      213: 188700210
+    second: InteriorWindowArch
+  - first:
+      213: 188700211
+    second: InteriorWindowJamb
+  - first:
+      213: 188700212
+    second: InteriorWindowSill
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -1659,6 +1722,468 @@ TextureImporter:
       indices:
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_0
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52ceb28760985d528b26148145e0cc52
+      internalID: 188700100
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_0
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2921961cc6e513f99df09c8cd90fcfd
+      internalID: 188700101
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_0
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6e5b2874ed45c0aabdfb086ff70c7b9
+      internalID: 188700102
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_0
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e19e8bd0996f5e8cbdf0e0c69081ab02
+      internalID: 188700103
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_1
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17d4b213236c5daa9a369b9dfd75c208
+      internalID: 188700104
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_1
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 624f0a0bf6ba55f1842f8828670064cc
+      internalID: 188700105
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_1
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a9013a0c97465ca0a106fd339398ad10
+      internalID: 188700106
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_1
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 76839088aec35141a4edfa067cff7366
+      internalID: 188700107
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_2
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30baa023602a52b1bbeeecd09efc8f15
+      internalID: 188700108
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_2
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a676edbc70105604bd1add60fc67e520
+      internalID: 188700109
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_2
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9086ca18cbf05a6a90e323843b00ce99
+      internalID: 188700110
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_2
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d0a2a9c91744561b95109ce6313064f7
+      internalID: 188700111
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_3
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b436d347e8c5f579bc64db831b73ad8
+      internalID: 188700112
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_3
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd483422fb855858a06e71beede5dfec
+      internalID: 188700113
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_3
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08cb36d033005344bc62e3ca41249588
+      internalID: 188700114
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_3
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d9db544f03a5aeeb0f3ac1a55a6ebb7
+      internalID: 188700115
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorLedgeLeft
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 656
+        width: 48
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40fbbad7fd5d5215a74648ec9fb2a465
+      internalID: 188700200
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorLedgeRight
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 656
+        width: 48
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 16661646119758e98c532938b87e2fc3
+      internalID: 188700201
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowArch
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1152
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b99afe74cb665ee8b89299ba51762adb
+      internalID: 188700210
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowJamb
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1136
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 20fa9f4006415395b0110afab06d3e6c
+      internalID: 188700211
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowSill
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1120
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 063780c677a45affb090bba399f449d6
+      internalID: 188700212
+      vertices: []
+      indices:
+      edges: []
+      weights: []
     outline: []
     customData:
     physicsShape: []
@@ -1715,6 +2240,27 @@ TextureImporter:
       InteriorColumnShaft: 188700004
       InteriorColumnCapital: 188700005
       InteriorColumnBase: 188700006
+      InteriorGround0_0: 188700100
+      InteriorGround1_0: 188700101
+      InteriorGround2_0: 188700102
+      InteriorGround3_0: 188700103
+      InteriorGround0_1: 188700104
+      InteriorGround1_1: 188700105
+      InteriorGround2_1: 188700106
+      InteriorGround3_1: 188700107
+      InteriorGround0_2: 188700108
+      InteriorGround1_2: 188700109
+      InteriorGround2_2: 188700110
+      InteriorGround3_2: 188700111
+      InteriorGround0_3: 188700112
+      InteriorGround1_3: 188700113
+      InteriorGround2_3: 188700114
+      InteriorGround3_3: 188700115
+      InteriorLedgeLeft: 188700200
+      InteriorLedgeRight: 188700201
+      InteriorWindowArch: 188700210
+      InteriorWindowJamb: 188700211
+      InteriorWindowSill: 188700212
   mipmapLimitGroupName:
   pSDRemoveMatte: 0
   userData:

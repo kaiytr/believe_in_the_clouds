@@ -21,6 +21,9 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField, Tooltip("Horizontal player limits for a non-lobby stage.")]
     private float stageMinX = -10f;
     [SerializeField] private float stageMaxX = 10f;
+    [SerializeField] private float stageMaxY = 8f;
+    [SerializeField] private float lobbyMinX = -23f, lobbyMaxX = 31f;
+    [SerializeField] private Vector2 lobbyTitlePosition = new Vector2(-15f, 2.3f);
     [SerializeField] private TemporaryStageExit authoredExit;
     [SerializeField] private bool showTestTools = true;
     public bool IsLobby => isLobby;
@@ -54,8 +57,8 @@ public sealed class LobbySceneController : MonoBehaviour
         if (player == null) player = FindFirstObjectByType<PlayerHealth>();
         BuildUi(); flow.Attach(this);
     }
-    public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? -23f : stageMinX, isLobby ? 31f : stageMaxX),
-        Mathf.Clamp(position.y, authoredExit != null ? -3f : -1.95f, 8f));
+    public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? lobbyMinX : stageMinX, isLobby ? lobbyMaxX : stageMaxX),
+        Mathf.Clamp(position.y, authoredExit != null ? -3f : -1.95f, stageMaxY));
 
     public void SetPlayable(bool value)
     {
@@ -113,7 +116,7 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             SpawnFoundation(generated.transform);
             SpawnBranches(run, generated.transform);
-            WorldLabel(generated.transform, "Lobby title", "다음 목적지를 선택하세요", new Vector2(-15, 2.3f), new Color(.75f, .86f, .95f));
+            WorldLabel(generated.transform, "Lobby title", "다음 목적지를 선택하세요", lobbyTitlePosition, new Color(.75f, .86f, .95f));
         }
         else
         {
