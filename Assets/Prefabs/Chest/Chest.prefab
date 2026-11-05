@@ -111,7 +111,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 422bf4f1c4dd4e3fbd857f69137f758c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::ChestInteractable
-  interactRadius: 2.5
+  interactRadius: 1.4
   promptText: "E : \uC0C1\uD638\uC791\uC6A9"
   displayName: 
   spawnId: chest-01
