@@ -360,6 +360,70 @@ public class DoctrineManager : MonoBehaviour
         return ResolveCooldown(doctrine);
     }
 
+    // UI: remaining cooldown for the exact entry+target that just triggered.
+    // Returns 0 when ready, when the target has no cooldown, or when the
+    // doctrine has no cooldown at all.
+    public float GetCooldownRemaining(ActiveDoctrine entry, GameObject target)
+    {
+        if (entry == null || entry.Doctrine == null)
+        {
+            return 0f;
+        }
+
+        if (ResolveCooldown(entry.Doctrine) <= 0f)
+        {
+            return 0f;
+        }
+
+        string key = CooldownKey(entry, target);
+        float now = Time.time;
+        for (int i = 0; i < cooldowns.Count; i++)
+        {
+            if (cooldowns[i].Key == key)
+            {
+                return Mathf.Max(0f, cooldowns[i].ReadyAt - now);
+            }
+        }
+
+        return 0f;
+    }
+
+    // UI: longest remaining cooldown among every target of this entry.
+    // Used when the HUD rebuilds its slots while a cooldown is still running
+    // (targets have separate cooldown keys, e.g. Explode per enemy).
+    public float GetCooldownRemaining(ActiveDoctrine entry)
+    {
+        if (entry == null || entry.Doctrine == null)
+        {
+            return 0f;
+        }
+
+        if (ResolveCooldown(entry.Doctrine) <= 0f)
+        {
+            return 0f;
+        }
+
+        string prefix = CooldownPrefix(entry);
+        float now = Time.time;
+        float remaining = 0f;
+        for (int i = 0; i < cooldowns.Count; i++)
+        {
+            string key = cooldowns[i].Key;
+            if (key == null || !key.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            float targetRemaining = cooldowns[i].ReadyAt - now;
+            if (targetRemaining > remaining)
+            {
+                remaining = targetRemaining;
+            }
+        }
+
+        return Mathf.Max(0f, remaining);
+    }
+
     private bool IsOnCooldown(ActiveDoctrine entry, GameObject target)
     {
         float cooldown = ResolveCooldown(entry.Doctrine);

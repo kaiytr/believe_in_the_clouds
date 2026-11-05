@@ -37,7 +37,8 @@ public sealed class BossCombatHud : MonoBehaviour
         if (font == null) Debug.LogError("Boss HUD: install a Korean font or configure preferredFont.", this);
         if (canvas != null)
             foreach (Text text in canvas.GetComponentsInChildren<Text>(true)) if (font != null) text.font = font;
-        gameplayHud.Initialize(boss, font);
+        // 머리 위 믿음 말풍선만 그리운 심심체를 쓴다.
+        gameplayHud.Initialize(boss, CombatUiResources.BeliefFont(preferredFont));
         previousHp = boss.CurrentHp;
         previousBelief = boss.CurrentBelief;
         SetDebugVisible(DebugVisible);

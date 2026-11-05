@@ -2,11 +2,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 폭발 교리 발동 시 터지는 순간 연출. A세트:
-//   1) 코어 플래시 (0.1초): 흰-노랑 원이 확 켜졌다 꺼진다
-//   2) 충격파 링 (0.35초): 주황 링이 0.3배 → 1.0배로 퍼지며 페이드 (최종 크기 = 실제 데미지 반경)
-//   3) 화염 글로우 (0.4초): 바닥에 깔리는 주황 타원 광원
-//   4) 스파크 (20~30개): 중심에서 방사형으로 튀고 중력 낙하, 흰→주황→빨강
-//   5) 연기 (8~10개): 회색 원이 천천히 위로 오르며 0.8초간 사라진다
+//   1) 코어 플래시 (0.1초): 흰색 원이 확 켜졌다 꺼진다
+//   2) 충격파 링 (0.35초): 흰빛 링이 0.3배 → 1.0배로 퍼지며 페이드 (최종 크기 = 실제 데미지 반경)
+//   3) 빛 글로우 (0.4초): 바닥에 깔리는 옅은 흰빛 광원
+//   4) 스파크 (20~30개): 중심에서 방사형으로 튀고 중력 낙하, 흰색→옅은 회백색
+//   5) 연기 (8~10개): 밝은 회색 원이 천천히 위로 오르며 0.8초간 사라진다
 //
 // 대상의 자식으로 두지 않고 씬 루트에 둔다.
 // 플레이어는 좌우 반전을 localScale.x 부호로 하므로 자식으로 두면
@@ -16,13 +16,13 @@ using UnityEngine.SceneManagement;
 // EditMode 테스트에서 오브젝트가 남지 않도록 플레이 중에만 생성한다.
 public sealed class DoctrineExplodeEffect : MonoBehaviour
 {
-    private static readonly Color CoreColor = new Color(1f, 0.96f, 0.82f, 1f);
-    private static readonly Color RingColor = new Color(1f, 0.55f, 0.15f, 1f);
-    private static readonly Color GlowColor = new Color(1f, 0.45f, 0.10f, 1f);
-    private static readonly Color SparkHotColor = new Color(1f, 0.95f, 0.80f, 1f);
-    private static readonly Color SparkMidColor = new Color(1f, 0.60f, 0.18f, 1f);
-    private static readonly Color SparkColdColor = new Color(0.75f, 0.25f, 0.10f, 1f);
-    private static readonly Color SmokeColor = new Color(0.35f, 0.32f, 0.30f, 1f);
+    private static readonly Color CoreColor = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color RingColor = new Color(1f, 0.97f, 0.92f, 1f);
+    private static readonly Color GlowColor = new Color(1f, 0.95f, 0.88f, 1f);
+    private static readonly Color SparkHotColor = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color SparkMidColor = new Color(1f, 0.97f, 0.91f, 1f);
+    private static readonly Color SparkColdColor = new Color(0.82f, 0.80f, 0.78f, 1f);
+    private static readonly Color SmokeColor = new Color(0.80f, 0.79f, 0.78f, 1f);
 
     private const float TotalDuration = 0.7f;
     private const float FlashDuration = 0.1f;
@@ -106,7 +106,7 @@ public sealed class DoctrineExplodeEffect : MonoBehaviour
         int layer = bodyHint != null ? bodyHint.sortingLayerID : 0;
         int order = bodyHint != null ? bodyHint.sortingOrder : 0;
 
-        // 1) 코어 플래시: 흰-노랑 원, radius*0.8. 캐릭터 앞(+5).
+        // 1) 코어 플래시: 흰색 원, radius*0.8. 캐릭터 앞(+5).
         flash = CreateRenderer("Flash", CoreSprite, layer, order + 5);
         flash.transform.position = blastCenter;
         flash.transform.localScale = Vector3.one * (blastRadius * 1.6f);
@@ -119,7 +119,7 @@ public sealed class DoctrineExplodeEffect : MonoBehaviour
         ring.transform.localScale = ringBaseScale * 0.3f;
         ring.color = WithAlpha(RingColor, 0.9f);
 
-        // 3) 화염 글로우: 바닥에 깔리는 타원. 캐릭터 뒤(-1).
+        // 3) 빛 글로우: 바닥에 깔리는 타원. 캐릭터 뒤(-1).
         glow = CreateRenderer("FireGlow", GlowSprite, layer, order - 1);
         glow.transform.position = blastCenter + Vector3.down * (blastRadius * 0.15f);
         glow.transform.localScale = new Vector3(blastRadius * 1.8f, blastRadius * 0.9f, 1f);
@@ -131,7 +131,7 @@ public sealed class DoctrineExplodeEffect : MonoBehaviour
         bornAt = Time.time;
     }
 
-    // 중심에서 방사형으로 튀는 불꽃. 흰→주황→빨강으로 식는다.
+    // 중심에서 방사형으로 튀는 불꽃. 흰색→옅은 회백색으로 식는다.
     private void CreateSparks(int layer, int order)
     {
         sparks = new SpriteRenderer[SparkCount];
@@ -300,7 +300,7 @@ public sealed class DoctrineExplodeEffect : MonoBehaviour
             position.x += Mathf.Sin((local * 8f) + sparkSeed[i]) * 0.05f;
             spark.transform.position = position;
 
-            // 흰→주황→빨강으로 식으며 사라진다.
+            // 흰색→옅은 회백색으로 식으며 사라진다.
             Color color = t < 0.3f
                 ? Color.Lerp(SparkHotColor, SparkMidColor, t / 0.3f)
                 : Color.Lerp(SparkMidColor, SparkColdColor, (t - 0.3f) / 0.7f);
@@ -444,7 +444,7 @@ public sealed class DoctrineExplodeEffect : MonoBehaviour
         }
     }
 
-    // 바닥 화염 광원.
+    // 바닥 빛 광원.
     private static Sprite GlowSprite
     {
         get

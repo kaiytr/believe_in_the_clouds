@@ -10,12 +10,48 @@ public class DoctrineSlotView : MonoBehaviour
 {
     [SerializeField] private Image background;
     [SerializeField] private Image triggerFlash;
+    [SerializeField] private Image cooldownMask;
     [SerializeField] private Text label;
+
+    // 쿨타임 마스크 색. 아이콘 아트 위에 얹어도 형태가 보이도록 어둡게 반투명.
+    private static readonly Color CooldownMaskColor = new Color(0.05f, 0.05f, 0.08f, 0.62f);
 
     private Doctrine doctrine;
     private Coroutine flashRoutine;
     private Color baseBackground;
     private Button button;
+
+    // 쿨타임 마스크 진행 상태. 남은 시간이 0이 되면 마스크를 끈다.
+    private float cooldownEndTime;
+    private float cooldownDuration;
+
+    // 교리 목록 두루마리 아트 (Design/Doctrine/교리 1.png → Resources/UI/Doctrine/DoctrineSlot).
+    // Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
+    private static Sprite slotSprite;
+    private static bool slotSpriteLoaded;
+
+    private static Sprite LoadSlotSprite()
+    {
+        if (slotSpriteLoaded)
+        {
+            return slotSprite;
+        }
+
+        slotSpriteLoaded = true;
+        slotSprite = Resources.Load<Sprite>("UI/Doctrine/DoctrineSlot");
+        if (slotSprite == null)
+        {
+            Texture2D texture = Resources.Load<Texture2D>("UI/Doctrine/DoctrineSlot");
+            if (texture != null)
+            {
+                slotSprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                slotSprite.name = "DoctrineSlot";
+            }
+        }
+
+        return slotSprite;
+    }
 
     /// <summary>이 칸이 표시하는 교리. 빈 칸이면 null.</summary>
     public Doctrine Doctrine => doctrine;
@@ -34,17 +70,47 @@ public class DoctrineSlotView : MonoBehaviour
 
         if (background != null)
         {
-            background.color = filled ? UiTheme.SlotFill : UiTheme.SlotFillEmpty;
+            Sprite art = LoadSlotSprite();
+            if (art != null)
+            {
+                background.sprite = art;
+                background.type = Image.Type.Simple;
+                background.preserveAspect = false;
+                // 목업처럼 칸 3개가 모두 같은 두루마리로 보이게 한다 (빈 칸은 글자만 없다).
+                background.color = Color.white;
+            }
+            else
+            {
+                background.color = filled ? UiTheme.SlotFill : UiTheme.SlotFillEmpty;
+            }
+
             baseBackground = background.color;
         }
 
+        // 배경 아트가 정해진 뒤에 마스크를 준비한다 (같은 실루엣으로 덮기 위해).
+        EnsureCooldownMask();
+        ClearCooldown();
+
         if (label != null)
         {
-            // OS 폰트는 런타임에 만들어져 프리팹에 저장되지 않는다.
-            // 프리팹 인스턴스에서도 한글이 보이도록 매번 지정한다.
+            // 두루마리 아트를 쓰면 칸 안 글자는 표시하지 않는다 (목업처럼 그림만).
+            // 툴팁은 클릭 시 그대로 뜬다.
+            bool hasArt = LoadSlotSprite() != null;
             label.font = UiTheme.GetFont();
-            label.text = string.IsNullOrEmpty(displayName) ? string.Empty : displayName;
+            label.text = hasArt || string.IsNullOrEmpty(displayName) ? string.Empty : displayName;
             label.color = filled ? UiTheme.TextDark : UiTheme.TextMuted;
+            label.gameObject.SetActive(!hasArt && !string.IsNullOrEmpty(displayName));
+
+            // 두루마리 아트는 위쪽에 감긴 막대가 있어 글자를 그 아래 양피지 안쪽에 둔다.
+            if (hasArt && label.rectTransform != null)
+            {
+                label.fontSize = 16;
+                RectTransform labelRect = label.rectTransform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(8f, 10f);
+                labelRect.offsetMax = new Vector2(-8f, -28f);
+            }
         }
 
         if (triggerFlash != null)
@@ -106,6 +172,8 @@ public class DoctrineSlotView : MonoBehaviour
             background = FindImage("Background");
         if (triggerFlash == null)
             triggerFlash = FindImage("TriggerFlash");
+        if (cooldownMask == null)
+            cooldownMask = FindImage("CooldownMask");
         if (label == null)
         {
             Transform child = transform.Find("Label");
@@ -153,8 +221,93 @@ public class DoctrineSlotView : MonoBehaviour
         flashRoutine = null;
     }
 
+    // 쿨타임 마스크. 아이콘 아트와 같은 실루엣을 어둡게 덮고,
+    // 남은 쿨타임 비율만큼만 채워 위쪽 경계가 아래로 내려가며 걷힌다.
+    private void EnsureCooldownMask()
+    {
+        if (cooldownMask == null)
+            cooldownMask = FindImage("CooldownMask");
+
+        if (cooldownMask == null)
+        {
+            GameObject maskObject = UiTheme.CreateImage("CooldownMask", transform, CooldownMaskColor);
+            cooldownMask = maskObject.GetComponent<Image>();
+        }
+
+        UiTheme.Stretch(cooldownMask.rectTransform);
+
+        // 배경 두루마리와 같은 스프라이트를 쓰면 마스크도 같은 형태로 보인다.
+        Sprite art = background != null ? background.sprite : null;
+        cooldownMask.sprite = art != null ? art : UiTheme.WhiteSprite;
+        cooldownMask.type = Image.Type.Filled;
+        cooldownMask.fillMethod = Image.FillMethod.Vertical;
+        cooldownMask.fillOrigin = (int)Image.OriginVertical.Bottom;
+        cooldownMask.fillAmount = 0f;
+        cooldownMask.preserveAspect = false;
+        cooldownMask.raycastTarget = false;
+        cooldownMask.color = CooldownMaskColor;
+
+        // 배경/라벨 위, 발동 섬광 아래에 그린다.
+        // (이미 섬광보다 앞에 있으면 순서를 건드리지 않는다.)
+        if (triggerFlash != null)
+        {
+            int maskIndex = cooldownMask.transform.GetSiblingIndex();
+            int flashIndex = triggerFlash.transform.GetSiblingIndex();
+            if (maskIndex > flashIndex)
+                cooldownMask.transform.SetSiblingIndex(flashIndex);
+        }
+        else
+        {
+            cooldownMask.transform.SetAsLastSibling();
+        }
+    }
+
+    /// <summary>
+    /// 쿨타임 마스크를 시작한다. remaining/duration 비율에서 시작해 0까지 줄어든다.
+    /// 실제로 쿨타임이 걸린 경우에만 호출해야 한다.
+    /// </summary>
+    public void StartCooldown(float remaining, float duration)
+    {
+        EnsureCooldownMask();
+
+        if (cooldownMask == null || duration <= 0f || remaining <= 0f)
+        {
+            ClearCooldown();
+            return;
+        }
+
+        cooldownDuration = duration;
+        cooldownEndTime = Time.time + Mathf.Min(remaining, duration);
+        cooldownMask.fillAmount = Mathf.Clamp01(remaining / duration);
+    }
+
+    public void ClearCooldown()
+    {
+        cooldownDuration = 0f;
+        cooldownEndTime = 0f;
+        if (cooldownMask != null)
+            cooldownMask.fillAmount = 0f;
+    }
+
+    private void Update()
+    {
+        if (cooldownMask == null || cooldownDuration <= 0f)
+            return;
+
+        float remaining = cooldownEndTime - Time.time;
+        if (remaining <= 0f)
+        {
+            ClearCooldown();
+            return;
+        }
+
+        cooldownMask.fillAmount = Mathf.Clamp01(remaining / cooldownDuration);
+    }
+
     private void OnDisable()
     {
+        ClearCooldown();
+
         if (flashRoutine != null)
         {
             StopCoroutine(flashRoutine);
@@ -184,6 +337,11 @@ public class DoctrineSlotView : MonoBehaviour
             14, UiTheme.TextDark, TextAnchor.MiddleCenter);
         UiTheme.Stretch(label.rectTransform, 3f);
 
+        // 쿨타임 마스크는 배경/라벨 위, 발동 섬광 아래에 둔다.
+        GameObject maskObject = UiTheme.CreateImage("CooldownMask", slotObject.transform,
+            CooldownMaskColor);
+        UiTheme.Stretch(maskObject.GetComponent<RectTransform>());
+
         // 반짝임은 맨 위에 덮는다. 레이아웃에는 영향이 없다.
         GameObject flashObject = UiTheme.CreateImage("TriggerFlash", slotObject.transform,
             new Color(1f, 1f, 1f, 0f));
@@ -192,6 +350,7 @@ public class DoctrineSlotView : MonoBehaviour
         DoctrineSlotView slot = slotObject.AddComponent<DoctrineSlotView>();
         slot.background = bgObject.GetComponent<Image>();
         slot.label = label;
+        slot.cooldownMask = maskObject.GetComponent<Image>();
         slot.triggerFlash = flashObject.GetComponent<Image>();
         slot.EnsureClickable();
         return slot;

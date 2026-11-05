@@ -16,9 +16,9 @@ public class DoctrineHud : MonoBehaviour
     [SerializeField] private PlayerHealth player;
 
     [Header("교리 슬롯")]
-    [SerializeField] private Vector2 doctrinePosition = new Vector2(238f, -40f);
-    [SerializeField] private Vector2 slotSize = new Vector2(88f, 108f);
-    [SerializeField] private float slotSpacing = 7f;
+    [SerializeField] private Vector2 doctrinePosition = new Vector2(252f, 6f);
+    [SerializeField] private Vector2 slotSize = new Vector2(118f, 130f);
+    [SerializeField] private float slotSpacing = 20f;
     [Tooltip("활성 교리가 없을 때 확인용 교리 에셋을 표시한다.")]
     [SerializeField] private List<DoctrineDefinition> previewDoctrines = new List<DoctrineDefinition>();
     [SerializeField] private DoctrineSlotView slotPrefab;
@@ -270,9 +270,47 @@ public class DoctrineHud : MonoBehaviour
 
     private void HandleTriggered(DoctrineManager.ActiveDoctrine entry, GameObject target)
     {
+        if (entry == null || entry.Doctrine == null)
+            return;
+
         int index = FindSlotIndex(entry.Doctrine);
-        if (index >= 0 && index < slots.Count)
-            slots[index].PlayTriggerFlash();
+        if (index < 0 || index >= slots.Count)
+            return;
+
+        DoctrineSlotView slot = slots[index];
+        slot.PlayTriggerFlash();
+
+        // Triggered는 효과 성공 여부와 무관하게 호출된다.
+        // 실제로 쿨타임이 걸린 경우에만 마스크를 표시한다.
+        float duration = DoctrineManager.GetCooldownSeconds(entry.Doctrine);
+        float remaining = manager != null ? manager.GetCooldownRemaining(entry, target) : 0f;
+        if (duration > 0f && remaining > 0f)
+            slot.StartCooldown(remaining, duration);
+    }
+
+    private DoctrineManager.ActiveDoctrine FindActiveEntry(Doctrine doctrine)
+    {
+        if (manager == null || doctrine == null)
+            return null;
+
+        IReadOnlyList<DoctrineManager.ActiveDoctrine> active = manager.ActiveDoctrines;
+        for (int i = 0; i < active.Count; i++)
+        {
+            DoctrineManager.ActiveDoctrine entry = active[i];
+            if (entry == null || entry.Doctrine == null)
+                continue;
+
+            if (!entry.Doctrine.HasSameRule(doctrine))
+                continue;
+
+            // CollectDoctrines와 같은 기준: 다른 존재에 묶인 교리는 HUD에 없다.
+            if (entry.Owner != null && (player == null || entry.Owner != player.gameObject))
+                continue;
+
+            return entry;
+        }
+
+        return null;
     }
 
     private int FindSlotIndex(Doctrine doctrine)
@@ -309,15 +347,27 @@ public class DoctrineHud : MonoBehaviour
         List<Doctrine> doctrines = CollectDoctrines();
         for (int i = 0; i < doctrines.Count; i++)
         {
+            Doctrine doctrine = doctrines[i];
             DoctrineSlotView slot = CreateSlot();
             if (slot == null)
                 continue;
 
             // 목업의 "교리1, 교리2..." 이름과 규칙 요약을 함께 표시한다.
-            string label = $"교리{i + 1}\n{DoctrineText.ShortName(doctrines[i])}";
-            slot.Bind(doctrines[i], label, true);
+            string label = $"교리{i + 1}\n{DoctrineText.ShortName(doctrine)}";
+            slot.Bind(doctrine, label, true);
             slot.Clicked -= HandleSlotClicked;
             slot.Clicked += HandleSlotClicked;
+
+            // 다른 교리가 해제되는 등으로 슬롯을 다시 만들어도
+            // 진행 중인 쿨타임 마스크가 사라지지 않게 실제 남은 시간을 복원한다.
+            DoctrineManager.ActiveDoctrine activeEntry = FindActiveEntry(doctrine);
+            float cooldownSeconds = DoctrineManager.GetCooldownSeconds(doctrine);
+            float cooldownRemaining = activeEntry != null && manager != null
+                ? manager.GetCooldownRemaining(activeEntry)
+                : 0f;
+            if (cooldownSeconds > 0f && cooldownRemaining > 0f)
+                slot.StartCooldown(cooldownRemaining, cooldownSeconds);
+
             slots.Add(slot);
         }
 
@@ -453,22 +503,23 @@ public class DoctrineHud : MonoBehaviour
         textsRect.offsetMin = new Vector2(52f, 40f);
         textsRect.offsetMax = new Vector2(-56f, -34f);
 
+        // 제목/본문을 왼쪽 정렬한 채 두루마리 안쪽에서 세로 중앙에 묶는다.
+        VerticalLayoutGroup layout = texts.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(0, 0, 0, 0);
+        layout.spacing = 8f;
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
         tooltipTitle = UiTheme.CreateText("TooltipTitle", texts.transform, string.Empty,
             24, tooltipTextColor, TextAnchor.UpperLeft);
-        RectTransform titleRect = tooltipTitle.rectTransform;
-        titleRect.anchorMin = new Vector2(0f, 1f);
-        titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.pivot = new Vector2(0f, 1f);
-        titleRect.anchoredPosition = Vector2.zero;
-        titleRect.sizeDelta = new Vector2(0f, 36f);
+        tooltipTitle.horizontalOverflow = HorizontalWrapMode.Overflow;
 
         tooltipBody = UiTheme.CreateText("TooltipBody", texts.transform, string.Empty,
             20, tooltipTextColor, TextAnchor.UpperLeft);
-        RectTransform bodyRect = tooltipBody.rectTransform;
-        bodyRect.anchorMin = Vector2.zero;
-        bodyRect.anchorMax = Vector2.one;
-        bodyRect.offsetMin = new Vector2(0f, 0f);
-        bodyRect.offsetMax = new Vector2(0f, -42f);
+        tooltipBody.horizontalOverflow = HorizontalWrapMode.Wrap;
 
         root.SetActive(false);
         tooltipObject = root;
@@ -591,7 +642,7 @@ public class DoctrineHud : MonoBehaviour
         {
             Transform child = canvas.transform.GetChild(i);
             if (child.name != "PlayerHudBand" && child.name != "PlayerStrengthBackground"
-                && child.name != "PlayerPortrait")
+                && child.name != "PlayerPortrait" && child.name != "DoctrineRow")
                 continue;
 
             child.gameObject.SetActive(false);
@@ -657,13 +708,20 @@ public class DoctrineHud : MonoBehaviour
     private void BuildDoctrineRow()
     {
         GameObject row = new GameObject("DoctrineRow", typeof(RectTransform));
-        row.transform.SetParent(bandRect, false);
+        // 체력바 배경(PlayerStrengthBackground)보다 먼저 그려지도록 캔버스 맨 뒤에 둔다.
+        // 밴드 안에 두면 밴드가 배경보다 위에 있어 두루마리가 체력바를 덮는다.
+        row.transform.SetParent(canvas.transform, false);
         doctrineRow = row.GetComponent<RectTransform>();
-        doctrineRow.anchorMin = new Vector2(0f, 1f);
-        doctrineRow.anchorMax = new Vector2(0f, 1f);
+        doctrineRow.anchorMin = new Vector2(0f, 0f);
+        doctrineRow.anchorMax = new Vector2(0f, 0f);
         doctrineRow.pivot = new Vector2(0f, 1f);
-        doctrineRow.anchoredPosition = doctrinePosition;
+        // 기존에는 밴드 위쪽 모서리(anchor/pivot 모두 위)에서 y만큼 위로 올린 위치였다.
+        // 캔버스 좌하단 기준으로는 밴드 높이에 y를 더하면 같은 화면 위치가 된다.
+        doctrineRow.anchoredPosition = new Vector2(doctrinePosition.x, bandHeight + doctrinePosition.y);
         doctrineRow.sizeDelta = new Vector2(slotSize.x, slotSize.y);
+
+        // 체력바 뒤로 보낸다. 이후에 그려지는 배경/게이지가 두루마리 아래쪽을 덮는다.
+        row.transform.SetAsFirstSibling();
     }
 
     private void BuildHpBar()
