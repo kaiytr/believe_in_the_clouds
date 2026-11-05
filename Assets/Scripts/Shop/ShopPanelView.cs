@@ -26,10 +26,13 @@ public class ShopPanelView : MonoBehaviour
     // 교리 카드 아트 원본 크기. 아트 안 좌표를 그대로 쓰기 위해 1:1로 배치한다.
     private const float CardWidth = 405f;
     private const float CardHeight = 159f;
-    private const float GridGapX = 26f;
+    private const float GridGapX = 20f;
     private const float GridGapY = 30f;
     private const float CatalogMarginX = 34f;
     private const float CatalogTop = 44f;
+
+    // 스크롤바가 카드와 겹치지 않도록 뷰포트에서 비워둘 폭.
+    private const float ScrollbarSpace = 16f;
 
     // 장바구니 카드 크기 (아트 원본 300x118).
     private const float CartCardWidth = 300f;
@@ -255,6 +258,8 @@ public class ShopPanelView : MonoBehaviour
         viewport.transform.SetParent(scroll.transform, false);
         RectTransform viewportRect = viewport.GetComponent<RectTransform>();
         UiTheme.Stretch(viewportRect);
+        // 스크롤바 자리만큼 오른쪽을 비운다.
+        viewportRect.offsetMax = new Vector2(-ScrollbarSpace, 0f);
         Image viewportImage = viewport.AddComponent<Image>();
         viewportImage.color = new Color(1f, 1f, 1f, 0.004f);
         viewportImage.raycastTarget = true;
@@ -282,6 +287,11 @@ public class ShopPanelView : MonoBehaviour
         ContentSizeFitter fitter = list.AddComponent<ContentSizeFitter>();
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // 오른쪽 세로 스크롤바.
+        Scrollbar catalogScrollbar = BuildScrollbar(scroll.transform, true);
+        scroller.verticalScrollbar = catalogScrollbar;
+        scroller.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
 
         // 한 행에 [주어, 조건, 결과] 순으로 나열한다.
         IReadOnlyList<ShopEntry> subjects = ShopCatalog.GetColumn(ShopColumn.Subject);
@@ -325,6 +335,61 @@ public class ShopPanelView : MonoBehaviour
         }
     }
 
+    // 세로/가로 스크롤바를 만든다. 트랙은 반투명, 핸들은 패널 톤에 맞춘다.
+    private static Scrollbar BuildScrollbar(Transform parent, bool vertical)
+    {
+        GameObject track = UiTheme.CreateImage(vertical ? "ScrollbarV" : "ScrollbarH", parent,
+            new Color(0.55f, 0.45f, 0.36f, 0.35f));
+        RectTransform trackRect = track.GetComponent<RectTransform>();
+        if (vertical)
+        {
+            trackRect.anchorMin = new Vector2(1f, 0f);
+            trackRect.anchorMax = new Vector2(1f, 1f);
+            trackRect.pivot = new Vector2(1f, 1f);
+            trackRect.offsetMin = new Vector2(-14f, 4f);
+            trackRect.offsetMax = new Vector2(-4f, -4f);
+        }
+        else
+        {
+            trackRect.anchorMin = new Vector2(0f, 0f);
+            trackRect.anchorMax = new Vector2(1f, 0f);
+            trackRect.pivot = new Vector2(0f, 0f);
+            trackRect.offsetMin = new Vector2(4f, 2f);
+            trackRect.offsetMax = new Vector2(-4f, 10f);
+        }
+
+        Image trackImage = track.GetComponent<Image>();
+        trackImage.raycastTarget = true;
+
+        GameObject slidingArea = new GameObject("SlidingArea", typeof(RectTransform));
+        slidingArea.transform.SetParent(track.transform, false);
+        UiTheme.Stretch(slidingArea.GetComponent<RectTransform>());
+
+        GameObject handle = UiTheme.CreateImage("Handle", slidingArea.transform,
+            new Color(0.42f, 0.32f, 0.24f, 0.95f));
+        RectTransform handleRect = handle.GetComponent<RectTransform>();
+        handleRect.anchorMin = Vector2.zero;
+        handleRect.anchorMax = Vector2.one;
+        handleRect.offsetMin = Vector2.zero;
+        handleRect.offsetMax = Vector2.zero;
+        Image handleImage = handle.GetComponent<Image>();
+        handleImage.raycastTarget = true;
+
+        Scrollbar scrollbar = track.AddComponent<Scrollbar>();
+        scrollbar.handleRect = handleRect;
+        scrollbar.targetGraphic = handleImage;
+        scrollbar.direction = vertical ? Scrollbar.Direction.BottomToTop : Scrollbar.Direction.LeftToRight;
+        Navigation navigation = scrollbar.navigation;
+        navigation.mode = Navigation.Mode.None;
+        scrollbar.navigation = navigation;
+
+        ColorBlock colors = scrollbar.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1f, 0.94f, 0.86f, 1f);
+        colors.pressedColor = new Color(0.85f, 0.78f, 0.70f, 1f);
+        scrollbar.colors = colors;
+        return scrollbar;
+    }
     // 카탈로그와 장바구니가 같은 등급 뱃지를 쓰도록 한 곳에서 정한다.
     // "slot"/"heal"은 ShopCatalog에 없으므로 여기서 명시한다.
     private static ShopRarity RarityOf(string id)
@@ -448,7 +513,8 @@ public class ShopPanelView : MonoBehaviour
         scrollRect.pivot = new Vector2(0f, 0.5f);
         scrollRect.anchoredPosition = new Vector2(18f, 0f);
         // 카드 3장(300*3) + 간격 2개(16*2) = 932 만 보이게 한다. 4번째부터는 스크롤로 본다.
-        scrollRect.sizeDelta = new Vector2(932f, CartCardHeight);
+        // 아래 스크롤바 자리(12px)를 포함한 높이.
+        scrollRect.sizeDelta = new Vector2(932f, CartCardHeight + 12f);
 
         ScrollRect scroller = scroll.AddComponent<ScrollRect>();
         scroller.horizontal = true;
@@ -460,6 +526,8 @@ public class ShopPanelView : MonoBehaviour
         viewport.transform.SetParent(scroll.transform, false);
         RectTransform viewportRect = viewport.GetComponent<RectTransform>();
         UiTheme.Stretch(viewportRect);
+        // 아래 스크롤바 자리만큼 비운다.
+        viewportRect.offsetMin = new Vector2(0f, 12f);
         // 레이캐스트를 받아야 휠/드래그가 스크롤로 전달된다.
         Image viewportImage = viewport.AddComponent<Image>();
         viewportImage.color = new Color(1f, 1f, 1f, 0.004f);
@@ -493,6 +561,11 @@ public class ShopPanelView : MonoBehaviour
         ContentSizeFitter fitter = list.AddComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
         fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        // 아래쪽 가로 스크롤바.
+        Scrollbar cartScrollbar = BuildScrollbar(scroll.transform, false);
+        scroller.horizontalScrollbar = cartScrollbar;
+        scroller.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
 
         // 비었을 때 안내 문구.
         GameObject empty = new GameObject("EmptyCart", typeof(RectTransform));
