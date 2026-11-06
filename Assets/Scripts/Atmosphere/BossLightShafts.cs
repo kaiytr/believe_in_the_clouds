@@ -12,8 +12,9 @@ using UnityEngine.Rendering.Universal;
 public sealed class BossLightShafts : MonoBehaviour
 {
     private const float MinX = -38f, MaxX = 46f, MinGap = 3.5f, MaxGap = 13f;
-    private const float ArenaMinX = -12f, ArenaMaxX = 33f;
-    private const float ColumnSpacing = 1.6f, ColumnWidth = 2.3f, ColumnLean = 9f, ColumnMargin = .2f;
+    // Fallback arena span (centre 10.5, 30 wide); the real span is read from the arena trigger at load.
+    private const float DefaultArenaMinX = -4.5f, DefaultArenaMaxX = 25.5f;
+    private const float ColumnSpacing = 1.6f, ColumnWidth = 2.3f, ColumnMinLean = 4f, ColumnMaxLean = 16f, ColumnMargin = .2f;
     private const float PourSeconds = .9f, DrawBackSeconds = .5f;
     private const float FieldSearchInterval = .5f;
     private const float FloorY = -3.35f, TopY = 13f;
@@ -35,19 +36,29 @@ public sealed class BossLightShafts : MonoBehaviour
     private Shaft[] columns;
     private BossCloudField field;
     private float nextFieldSearch;
-    private float leanSign = 1f;
+    private float arenaMinX = DefaultArenaMinX, arenaMaxX = DefaultArenaMaxX;
     private Texture2D beamTexture, moteTexture;
     private Sprite beamSprite;
     private Material moteMaterial;
 
     private void Awake()
     {
+        FindArenaSpan();
         beamSprite = BuildBeamSprite();
         var random = new System.Random();
-        leanSign = random.NextDouble() < .5 ? -1f : 1f;
         BuildShafts(random);
         BuildColumns(random);
         BuildMotes();
+    }
+
+    // The arena can be resized or moved in the scene, so follow its entry trigger instead of fixed numbers.
+    private void FindArenaSpan()
+    {
+        BossEncounterTrigger arena = FindFirstObjectByType<BossEncounterTrigger>();
+        BoxCollider2D box = arena != null ? arena.GetComponent<BoxCollider2D>() : null;
+        if (box == null || box.bounds.size.x < 1f) return;
+        arenaMinX = box.bounds.min.x;
+        arenaMaxX = box.bounds.max.x;
     }
 
     private void BuildShafts(System.Random random)
@@ -57,7 +68,7 @@ public sealed class BossLightShafts : MonoBehaviour
         float x = MinX + Range(random, 0f, 4f);
         while (x < MaxX)
         {
-            if (x >= ArenaMinX && x <= ArenaMaxX) { x = ArenaMaxX + Range(random, 1f, 4f); continue; }
+            if (x >= arenaMinX && x <= arenaMaxX) { x = arenaMaxX + Range(random, 1f, 4f); continue; }
             // Either side, with its own tilt, so the rays cross the room instead of running in parallel.
             float lean = Range(random, MinLean, MaxLean) * (random.NextDouble() < .5 ? -1f : 1f);
             float width = Range(random, 1.2f, 4f);
@@ -69,12 +80,16 @@ public sealed class BossLightShafts : MonoBehaviour
 
     private void BuildColumns(System.Random random)
     {
-        int count = Mathf.CeilToInt((ArenaMaxX - ArenaMinX) / ColumnSpacing);
+        // Every column leans its own way, like the shafts outside the arena. Slanted beams land away from
+        // where they start, so columns start a little beyond both walls to keep the whole floor lit.
+        float pad = (TopY - FloorY) * Mathf.Tan(ColumnMaxLean * Mathf.Deg2Rad);
+        float start = arenaMinX - pad;
+        int count = Mathf.CeilToInt((arenaMaxX + pad - start) / ColumnSpacing);
         columns = new Shaft[count];
         for (int i = 0; i < count; i++)
         {
-            float x = ArenaMinX + (i + .5f) * ColumnSpacing;
-            float lean = ColumnLean * leanSign;
+            float x = start + (i + .5f) * ColumnSpacing;
+            float lean = Range(random, ColumnMinLean, ColumnMaxLean) * (random.NextDouble() < .5 ? -1f : 1f);
             columns[i] = CreateBeam(100 + i, x, lean, ColumnWidth, random);
             columns[i].Open = 0f;
             columns[i].X = x; columns[i].Lean = lean; columns[i].Width = ColumnWidth;
@@ -165,11 +180,10 @@ public sealed class BossLightShafts : MonoBehaviour
             field = FindFirstObjectByType<BossCloudField>();
         }
         bool clouds = field != null && field.IsPrepared;
-        float slope = Mathf.Tan(ColumnLean * leanSign * Mathf.Deg2Rad);
         for (int i = 0; i < columns.Length; i++)
         {
             Shaft s = columns[i];
-            bool open = !clouds || !Covered(s.X, slope);
+            bool open = !clouds || !Covered(s.X, Mathf.Tan(s.Lean * Mathf.Deg2Rad));
             float rate = open ? 1f / PourSeconds : -1f / DrawBackSeconds;
             s.Open = Mathf.Clamp01(s.Open + rate * Time.deltaTime);
             columns[i] = s;
