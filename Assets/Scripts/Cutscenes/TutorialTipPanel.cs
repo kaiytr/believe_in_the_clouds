@@ -100,6 +100,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private GameObject canvasObject;
     private Text pageLabel;
+    private GameObject prevArrow;
+    private GameObject nextArrow;
     private readonly List<Text> bodyLines = new List<Text>();
     private string[] activeLabels = PageLabels;
     private string[] activeBodies = PageBodies;
@@ -248,6 +250,12 @@ public sealed class TutorialTipPanel : MonoBehaviour
         if (pageLabel != null)
             pageLabel.text = activeLabels[pageIndex];
 
+        // 첫 페이지에서는 왼쪽 화살표, 마지막 페이지에서는 오른쪽 화살표를 숨긴다.
+        if (prevArrow != null)
+            prevArrow.SetActive(pageIndex > 0);
+        if (nextArrow != null)
+            nextArrow.SetActive(pageIndex < activeLabels.Length - 1);
+
         string[] lines = activeBodies[pageIndex].Split('\n');
 
         // 1) 텍스트/활성 먼저 반영.
@@ -338,8 +346,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
         }
 
         // 좌/우 화살표 (아트 위치 그대로, 살짝 확대)
-        BuildArrowButton(content, "PrevPage", LeftArrowRect, () => ShowPage(pageIndex - 1));
-        BuildArrowButton(content, "NextPage", RightArrowRect, () => ShowPage(pageIndex + 1));
+        prevArrow = BuildArrowButton(content, "PrevPage", LeftArrowRect, () => ShowPage(pageIndex - 1));
+        nextArrow = BuildArrowButton(content, "NextPage", RightArrowRect, () => ShowPage(pageIndex + 1));
 
         // ESC + 나가기: 아트 한 장 (글자 baked). 텍스트를 다시 그리지 않는다.
         BuildEscArt(content);
@@ -367,7 +375,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
         return text;
     }
 
-    private void BuildArrowButton(Transform parent, string name, RectInt iconRect, Action onClick)
+    private GameObject BuildArrowButton(Transform parent, string name, RectInt iconRect, Action onClick)
     {
         // 아이콘 x는 아트 원본 위치, y는 갈색 박스 세로 중심에 맞춘다.
         float localCenterX = iconRect.x + iconRect.width * 0.5f - BackgroundRect.x;
@@ -409,6 +417,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
             name == "PrevPage" ? LeftArrowRect : RightArrowRect);
         iconImage.preserveAspect = true;
         iconImage.raycastTarget = false;
+
+        return buttonObject;
     }
 
     // TIP_button 아트에는 알약 + "ESC" + "나가기"가 이미 그려져 있다.
