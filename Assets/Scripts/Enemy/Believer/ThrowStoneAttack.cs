@@ -102,6 +102,20 @@ public class ThrowStoneAttack : EnemyAttack
         return ColliderOverlapsBox(bodyCollider, center, new Vector2(length, indicatorWidth), angle);
     }
 
+    /// <summary>
+    /// The stone has dodged-past the player: the stone is now farther from the believer than the player is,
+    /// the player was in the throw lane during the warning, and the throw did not hit (it would have resolved already).
+    /// </summary>
+    public bool HasStonePassedPlayer(float stoneDistanceFromBeliever)
+    {
+        Collider2D body = PlayerBodyCollider;
+        if (!WasPlayerThreatenedDuringWarning || body == null)
+            return false;
+
+        float playerDistance = Vector2.Distance(launchOrigin, body.bounds.center);
+        return stoneDistanceFromBeliever > playerDistance && !IsBodyInThrowLane(body, launchOrigin, lockedProjectileDistance);
+    }
+
     public AttackOutcome GetOutcomeAtMaximumRange()
     {
         Collider2D body = PlayerBodyCollider;
