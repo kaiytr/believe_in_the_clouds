@@ -404,9 +404,9 @@ public class ShopPanelView : MonoBehaviour
         return ShopRarity.Common;
     }
 
-    // 카드 한 장 = 지급된 카드 아트 그대로 + 이름/등급/가격/구매 버튼만 얹는다.
+    // 카드 한 장 = 지급된 카드 아트 그대로 + 이름/등급/가격/설명/구매 버튼만 얹는다.
     private void BuildCardFrame(Transform parent, string objectName, string id,
-        string label, int price, ShopRarity rarity, ScrollDragGuard guard)
+        string label, int price, ShopRarity rarity, ScrollDragGuard guard, string description = null)
     {
         GameObject card = UiTheme.CreateImage(objectName, parent, Color.white);
         Image background = card.GetComponent<Image>();
@@ -447,6 +447,17 @@ public class ShopPanelView : MonoBehaviour
         priceText.fontStyle = FontStyle.Bold;
         Place(priceText, 322f, 27f, 64f, 30f);
 
+        // 설명 (카드 빈 칸 안쪽. 아트의 빈 사각형은 x 32~238, y 76~124).
+        if (!string.IsNullOrEmpty(description))
+        {
+            Text descText = UiTheme.CreateText("Desc", card.transform, description, 13,
+                InkSoft, TextAnchor.MiddleLeft);
+            descText.lineSpacing = 1f;
+            descText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            descText.verticalOverflow = VerticalWrapMode.Truncate;
+            Place(descText, 38f, 77f, 196f, 47f);
+        }
+
         // 구매 버튼 (아트에 "구매" 글자가 박혀 있음). 그대로 사용한다.
         GameObject buy = UiTheme.CreateImage("Buy", card.transform, Color.white);
         Image buyLocal = buy.GetComponent<Image>();
@@ -474,19 +485,21 @@ public class ShopPanelView : MonoBehaviour
     private void BuildCatalogCard(Transform parent, ShopEntry entry, ScrollDragGuard guard)
     {
         BuildCardFrame(parent, "Catalog_" + entry.Id, entry.Id,
-            entry.Label, entry.Price, entry.Rarity, guard);
+            entry.Label, entry.Price, entry.Rarity, guard, entry.CardDescription);
     }
 
     private void BuildSlotCard(Transform parent, ScrollDragGuard guard)
     {
         BuildCardFrame(parent, "Catalog_slot", "slot",
-            "교리칸", SlotPrice, SlotRarity, guard);
+            "교리칸", SlotPrice, SlotRarity, guard,
+            "재단의 교리 슬롯 +1칸\n구매 즉시 확장 · 영구 적용");
     }
 
     private void BuildHealCard(Transform parent, ScrollDragGuard guard)
     {
         BuildCardFrame(parent, "Catalog_heal", "heal",
-            "체력 회복", HealPrice, HealRarity, guard);
+            "체력 회복", HealPrice, HealRarity, guard,
+            "최대체력의 30% 즉시 회복\n일회성 사용 · 교리 아님");
     }
 
     // ---------------- 아래: 장바구니 바 ----------------
@@ -572,9 +585,10 @@ public class ShopPanelView : MonoBehaviour
         empty.transform.SetParent(viewport.transform, false);
         RectTransform emptyRect = empty.GetComponent<RectTransform>();
         UiTheme.Stretch(emptyRect, 8f);
-        Text emptyText = UiTheme.CreateText("Text", empty.transform, "위에서 교리를 눌러 담으세요.", 16,
+        Text emptyText = UiTheme.CreateText("Text", empty.transform, "위에서 교리를 눌러 담으세요.", 20,
             InkSoft, TextAnchor.MiddleCenter);
         UiTheme.Stretch(emptyText.rectTransform);
+        emptyText.rectTransform.anchoredPosition += new Vector2(0f, -6f);
         emptyCartText = empty;
 
         // 총 코인 알약 (아트에 "총 코인" 글자와 코인이 박혀 있음).

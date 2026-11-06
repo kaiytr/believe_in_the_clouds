@@ -77,9 +77,21 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "적 머리 위 말풍선이 믿음입니다.\n믿음을 무너뜨리면 약해집니다.\n\n방법은 말풍선마다 다릅니다.\n잘 보고 공략하세요.",
     };
 
+    // 재단 TIP (런당 최초 1회): 재단 사용 전에 재단이 뭔지 알려준다.
+    private static readonly string[] FoundationLabels = { "재단", "교리 조합", "사용 시기" };
+
+    private static readonly string[] FoundationBodies =
+    {
+        "재단은 나만의 교리를\n조합 할 수 있는 장소입니다.",
+        "주어/조건/결과로 이루어진 교리를\n마음대로 조합하여 강해지세요!",
+        "매 분기마다 재단을\n사용할 수 있습니다.",
+    };
+
     private GameObject canvasObject;
     private Text pageLabel;
     private readonly List<Text> bodyLines = new List<Text>();
+    private string[] activeLabels = PageLabels;
+    private string[] activeBodies = PageBodies;
     private int pageIndex;
     private int openedFrame;
 
@@ -142,9 +154,31 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     public void Open()
     {
+        OpenTutorial();
+    }
+
+    public void OpenTutorial()
+    {
         if (canvasObject == null)
             BuildUi();
 
+        activeLabels = PageLabels;
+        activeBodies = PageBodies;
+        pageIndex = 0;
+        RefreshPage();
+        openedFrame = Time.frameCount;
+        canvasObject.SetActive(true);
+        UiEventSystemBoot.Ensure();
+    }
+
+    // 재단 TIP (런당 최초 1회). 같은 패널·같은 조작으로 재단 설명을 보여준다.
+    public void OpenFoundationTip()
+    {
+        if (canvasObject == null)
+            BuildUi();
+
+        activeLabels = FoundationLabels;
+        activeBodies = FoundationBodies;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
@@ -175,7 +209,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private void ShowPage(int index)
     {
-        int clamped = Mathf.Clamp(index, 0, PageLabels.Length - 1);
+        int clamped = Mathf.Clamp(index, 0, activeLabels.Length - 1);
         if (clamped == pageIndex)
             return;
 
@@ -186,9 +220,9 @@ public sealed class TutorialTipPanel : MonoBehaviour
     private void RefreshPage()
     {
         if (pageLabel != null)
-            pageLabel.text = PageLabels[pageIndex];
+            pageLabel.text = activeLabels[pageIndex];
 
-        string[] lines = PageBodies[pageIndex].Split('\n');
+        string[] lines = activeBodies[pageIndex].Split('\n');
 
         // 1) 텍스트/활성 먼저 반영.
         for (int i = 0; i < bodyLines.Count; i++)
