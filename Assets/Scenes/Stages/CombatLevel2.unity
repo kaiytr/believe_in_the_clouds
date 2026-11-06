@@ -863,10 +863,11 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
-  attackWindupSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
-  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
+  circleCreateSound: {fileID: 8300000, guid: 09e3e0a3ced445f48b2bc642c3e60d23, type: 3}
 --- !u!70 &367042531
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -3028,10 +3029,11 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
-  attackWindupSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
-  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
+  circleCreateSound: {fileID: 8300000, guid: 09e3e0a3ced445f48b2bc642c3e60d23, type: 3}
 --- !u!70 &852854584
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

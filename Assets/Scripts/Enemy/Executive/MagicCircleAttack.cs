@@ -24,6 +24,10 @@ public class MagicCircleAttack : EnemyAttack
     [Header("Danger Indicator")]
     [SerializeField] private DangerIndicator dangerIndicatorPrefab;
 
+    [Header("Sound")]
+    [Tooltip("The only sound of this attack: played the moment the magic circle is created.")]
+    [SerializeField] private AudioClip circleCreateSound;
+
     private Vector2 lockedTargetPosition; // floor point under the target, where the zone is laid
 
     public float AttackRange => attackRange;
@@ -86,6 +90,7 @@ public class MagicCircleAttack : EnemyAttack
 
         MarkAttackAsLaunched();
         MagicCircle circle = Instantiate(magicCirclePrefab, lockedTargetPosition, Quaternion.identity);
+        PlayAttackSound(circleCreateSound);
         bool harmfulEffectApplied = circle.Activate(
             circleRadius,
             zoneHeight,
