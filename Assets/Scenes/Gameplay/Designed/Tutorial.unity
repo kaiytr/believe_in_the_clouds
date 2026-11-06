@@ -516,7 +516,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
   maxHp: 30
-  moveSpeedRatio: 0.64
+  moveSpeedRatio: 0.512
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 292175794}
   destroyDelay: 1.5
