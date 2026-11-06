@@ -51,6 +51,9 @@ public class FoundationPanelView : MonoBehaviour
 
     private const int InitialDoctrineGroups = 3; // 처음에 보여주는 교리 수 (열린 1 + 잠긴 2)
 
+    // 스크롤바 자리. 상점 카탈로그와 같은 값.
+    private const float ScrollbarSpace = 16f;
+
     // 제단 글자 크기. 큰 글자/작은 글자, 조합 슬롯 라벨, 조합 설명 순.
     private const int LargeTextSize = 30;
     private const int SmallTextSize = 14;
@@ -104,6 +107,51 @@ public class FoundationPanelView : MonoBehaviour
             image.type = Image.Type.Simple;
             image.preserveAspect = false;
         }
+    }
+
+    // 세로 스크롤바를 만든다. 상점 카탈로그와 같은 스타일 (트랙 반투명, 핸들 패널 톤).
+    private static Scrollbar BuildScrollbar(Transform parent)
+    {
+        GameObject track = UiTheme.CreateImage("ScrollbarV", parent,
+            new Color(0.55f, 0.45f, 0.36f, 0.35f));
+        RectTransform trackRect = track.GetComponent<RectTransform>();
+        trackRect.anchorMin = new Vector2(1f, 0f);
+        trackRect.anchorMax = new Vector2(1f, 1f);
+        trackRect.pivot = new Vector2(1f, 1f);
+        trackRect.offsetMin = new Vector2(-14f, 4f);
+        trackRect.offsetMax = new Vector2(-4f, -4f);
+
+        Image trackImage = track.GetComponent<Image>();
+        trackImage.raycastTarget = true;
+
+        GameObject slidingArea = new GameObject("SlidingArea", typeof(RectTransform));
+        slidingArea.transform.SetParent(track.transform, false);
+        UiTheme.Stretch(slidingArea.GetComponent<RectTransform>());
+
+        GameObject handle = UiTheme.CreateImage("Handle", slidingArea.transform,
+            new Color(0.42f, 0.32f, 0.24f, 0.95f));
+        RectTransform handleRect = handle.GetComponent<RectTransform>();
+        handleRect.anchorMin = Vector2.zero;
+        handleRect.anchorMax = Vector2.one;
+        handleRect.offsetMin = Vector2.zero;
+        handleRect.offsetMax = Vector2.zero;
+        Image handleImage = handle.GetComponent<Image>();
+        handleImage.raycastTarget = true;
+
+        Scrollbar scrollbar = track.AddComponent<Scrollbar>();
+        scrollbar.handleRect = handleRect;
+        scrollbar.targetGraphic = handleImage;
+        scrollbar.direction = Scrollbar.Direction.BottomToTop;
+        Navigation navigation = scrollbar.navigation;
+        navigation.mode = Navigation.Mode.None;
+        scrollbar.navigation = navigation;
+
+        ColorBlock colors = scrollbar.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1f, 0.94f, 0.86f, 1f);
+        colors.pressedColor = new Color(0.85f, 0.78f, 0.70f, 1f);
+        scrollbar.colors = colors;
+        return scrollbar;
     }
 
     // 왼쪽 목록 패널 스킨 (탭에 따라 Select_* 교체. 탭 글자는 이미지에 박혀 있음)
@@ -742,6 +790,8 @@ public class FoundationPanelView : MonoBehaviour
         viewport.transform.SetParent(scroll.transform, false);
         RectTransform viewportRect = viewport.GetComponent<RectTransform>();
         UiTheme.Stretch(viewportRect);
+        // 스크롤바 자리만큼 오른쪽을 비운다.
+        viewportRect.offsetMax = new Vector2(-ScrollbarSpace, 0f);
         viewport.AddComponent<Mask>().showMaskGraphic = false;
         viewport.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
         scroller.viewport = viewportRect;
@@ -776,6 +826,11 @@ public class FoundationPanelView : MonoBehaviour
         // 잠긴 칸: 표시용으로 뒤에 2칸을 더 붙이되, 열린 칸만 활성화한다.
         // (초기는 열린 1 + 잠긴 2 = 3칸 표시. 잠긴 칸은 자물쇠 이미지로 대체된다.)
         SetUnlockedCount(doctrineCount);
+
+        // 오른쪽 세로 스크롤바 (상점 카탈로그와 같은 스타일).
+        Scrollbar doctrineScrollbar = BuildScrollbar(scroll.transform);
+        scroller.verticalScrollbar = doctrineScrollbar;
+        scroller.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
     }
 
     // 교리 하나 = [주어][조건][결과] 슬롯 3개 + 설명 줄. 모든 교리 동일하게 동작한다.
