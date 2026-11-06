@@ -11,7 +11,7 @@ public static class StageAtmosphere
     private const string TorchName = "Wall Torch";
     private const string RootName = "Stage atmosphere";
     private static readonly Color NormalAmbient = new Color(.5f, .55f, .7f);
-    private const float NormalAmbientIntensity = .5f;
+    private const float NormalAmbientIntensity = .26f;
     private static readonly Color BossAmbient = new Color(.52f, .56f, .62f);
     private const float BossAmbientIntensity = .4f;
 

@@ -471,7 +471,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerProximityLight
   lightColor: {r: 1, g: 0.84, b: 0.67, a: 1}
-  intensity: 0.8
+  intensity: 0.55
   innerRadius: 1.2
   outerRadius: 4
   falloffIntensity: 0.75
