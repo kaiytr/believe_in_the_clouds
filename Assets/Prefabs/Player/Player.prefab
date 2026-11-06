@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 7138799533125009962}
   - component: {fileID: 6455396816621203815}
   - component: {fileID: 5298411138573312401}
+  - component: {fileID: 1995138297358303125}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -457,3 +458,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8866078580113681940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1995138297358303125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3595845daf149238c855926643513fd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerProximityLight
+  lightColor: {r: 1, g: 0.84, b: 0.67, a: 1}
+  intensity: 0.8
+  innerRadius: 1.2
+  outerRadius: 4
+  falloffIntensity: 0.75
