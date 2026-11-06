@@ -2589,7 +2589,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
 --- !u!70 &743892922
@@ -4664,7 +4664,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
 --- !u!70 &1467215917
