@@ -43,7 +43,6 @@ public sealed class DeathResultView : MonoBehaviour
             Framed("Play statistics", panel, .025f, .35f, .515f, .84f);
             Framed("Reserved area", panel, .025f, .055f, .515f, .30f);
             Framed("Death information", panel, .53f, .055f, .975f, .84f);
-            Label(composition, "− 사망원인 −", 22, Ink, .57f, .70f, .82f, .76f);
         }
 
         Label(composition, "획득한 코인 개수", 23, Ink, .178f, .63f, .405f, .68f, TextAnchor.MiddleLeft);
@@ -63,7 +62,8 @@ public sealed class DeathResultView : MonoBehaviour
                 .Append(kind == EnemyRewardKind.Dog ? " 마리" : " 명");
         }
         Label(composition, kills.ToString(), 18, Ink, .178f, .455f, .49f, .50f);
-        Label(composition, data.cause, 15, Ink, .57f, .675f, .82f, .70f);
+        // The cause replaces the old "사망원인" heading, in the same spot above the capture.
+        Label(composition, data.cause, 22, Ink, .56f, .715f, .83f, .775f);
 
         var imageArea = Box("Capture frame", composition, new Color(0, 0, 0, 0), .568f, .374f, .82f, .671f);
         imageArea.GetComponent<Image>().raycastTarget = false;
