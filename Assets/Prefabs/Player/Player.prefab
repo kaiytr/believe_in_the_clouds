@@ -184,6 +184,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMove
   moveSpeed: 7
   jumpPower: 15.64
+  jumpSound: {fileID: 8300000, guid: 23ad3fec84cdcb845ab0d00a3148cffb, type: 3}
+  jumpSoundVolume: 0.8
   groundCheck: {fileID: 6043598783600447505}
   groundCheckRadius: 0.2
   groundLayer:
@@ -311,6 +313,8 @@ MonoBehaviour:
   cooldown: 0.6
   afterimagePrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
   afterimageTint: {r: 0.6, g: 0.8, b: 1, a: 0.45}
+  dashSound: {fileID: 8300000, guid: ce93c474f714deb4d9e886f15c945c2f, type: 3}
+  dashSoundVolume: 0.8
 --- !u!114 &3230661664895121193
 MonoBehaviour:
   m_ObjectHideFlags: 0

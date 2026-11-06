@@ -258,7 +258,9 @@ public sealed class BossLightShafts : MonoBehaviour
         velocity.space = ParticleSystemSimulationSpace.World;
         velocity.x = new ParticleSystem.MinMaxCurve(-.08f, .18f);
         velocity.y = new ParticleSystem.MinMaxCurve(-.12f, .1f);
-        velocity.z = 0f;
+        // x/y/z는 모두 같은 커브 모드여야 한다(TwoConstants).
+        // z를 상수(0f)로 두면 "Particle Velocity curves must all be in the same mode" 에러가 난다.
+        velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
         var noise = particles.noise;
         noise.enabled = true;
         noise.strength = .25f;

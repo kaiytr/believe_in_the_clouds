@@ -75,6 +75,7 @@ MonoBehaviour:
   - 14
   MeleeComboFirstWarning: 0.65
   MeleeComboFollowupWarning: 0.35
+  MeleeComboLungeMultiplier: 1.6
   DashDistance: 4.5
   DashSpeed: 10
   DashDamage: 18

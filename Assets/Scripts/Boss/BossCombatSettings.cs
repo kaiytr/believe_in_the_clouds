@@ -39,6 +39,8 @@ public sealed class BossCombatSettings : ScriptableObject
     public float[] MeleeComboDamage = { 6f, 7f, 14f };
     public float MeleeComboFirstWarning = 0.65f;
     public float MeleeComboFollowupWarning = 0.35f;
+    [Tooltip("연속 베기(플레이어 콤보 재현) 시 앞으로 전진하는 양 배율. 1이면 플레이어와 동일, 클수록 더 깊이 파고든다.")]
+    [Min(0f)] public float MeleeComboLungeMultiplier = 1.6f;
     public float DashDistance = 4.5f;
     public float DashSpeed = 10f;
     public float DashDamage = 18f;

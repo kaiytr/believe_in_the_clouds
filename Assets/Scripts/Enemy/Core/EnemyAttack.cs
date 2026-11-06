@@ -53,6 +53,8 @@ public abstract class EnemyAttack : MonoBehaviour
     public float LockedFacingDirection => lockedDirection.x < 0f ? -1f : 1f;
     public EnemyUnit Owner => owner;
     public virtual bool IsConfigured => owner != null;
+    // 컷씬 연출 돌이 실제 공격과 같은 피해를 입히기 위한 값 (기본 피해 × 교리 공격 배율).
+    public float ScriptedHitDamage => damage * DoctrineAttackMultiplier;
     public bool WasPlayerThreatenedDuringWarning => playerThreatenedDuringWarning;
     protected Collider2D PlayerBodyCollider => owner != null ? owner.TargetBodyCollider : null;
     protected Vector2 LockedDirection => lockedDirection;

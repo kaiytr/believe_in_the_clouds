@@ -573,7 +573,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
                 if (clouds != null && clouds.BeginLightning())
                 {
                     NoteBelief(BossBeliefKind.Cloud);
-                    ShowFeedback($"먹구름 번개 · {settings.CloudDuration:0}초 뒤 · 흰 구름 아래나 범위 밖으로", new Color(.75f, .85f, 1f));
+                    ShowFeedback($"먹구름 번개 · {settings.CloudDuration:0}초 뒤 · 흰 구름 아래나 범위 밖으로", new Color(1f, .87f, .45f));
                 }
                 break;
             case BossPatternKind.ShockwaveBelief:

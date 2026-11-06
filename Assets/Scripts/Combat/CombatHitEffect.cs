@@ -126,14 +126,23 @@ public static class CombatHitEffect
     }
 
     // Particles are flung out fast and slow down quickly, like sparks hitting the air.
+    // x/y/z와 speedModifier는 모두 같은 커브 모드여야 한다(Curve).
+    // x/y/z를 상수로 두고 speedModifier만 커브로 두면
+    // "Particle Velocity curves must all be in the same mode" 에러가 난다.
+    // 그래서 0인 축들도 값은 항상 0인 커브로 둔다.
+    private static readonly AnimationCurve ZeroCurve =
+        new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(1f, 0f));
+    private static readonly AnimationCurve SpeedFadeCurve =
+        new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, .08f));
+
     private static void SetSpeedFade(ParticleSystem system)
     {
         ParticleSystem.VelocityOverLifetimeModule velocity = system.velocityOverLifetime;
         velocity.enabled = true;
-        velocity.x = new ParticleSystem.MinMaxCurve(0f);
-        velocity.y = new ParticleSystem.MinMaxCurve(0f);
-        velocity.z = new ParticleSystem.MinMaxCurve(0f);
-        velocity.speedModifier = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, .08f)));
+        velocity.x = new ParticleSystem.MinMaxCurve(1f, ZeroCurve);
+        velocity.y = new ParticleSystem.MinMaxCurve(1f, ZeroCurve);
+        velocity.z = new ParticleSystem.MinMaxCurve(1f, ZeroCurve);
+        velocity.speedModifier = new ParticleSystem.MinMaxCurve(1f, SpeedFadeCurve);
     }
 
     // A sharp 8-point star: four long spikes along the axes, four shorter ones on the diagonals.

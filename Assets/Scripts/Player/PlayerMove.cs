@@ -15,6 +15,10 @@ public class PlayerMove : MonoBehaviour, ISlowable
     [Header("점프")]
     // 0.74 유닛 타일 4칸: 중력 배율 4, 0.02초 물리 틱에서 약 2.96 유닛 상승.
     [SerializeField] private float jumpPower = 15.64f;
+    [Tooltip("점프가 실제로 발동되는 순간 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] private AudioClip jumpSound;
+    [Tooltip("점프 사운드 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] private float jumpSoundVolume = 0.8f;
 
     [Header("바닥 체크")]
     [SerializeField] private Transform groundCheck;
@@ -29,6 +33,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
     private float slowEndTime;
     private DoctrineStats doctrineStats;
     private PlayerHealth health;
+    private AudioSource jumpAudioSource;
 
     /// <summary>
     /// true면 이동 입력/방향 전환을 잠그고 Rigidbody 속도를 덮어쓰지 않는다.
@@ -57,6 +62,16 @@ public class PlayerMove : MonoBehaviour, ISlowable
         rb = GetComponent<Rigidbody2D>();
         doctrineStats = GetComponent<DoctrineStats>();
         health = GetComponent<PlayerHealth>();
+
+        // 공격/사망/대시음과 같은 AudioSource를 공유한다 (PlayOneShot은 겹쳐 재생 가능).
+        jumpAudioSource = GetComponent<AudioSource>();
+        if (jumpAudioSource == null)
+            jumpAudioSource = gameObject.AddComponent<AudioSource>();
+        jumpAudioSource.playOnAwake = false;
+        jumpAudioSource.loop = false;
+        jumpAudioSource.spatialBlend = 0f; // 2D
+        if (jumpAudioSource.volume <= 0f)
+            jumpAudioSource.volume = 1f;
     }
 
     private void Update()
@@ -168,6 +183,9 @@ public class PlayerMove : MonoBehaviour, ISlowable
             rb.linearVelocity.x,
             jumpPower
         );
+
+        if (jumpSound != null && jumpAudioSource != null)
+            jumpAudioSource.PlayOneShot(jumpSound, jumpSoundVolume);
     }
 
     private void OnDrawGizmosSelected()

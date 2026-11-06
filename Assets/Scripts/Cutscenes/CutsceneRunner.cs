@@ -342,6 +342,11 @@ public sealed class CutsceneRunner : MonoBehaviour
     {
         Vector3 start = actor.ProjectileWorldPosition;
         Vector3 end = destination.position;
+        // 컷씬 돌은 실제 신도 돌과 같은 피해를 입힌다.
+        // TutorialStoryBeliever의 ThrowStoneAttack 값을 그대로 읽어 하드코딩 없이 동기화한다.
+        ThrowStoneAttack scriptedAttack = actor.GetComponentInChildren<ThrowStoneAttack>(true);
+        float scriptedDamage = scriptedAttack != null ? scriptedAttack.ScriptedHitDamage : 0f;
+        GameObject scriptedAttacker = actor.gameObject;
         activeProjectileVisual = Instantiate(step.HarmlessProjectilePrefab, start, Quaternion.identity);
         CutsceneHarmlessProjectile.Prepare(activeProjectileVisual);
         actor.FaceToward(end);
@@ -362,6 +367,18 @@ public sealed class CutsceneRunner : MonoBehaviour
         if (activeProjectileVisual != null)
             Destroy(activeProjectileVisual);
         activeProjectileVisual = null;
+
+        // 돌이 플레이어에게 닿는 시점(연출 종료)에 실제 신도 돌과 동일한 피해를 적용한다.
+        // playerTalk 자리에 도착했다는 전제이며, 무적·사망 중이면 PlayerHealth가 무시한다.
+        if (running && generation == runGeneration && scriptedDamage > 0f && player != null && !player.IsDead)
+        {
+            float before = player.CurrentHp;
+            bool applied = player.TakeDamage(
+                new DamageInfo(scriptedDamage, DamageSource.Enemy, scriptedAttacker, "돌 투척"));
+            if (applied)
+                Debug.Log($"[Cutscene] scripted stone hit: {scriptedDamage} / HP: {before} -> {player.CurrentHp}");
+        }
+
         if (running && generation == runGeneration)
             actor.SetCutscenePose(CutscenePose.Idle);
     }

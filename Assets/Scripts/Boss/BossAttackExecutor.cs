@@ -160,7 +160,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             float warningStartedAt = Time.time;
             float warningEndsAt = warningStartedAt + warningDuration;
             float lungeDistance = step.windupTime > 0f
-                ? step.lungeDistance * step.windupTime / (step.windupTime + 0.05f)
+                ? step.lungeDistance * step.windupTime / (step.windupTime + 0.05f) * Data.MeleeComboLungeMultiplier
                 : 0f;
             float lungeDuration = Mathf.Min(warningDuration, step.windupTime / owner.SpeedMultiplier);
             float angleRadians = step.hitboxAngle * Mathf.Deg2Rad;

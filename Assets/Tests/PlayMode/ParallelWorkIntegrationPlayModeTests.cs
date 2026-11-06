@@ -182,7 +182,11 @@ public sealed class ParallelWorkIntegrationPlayModeTests
         yield return Until(() => tutorial.Runner.LastCompletedDefinition == encounter && !tutorial.Runner.IsRunning);
         Assert.That(believer.enabled, Is.True);
         Assert.That(body.simulated, Is.True);
-        Assert.That(Player.CurrentHp, Is.EqualTo(hp), "첫 돌 연출은 체력을 줄이지 않는다.");
+        // 연출 돌은 TutorialStoryBeliever의 ThrowStoneAttack 피해와 동일하게 적용된다.
+        // (ScriptedHitDamage = damage × DoctrineStats AttackMultiplier)
+        float expected = believer.GetComponent<ThrowStoneAttack>().ScriptedHitDamage;
+        Assert.That(Player.CurrentHp, Is.EqualTo(hp - expected).Within(0.001f),
+            "첫 돌 연출은 실제 신도 돌과 같은 피해를 입힌다.");
         Assert.That(UiModal.IsOpen, Is.False);
         yield return null;
         var attack = Player.GetComponent<PlayerAttack>();

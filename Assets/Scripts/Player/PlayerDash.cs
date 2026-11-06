@@ -26,6 +26,12 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private CombatAfterimage afterimagePrefab;
     [SerializeField] private Color afterimageTint = new Color(0.6f, 0.8f, 1f, 0.45f);
 
+    [Header("대시 사운드")]
+    [Tooltip("대시가 실제로 시작되는 순간 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] private AudioClip dashSound;
+    [Tooltip("대시 사운드 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] private float dashSoundVolume = 0.8f;
+
     private Rigidbody2D rb;
     private PlayerMove playerMove;
     private PlayerAttack attack;
@@ -33,6 +39,7 @@ public class PlayerDash : MonoBehaviour
     private SpriteRenderer bodyVisual;
     private PlayerIdleSpriteAnimator spriteAnimator;
     private CombatAfterimageEmitter afterimages;
+    private AudioSource dashAudioSource;
 
     private float cooldownRemaining;
     private bool isDashing;
@@ -51,6 +58,16 @@ public class PlayerDash : MonoBehaviour
         spriteAnimator = GetComponent<PlayerIdleSpriteAnimator>();
         afterimages = GetComponent<CombatAfterimageEmitter>();
         if (afterimages == null) afterimages = gameObject.AddComponent<CombatAfterimageEmitter>();
+
+        // 공격/사망음과 같은 AudioSource를 공유한다 (PlayOneShot은 겹쳐 재생 가능).
+        dashAudioSource = GetComponent<AudioSource>();
+        if (dashAudioSource == null)
+            dashAudioSource = gameObject.AddComponent<AudioSource>();
+        dashAudioSource.playOnAwake = false;
+        dashAudioSource.loop = false;
+        dashAudioSource.spatialBlend = 0f; // 2D
+        if (dashAudioSource.volume <= 0f)
+            dashAudioSource.volume = 1f;
     }
 
     private void Update()
@@ -94,6 +111,9 @@ public class PlayerDash : MonoBehaviour
         health?.SetDashInvulnerability(true);
         cooldownRemaining = cooldown;
         playerMove.ControlLocked = true;
+
+        if (dashSound != null && dashAudioSource != null)
+            dashAudioSource.PlayOneShot(dashSound, dashSoundVolume);
 
         float elapsed = 0f;
         while (elapsed < dashTime)

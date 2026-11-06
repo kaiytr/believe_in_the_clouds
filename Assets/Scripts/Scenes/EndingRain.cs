@@ -51,7 +51,9 @@ public static class EndingRain
         velocity.space = ParticleSystemSimulationSpace.World;
         velocity.x = new ParticleSystem.MinMaxCurve(-speed.x * .22f, -speed.x * .16f);
         velocity.y = new ParticleSystem.MinMaxCurve(-speed.y, -speed.x);
-        velocity.z = 0f;
+        // x/y/z는 모두 같은 커브 모드여야 한다(TwoConstants).
+        // z를 상수(0f)로 두면 "Particle Velocity curves must all be in the same mode" 에러가 난다.
+        velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
 
         var renderer = go.GetComponent<ParticleSystemRenderer>();
         renderer.sharedMaterial = material;

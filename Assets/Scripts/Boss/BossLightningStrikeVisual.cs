@@ -45,10 +45,10 @@ public sealed class BossLightningStrikeVisual : MonoBehaviour
         }
 
         // 착지점에는 작은 사각 빛 조각만 남겨 화면 전체를 덮지 않는다.
-        AddQuad(end, new Vector2(.7f, .07f), new Color(.3f, .75f, 1f, .45f));
+        AddQuad(end, new Vector2(.7f, .07f), new Color(.95f, .75f, .2f, .45f));
         for (int i = 0; i < 5; i++)
             AddQuad(end + new Vector2(Random.Range(-.35f, .35f), Random.Range(.06f, .3f)),
-                Vector2.one * pixel, new Color(.8f, .97f, 1f, .8f));
+                Vector2.one * pixel, new Color(1f, .93f, .6f, .8f));
 
         mesh = new Mesh { name = "Pixel lightning mesh" };
         mesh.SetVertices(vertices);
@@ -65,10 +65,11 @@ public sealed class BossLightningStrikeVisual : MonoBehaviour
     {
         Vector2 size = new Vector2(Mathf.Abs(end.x - start.x) + width, Mathf.Abs(end.y - start.y) + width);
         Vector2 center = (start + end) * .5f;
-        AddQuad(center, size + Vector2.one * width, new Color(.15f, .48f, 1f, .16f));
-        AddQuad(center, size, new Color(.3f, .75f, 1f, .85f));
+        // 금색 낙뢰: 옅은 금빛 외곽 → 진한 금색 본체 → 거의 흰 금빛 코어.
+        AddQuad(center, size + Vector2.one * width, new Color(.62f, .42f, .08f, .16f));
+        AddQuad(center, size, new Color(.95f, .75f, .2f, .85f));
         AddQuad(center, new Vector2(Mathf.Max(width * .36f, size.x - width * .64f),
-            Mathf.Max(width * .36f, size.y - width * .64f)), new Color(.93f, 1f, 1f, 1f));
+            Mathf.Max(width * .36f, size.y - width * .64f)), new Color(1f, .95f, .72f, 1f));
     }
 
     private void AddQuad(Vector2 center, Vector2 size, Color color)
