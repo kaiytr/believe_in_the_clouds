@@ -42,9 +42,25 @@ public sealed class LobbySceneController : MonoBehaviour
 
     private void Start()
     {
+        if (player == null) player = FindFirstObjectByType<PlayerHealth>();
+
         if (!isLobby && runStageOnly)
         {
             flow = LobbyFlowRuntime.Instance;
+
+#if UNITY_EDITOR
+            if (flow == null && gameObject.scene.name == LobbyFlowRuntime.ShopTestScene)
+            {
+                flow = LobbyFlowRuntime.Ensure();
+                if (!flow.PrepareStandaloneShopTest(player))
+                {
+                    Debug.LogWarning("ShopTest를 직접 실행했지만 격리된 상점 테스트 런을 준비하지 못했습니다. 플레이어 및 재화 초기화 상태를 확인해 주세요.", this);
+                    enabled = false;
+                    return;
+                }
+            }
+#endif
+
             if (flow == null || !flow.IsActiveRunStage(runStageRole))
             {
                 enabled = false;
@@ -56,7 +72,6 @@ public sealed class LobbySceneController : MonoBehaviour
             flow = LobbyFlowRuntime.Ensure();
         }
 
-        if (player == null) player = FindFirstObjectByType<PlayerHealth>();
         BuildUi(); flow.Attach(this);
     }
     public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? lobbyMinX : stageMinX, isLobby ? lobbyMaxX : stageMaxX),

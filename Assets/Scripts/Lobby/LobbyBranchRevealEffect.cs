@@ -10,6 +10,7 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
     private const float BuriedDuration = .12f;
     private const float RiseDuration = .45f;
     private const float SettleDuration = .16f;
+    private const float DustOnlyHoldDuration = .16f;
     private const float RiseAt = RumbleDuration + SinkDuration + BuriedDuration;
     private const float SettleAt = RiseAt + RiseDuration;
     private const float FinishAt = SettleAt + SettleDuration;
@@ -32,7 +33,10 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
     private bool bodyWasEnabled, frameWasEnabled, labelWasEnabled, captured, restored;
     private bool sank, emerged, landed;
     private bool riseOnly;
+    private bool dustOnly;
     private float elapsed, depth, groundWidth;
+    private bool hasGroundOrder, behindGround;
+    private int groundBehindOrder;
     private GameObject debrisRoot;
     private Sprite shardSprite, dustSprite;
     private Texture2D shardTexture, dustTexture;
@@ -51,6 +55,22 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
     public bool PlayRise(SpriteRenderer source, Sprite targetSprite, Color targetTint)
     {
         return Begin(source, null, null, targetSprite, targetTint, string.Empty, true);
+    }
+
+    public bool PlayGroundDust(SpriteRenderer source)
+    {
+        if (captured || source == null || source.sprite == null) return false;
+
+        body = source;
+        revealedSprite = source.sprite;
+        revealedTint = source.color;
+        bodyWasEnabled = source.enabled;
+        Bounds bounds = source.bounds;
+        groundWidth = Mathf.Max(.5f, bounds.size.x * .9f);
+        captured = IsPlaying = dustOnly = true;
+        BuildDebris(new Vector3(bounds.center.x, bounds.min.y + .025f, source.transform.position.z));
+        Emit(0, 14, .7f);
+        return true;
     }
 
     private bool Begin(SpriteRenderer source, SpriteRenderer border, TextMesh roleLabel,
@@ -90,9 +110,40 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
         visual.transform.position = riseOnly
             ? body.transform.position + Vector3.down * depth
             : body.transform.position;
+        FindGroundOrder(bounds);
+        if (riseOnly) ApplyDoorOrder(-depth);
         BuildDebris(new Vector3(bounds.center.x, bounds.min.y + .025f, body.transform.position.z));
         Emit(6, 7, .5f);
         return true;
+    }
+
+    // The door travels through solid ground, so while it is below its resting spot it
+    // must draw behind whatever ground renders under it, then return to its normal order.
+    private void FindGroundOrder(Bounds bounds)
+    {
+        Vector2 center = new Vector2(bounds.center.x, bounds.min.y - .1f);
+        Vector2 size = new Vector2(Mathf.Max(.2f, bounds.size.x * .5f), .12f);
+        int order = int.MaxValue;
+        foreach (Collider2D hit in Physics2D.OverlapBoxAll(center, size, 0f))
+        {
+            if (hit == null || hit.isTrigger) continue;
+            Renderer r = hit.GetComponent<Renderer>();
+            if (r == null) r = hit.GetComponentInParent<Renderer>();
+            if (r == null || r.sortingLayerID != body.sortingLayerID) continue;
+            order = Mathf.Min(order, r.sortingOrder);
+        }
+        if (order == int.MaxValue || order - 1 >= body.sortingOrder) return;
+        groundBehindOrder = order - 1;
+        hasGroundOrder = true;
+    }
+
+    private void ApplyDoorOrder(float y)
+    {
+        if (!hasGroundOrder || visual == null) return;
+        bool behind = y < -.001f;
+        if (behind == behindGround) return;
+        behindGround = behind;
+        visual.sortingOrder = behind ? groundBehindOrder : body.sortingOrder;
     }
 
     private void Update()
@@ -108,6 +159,13 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
 
     private void AnimateDoor()
     {
+        if (dustOnly)
+        {
+            if (elapsed >= DustOnlyHoldDuration)
+                RestorePresentation();
+            return;
+        }
+
         if (riseOnly)
         {
             AnimateRise();
@@ -162,6 +220,7 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
             y = Mathf.Lerp(.09f, 0f, Mathf.SmoothStep(0f, 1f, t));
         }
         visual.transform.position = body.transform.position + new Vector3(x, y, 0f);
+        ApplyDoorOrder(y);
     }
 
     private void AnimateRise()
@@ -197,6 +256,7 @@ public sealed class LobbyBranchRevealEffect : MonoBehaviour
             y = Mathf.Lerp(.09f, 0f, Mathf.SmoothStep(0f, 1f, t));
         }
         visual.transform.position = body.transform.position + Vector3.up * y;
+        ApplyDoorOrder(y);
     }
 
     private void BuildDebris(Vector3 ground)

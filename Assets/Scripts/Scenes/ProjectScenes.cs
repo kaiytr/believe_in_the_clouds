@@ -15,6 +15,8 @@ public static class ProjectScenes
     public const string BelieverCombatTest = "Assets/Scenes/Gameplay/BelieverCombatTest.unity";
     public const string ExecutiveCombatTest = "Assets/Scenes/Gameplay/ExecutiveCombatTest.unity";
     public const string BossTest = "Assets/Scenes/Gameplay/BossTest.unity";
+    public const string Ending = "Assets/Scenes/Gameplay/Ending.unity";
+    public const string EndingSceneName = "Ending";
     public const string StageTest = "Assets/Scenes/Tests/StageTest.unity";
     public const string EconomyTest = "Assets/Scenes/Tests/EconomyTest.unity";
     public const string ChestTest = "Assets/Scenes/Tests/ChestTest.unity";
@@ -36,6 +38,7 @@ public static class ProjectScenes
             yield return BelieverCombatTest;
             yield return ExecutiveCombatTest;
             yield return BossTest;
+            yield return Ending;
         }
     }
 

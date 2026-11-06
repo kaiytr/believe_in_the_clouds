@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Shows the existing enemy through the door's rise effect while combat and physics are paused.
+// Briefly pauses the existing enemy while ground dust marks its arena entrance.
 public sealed class EnemyArenaEmergence : IDisposable
 {
     private readonly List<Behaviour> behaviours = new List<Behaviour>();
     private readonly List<Collider2D> colliders = new List<Collider2D>();
     private readonly List<Rigidbody2D> bodies = new List<Rigidbody2D>();
-    private readonly List<SpriteRenderer> hiddenRenderers = new List<SpriteRenderer>();
     private LobbyBranchRevealEffect effect;
     private bool restored;
 
@@ -67,14 +66,8 @@ public sealed class EnemyArenaEmergence : IDisposable
         }
         if (primary == null) return;
 
-        foreach (SpriteRenderer renderer in enemy.GetComponentsInChildren<SpriteRenderer>(true))
-        {
-            if (renderer == primary || !renderer.enabled) continue;
-            hiddenRenderers.Add(renderer);
-            renderer.enabled = false;
-        }
         effect = enemy.gameObject.AddComponent<LobbyBranchRevealEffect>();
-        effect.PlayRise(primary, primary.sprite, primary.color);
+        effect.PlayGroundDust(primary);
     }
 
     private void Pause(Behaviour behaviour)
@@ -88,8 +81,6 @@ public sealed class EnemyArenaEmergence : IDisposable
     {
         if (restored) return;
         restored = true;
-        foreach (SpriteRenderer renderer in hiddenRenderers)
-            if (renderer != null) renderer.enabled = true;
         foreach (Collider2D collider in colliders)
             if (collider != null) collider.enabled = true;
         foreach (Rigidbody2D body in bodies)

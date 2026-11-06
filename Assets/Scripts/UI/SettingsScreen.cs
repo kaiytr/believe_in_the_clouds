@@ -158,6 +158,8 @@ public class SettingsScreen : MonoBehaviour
         pausedBySettings = false;
         if (Time.timeScale > 0f)
         {
+            // 짧은 히트스톱 배율을 일시정지 해제 후의 게임 속도로 저장하지 않는다.
+            FindFirstObjectByType<PlayerAttack>()?.EndHitStop();
             resumedTimeScale = Time.timeScale;
             Time.timeScale = 0f;
             pausedBySettings = true;

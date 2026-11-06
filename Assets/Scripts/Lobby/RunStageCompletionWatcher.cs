@@ -10,6 +10,7 @@ public sealed class RunStageCompletionWatcher : MonoBehaviour
     private LobbyFlowRuntime flow;
     private EnemyUnit[] enemies;
     private BossCombatController boss;
+    private BossEndingSequence bossEnding;
     private bool armed;
     private bool completionPending;
     private float nextCompletionAttempt;
@@ -28,7 +29,10 @@ public sealed class RunStageCompletionWatcher : MonoBehaviour
             enemies = authoredEnemies != null && authoredEnemies.Length > 0
                 ? authoredEnemies : FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None);
         else if (role == BranchRole.Boss)
+        {
             boss = FindFirstObjectByType<BossCombatController>();
+            bossEnding = FindFirstObjectByType<BossEndingSequence>();
+        }
         else if (role == BranchRole.Shop)
             ShopScreen.ShopClosed += HandleShopClosed;
     }
@@ -41,7 +45,14 @@ public sealed class RunStageCompletionWatcher : MonoBehaviour
             enemies.All(enemy => enemy == null || enemy.IsDead))
             completionPending = true;
         else if (role == BranchRole.Boss && boss != null && boss.IsDead)
+        {
+            if (bossEnding != null)
+            {
+                bossEnding.Begin();
+                if (bossEnding.HoldsStageCompletion) return;
+            }
             completionPending = true;
+        }
 
         if (!completionPending || Time.unscaledTime < nextCompletionAttempt) return;
         if (flow.State?.stage == null || flow.State.stage.completed)
