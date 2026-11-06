@@ -10,6 +10,16 @@ public abstract class EnemyAttack : MonoBehaviour
     [SerializeField] protected float windupTime = 0.8f;
     [SerializeField] protected float recoveryTime = 0.5f;
 
+    [Header("Attack Sounds")]
+    [Tooltip("공격 준비(선딜)가 시작되는 순간 재생. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] protected AudioClip attackWindupSound;
+    [Tooltip("공격 시전(실제 판정이 시작되는 순간)에 재생.")]
+    [SerializeField] protected AudioClip attackCastSound;
+    [Tooltip("이 공격이 플레이어를 실제로 맞혔을 때 재생.")]
+    [SerializeField] protected AudioClip attackHitSound;
+    [Tooltip("공격 사운드 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] protected float attackSoundVolume = 0.9f;
+
     private enum AttackPhase
     {
         Idle,
@@ -31,6 +41,7 @@ public abstract class EnemyAttack : MonoBehaviour
     private int attackId;
     private bool playerThreatenedDuringWarning;
     private Vector2 lockedDirection;
+    private AudioSource attackAudioSource;
 
     public event Action<EnemyAttack, AttackOutcome> OutcomeReported;
     public event Action<EnemyAttack, EnemyAttackResult> AttackResolved;
@@ -64,6 +75,16 @@ public abstract class EnemyAttack : MonoBehaviour
         owner = GetComponent<EnemyUnit>();
         if (owner == null)
             Debug.LogError($"{name}: EnemyAttack requires EnemyUnit on the same root.", this);
+
+        // 공격 사운드는 적 오브젝트에 2D AudioSource 하나를 두고 겹쳐 재생한다.
+        attackAudioSource = GetComponent<AudioSource>();
+        if (attackAudioSource == null)
+            attackAudioSource = gameObject.AddComponent<AudioSource>();
+        attackAudioSource.playOnAwake = false;
+        attackAudioSource.loop = false;
+        attackAudioSource.spatialBlend = 0f;
+        if (attackAudioSource.volume <= 0f)
+            attackAudioSource.volume = 1f;
     }
 
     private void Update()
@@ -112,6 +133,8 @@ public abstract class EnemyAttack : MonoBehaviour
         activeIndicator = ShowDangerIndicator();
         if (activeIndicator != null)
             activeIndicator.SetSortingBehind(owner.GetComponentInChildren<SpriteRenderer>());
+        // 공격준비시전: 선딜(예고)이 시작되는 순간.
+        PlayAttackSound(attackWindupSound);
         attackRoutine = StartCoroutine(AttackRoutine(target));
         return true;
     }
@@ -124,6 +147,8 @@ public abstract class EnemyAttack : MonoBehaviour
 
         phase = AttackPhase.Resolving;
         owner.ChangeState(EnemyState.Attack);
+        // 공격시전: 실제 판정이 시작되는 순간.
+        PlayAttackSound(attackCastSound);
         yield return ExecuteAttackRoutine();
 
         while (pendingHitResults > 0 && owner != null && !owner.IsDead)
@@ -242,9 +267,19 @@ public abstract class EnemyAttack : MonoBehaviour
             return;
 
         playerHpDamaged = true;
+        // 공격피격: 이 공격이 플레이어에게 실제 피해를 넣은 순간.
+        PlayAttackSound(attackHitSound);
         if (owner != null && DoctrineEventBus.HasListeners)
             DoctrineEventBus.Raise(ConditionType.OnAttack, owner.gameObject,
                 attackTarget != null ? attackTarget.gameObject : null);
+    }
+
+    private void PlayAttackSound(AudioClip clip)
+    {
+        if (clip == null || attackAudioSource == null)
+            return;
+
+        attackAudioSource.PlayOneShot(clip, attackSoundVolume);
     }
 
     private bool HasAttackTarget() => owner != null && owner.HasCombatTarget && owner.Target == attackTarget;
