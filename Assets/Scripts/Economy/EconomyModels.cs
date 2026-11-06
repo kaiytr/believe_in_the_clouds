@@ -124,6 +124,8 @@ public sealed class EconomyProfileData
     public LobbyRunData run;
     // 재단 TIP 최초 1회 열람 여부 (런당 1번. 세이브 초기화하면 다시 뜬다).
     public bool foundationTipSeen;
+    // 상점 TIP 최초 1회 열람 여부 (런당 1번. 세이브 초기화하면 다시 뜬다).
+    public bool shopTipSeen;
 
     public EconomyProfileData Copy()
     {
