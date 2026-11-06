@@ -178,10 +178,14 @@ MonoBehaviour:
   creditsDelay: 2.5
   creditsScrollSpeed: 55
   fadeOutSeconds: 1.5
-  creditsText: "# \uAD6C\uB984\uC744 \uBBFF\uC73C\uC138\uC694!\n\n\n## \uAE30\uD68D\n[\uC774\uB984]\n[\uC774\uB984]\n\n##
-    \uD504\uB85C\uADF8\uB798\uBC0D\n[\uC774\uB984]\n[\uC774\uB984]\n\n## \uC544\uD2B8\n[\uC774\uB984]\n[\uC774\uB984]\n\n##
-    \uC0AC\uC6B4\uB4DC\n[\uC774\uB984]\n\n## Special Thanks\n[\uC774\uB984]\n[\uC774\uB984]\n\n\n\uD50C\uB808\uC774\uD574
-    \uC8FC\uC154\uC11C \uAC10\uC0AC\uD569\uB2C8\uB2E4"
+  creditsText: "# \uAD6C\uB984\uC744 \uBBFF\uC73C\uC138\uC694!\nTrust the cloud!\n\n##
+    DESIGNED BY\r\n\uC774\uD604\uC9C0\n\n## DEVELOPED BY\r\n\uC624\uC900\uBBFC\r\n\uC774\uC2B9\uCC2C\n\n##
+    GRAPHIC BY\r\n\uC774\uC2B9\uC8FC\r\n\uC815\uB3C4\uC6D0\r\n\n## USED ASSET\r\nSA
+    Szadi Art - Platformer Set\n\n## MUSIC PROVED BY\r\n\uBE0C\uAE08\uB300\uD1B5\uB839
+    - Attack of The Trolls\n\n## SPECIAL THANKS\nAnA's main chunshik\r\nDogHam\r\n\uC774\uC2B9\uCC2C\uAEBC\r\n\uC624\uC900\uBBFC\uAEBC\r\n\uB3C4\uC6D0\uC774\uAEBC\n\n\n\xA9
+    2026. \uAC81 \uC5C6\uB294 10\uB300 \uCC3D\uC5C5\uAC00\uC758 \uB4A4\uB97C \uC787\uAE30
+    \uC704\uD574 \uC790\uC804\uAC70\uB97C \uD0C0\uACE0 26km\uB97C \uB2EC\uB824\uC628
+    \uC804\uC124\uC758 \uC5C4\uBCF5\uB3D9 All rights reserved"
 --- !u!4 &1737599110
 Transform:
   m_ObjectHideFlags: 0
