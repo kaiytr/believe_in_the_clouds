@@ -28129,7 +28129,7 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
-  attackWindupSound: {fileID: 8300000, guid: a1ef66fc1f2e65f4e89fe86aa332aeba, type: 3}
+  attackWindupSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
   attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
