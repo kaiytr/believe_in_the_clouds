@@ -5,6 +5,8 @@ public interface IWorldInteractionPrompt
 {
     Transform PromptAnchor { get; }
     Vector3 PromptOffset { get; }
+    /// <summary>True when the prompt is centred on the offset instead of standing on top of it.</summary>
+    bool PromptCentered => false;
 }
 
 public interface IHoldInteractable

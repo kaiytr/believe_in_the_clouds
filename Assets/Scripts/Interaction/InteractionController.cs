@@ -301,7 +301,7 @@ public class InteractionController : MonoBehaviour
 
     private void PositionPrompt(InteractableBehaviour target)
     {
-        if (target is IWorldInteractionPrompt anchor) prompt.Follow(anchor.PromptAnchor, anchor.PromptOffset);
+        if (target is IWorldInteractionPrompt anchor) prompt.Follow(anchor.PromptAnchor, anchor.PromptOffset, anchor.PromptCentered);
         else prompt.Dock();
     }
 

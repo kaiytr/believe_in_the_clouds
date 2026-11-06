@@ -12,14 +12,14 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private Sprite combatDoor;
     [SerializeField] private Sprite bossDoor;
     [SerializeField] private Sprite shopDoor;
-    [Tooltip("분기 위 안내와 콜라이더 윗면 사이의 월드 거리.")]
-    [SerializeField, Min(0f)] private float promptGap = .8f;
     private LobbyBranchRevealEffect revealEffect;
 
     public bool IsRevealing => revealEffect != null && revealEffect.IsPlaying;
 
     public Transform PromptAnchor => transform;
-    public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
+    // The branch prompt sits in the middle of the door.
+    public Vector3 PromptOffset => GetPromptOffsetAtArtCenter();
+    public bool PromptCentered => true;
 
     private void Awake()
     {
@@ -64,13 +64,12 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     {
         get
         {
-            if (IsRevealing) return "분기 공개 중…";
+            // One action per line; the prompt shows each as a keycap row.
+            if (IsRevealing) return "공개 중…";
             BranchCandidate data = Candidate;
-            if (data == null) return "분기를 확인할 수 없습니다.";
-            if (data.revealed) return "E : " + LobbyRules.RoleLabel(data.role) + " 출발 · 공개됨";
-            return Currency.Balance >= LobbyRules.RevealPrice
-                ? "E : 출발   |   F : 역할 공개 (5코인)"
-                : "E : 출발   |   F : 역할 공개 (5코인 · 코인 부족)";
+            if (data == null) return "확인 불가";
+            if (data.revealed) return "E : 진입";
+            return "E : 진입\nF : 정보 공개 (5코인)";
         }
     }
 

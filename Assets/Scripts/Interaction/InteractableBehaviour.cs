@@ -68,8 +68,48 @@ public abstract class InteractableBehaviour : MonoBehaviour, IInteractable
         }
     }
 
-    // Keep the prompt above the object even when a scene scales its collider.
-    // Return local coordinates for InteractionPrompt.Follow; the gap is in world units.
+    /// <summary>World gap between the top of the object's art and the bottom of its prompt.</summary>
+    protected const float PromptArtGap = .15f;
+
+    // Keep the prompt right above what the player sees. Trigger colliders are usually much taller than the
+    // art, so the top of the sprites is used and the collider only as a fallback.
+    // Return local coordinates for InteractionPrompt.Follow.
+    protected Vector3 GetPromptOffsetAboveArt(float gap = PromptArtGap)
+    {
+        bool found = false;
+        Bounds art = default;
+        foreach (SpriteRenderer renderer in GetComponentsInChildren<SpriteRenderer>(false))
+        {
+            if (renderer == null || !renderer.enabled || renderer.sprite == null) continue;
+            if (!found) { art = renderer.bounds; found = true; }
+            else art.Encapsulate(renderer.bounds);
+        }
+        if (found)
+            return transform.InverseTransformPoint(new Vector3(art.center.x, art.max.y + Mathf.Max(0, gap), transform.position.z));
+        return GetPromptOffsetAboveCollider(gap);
+    }
+
+    // Centre of the visible art (falls back to the collider centre), in local coordinates.
+    protected Vector3 GetPromptOffsetAtArtCenter()
+    {
+        bool found = false;
+        Bounds art = default;
+        foreach (SpriteRenderer renderer in GetComponentsInChildren<SpriteRenderer>(false))
+        {
+            if (renderer == null || !renderer.enabled || renderer.sprite == null) continue;
+            if (!found) { art = renderer.bounds; found = true; }
+            else art.Encapsulate(renderer.bounds);
+        }
+        if (!found)
+        {
+            Collider2D collider2D = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>();
+            if (collider2D == null) return Vector3.zero;
+            art = collider2D.bounds;
+        }
+        return transform.InverseTransformPoint(new Vector3(art.center.x, art.center.y, transform.position.z));
+    }
+
+    // Prompt above the collider top; the gap is in world units.
     protected Vector3 GetPromptOffsetAboveCollider(float gap)
     {
         Collider2D collider2D = GetComponent<Collider2D>() ?? GetComponentInChildren<Collider2D>();

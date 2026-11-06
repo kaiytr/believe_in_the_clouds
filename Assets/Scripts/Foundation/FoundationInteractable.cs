@@ -27,12 +27,10 @@ public class FoundationInteractable : InteractableBehaviour, IWorldInteractionPr
     [Header("재단")]
     [Tooltip("로그/UI에 표시할 재단 이름.")]
     [SerializeField] private string foundationName = "재단";
-    [Tooltip("오브젝트 위 상호작용 안내와 콜라이더 윗면 사이의 월드 거리.")]
-    [SerializeField, Min(0f)] private float promptGap = .8f;
 
     public string FoundationName => string.IsNullOrEmpty(foundationName) ? InteractionName : foundationName;
     public Transform PromptAnchor => transform;
-    public Vector3 PromptOffset => GetPromptOffsetAboveCollider(promptGap);
+    public Vector3 PromptOffset => GetPromptOffsetAboveArt();
 
     public override string InteractionPrompt
     {
