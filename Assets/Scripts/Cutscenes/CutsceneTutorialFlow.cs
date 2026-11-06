@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-500)]
@@ -13,6 +14,12 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
     [SerializeField] private CutsceneDefinition afterDeathDefinition;
     [SerializeField] private bool playIntroOnStart = true;
 
+    [Header("Scene fade-in")]
+    [Tooltip("The scene starts fully black, holds briefly, then fades in before the intro cutscene begins.")]
+    [SerializeField] private bool fadeInOnStart = true;
+    [SerializeField, Min(0f)] private float fadeHoldSeconds = 0.5f;
+    [SerializeField, Min(0.05f)] private float fadeSeconds = 1.6f;
+
     [Header("Actors and watcher")]
     [SerializeField] private CutsceneCharacter playerCharacter;
     [SerializeField] private CutsceneCharacter storyBeliever;
@@ -22,6 +29,8 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
     private Rigidbody2D heldBody;
     private bool bodyWasSimulated;
     private bool holdingBeliever;
+    private GameObject fadeOverlay;
+    private object fadeToken;
 
     public CutsceneRunner Runner => runner;
     public CutsceneDefinition IntroDefinition => introDefinition;
@@ -35,6 +44,9 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
         if (deathWatcher == null)
             deathWatcher = GetComponent<CutsceneDeathWatcher>();
         HoldBeliever();
+        // Cover the screen before the first frame so the scene never flashes in unfaded.
+        if (fadeInOnStart && playIntroOnStart && Application.isPlaying)
+            CreateFadeOverlay();
     }
 
     private void OnEnable()
@@ -50,6 +62,8 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
         ReleaseBeliever();
     }
 
+    private void OnDestroy() => EndFade();
+
     private IEnumerator Start()
     {
         // 로비 런타임의 씬 초기화/위치 복원을 끝낸 뒤 시작 독백을 재생한다.
@@ -57,8 +71,56 @@ public sealed class CutsceneTutorialFlow : MonoBehaviour
         LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
         while (flow != null && flow.Scene != null && flow.Scene.gameObject.scene == gameObject.scene && !flow.InputReady)
             yield return null;
+        yield return FadeIn();
         if (playIntroOnStart && runner != null && introDefinition != null)
             runner.Play(introDefinition, GetPlayerHealth(), false);
+    }
+
+    private void CreateFadeOverlay()
+    {
+        fadeOverlay = new GameObject("[Tutorial Fade]", typeof(RectTransform), typeof(Canvas), typeof(CanvasGroup));
+        Canvas canvas = fadeOverlay.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 400;
+
+        var imageObject = new GameObject("Black", typeof(RectTransform), typeof(Image));
+        imageObject.transform.SetParent(fadeOverlay.transform, false);
+        RectTransform rect = imageObject.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
+        Image image = imageObject.GetComponent<Image>();
+        image.color = Color.black;
+        image.raycastTarget = false;
+
+        // The player cannot move or interact while the screen is dark.
+        fadeToken = new object();
+        UiModal.Push(fadeToken);
+    }
+
+    private IEnumerator FadeIn()
+    {
+        if (fadeOverlay == null) yield break;
+        CanvasGroup group = fadeOverlay.GetComponent<CanvasGroup>();
+        for (float t = 0f; t < fadeHoldSeconds; t += Time.unscaledDeltaTime)
+            yield return null;
+        for (float t = 0f; t < fadeSeconds; t += Time.unscaledDeltaTime)
+        {
+            if (fadeOverlay == null) yield break;
+            float k = Mathf.Clamp01(t / fadeSeconds);
+            group.alpha = 1f - k * k * (3f - 2f * k);
+            yield return null;
+        }
+        EndFade();
+    }
+
+    private void EndFade()
+    {
+        if (fadeToken != null) UiModal.Pop(fadeToken);
+        fadeToken = null;
+        if (fadeOverlay != null) Destroy(fadeOverlay);
+        fadeOverlay = null;
     }
 
     public void Configure(CutsceneRunner sequenceRunner, CutsceneDefinition intro,
