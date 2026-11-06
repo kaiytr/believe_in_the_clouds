@@ -8,6 +8,8 @@ public sealed class TitleScreen : MonoBehaviour
     public const string SceneName = "Title";
     private const string TutorialStartedKey = "believe_in_the_clouds.tutorial_started";
     private const string BackgroundResource = "UI/Title/TitleBackground";
+    private const float ArtworkWidth = 1920f;
+    private const float ArtworkHeight = 1080f;
 
     private Button start;
     private Button quit;
@@ -23,14 +25,66 @@ public sealed class TitleScreen : MonoBehaviour
         canvas.transform.SetParent(transform, false);
         CreateBackground(canvas.transform);
 
-        RectTransform menuPanel = DeathResultView.Box("Title menu backing", canvas.transform,
-            new Color(.035f, .035f, .045f, .64f), .42f, .035f, .58f, .195f);
-        start = DeathResultView.MenuButton(menuPanel, "시작하기", .08f, .56f, .92f, .90f, StartGame);
-        quit = DeathResultView.MenuButton(menuPanel, "종료하기", .08f, .10f, .92f, .44f, QuitGame);
-        message = DeathResultView.Label(canvas.transform, "", 17, DeathResultView.Paper,
-            .25f, .20f, .75f, .245f);
+        RectTransform menu = CreateButtonLayout(canvas.transform);
+        start = CreateArtworkButton(menu, "시작하기", "TitleStartButton", "TitleStartButtonPressed",
+            new Rect(782f, 171f, 357f, 78f), StartGame);
+        quit = CreateArtworkButton(menu, "종료하기", "TitleQuitButton", "TitleQuitButtonPressed",
+            new Rect(782f, 67f, 357f, 78f), QuitGame);
+        message = DeathResultView.Label(menu, "", 17, DeathResultView.Paper,
+            .20f, .255f, .80f, .31f);
 
         UiEventSystemBoot.Ensure().SetSelectedGameObject(start.gameObject);
+    }
+
+    private static RectTransform CreateButtonLayout(Transform parent)
+    {
+        var layout = new GameObject("Title button layout", typeof(RectTransform), typeof(AspectRatioFitter));
+        RectTransform rect = layout.GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+        rect.anchoredPosition = rect.sizeDelta = Vector2.zero;
+
+        AspectRatioFitter fitter = layout.GetComponent<AspectRatioFitter>();
+        fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        fitter.aspectRatio = ArtworkWidth / ArtworkHeight;
+        return rect;
+    }
+
+    private static Button CreateArtworkButton(Transform parent, string label, string normalResource,
+        string pressedResource, Rect bounds, Action action)
+    {
+        float x0 = bounds.xMin / ArtworkWidth, y0 = bounds.yMin / ArtworkHeight;
+        float x1 = bounds.xMax / ArtworkWidth, y1 = bounds.yMax / ArtworkHeight;
+        Sprite normal = Resources.Load<Sprite>("UI/Title/" + normalResource);
+        if (normal == null)
+        {
+            Debug.LogError("타이틀 버튼 이미지를 불러오지 못했습니다: " + normalResource);
+            return DeathResultView.MenuButton(parent, label, x0, y0, x1, y1, action);
+        }
+
+        Sprite pressed = Resources.Load<Sprite>("UI/Title/" + pressedResource);
+        var artwork = new GameObject(label + " artwork", typeof(RectTransform), typeof(Image));
+        artwork.transform.SetParent(parent, false);
+        DeathResultView.Place(artwork.GetComponent<RectTransform>(), 0f, 0f, 1f, 1f);
+        Image image = artwork.GetComponent<Image>();
+        image.sprite = normal;
+        image.raycastTarget = false;
+
+        // 원본의 투명 여백은 보존하고 실제 버튼 테두리 안에서만 입력을 받는다.
+        RectTransform hitArea = DeathResultView.Box(label + " hit area", parent, Color.clear, x0, y0, x1, y1);
+        hitArea.GetComponent<Image>().raycastTarget = true;
+        Button button = hitArea.gameObject.AddComponent<Button>();
+        button.targetGraphic = image;
+        button.transition = Selectable.Transition.SpriteSwap;
+        button.spriteState = new SpriteState
+        {
+            highlightedSprite = normal,
+            selectedSprite = normal,
+            pressedSprite = pressed != null ? pressed : normal,
+            disabledSprite = normal
+        };
+        button.onClick.AddListener(() => action());
+        return button;
     }
 
     private static void CreateBackground(Transform parent)
