@@ -37,7 +37,7 @@ public sealed class ExpandedBeliefCondition : BeliefCondition
     }
 
     private bool CanEvaluate => challenge != null && isActiveAndEnabled && owner != null &&
-        !owner.IsDead && Controller != null && !Controller.IsStopped && !Controller.IsVulnerable &&
+        !owner.IsDead && Controller != null && !Controller.IsStopped && !Controller.IsDefenseReduced &&
         owner.HasCombatTarget && owner.BodyCollider != null;
 
     private void LateUpdate()

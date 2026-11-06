@@ -42,7 +42,7 @@ public sealed class BeliefSystemPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator BeliefIsPerEnemyDamageDependsOnSourceAndVulnerabilityRecoversOnce()
+    public IEnumerator BeliefIsPerEnemyDamageDependsOnSourceAndVulnerabilityCollapsesWithoutRecovery()
     {
         BeliefProfile rear = CreateProfile(BeliefType.RearPosition, 25f, 0f);
         BeliefProfile dodge = CreateProfile(BeliefType.DodgeAttack, 0f, 25f);
@@ -67,7 +67,7 @@ public sealed class BeliefSystemPlayModeTests
 
         first.ReduceBelief(75f);
         second.ReduceBelief(100f);
-        Assert.That(first.CurrentState, Is.EqualTo(BeliefState.Vulnerable));
+        Assert.That(first.CurrentState, Is.EqualTo(BeliefState.Collapsed));
         Assert.That(first.CurrentBelief, Is.Zero);
         Assert.That(first.ApplyIncomingDamageModifier(new DamageInfo(10f, DamageSource.PlayerOwned)), Is.EqualTo(20f));
         Assert.That(first.ReduceBelief(25f), Is.False);
@@ -75,9 +75,9 @@ public sealed class BeliefSystemPlayModeTests
 
         yield return new WaitForSeconds(5.1f);
 
-        Assert.That(first.CurrentState, Is.EqualTo(BeliefState.Maintained));
-        Assert.That(first.CurrentBelief, Is.EqualTo(100f));
-        Assert.That(second.CurrentState, Is.EqualTo(BeliefState.Vulnerable));
+        Assert.That(first.CurrentState, Is.EqualTo(BeliefState.Collapsed), "Collapsed belief must not recover.");
+        Assert.That(first.CurrentBelief, Is.Zero);
+        Assert.That(second.CurrentState, Is.EqualTo(BeliefState.Collapsed));
         Assert.That(second.CurrentBelief, Is.Zero);
     }
 

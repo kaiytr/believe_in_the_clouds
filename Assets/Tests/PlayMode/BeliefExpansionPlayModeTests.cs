@@ -120,7 +120,7 @@ public sealed class BeliefExpansionPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator ProductionSelectionUsesThreeSpeciesCandidatesAndSurvivesRecovery()
+    public IEnumerator ProductionSelectionUsesThreeSpeciesCandidatesAndStaysCollapsed()
     {
         yield return Load(productionSelection: true);
         var selected = new Dictionary<EnemyUnit, BeliefType>();
@@ -139,7 +139,8 @@ public sealed class BeliefExpansionPlayModeTests
         foreach (EnemyUnit enemy in enemies.Values)
         {
             Assert.That(enemy.Belief.Type, Is.EqualTo(selected[enemy]));
-            Assert.That(enemy.Belief.CurrentBelief, Is.EqualTo(100f));
+            Assert.That(enemy.Belief.CurrentState, Is.EqualTo(BeliefState.Collapsed), $"{enemy.name}: collapsed belief must not recover.");
+            Assert.That(enemy.Belief.CurrentBelief, Is.Zero);
             Assert.That(enemy.gameObject.activeInHierarchy, Is.True);
         }
     }
@@ -163,13 +164,14 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(combo.TryHit(Dog, 10f, 1), Is.True);
         Assert.That(Dog.Belief.CurrentBelief, Is.EqualTo(20f));
         Assert.That(new PlayerAttackContext(player.gameObject).TryHit(Dog, 10f), Is.True);
-        Assert.That(Dog.IsVulnerable, Is.True);
+        Assert.That(Dog.IsDefenseReduced, Is.True);
         Assert.That(Dog.CurrentHp, Is.EqualTo(hp - 18f));
         Assert.That(new PlayerAttackContext(player.gameObject).TryHit(Dog, 10f), Is.True);
         Assert.That(Dog.CurrentHp, Is.EqualTo(hp - 38f));
         yield return new WaitForSeconds(.2f);
         Assert.That(Dog.Belief.Type, Is.EqualTo(BeliefType.DogRearAttack));
-        Assert.That(Dog.Belief.CurrentBelief, Is.EqualTo(100f));
+        Assert.That(Dog.Belief.CurrentState, Is.EqualTo(BeliefState.Collapsed), "Collapsed belief must not recover.");
+        Assert.That(Dog.Belief.CurrentBelief, Is.Zero);
         Assert.That(combo.TryHit(Dog, 10f, 0), Is.False, "Recovery must not forget a consumed damage ID.");
     }
 
@@ -195,7 +197,7 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(Believer.Belief.CurrentBelief, Is.EqualTo(75f));
         for (int i = 3; i <= 5; i++) combo.TryHit(Believer, 1f, i);
         Assert.That(Believer.Belief.CurrentBelief, Is.Zero);
-        Assert.That(Believer.IsVulnerable, Is.True);
+        Assert.That(Believer.IsDefenseReduced, Is.True);
     }
 
     [UnityTest]
@@ -212,7 +214,7 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(Executive.Belief.CurrentBelief, Is.EqualTo(50f));
         Assert.That(attack.IsWindingUp, Is.True);
         combo.TryHit(Executive, 1f, 1);
-        Assert.That(Executive.IsVulnerable, Is.True);
+        Assert.That(Executive.IsDefenseReduced, Is.True);
         Assert.That(attack.IsWindingUp, Is.False);
         Assert.That(result.HasValue, Is.True);
         Assert.That(result.Value.Outcome, Is.EqualTo(AttackOutcome.Cancelled));
@@ -426,7 +428,7 @@ public sealed class BeliefExpansionPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator ReactivationKeepsSelectionResetsTheChainAndResumesTheRemainingVulnerability()
+    public IEnumerator ReactivationKeepsSelectionResetsTheChainAndKeepsTheCollapse()
     {
         yield return Load();
         Place(Believer, Vector2.right * 2f);
@@ -442,15 +444,17 @@ public sealed class BeliefExpansionPlayModeTests
         combo.TryHit(Believer, 1f, 2);
         Assert.That(Believer.Belief.CurrentBelief, Is.EqualTo(75f), "A reactivated chain starts with its first hit.");
         for (int i = 3; i <= 5; i++) combo.TryHit(Believer, 1f, i);
-        Assert.That(Believer.IsVulnerable, Is.True);
+        Assert.That(Believer.IsDefenseReduced, Is.True);
         Believer.gameObject.SetActive(false);
         yield return new WaitForSeconds(.2f);
         Assert.That(Believer.Belief.CurrentBelief, Is.Zero);
         Believer.gameObject.SetActive(true);
         yield return new WaitForSeconds(.04f);
-        Assert.That(Believer.IsVulnerable, Is.True);
+        Assert.That(Believer.Belief.CurrentState, Is.EqualTo(BeliefState.Collapsed), "Collapsed belief must survive reactivation.");
+        Assert.That(Believer.Belief.CurrentBelief, Is.Zero);
         yield return new WaitForSeconds(.15f);
-        Assert.That(Believer.Belief.CurrentBelief, Is.EqualTo(100f));
+        Assert.That(Believer.Belief.CurrentState, Is.EqualTo(BeliefState.Collapsed), "Collapsed belief must not recover.");
+        Assert.That(Believer.Belief.CurrentBelief, Is.Zero);
         Assert.That(Believer.Belief.Type, Is.EqualTo(BeliefType.BelieverConsecutiveHits));
     }
 
@@ -501,7 +505,7 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(Dog.Belief.CurrentBelief, Is.EqualTo(60f));
         tool.SelectTarget(believerIndex);
         Assert.That(tool.StartFiveHits(), Is.True);
-        yield return Until(() => Believer.IsVulnerable);
+        yield return Until(() => Believer.IsDefenseReduced);
         Assert.That(Believer.Belief.CurrentBelief, Is.Zero);
         Assert.That(Believer.CurrentHp, Is.EqualTo(997f).Within(.001f));
         yield return Until(() => !tool.IsBurstRunning);
@@ -518,7 +522,7 @@ public sealed class BeliefExpansionPlayModeTests
         Assert.That(tool.SendHit(), Is.True);
         Assert.That(Executive.Belief.CurrentBelief, Is.EqualTo(50f));
         Assert.That(tool.SendHit(), Is.True);
-        Assert.That(Executive.IsVulnerable, Is.True);
+        Assert.That(Executive.IsDefenseReduced, Is.True);
         Assert.That(attack.IsWindingUp, Is.False);
         tool.SelectTarget(Array.IndexOf(tool.Targets, Believer));
         Assert.That(tool.StartFiveHits(), Is.True);

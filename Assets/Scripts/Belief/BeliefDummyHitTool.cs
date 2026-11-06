@@ -119,7 +119,7 @@ public sealed class BeliefDummyHitTool : MonoBehaviour
         {
             if (!CanSend(target, data) || !SendTo(target, data)) break;
             sent++;
-            if (target.IsDead || target.IsVulnerable) break;
+            if (target.IsDead || target.IsDefenseReduced) break;
             if (i < 4) yield return new WaitForSeconds(burstInterval);
         }
         LastStatus = $"더미 연속 주입 {sent}회 완료 · 붕괴/사망 시 종료";
