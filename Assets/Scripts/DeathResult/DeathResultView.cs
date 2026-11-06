@@ -27,7 +27,7 @@ public sealed class DeathResultView : MonoBehaviour
         aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
         aspect.aspectRatio = 16f / 9f;
 
-        Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/DeathResultPanel");
+        Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/result_BG");
         if (panelSprite != null)
         {
             AddFullCanvasArtwork(composition, "Result panel artwork", panelSprite);
@@ -43,7 +43,6 @@ public sealed class DeathResultView : MonoBehaviour
             Framed("Play statistics", panel, .025f, .35f, .515f, .84f);
             Framed("Reserved area", panel, .025f, .055f, .515f, .30f);
             Framed("Death information", panel, .53f, .055f, .975f, .84f);
-            Label(composition, "− 사망원인 −", 22, Ink, .57f, .70f, .82f, .76f);
         }
 
         Label(composition, "획득한 코인 개수", 23, Ink, .178f, .63f, .405f, .68f, TextAnchor.MiddleLeft);
