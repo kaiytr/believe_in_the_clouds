@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 4600000110}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -22.75, y: -0.8499999, z: 0}
+  m_LocalPosition: {x: -15, y: -0.8499999, z: 0}
   m_LocalScale: {x: 0.5, y: 10, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -165,7 +165,7 @@ Transform:
   m_GameObject: {fileID: 4600000120}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 22.75, y: -0.8499999, z: 0}
+  m_LocalPosition: {x: 15, y: -0.8499999, z: 0}
   m_LocalScale: {x: 0.5, y: 10, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -352,7 +352,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 45, y: 20}
+  m_Size: {x: 30, y: 20}
   m_EdgeRadius: 0
 --- !u!1 &758039714956035726
 GameObject:
@@ -470,7 +470,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 45, y: 16}
+  m_Size: {x: 30, y: 16}
   m_EdgeRadius: 0
 --- !u!114 &6084462513718281962
 MonoBehaviour:
@@ -507,6 +507,7 @@ MonoBehaviour:
   explorationControllers: []
   combatSize: 8
   maximumCombatSize: 10.5
+  fixedCombatView: 1
   combatVerticalOffset: -1
   stormCloudTopMargin: 0.7
   playerMargin: 1.5
@@ -543,7 +544,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 10.5
       objectReference: {fileID: 0}
     - target: {fileID: 5173758161841430087, guid: f2abb5c4719d6b244a6665fd683ce468, type: 3}
       propertyPath: m_LocalPosition.y

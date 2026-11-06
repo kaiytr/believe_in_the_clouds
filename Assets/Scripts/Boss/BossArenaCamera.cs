@@ -10,6 +10,8 @@ public sealed class BossArenaCamera : MonoBehaviour
     [SerializeField] private Behaviour[] explorationControllers = new Behaviour[0];
     [SerializeField, Min(.1f)] private float combatSize = 8f;
     [SerializeField, Min(.1f)] private float maximumCombatSize = 10.5f;
+    [Tooltip("Keeps the combat camera centered on the arena and fits its full width in view.")]
+    [SerializeField] private bool fixedCombatView;
     [SerializeField] private float combatVerticalOffset = -1f;
     [SerializeField, Min(0f)] private float stormCloudTopMargin = .7f;
     [Tooltip("Lowers the combat view without moving the storm clouds, so their top edge overlaps the top of the screen (needs to exceed the top margin).")]
@@ -67,8 +69,8 @@ public sealed class BossArenaCamera : MonoBehaviour
         }
 
         float centerY = bounds.center.y + combatVerticalOffset;
-        float size = combatSize;
-        if (focus != null)
+        float size = fixedCombatView ? GetFixedCombatSize(bounds) : combatSize;
+        if (!fixedCombatView && focus != null)
             size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(focus.position.y - centerY) + playerMargin),
                 combatSize, Mathf.Max(combatSize, maximumCombatSize));
         topY = centerY + size - stormCloudTopMargin;
@@ -139,14 +141,18 @@ public sealed class BossArenaCamera : MonoBehaviour
             view.orthographicSize = endingSize;
             return;
         }
-        if (fighting && player != null && TryGetArenaBounds(out Bounds bounds))
+        if (fighting && TryGetArenaBounds(out Bounds bounds) && (fixedCombatView || player != null))
         {
             float centerY = bounds.center.y + combatVerticalOffset;
-            float size = Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(player.position.y - centerY) + playerMargin),
-                combatSize, Mathf.Max(combatSize, maximumCombatSize));
+            float size = fixedCombatView
+                ? GetFixedCombatSize(bounds)
+                : Mathf.Clamp(Mathf.Max(combatSize, Mathf.Abs(player.position.y - centerY) + playerMargin),
+                    combatSize, Mathf.Max(combatSize, maximumCombatSize));
             float blend = 1f - Mathf.Exp(-Time.unscaledDeltaTime * 5f / blendDuration);
             view.orthographicSize = Mathf.Lerp(view.orthographicSize, size, blend);
-            float x = ConfineX(player.position.x, bounds.min.x, bounds.max.x, view.orthographicSize * view.aspect);
+            float x = fixedCombatView
+                ? bounds.center.x
+                : ConfineX(player.position.x, bounds.min.x, bounds.max.x, view.orthographicSize * view.aspect);
             Vector3 position = new Vector3(x, centerY - combatCameraDrop, view.transform.position.z);
             view.transform.position = Vector3.Lerp(view.transform.position, position, blend);
             view.transform.rotation = Quaternion.Slerp(view.transform.rotation, Quaternion.identity, blend);
@@ -168,6 +174,13 @@ public sealed class BossArenaCamera : MonoBehaviour
 
     private static float ConfineX(float x, float min, float max, float halfWidth) =>
         min + halfWidth > max - halfWidth ? (min + max) * .5f : Mathf.Clamp(x, min + halfWidth, max - halfWidth);
+
+    private float GetFixedCombatSize(Bounds bounds)
+    {
+        Camera output = view != null ? view : Camera.main;
+        float aspect = output != null ? output.aspect : 16f / 9f;
+        return Mathf.Max(combatSize, bounds.size.x / (2f * Mathf.Max(.01f, aspect)));
+    }
 
     private void RestoreExploration()
     {
