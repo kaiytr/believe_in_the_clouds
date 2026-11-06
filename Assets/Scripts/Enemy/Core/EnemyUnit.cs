@@ -34,6 +34,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
     private PlayerMove targetMovement;
     private float moveInput;
     private bool movementLocked;
+    // 플레이어 타격 넉백 속도(유닛/초). AI 이동속도에 더해지고 매 틱 감쇠한다.
+    private float knockbackVelocity;
+    private float knockbackDirection;
     private bool configurationValid;
     private float nextTargetSearchTime;
     private CoinDropOrigin coinDropOrigin;
@@ -137,12 +140,50 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
     protected virtual void FixedUpdate()
     {
-        if (IsDead || movementLocked)
+        if (IsDead)
             return;
+
+        // 넉백은 공격/경직으로 movementLocked여도 적용돼야 뒤로 밀린다.
+        float knockback = ConsumeKnockbackVelocity();
+        if (movementLocked)
+        {
+            if (knockback != 0f)
+                rb.linearVelocity = new Vector2(knockback, rb.linearVelocity.y);
+            return;
+        }
 
         DoctrineStats doctrineStats = GetComponent<DoctrineStats>();
         float doctrineMultiplier = doctrineStats != null ? doctrineStats.SpeedMultiplier : 1f;
-        rb.linearVelocity = new Vector2(moveInput * ReferencePlayerMoveSpeed * moveSpeedRatio * doctrineMultiplier, rb.linearVelocity.y);
+        float move = moveInput * ReferencePlayerMoveSpeed * moveSpeedRatio * doctrineMultiplier;
+        rb.linearVelocity = new Vector2(move + knockback, rb.linearVelocity.y);
+    }
+
+    // 넉백 속도를 반환하고 다음 틱을 위해 감쇠시킨다.
+    private float ConsumeKnockbackVelocity()
+    {
+        if (Mathf.Abs(knockbackVelocity) < 0.01f)
+        {
+            knockbackVelocity = 0f;
+            return 0f;
+        }
+
+        float value = knockbackVelocity * knockbackDirection;
+        // 약 0.25초에 걸쳐 빠르게 잦아든다.
+        knockbackVelocity = Mathf.MoveTowards(knockbackVelocity, 0f, knockbackVelocity * 0.25f + 0.01f);
+        return value;
+    }
+
+    /// <summary>플레이어 타격 시 적이 뒤로 밀려나도록 넉백 속도를 적립한다.</summary>
+    public void AddKnockback(float speed, float fromX)
+    {
+        if (IsDead || speed <= 0f)
+            return;
+
+        float direction = transform.position.x - fromX;
+        if (Mathf.Abs(direction) < 0.01f)
+            direction = transform.localScale.x >= 0f ? -1f : 1f;
+        knockbackDirection = Mathf.Sign(direction);
+        knockbackVelocity = Mathf.Min(knockbackVelocity + speed, 16f);
     }
 
     protected abstract void UpdateAI();
