@@ -26,15 +26,13 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField] private TemporaryStageExit authoredExit;
     [SerializeField] private bool showTestTools = true;
     [Header("Scene-placed labels (optional; created at run time when empty)")]
-    [Tooltip("Label above the authored exit door. Its text and visibility are driven at run time.")]
-    [SerializeField] private TextMesh authoredExitLabel;
     public bool IsLobby => isLobby;
     public PlayerHealth Player => player;
     public bool ShowTestTools { get => showTestTools; set { showTestTools = value; if (tools != null) tools.SetActive(value); } }
     private LobbyFlowRuntime flow;
     private GameObject generated, tools;
     private string contentKey;
-    private TextMesh stageTitle, exitLabel;
+    private TextMesh stageTitle;
     private SpriteRenderer exitBody;
     private TemporaryStageExit stageExit;
     private bool exitRevealStarted;
@@ -124,7 +122,6 @@ public sealed class LobbySceneController : MonoBehaviour
             if (isShop)
             {
                 exitBody.enabled = true;
-                SetExitLabelVisible(true);
             }
             else if (isCombat)
             {
@@ -132,13 +129,11 @@ public sealed class LobbySceneController : MonoBehaviour
                 else if (exitRevealStarted && !revealPlaying)
                 {
                     exitBody.enabled = true;
-                    SetExitLabelVisible(true);
                 }
             }
             else
             {
                 exitBody.enabled = false;
-                SetExitLabelVisible(false);
             }
 
             bool available = isShop || isCombat && run.stage.completed;
@@ -146,7 +141,6 @@ public sealed class LobbySceneController : MonoBehaviour
                 exitBody.color = available ? Color.white : new Color(.55f, .55f, .55f);
             else
                 exitBody.color = available ? new Color(.27f, .65f, .53f) : new Color(.22f, .25f, .3f);
-            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : available ? "출구 · E" : "완료 후 출구 사용";
         }
     }
 
@@ -165,14 +159,6 @@ public sealed class LobbySceneController : MonoBehaviour
             {
                 stageExit = authoredExit;
                 exitBody = authoredExit.GetComponentInChildren<SpriteRenderer>();
-                if (authoredExitLabel != null)
-                {
-                    exitLabel = authoredExitLabel;
-                    ApplyLabelFont(exitLabel);
-                }
-                else
-                    exitLabel = WorldLabel(generated.transform, "Exit label", "완료 후 출구 사용",
-                        authoredExit.transform.position + Vector3.up * 2.25f, Color.white);
                 InitializeExitPresentation(run);
                 return;
             }
@@ -191,8 +177,6 @@ public sealed class LobbySceneController : MonoBehaviour
             exitBody.sharedMaterial = worldMaterial;
             exitBody.sortingOrder = -8;
             stageExit = exit.AddComponent<TemporaryStageExit>();
-            exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용",
-                new Vector2(0, returnDoorSprite != null ? 2.25f : 2.7f), Color.white);
             InitializeExitPresentation(run);
         }
     }
@@ -202,7 +186,6 @@ public sealed class LobbySceneController : MonoBehaviour
         exitRevealStarted = false;
         bool showImmediately = run != null && run.stage != null && run.stage.role == BranchRole.Shop;
         if (exitBody != null) exitBody.enabled = showImmediately;
-        SetExitLabelVisible(showImmediately);
     }
 
     private void StartExitReveal()
@@ -216,14 +199,7 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             Destroy(effect);
             exitBody.enabled = true;
-            SetExitLabelVisible(true);
         }
-    }
-
-    private void SetExitLabelVisible(bool visible)
-    {
-        if (exitLabel != null && exitLabel.TryGetComponent(out Renderer labelRenderer))
-            labelRenderer.enabled = visible;
     }
 
     private void SpawnFoundation(Transform parent)
@@ -264,13 +240,6 @@ public sealed class LobbySceneController : MonoBehaviour
             LobbyBranchInteractable branch = Instantiate(branchPrefab, anchor.position, anchor.rotation, parent);
             branch.Initialize(candidate.id);
         }
-    }
-
-    // Scene-placed labels keep their text, colour and position; only the run-time font is applied.
-    private static void ApplyLabelFont(TextMesh label)
-    {
-        label.font = UiTheme.GetFont();
-        if (label.TryGetComponent(out MeshRenderer labelRenderer)) labelRenderer.sharedMaterial = label.font.material;
     }
 
     public static TextMesh WorldLabel(Transform parent, string name, string text, Vector2 position, Color color)

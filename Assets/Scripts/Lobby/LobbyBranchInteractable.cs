@@ -6,7 +6,6 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     public SpriteRenderer Body => body;
     [SerializeField] private SpriteRenderer body;
     [SerializeField] private SpriteRenderer border;
-    [SerializeField] private TextMesh label;
     [SerializeField] private BoxCollider2D trigger;
     [SerializeField] private Sprite closedDoor;
     [SerializeField] private Sprite combatDoor;
@@ -38,25 +37,12 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
 
         trigger.isTrigger = true;
         trigger.size = new Vector2(2.8f, 4.6f);
-
-        if (label != null && label.font == null)
-        {
-            label.font = UiTheme.GetFont();
-            if (label.font != null && label.TryGetComponent(out MeshRenderer textRenderer))
-            {
-                textRenderer.sharedMaterial = label.font.material;
-            }
-        }
     }
 
     public void Initialize(string id)
     {
         ResolvePrefabReferences();
         BranchId = id;
-        if (label != null)
-        {
-            label.text = "?";
-        }
     }
 
     private BranchCandidate Candidate => LobbyFlowRuntime.Instance?.State?.candidates.Find(item => item.id == BranchId);
@@ -86,7 +72,7 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
 
         revealEffect = gameObject.AddComponent<LobbyBranchRevealEffect>();
         Color tint = closedDoor != null ? Color.white : RoleColor(committed.role);
-        if (!revealEffect.Play(body, border, label, DoorFor(committed), tint, LobbyRules.RoleLabel(committed.role)))
+        if (!revealEffect.Play(body, border, null, DoorFor(committed), tint, LobbyRules.RoleLabel(committed.role)))
             Destroy(revealEffect);
     }
 
@@ -94,9 +80,6 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     {
         BranchCandidate candidate = Candidate;
         if (candidate == null || body == null || IsRevealing) return;
-
-        string roleLabel = candidate.revealed ? LobbyRules.RoleLabel(candidate.role) : "?";
-        if (label != null && label.text != roleLabel) label.text = roleLabel;
 
         bool selected = InteractionController.Instance != null && InteractionController.Instance.Current == this &&
             LobbyFlowRuntime.Instance.InputReady && IsInRange(LobbyFlowRuntime.Instance.Scene.Player.transform.position);
@@ -135,10 +118,6 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
         if (border == null)
         {
             border = transform.Find("Frame")?.GetComponent<SpriteRenderer>();
-        }
-        if (label == null)
-        {
-            label = transform.Find("Role")?.GetComponent<TextMesh>();
         }
     }
 

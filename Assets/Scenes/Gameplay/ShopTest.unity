@@ -6595,7 +6595,6 @@ MonoBehaviour:
   authoredExit: {fileID: 1816198481}
   showTestTools: 1
   lobbyTitleLabel: {fileID: 0}
-  authoredExitLabel: {fileID: 0}
 --- !u!4 &2110144405
 Transform:
   m_ObjectHideFlags: 0

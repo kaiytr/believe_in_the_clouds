@@ -12342,7 +12342,6 @@ MonoBehaviour:
   lobbyMaxX: -3
   authoredExit: {fileID: 0}
   showTestTools: 1
-  authoredExitLabel: {fileID: 0}
 --- !u!4 &1684355054
 Transform:
   m_ObjectHideFlags: 0
