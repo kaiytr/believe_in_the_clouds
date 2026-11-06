@@ -32,9 +32,14 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     // 아트 속 갈색 박스 (실측): x 107~494, y 180~407. 중심 = (300.5, 293.5)
     private const float BoxCenterX = 300.5f;
-    private const float BoxTop = 180f;
-    private const float BoxBottom = 407f;
+    private const float BoxTop = 179f;
+    private const float BoxBottom = 406f;
     private const float BoxCenterY = (BoxTop + BoxBottom) * 0.5f;
+    // 갈색 박스 안쪽 여백. 0이면 그림이 박스 경계까지 꽉 찬다.
+    // (박스 실측: x 107~494, y 179~406)
+    private const float IllustrationInset = 0f;
+    private const float IllustrationWidth = 494f - 107f - IllustrationInset * 2f;
+    private const float IllustrationHeight = 406f - 179f - IllustrationInset * 2f;
 
     // 페이지명: 박스 아래 여백(407~468)의 정중앙, 박스 중심 x.
     private const float LabelCenterY = 437.5f;
@@ -70,6 +75,14 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private static readonly string[] PageLabels = { "공격", "이동 · 회피", "믿음" };
 
+    // 페이지별 그림. Resources/Tip/Tutorial 아래 파일 이름.
+    private static readonly string[] PageIllustrations =
+    {
+        "Tutorial/TutorialAttack",
+        "Tutorial/TutorialMove",
+        "Tutorial/TutorialBelief",
+    };
+
     private static readonly string[] PageBodies =
     {
         "마우스 좌클릭으로 공격합니다.\n지상에서는 3연타가 나가고,\n공중에서는 내리찍습니다.\n\n신도를 쓰러뜨려 보세요.",
@@ -89,6 +102,16 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "매 분기마다 재단을\n사용할 수 있습니다.",
     };
 
+    // 재단 TIP 페이지별 그림. Resources/Tip/Foundation 아래 파일 이름 (1→5 순서).
+    private static readonly string[] FoundationIllustrations =
+    {
+        "Foundation/FoundationStep1",
+        "Foundation/FoundationStep2",
+        "Foundation/FoundationStep3",
+        "Foundation/FoundationStep4",
+        "Foundation/FoundationStep5",
+    };
+
     // 상점 TIP (런당 최초 1회): 상점 사용 전에 상점이 뭔지 알려준다.
     private static readonly string[] ShopLabels = { "상점", "교리 활용" };
 
@@ -98,10 +121,20 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "상점에서 구매한 교리들을 재단에서\n조합하여 사용 할 수 있습니다.",
     };
 
+    // 상점 TIP 페이지별 그림. Resources/Tip/Shop 아래 파일 이름 (시간순).
+    private static readonly string[] ShopIllustrations =
+    {
+        "Shop/ShopStep1",
+        "Shop/ShopStep2",
+    };
+
     private GameObject canvasObject;
     private Text pageLabel;
     private GameObject prevArrow;
     private GameObject nextArrow;
+    private Image pageIllustration;
+    private Sprite roundedMaskSprite;
+    private string[] activeIllustrations = PageIllustrations;
     private readonly List<Text> bodyLines = new List<Text>();
     private string[] activeLabels = PageLabels;
     private string[] activeBodies = PageBodies;
@@ -177,6 +210,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
         activeLabels = PageLabels;
         activeBodies = PageBodies;
+        activeIllustrations = PageIllustrations;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
@@ -192,6 +226,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
         activeLabels = FoundationLabels;
         activeBodies = FoundationBodies;
+        activeIllustrations = FoundationIllustrations;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
@@ -207,6 +242,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
         activeLabels = ShopLabels;
         activeBodies = ShopBodies;
+        activeIllustrations = ShopIllustrations;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
@@ -256,6 +292,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
         if (nextArrow != null)
             nextArrow.SetActive(pageIndex < activeLabels.Length - 1);
 
+        RefreshIllustration();
+
         string[] lines = activeBodies[pageIndex].Split('\n');
 
         // 1) 텍스트/활성 먼저 반영.
@@ -282,8 +320,104 @@ public sealed class TutorialTipPanel : MonoBehaviour
         }
     }
 
-    private void BuildUi()
+    // 현재 페이지의 그림을 갈색 박스 안에 비율 유지로 배치한다.
+    private void RefreshIllustration()
     {
+        if (pageIllustration == null)
+            return;
+
+        Sprite sprite = null;
+        if (activeIllustrations != null && pageIndex < activeIllustrations.Length)
+        {
+            string path = activeIllustrations[pageIndex];
+            if (!string.IsNullOrEmpty(path))
+            {
+                string resourcePath = "Tip/" + path;
+                sprite = Resources.Load<Sprite>(resourcePath);
+                if (sprite == null)
+                {
+                    // 임포트 설정이 Sprite가 아니어도 그림은 보이도록 텍스처 폴백.
+                    Texture2D texture = Resources.Load<Texture2D>(resourcePath);
+                    if (texture != null)
+                    {
+                        sprite = Sprite.Create(texture,
+                            new Rect(0f, 0f, texture.width, texture.height),
+                            new Vector2(0.5f, 0.5f), 100f, 0,
+                            SpriteMeshType.FullRect);
+                        sprite.name = path + " (Tip fallback)";
+                        generatedSprites.Add(sprite);
+                    }
+                    else
+                    {
+                        Debug.LogError($"TIP 그림을 불러오지 못했습니다: Resources/{resourcePath}.png");
+                    }
+                }
+            }
+        }
+
+        pageIllustration.sprite = sprite;
+        pageIllustration.gameObject.SetActive(sprite != null);
+        if (sprite == null)
+            return;
+
+        // 박스를 꽉 채운다(cover): 더 넓게 맞추는 축을 기준으로 확대하고,
+        // 남는 쪽은 마스크가 잘라낸다. 작은 원본도 확대해서 여백이 생기지 않게 한다.
+        Vector2 source = sprite.rect.size;
+        float scale = Mathf.Max(IllustrationWidth / source.x, IllustrationHeight / source.y);
+        pageIllustration.rectTransform.sizeDelta = source * scale;
+    }
+
+    // 둥근 모서리 마스크용 스프라이트. 9-slice로 늘려 써서 크기와 무관하게 모서리 반경이 유지된다.
+    private Sprite GetRoundedMaskSprite()
+    {
+        if (roundedMaskSprite != null)
+            return roundedMaskSprite;
+
+        const int size = 64;
+        const int radius = 20;
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+            name = "TipRoundedMask"
+        };
+
+        var pixels = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                // 네 모서리 원 안쪽인지 검사 (안티에일리어싱 포함).
+                float dx = 0f, dy = 0f;
+                bool corner = false;
+                if (x < radius) { dx = radius - x - 0.5f; corner = true; }
+                else if (x >= size - radius) { dx = x - (size - radius) + 0.5f; corner = true; }
+                if (y < radius) { dy = radius - y - 0.5f; corner = true; }
+                else if (y >= size - radius) { dy = y - (size - radius) + 0.5f; corner = true; }
+
+                float alpha = 1f;
+                if (corner)
+                {
+                    float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    alpha = Mathf.Clamp01(radius - distance + 0.5f);
+                }
+
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, false);
+
+        roundedMaskSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size),
+            new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect,
+            new Vector4(radius, radius, radius, radius));
+        roundedMaskSprite.name = "TipRoundedMask (Tip)";
+        generatedSprites.Add(roundedMaskSprite);
+        return roundedMaskSprite;
+    }
+
+    private void BuildUi()    {
         if (canvasObject != null)
             return;
 
@@ -325,6 +459,45 @@ public sealed class TutorialTipPanel : MonoBehaviour
             .GetComponent<RectTransform>();
         content.SetParent(panel, false);
         UiTheme.Stretch(content);
+
+        // 페이지 그림: 갈색 박스 안쪽을 꽉 채운다. 원본이 박스보다 좁으면 확대하고,
+        // 넘치는 부분은 둥근 모서리 마스크로 잘라 박스 밖으로 나가지 않게 한다.
+        GameObject illustrationMaskObject = new GameObject("IllustrationMask",
+            typeof(RectTransform), typeof(Image), typeof(Mask));
+        illustrationMaskObject.transform.SetParent(content, false);
+
+        RectTransform illustrationMask = illustrationMaskObject.GetComponent<RectTransform>();
+        illustrationMask.anchorMin = new Vector2(0f, 1f);
+        illustrationMask.anchorMax = new Vector2(0f, 1f);
+        illustrationMask.pivot = new Vector2(0.5f, 0.5f);
+        illustrationMask.sizeDelta = new Vector2(IllustrationWidth, IllustrationHeight);
+        illustrationMask.anchoredPosition = new Vector2(BoxCenterX, -BoxCenterY);
+
+        Image maskImage = illustrationMaskObject.GetComponent<Image>();
+        maskImage.sprite = GetRoundedMaskSprite();
+        maskImage.type = Image.Type.Sliced;
+        maskImage.color = Color.white;
+        maskImage.raycastTarget = false;
+
+        Mask mask = illustrationMaskObject.GetComponent<Mask>();
+        mask.showMaskGraphic = false;
+
+        GameObject illustrationObject = new GameObject("Illustration",
+            typeof(RectTransform), typeof(Image));
+        illustrationObject.transform.SetParent(illustrationMaskObject.transform, false);
+
+        RectTransform illustrationRect = illustrationObject.GetComponent<RectTransform>();
+        illustrationRect.anchorMin = new Vector2(0.5f, 0.5f);
+        illustrationRect.anchorMax = new Vector2(0.5f, 0.5f);
+        illustrationRect.pivot = new Vector2(0.5f, 0.5f);
+        illustrationRect.anchoredPosition = Vector2.zero;
+        illustrationRect.sizeDelta = new Vector2(IllustrationWidth, IllustrationHeight);
+
+        pageIllustration = illustrationObject.GetComponent<Image>();
+        pageIllustration.color = Color.white;
+        pageIllustration.preserveAspect = false;
+        pageIllustration.raycastTarget = false;
+        illustrationObject.SetActive(false);
 
         // 페이지명: 갈색 박스 아래 여백의 정중앙, 박스 중심 x.
         pageLabel = CreateText(content, "PageLabel", string.Empty,

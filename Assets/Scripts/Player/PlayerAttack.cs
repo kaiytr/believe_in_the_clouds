@@ -732,6 +732,14 @@ public class PlayerAttack : MonoBehaviour
         if ((step.knockback <= 0f && step.launchUp <= 0f) || hit == null)
             return;
 
+        EnemyUnit enemy = hit.GetComponentInParent<EnemyUnit>();
+        // 넉백은 EnemyUnit의 속도 방식으로 밀어낸다 (AI 속도에 더해져 감쇠).
+        if (enemy != null)
+        {
+            enemy.AddKnockback(step.knockback * 1.4f, transform.position.x);
+            return;
+        }
+
         Rigidbody2D enemyRb = hit.attachedRigidbody;
         if (enemyRb == null)
             enemyRb = hit.GetComponentInParent<Rigidbody2D>();
