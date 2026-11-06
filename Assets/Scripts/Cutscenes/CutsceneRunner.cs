@@ -211,7 +211,8 @@ public sealed class CutsceneRunner : MonoBehaviour
                         Fail("이동 배우 또는 앵커 참조가 없습니다: " + step.ActorId + " -> " + step.AnchorId);
                         yield break;
                     }
-                    yield return MoveActor(actor, destination, step.MovementSpeed, generation);
+                    CutsceneCharacter facing = string.IsNullOrEmpty(step.FacingActorId) ? null : ResolveActor(step.FacingActorId);
+                    yield return MoveActor(actor, destination, step.MovementSpeed, generation, facing);
                     break;
                 }
                 case CutsceneStepType.HarmlessProjectile:
@@ -306,10 +307,12 @@ public sealed class CutsceneRunner : MonoBehaviour
         }
     }
 
-    private IEnumerator MoveActor(CutsceneCharacter actor, Transform destination, float speed, int generation)
+    // `facing` set: the actor walks to the destination while looking at that actor (backing away).
+    private IEnumerator MoveActor(CutsceneCharacter actor, Transform destination, float speed, int generation,
+        CutsceneCharacter facing = null)
     {
         Vector3 target = destination.position;
-        actor.FaceToward(target);
+        actor.FaceToward(facing != null ? facing.transform.position : target);
         actor.SetCutscenePose(CutscenePose.Walking);
 
         if (speed <= 0f)
@@ -325,6 +328,7 @@ public sealed class CutsceneRunner : MonoBehaviour
                 if (actor.Enemy != null && actor.Body != null)
                     actor.Body.linearVelocity = (next - actor.transform.position) / Mathf.Max(.0001f, Time.unscaledDeltaTime);
                 actor.SetWorldPosition(next);
+                if (facing != null) actor.FaceToward(facing.transform.position);
                 yield return null;
             }
         }

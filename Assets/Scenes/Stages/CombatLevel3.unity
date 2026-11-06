@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad48d021300f9ac46ab9e87e975c6c8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DogEnemy
-  maxHp: 30
+  maxHp: 60
   moveSpeedRatio: 0.32
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 21015671}
@@ -1043,8 +1043,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.512
+  maxHp: 75
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 367042531}
   destroyDelay: 1.5
@@ -1275,8 +1275,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60b0ae2ecb4f1a04f86923b2b1a1b1b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.64
+  maxHp: 100
+  moveSpeedRatio: 0.48
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 452110119}
   destroyDelay: 1.5
@@ -1389,8 +1389,8 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
-  attackWindupSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
-  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
 --- !u!50 &452110124
@@ -25599,6 +25599,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec58794297f446d89f8856ea0e590bd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::LobbySceneController
+  exitRevealSound: {fileID: 8300000, guid: 6e6c6f3ada769cf4eb191f3f05bdd753, type: 3}
+  exitRevealSoundVolume: 0.9
   isLobby: 0
   player: {fileID: 132853814}
   branchPrefab: {fileID: 0}
@@ -26607,8 +26609,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.512
+  maxHp: 75
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1487363308}
   destroyDelay: 1.5
@@ -26821,8 +26823,8 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
-  attackWindupSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
-  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
 --- !u!70 &1517035366
@@ -26901,8 +26903,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60b0ae2ecb4f1a04f86923b2b1a1b1b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExecutiveEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.64
+  maxHp: 100
+  moveSpeedRatio: 0.48
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1517035366}
   destroyDelay: 1.5
@@ -27460,8 +27462,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.512
+  maxHp: 75
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1603110107}
   destroyDelay: 1.5
@@ -27661,8 +27663,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdcf3c9036f64ac4d9dd8eec7e6879f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BelieverEnemy
-  maxHp: 30
-  moveSpeedRatio: 0.512
+  maxHp: 75
+  moveSpeedRatio: 0.4
   targetSearchInterval: 0.5
   bodyCollider: {fileID: 1615577871}
   destroyDelay: 1.5

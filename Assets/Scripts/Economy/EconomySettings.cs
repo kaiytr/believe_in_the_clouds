@@ -18,6 +18,9 @@ public sealed class EconomySettings : ScriptableObject
     [Min(1f)] public float tokenDiameter = 30f;
     [Min(0f)] public float scatterRadius = 42f;
     public Color tokenColor = new Color(1f, 0.76f, 0.18f, 1f);
+    [Tooltip("Played when a dropped coin lands on the ground.")]
+    public AudioClip coinDropSound;
+    [Range(0f, 1f)] public float coinDropVolume = 0.6f;
 
     public static int RollDrop(EnemyRewardKind kind, IEconomyRandom random)
     {

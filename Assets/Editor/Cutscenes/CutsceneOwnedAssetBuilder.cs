@@ -65,7 +65,7 @@ public static class CutsceneOwnedAssetBuilder
             CutsceneStep.Move("believer", "believerNear", 2.4f),
             CutsceneStep.Say("believer", "..."),
             CutsceneStep.Say("believer", "뭐야, 가짜잖아?"),
-            CutsceneStep.Move("believer", "believerThrow", 2.4f),
+            CutsceneStep.BackAway("believer", "believerThrow", "player", 2.4f),
             CutsceneStep.ThrowHarmlessly("believer", "playerTalk", stone, 0.62f, 0.55f),
             CutsceneStep.Say("player", "…!?"),
             CutsceneStep.External("tutorial.believer.first-stone.tip")

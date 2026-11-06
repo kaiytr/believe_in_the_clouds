@@ -352,7 +352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHealth
-  maxHp: 100
+  maxHp: 150
   invulnerabilityDuration: 0.6
   blinkInterval: 0.2
   bodyCollider: {fileID: 9096975266081764243}

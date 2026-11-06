@@ -22,3 +22,5 @@ MonoBehaviour:
   tokenDiameter: 30
   scatterRadius: 42
   tokenColor: {r: 1, g: 0.76, b: 0.18, a: 1}
+  coinDropSound: {fileID: 8300000, guid: d8ca3b343efd4d5d9e49cffe0888a054, type: 3}
+  coinDropVolume: 0.6

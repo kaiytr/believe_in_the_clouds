@@ -93,6 +93,11 @@ public class StoneProjectile : MonoBehaviour
             return;
         }
 
+        // Dodged: the stone is already farther from the believer than the player is, and it did not hit.
+        // The stone keeps flying, but the result is settled now instead of at maximum range.
+        if (!resultResolved && sourceAttack != null && sourceAttack.HasStonePassedPlayer(travelled))
+            Resolve(AttackOutcome.EvadedByPlayer, completedNormally: true);
+
         if (travelled >= maxDistance)
         {
             if (!resultResolved && sourceAttack != null)

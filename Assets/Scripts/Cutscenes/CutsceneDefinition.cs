@@ -24,6 +24,8 @@ public sealed class CutsceneStep
     [Min(0f)] [SerializeField] private float projectileDuration = 0.55f;
     [Min(0f)] [SerializeField] private float projectileArcHeight = 0.6f;
     [SerializeField] private string externalStageId;
+    [Tooltip("Move step only: keep facing this actor while walking, so the mover backs away instead of turning its back. Empty = face the walking direction.")]
+    [SerializeField] private string facingActorId;
 
     public CutsceneStepType Type => type;
     public string ActorId => actorId;
@@ -36,6 +38,7 @@ public sealed class CutsceneStep
     public float ProjectileDuration => projectileDuration;
     public float ProjectileArcHeight => projectileArcHeight;
     public string ExternalStageId => externalStageId;
+    public string FacingActorId => facingActorId;
 
     public static CutsceneStep Say(string speakerId, string line, float charsPerSecond = 30f)
     {
@@ -56,6 +59,14 @@ public sealed class CutsceneStep
             actorId = speakerId,
             choices = options ?? Array.Empty<string>()
         };
+    }
+
+    /// <summary>Walks backwards: moves to the destination while always facing `facingActorId`.</summary>
+    public static CutsceneStep BackAway(string speakerId, string destinationId, string facingActorId, float speed = 4f)
+    {
+        CutsceneStep step = Move(speakerId, destinationId, speed);
+        step.facingActorId = facingActorId;
+        return step;
     }
 
     public static CutsceneStep Move(string speakerId, string destinationId, float speed = 4f)

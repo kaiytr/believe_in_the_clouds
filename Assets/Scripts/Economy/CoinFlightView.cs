@@ -14,7 +14,7 @@ public sealed class CoinFlightView : MonoBehaviour
         public Vector2 LaunchPosition;
         public float HorizontalScatter, ArcHeight, Age, Delay, GroundSeconds, Duration, NextRetry;
         public Image Image;
-        public bool DropInitialized, HudFlightStarted;
+        public bool DropInitialized, HudFlightStarted, Landed;
     }
     private EconomyService service;
     private EconomySettings settings;
@@ -25,6 +25,9 @@ public sealed class CoinFlightView : MonoBehaviour
     private readonly List<Flight> active = new List<Flight>();
     private readonly Stack<Image> pool = new Stack<Image>();
     private readonly RaycastHit2D[] groundHits = new RaycastHit2D[16];
+    private const float MinSoundGap = .04f;   // many coins land together; do not stack a sound for each
+    private AudioSource audioSource;
+    private float lastLandSound = -1f;
     public int ActiveCount => active.Count;
     public int CreatedCount { get; private set; }
     public bool HasFlights => active.Count > 0 || waiting.Count > 0;
@@ -40,6 +43,8 @@ public sealed class CoinFlightView : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 150; // HUD 100, shop/modal 200.
         canvasRect = GetComponent<RectTransform>();
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false; audioSource.loop = false; audioSource.spatialBlend = 0f;
         CanvasScaler scaler = gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
@@ -151,6 +156,12 @@ public sealed class CoinFlightView : MonoBehaviour
                 flight.LandingPosition = FindLandingPosition(flight);
                 flight.DropInitialized = true;
             }
+            // The coin touches the ground when its arc ends.
+            if (!flight.Landed && elapsed >= scatter)
+            {
+                flight.Landed = true;
+                PlayLandSound();
+            }
             Vector2 position;
             float radius = flight.Image.rectTransform.rect.height * .5f;
             if (elapsed < groundEnd)
@@ -180,6 +191,15 @@ public sealed class CoinFlightView : MonoBehaviour
             }
             flight.Image.rectTransform.anchoredPosition = position;
         }
+    }
+
+    private void PlayLandSound()
+    {
+        if (audioSource == null || settings.coinDropSound == null) return;
+        if (Time.unscaledTime - lastLandSound < MinSoundGap) return;
+        lastLandSound = Time.unscaledTime;
+        audioSource.pitch = Random.Range(.94f, 1.08f);
+        audioSource.PlayOneShot(settings.coinDropSound, settings.coinDropVolume);
     }
 
     private Image Rent()

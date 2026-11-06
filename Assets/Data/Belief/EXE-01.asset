@@ -16,8 +16,8 @@ MonoBehaviour:
   phrase: "\uB0B4 \uB9C8\uBC95\uC9C4\uC5D0\uC11C\uB294 \uBC97\uC5B4\uB0A0 \uC218
     \uC5C6\uB2E4."
   maxBelief: 100
-  maintainedPlayerDamageMultiplier: 0.6
-  vulnerablePlayerDamageMultiplier: 2
+  maintainedPlayerDamageMultiplier: 0.4
+  vulnerablePlayerDamageMultiplier: 3
   vulnerableDuration: 5
   recoveryRatio: 1
   reductionPerSecond: 0

@@ -23,6 +23,9 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField] private float stageMaxY = 8f;
     [SerializeField] private float lobbyMinX = -23f, lobbyMaxX = 31f;
     [SerializeField] private TemporaryStageExit authoredExit;
+    [Tooltip("Played when the stage exit door rises out of the ground (same sound as revealing a lobby branch door).")]
+    [SerializeField] private AudioClip exitRevealSound;
+    [SerializeField, Range(0f, 1f)] private float exitRevealSoundVolume = 0.9f;
     public bool IsLobby => isLobby;
     public PlayerHealth Player => player;
     private LobbyFlowRuntime flow;
@@ -184,6 +187,15 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             Destroy(effect);
             exitBody.enabled = true;
+            return;
+        }
+
+        if (exitRevealSound != null)
+        {
+            AudioSource source = stageExit.GetComponent<AudioSource>();
+            if (source == null) source = stageExit.gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false; source.loop = false; source.spatialBlend = 0f;
+            source.PlayOneShot(exitRevealSound, exitRevealSoundVolume);
         }
     }
 
