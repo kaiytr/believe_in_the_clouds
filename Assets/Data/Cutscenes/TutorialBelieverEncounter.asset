@@ -102,6 +102,7 @@ MonoBehaviour:
     projectileDuration: 0.55
     projectileArcHeight: 0.6
     externalStageId:
+    facingActorId: player
   - type: 3
     actorId: believer
     text:
