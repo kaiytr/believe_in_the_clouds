@@ -23188,6 +23188,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &212461113
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -23641,6 +23645,10 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!50 &292175799
 Rigidbody2D:
   serializedVersion: 5
@@ -24809,6 +24817,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &638605976
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -25488,6 +25500,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &921529127
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -26153,6 +26169,10 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
+  attackWindupSound: {fileID: 8300000, guid: a1ef66fc1f2e65f4e89fe86aa332aeba, type: 3}
+  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1111183005
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -27800,6 +27820,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1725122886
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -28486,6 +28510,10 @@ MonoBehaviour:
   slowMultiplier: 0.5
   slowLinger: 0.4
   dangerIndicatorPrefab: {fileID: 1107656235929659212, guid: 525544457b3c7e946bdcc26de2c90e88, type: 3}
+  attackWindupSound: {fileID: 8300000, guid: a1ef66fc1f2e65f4e89fe86aa332aeba, type: 3}
+  attackCastSound: {fileID: 8300000, guid: 3cacc4c0d148f1d4a95a245e06fe4fb1, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1801983815
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -28763,6 +28791,10 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1830780746
 CapsuleCollider2D:
   m_ObjectHideFlags: 0

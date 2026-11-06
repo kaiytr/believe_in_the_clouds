@@ -19601,6 +19601,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &417262238
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -19848,6 +19852,10 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &492637543
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -20889,6 +20897,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &879643806
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -21572,6 +21584,10 @@ MonoBehaviour:
   projectileSpeed: 8
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1058216087
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -23968,6 +23984,10 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!70 &1819559686
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -24422,6 +24442,10 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 64
+  attackWindupSound: {fileID: 0}
+  attackCastSound: {fileID: 8300000, guid: 9d471e935084a6c49a1f225de2214d87, type: 3}
+  attackHitSound: {fileID: 0}
+  attackSoundVolume: 0.9
 --- !u!50 &1908652342
 Rigidbody2D:
   serializedVersion: 5
