@@ -47,6 +47,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Gameplay/BossTest.unity
     guid: a82bfeb8e9fa4b34a261713ca8c83a10
+  - enabled: 1
+    path: Assets/Scenes/Gameplay/Ending.unity
+    guid: 264eed21b105464591288b6927c52b0a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

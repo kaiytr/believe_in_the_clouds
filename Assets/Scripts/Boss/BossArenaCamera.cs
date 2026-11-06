@@ -26,6 +26,10 @@ public sealed class BossArenaCamera : MonoBehaviour
     private Vector3 returnPosition;
     private Quaternion explorationRotation;
     private float returnSize;
+    private bool endingHold;
+    private Vector3 endingPosition;
+    private Quaternion endingRotation;
+    private float endingSize;
     private Bounds configuredBounds;
     private bool hasConfiguredBounds;
 
@@ -69,6 +73,21 @@ public sealed class BossArenaCamera : MonoBehaviour
         return true;
     }
 
+    public void HoldForEnding(Transform actor)
+    {
+        if (endingHold) return;
+        if (view == null) view = Camera.main;
+        if (view == null) return;
+
+        if (!controlling && actor != null) Enter(actor);
+        endingPosition = view.transform.position;
+        endingRotation = view.transform.rotation;
+        endingSize = view.orthographicSize;
+        endingHold = true;
+        controlling = true;
+        fighting = false;
+    }
+
     public void Enter(Transform actor)
     {
         if (view == null) view = Camera.main;
@@ -102,7 +121,7 @@ public sealed class BossArenaCamera : MonoBehaviour
 
     public void Exit()
     {
-        if (!controlling || !fighting || view == null) return;
+        if (endingHold || !controlling || !fighting || view == null) return;
         fighting = false;
         returnElapsed = 0f;
         returnPosition = view.transform.position;
@@ -112,6 +131,12 @@ public sealed class BossArenaCamera : MonoBehaviour
     private void LateUpdate()
     {
         if (!controlling || view == null) return;
+        if (endingHold)
+        {
+            view.transform.SetPositionAndRotation(endingPosition, endingRotation);
+            view.orthographicSize = endingSize;
+            return;
+        }
         if (fighting && player != null && TryGetArenaBounds(out Bounds bounds))
         {
             float centerY = bounds.center.y + combatVerticalOffset;
@@ -149,6 +174,7 @@ public sealed class BossArenaCamera : MonoBehaviour
             if (suspended[i] != null) suspended[i].enabled = true;
         suspended.Clear();
         controlling = fighting = false;
+        endingHold = false;
     }
 
     private void OnDisable()

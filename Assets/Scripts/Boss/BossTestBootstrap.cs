@@ -19,6 +19,13 @@ public sealed class BossTestBootstrap : MonoBehaviour
     public BossCombatController Boss => boss;
     public BossDebugPanel DebugPanel => debugPanel;
 
+    private void Awake()
+    {
+        BossEndingSequence ending = GetComponent<BossEndingSequence>();
+        if (ending == null) ending = gameObject.AddComponent<BossEndingSequence>();
+        ending.Initialize(boss);
+    }
+
     private void Start()
     {
         LobbyFlowRuntime flow = LobbyFlowRuntime.Instance;
