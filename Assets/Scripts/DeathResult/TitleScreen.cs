@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public sealed class TitleScreen : MonoBehaviour
 {
     public const string SceneName = "Title";
-    private const string TutorialStartedKey = "believe_in_the_clouds.tutorial_started";
+    public const string TutorialStartedKey = "believe_in_the_clouds.tutorial_started";
     private const string BackgroundResource = "UI/Title/TitleBackground";
     private const float ArtworkWidth = 1920f;
     private const float ArtworkHeight = 1080f;

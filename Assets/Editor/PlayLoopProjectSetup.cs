@@ -63,7 +63,6 @@ public static class PlayLoopProjectSetup
             AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Design/Lobby/BranchClosed.png");
         controllerSettings.FindProperty("worldMaterial").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
-        controllerSettings.FindProperty("showTestTools").boolValue = true;
         controllerSettings.ApplyModifiedPropertiesWithoutUndo();
 
         RunStageCompletionWatcher completion = Object.FindFirstObjectByType<RunStageCompletionWatcher>();
