@@ -30,22 +30,32 @@ public sealed class TutorialTipPanel : MonoBehaviour
     private const float PanelWidth = 973f;
     private const float PanelHeight = 581f;
 
-    // 아트 속 갈색 박스: x 107~494, y 180~407 (실측 388x228). 중심 x = 300.5
+    // 아트 속 갈색 박스 (실측): x 107~494, y 180~407. 중심 = (300.5, 293.5)
     private const float BoxCenterX = 300.5f;
+    private const float BoxTop = 180f;
+    private const float BoxBottom = 407f;
+    private const float BoxCenterY = (BoxTop + BoxBottom) * 0.5f;
 
-    // 페이지명: 박스 아래 중앙.
-    private const float LabelTop = 428f;
+    // 페이지명: 박스 아래 여백(407~468)의 정중앙, 박스 중심 x.
+    private const float LabelCenterY = 437.5f;
     private const float LabelWidth = 440f;
     private const float LabelHeight = 56f;
     private const int LabelFontSize = 40;
 
-    // 설명 본문: 갈색 박스 오른쪽, 화살표(우 x~543)를 피해 시작.
-    private const float BodyLeft = 562f;
-    private const float BodyTop = 156f;
-    private const float BodyWidth = 380f;
-    private const float BodyHeight = 300f;
-    private const int BodyFontSize = 26;
-    private const float BodyLineSpacing = 1.3f;
+    // ---- 설명 본문 그리드 ----
+    // 가로: 오른쪽 화살표 오른쪽 끝(546) ~ 패널 안쪽 오른쪽(950) 열 안에서,
+    //       가장 긴 줄(329px) 기준으로 좌우 여백이 같아지도록 센터링한다.
+    //       → 546 + (404-329)/2 = 583.5
+    // 세로: 갈색 박스 세로 중심(293.5)에 줄 블록 전체를 센터링.
+    // 줄마다 Text를 따로 두고 MiddleLeft로 배치한다 — 레거시 Text의 위쪽 정렬은
+    // 폰트 ascent에 따라 잉크 위치가 흔들리므로, 줄 중심을 직접 잡아야 정확하다.
+    // (실측 검증: left 585 전 페이지 동일, 본문 cy 294 = 박스 중심 293.5,
+    //  라벨 cx/cy = 박스 중심/여백 정중앙)
+    private const float BodyLeft = 583.5f;
+    private const float BodyWidth = 366.5f;
+    private const int BodyFontSize = 24;
+    private const float BodyPitch = 32f;
+    private const int BodyMaxLines = 6;
 
     // 화살표 아이콘: 아트 원본 21x24를 1.25배 (그대로 쓰면 너무 작다).
     private const float ArrowScale = 1.25f;
@@ -69,7 +79,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private GameObject canvasObject;
     private Text pageLabel;
-    private Text pageBody;
+    private readonly List<Text> bodyLines = new List<Text>();
     private int pageIndex;
     private int openedFrame;
 
@@ -177,8 +187,31 @@ public sealed class TutorialTipPanel : MonoBehaviour
     {
         if (pageLabel != null)
             pageLabel.text = PageLabels[pageIndex];
-        if (pageBody != null)
-            pageBody.text = PageBodies[pageIndex];
+
+        string[] lines = PageBodies[pageIndex].Split('\n');
+
+        // 1) 텍스트/활성 먼저 반영.
+        for (int i = 0; i < bodyLines.Count; i++)
+        {
+            Text line = bodyLines[i];
+            bool hasText = i < lines.Length && lines[i].Length > 0;
+            line.text = hasText ? lines[i] : string.Empty;
+            line.gameObject.SetActive(hasText);
+        }
+
+        // 2) 줄 블록을 갈색 박스 세로 중심에 센터링 (줄 중심 기준).
+        int slots = Mathf.Min(lines.Length, bodyLines.Count);
+        float blockHeight = slots > 0 ? (slots - 1) * BodyPitch : 0f;
+        float firstCenter = BoxCenterY - blockHeight * 0.5f;
+
+        for (int i = 0; i < bodyLines.Count; i++)
+        {
+            if (i >= lines.Length)
+                continue;
+
+            RectTransform rect = bodyLines[i].rectTransform;
+            rect.anchoredPosition = new Vector2(BodyLeft, -(firstCenter + i * BodyPitch));
+        }
     }
 
     private void BuildUi()
@@ -225,20 +258,24 @@ public sealed class TutorialTipPanel : MonoBehaviour
         content.SetParent(panel, false);
         UiTheme.Stretch(content);
 
-        // 페이지명: 갈색 박스 바로 아래 중앙.
+        // 페이지명: 갈색 박스 아래 여백의 정중앙, 박스 중심 x.
         pageLabel = CreateText(content, "PageLabel", string.Empty,
-            new Vector2(BoxCenterX - LabelWidth * 0.5f, LabelTop),
+            new Vector2(BoxCenterX - LabelWidth * 0.5f, LabelCenterY - LabelHeight * 0.5f),
             new Vector2(LabelWidth, LabelHeight), new Vector2(0.5f, 1f),
             LabelFontSize, TextAnchor.MiddleCenter);
 
-        // 설명 본문: 박스 오른쪽.
-        pageBody = CreateText(content, "Body", string.Empty,
-            new Vector2(BodyLeft, BodyTop),
-            new Vector2(BodyWidth, BodyHeight), new Vector2(0f, 1f),
-            BodyFontSize, TextAnchor.UpperLeft);
-        pageBody.horizontalOverflow = HorizontalWrapMode.Wrap;
-        pageBody.verticalOverflow = VerticalWrapMode.Overflow;
-        pageBody.lineSpacing = BodyLineSpacing;
+        // 설명 본문: 줄마다 Text를 하나씩, MiddleLeft로 두고 중심을 직접 잡는다.
+        for (int i = 0; i < BodyMaxLines; i++)
+        {
+            Text line = CreateText(content, "BodyLine" + i, string.Empty,
+                new Vector2(BodyLeft, 0f),
+                new Vector2(BodyWidth, BodyPitch), new Vector2(0f, 0.5f),
+                BodyFontSize, TextAnchor.MiddleLeft);
+            line.horizontalOverflow = HorizontalWrapMode.Overflow;
+            line.verticalOverflow = VerticalWrapMode.Overflow;
+            line.gameObject.SetActive(false);
+            bodyLines.Add(line);
+        }
 
         // 좌/우 화살표 (아트 위치 그대로, 살짝 확대)
         BuildArrowButton(content, "PrevPage", LeftArrowRect, () => ShowPage(pageIndex - 1));
@@ -272,10 +309,9 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private void BuildArrowButton(Transform parent, string name, RectInt iconRect, Action onClick)
     {
-        // 아이콘 위치는 1920x1080 전체 캔버스 기준이라 패널 좌상단으로 환산한다.
+        // 아이콘 x는 아트 원본 위치, y는 갈색 박스 세로 중심에 맞춘다.
         float localCenterX = iconRect.x + iconRect.width * 0.5f - BackgroundRect.x;
-        float localCenterY = (BackgroundRect.y + BackgroundRect.height)
-            - (iconRect.y + iconRect.height * 0.5f);
+        float localCenterY = BoxCenterY;
 
         GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image));
         buttonObject.transform.SetParent(parent, false);
