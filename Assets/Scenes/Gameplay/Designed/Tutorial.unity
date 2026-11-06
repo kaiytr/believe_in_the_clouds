@@ -692,6 +692,7 @@ MonoBehaviour:
   displayName: "\uC2E0\uB3C4"
   headAnchor: {fileID: 0}
   fallbackHeadOffset: {x: 0, y: 1.5, z: 0}
+  headOffsetIgnoresScale: 1
   projectileOrigin: {fileID: 0}
   enemy: {fileID: 292175793}
 --- !u!1 &348611530
@@ -26509,7 +26510,7 @@ Transform:
   m_GameObject: {fileID: 7190000050}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 24.26, y: -1.98, z: 0}
+  m_LocalPosition: {x: 22.2, y: -1.98, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -26540,7 +26541,7 @@ Transform:
   m_GameObject: {fileID: 7190000060}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 31.66, y: -1.98, z: 0}
+  m_LocalPosition: {x: 25.2, y: -1.98, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

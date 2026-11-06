@@ -36,6 +36,12 @@ public class PlayerMove : MonoBehaviour, ISlowable
     /// </summary>
     public bool ControlLocked { get; set; }
 
+    /// <summary>
+    /// Non-zero makes the player walk in that direction (-1/1) on their own, even while locked or under a modal.
+    /// Used by cutscenes so scripted walking uses the normal movement and animation.
+    /// </summary>
+    public float ScriptedMoveInput { get; set; }
+
     /// <summary>바닥에 닿아 있는지. 공중 공격 가능 여부 판단용.</summary>
     public bool IsGrounded => isGrounded;
     /// <summary>Horizontal speed of the moving ground under the feet (0 on ordinary ground).</summary>
@@ -64,7 +70,9 @@ public class PlayerMove : MonoBehaviour, ISlowable
         }
 
         // 모달 UI가 열려 있는 동안은 이동 입력을 읽지 않는다.
-        if (!ControlLocked && !UiModal.IsOpen)
+        if (ScriptedMoveInput != 0f)
+            moveInput = Mathf.Sign(ScriptedMoveInput);
+        else if (!ControlLocked && !UiModal.IsOpen)
             moveInput = Input.GetAxisRaw("Horizontal");
         else
             moveInput = 0f;
@@ -76,7 +84,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
         }
 
         // 플레이어 방향 전환 (공격 중에는 고정된 타격 방향 유지).
-        if (!ControlLocked && moveInput != 0)
+        if ((!ControlLocked || ScriptedMoveInput != 0f) && moveInput != 0)
         {
             Vector3 scale = transform.localScale;
 
@@ -117,7 +125,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
 
         // 좌우 이동 (공격이 전진 속도를 직접 넣는 동안은 덮어쓰지 않음)
         // 교리 이속 증가(+40%)는 DoctrineStats.SpeedMultiplier로 합산된다.
-        if (!ControlLocked)
+        if (!ControlLocked || ScriptedMoveInput != 0f)
         {
             float doctrineSpeed = doctrineStats != null ? doctrineStats.SpeedMultiplier : 1f;
             rb.linearVelocity = new Vector2(

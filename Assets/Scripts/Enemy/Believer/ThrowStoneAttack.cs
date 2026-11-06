@@ -137,6 +137,9 @@ public class ThrowStoneAttack : EnemyAttack
         owner.UnlockMovement();
     }
 
+    /// <summary>Where a real throw leaves the believer. Cutscene throws start from the same point.</summary>
+    public Vector2 ProjectileSpawnWorldPosition => GetSpawnPosition();
+
     private Vector2 GetSpawnPosition()
     {
         return projectileSpawnPoint != null ? projectileSpawnPoint.position : transform.position;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -12,8 +13,16 @@ public sealed class CutsceneBossEncounterCoordinator : MonoBehaviour
     [SerializeField] private UnityEngine.Events.UnityEvent onCloudPreparationRequested =
         new UnityEngine.Events.UnityEvent();
 
+    [Header("Approach before the intro")]
+    [Tooltip("The player walks on their own until the boss is this close (world units, edge to edge), then the intro starts.")]
+    [SerializeField, Min(0f)] private float approachDistance = 5.5f;
+    [SerializeField, Min(.5f)] private float approachTimeout = 6f;
+
     private bool beginEncounterAttempted;
     private PlayerHealth enteredPlayer;
+    private Coroutine approachRoutine;
+    private PlayerMove approachMove;
+    private object approachToken;
 
     public bool HasEntered => arena != null && arena.HasEntered;
     public bool BeginEncounterAttempted => beginEncounterAttempted;
@@ -86,7 +95,49 @@ public sealed class CutsceneBossEncounterCoordinator : MonoBehaviour
                 try { ((Action<CutsceneBossEncounterCoordinator>)callback)(this); }
                 catch (Exception exception) { Debug.LogException(exception, this); }
 
-        if (!introRunner.Play(introDefinition, enteredPlayer, false)) arena.CancelIntro();
+        if (approachRoutine != null) StopCoroutine(approachRoutine);
+        approachRoutine = StartCoroutine(ApproachThenPlay(boss, enteredPlayer));
+    }
+
+    // The player walks forward by themselves (input is blocked) so the conversation happens close to the boss.
+    private IEnumerator ApproachThenPlay(BossCombatController boss, PlayerHealth player)
+    {
+        approachMove = player.GetComponent<PlayerMove>();
+        if (approachMove != null && approachMove.isActiveAndEnabled && boss.BodyCollider != null && player.BodyCollider != null)
+        {
+            approachToken = new object();
+            UiModal.Push(approachToken);
+            float elapsed = 0f, stalled = 0f, lastX = player.transform.position.x;
+            while (elapsed < approachTimeout && !player.IsDead && !boss.IsDead)
+            {
+                Bounds bossBounds = boss.BodyCollider.bounds, playerBounds = player.BodyCollider.bounds;
+                float direction = Mathf.Sign(bossBounds.center.x - playerBounds.center.x);
+                float gap = direction > 0f ? bossBounds.min.x - playerBounds.max.x : playerBounds.min.x - bossBounds.max.x;
+                if (gap <= approachDistance) break;
+                approachMove.ScriptedMoveInput = direction;
+                elapsed += Time.deltaTime;
+                yield return null;
+                // Blocked by something: stop pushing and talk from here.
+                float x = player.transform.position.x;
+                stalled = Mathf.Abs(x - lastX) < .01f ? stalled + Time.deltaTime : 0f;
+                lastX = x;
+                if (stalled > .8f) break;
+            }
+            EndApproach();
+        }
+
+        approachRoutine = null;
+        if (player == null || player.IsDead || boss == null || boss.IsDead ||
+            !introRunner.Play(introDefinition, player, false))
+            arena.CancelIntro();
+    }
+
+    private void EndApproach()
+    {
+        if (approachMove != null) approachMove.ScriptedMoveInput = 0f;
+        approachMove = null;
+        if (approachToken != null) UiModal.Pop(approachToken);
+        approachToken = null;
     }
 
     private void HandleIntroCompleted(CutsceneRunner completedRunner)
@@ -120,6 +171,8 @@ public sealed class CutsceneBossEncounterCoordinator : MonoBehaviour
 
     private void OnDisable()
     {
+        if (approachRoutine != null) { StopCoroutine(approachRoutine); approachRoutine = null; }
+        EndApproach();
         if (introRunner != null && introRunner.IsRunning) introRunner.Cancel();
         Unsubscribe();
         arena?.CancelIntro();
