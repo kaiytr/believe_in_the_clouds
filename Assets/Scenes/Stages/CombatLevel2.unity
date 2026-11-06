@@ -3666,6 +3666,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec58794297f446d89f8856ea0e590bd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::LobbySceneController
+  exitRevealSound: {fileID: 8300000, guid: 6e6c6f3ada769cf4eb191f3f05bdd753, type: 3}
+  exitRevealSoundVolume: 0.9
   isLobby: 0
   player: {fileID: 132853814}
   branchPrefab: {fileID: 0}
