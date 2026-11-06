@@ -11,7 +11,12 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
     [SerializeField] private Sprite combatDoor;
     [SerializeField] private Sprite bossDoor;
     [SerializeField] private Sprite shopDoor;
+    [Tooltip("분기 정보 공개 시 재생할 돌문 소리. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] private AudioClip revealSound;
+    [Tooltip("돌문 소리 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] private float revealSoundVolume = 0.9f;
     private LobbyBranchRevealEffect revealEffect;
+    private AudioSource audioSource;
 
     public bool IsRevealing => revealEffect != null && revealEffect.IsPlaying;
 
@@ -37,6 +42,21 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
 
         trigger.isTrigger = true;
         trigger.size = new Vector2(2.8f, 4.6f);
+
+        ResolveRevealAudio();
+    }
+
+    // 돌문 소리는 정보 공개 연출과 함께 2D로 재생한다.
+    private void ResolveRevealAudio()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        audioSource.spatialBlend = 0f; // 2D
+        if (audioSource.volume <= 0f)
+            audioSource.volume = 1f;
     }
 
     public void Initialize(string id)
@@ -73,7 +93,14 @@ public sealed class LobbyBranchInteractable : InteractableBehaviour, ISecondaryI
         revealEffect = gameObject.AddComponent<LobbyBranchRevealEffect>();
         Color tint = closedDoor != null ? Color.white : RoleColor(committed.role);
         if (!revealEffect.Play(body, border, null, DoorFor(committed), tint, LobbyRules.RoleLabel(committed.role)))
+        {
             Destroy(revealEffect);
+            return;
+        }
+
+        // 정체가 드러나는 연출 시작과 동시에 돌문 소리를 재생한다.
+        if (revealSound != null && audioSource != null)
+            audioSource.PlayOneShot(revealSound, revealSoundVolume);
     }
 
     private void Update()

@@ -194,6 +194,8 @@ MonoBehaviour:
   combatDoor: {fileID: 21300000, guid: 4ee812a0ddec41919102cc0737ffac0a, type: 3}
   bossDoor: {fileID: 21300000, guid: 018cfbca3e61a4b48abf06fef44845d3, type: 3}
   shopDoor: {fileID: 21300000, guid: 9a866dd377f4c0742933d1e1bb6b865f, type: 3}
+  revealSound: {fileID: 8300000, guid: 6e6c6f3ada769cf4eb191f3f05bdd753, type: 3}
+  revealSoundVolume: 0.9
   promptGap: 0.8
 --- !u!1 &8829020209648748925
 GameObject:
