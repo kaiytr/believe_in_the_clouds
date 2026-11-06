@@ -1,9 +1,8 @@
-using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>Pixel-sized, wrapping debug controls with a clipped scroll area.</summary>
+/// <summary>Boss test controls: run a pattern, change HP/belief, force phase two, reset. Pixel-sized with a clipped scroll area.</summary>
 public sealed class BossDebugPanel : MonoBehaviour
 {
     private BossTestBootstrap tools;
@@ -12,10 +11,7 @@ public sealed class BossDebugPanel : MonoBehaviour
     private Canvas canvas;
     private RectTransform canvasRect, panel;
     private Font font;
-    private Text automaticLabel, status, latest, diagnostics, detailsLabel, manualLabel;
-    private GameObject manualButton;
-    private bool showDetails;
-    private readonly StringBuilder details = new StringBuilder();
+    private Text automaticLabel, status, latest;
     public Canvas Canvas => canvas;
 
     public void Initialize(BossTestBootstrap testTools, BossCombatController controller)
@@ -78,34 +74,17 @@ public sealed class BossDebugPanel : MonoBehaviour
                 Button(row, names[pattern], () => boss.ForcePatternForTest((BossPatternKind)pattern));
             }
         }
-        Section(content, "연속 베기");
-        Label("Combo info", content, "플레이어 콤보를 따라 연속 베기 자동 실행", 13, new Color(.75f, .81f, .9f));
+        Section(content, "전투 조작");
         Transform health = Row(content);
         Button(health, "HP -50", () => boss.SetHpForTest(boss.CurrentHp - 50f));
         Button(health, "HP 회복", () => boss.SetHpForTest(boss.MaxHp));
         Button(health, "B 믿음 -20", () => boss.ReduceBeliefForTest(20f));
-        Transform signals = Row(content);
-        Button(signals, "J 시도", () => tools.PublishTestAttack(false));
-        Button(signals, "K 적중", () => tools.PublishTestAttack(true));
-        Button(signals, "P 전환", boss.ForcePhaseTwoForTest);
-        Button(signals, "R 초기화", tools.RestartForTest);
-        detailsLabel = Button(content, "공격 진단 펼치기", ToggleDetails).GetComponentInChildren<Text>();
-        diagnostics = Label("Attack diagnostics", content, "", 13, new Color(.75f, .81f, .9f));
-        diagnostics.gameObject.SetActive(false);
-        var manual = Button(content, "", () => boss.AllowManualEvadeInjection = !boss.AllowManualEvadeInjection);
-        manualButton = manual.gameObject; manualLabel = manual.GetComponentInChildren<Text>();
-        manualButton.SetActive(false);
-        Label("Input help", content, "이동 A/D · 점프 Space · F1 패널 숨기기\nJ/K는 더미 공격 입력입니다.", 13, new Color(.62f, .7f, .81f));
+        Transform flow = Row(content);
+        Button(flow, "P 전환", boss.ForcePhaseTwoForTest);
+        Button(flow, "R 초기화", tools.RestartForTest);
         RefreshLayout();
     }
 
-    private void ToggleDetails()
-    {
-        showDetails = !showDetails;
-        diagnostics.gameObject.SetActive(showDetails);
-        manualButton.SetActive(showDetails);
-        detailsLabel.text = showDetails ? "공격 진단 접기" : "공격 진단 펼치기";
-    }
     public void SetVisible(bool visible)
     {
         if (canvas != null) canvas.gameObject.SetActive(visible);
@@ -131,23 +110,6 @@ public sealed class BossDebugPanel : MonoBehaviour
         status.text = "패턴: " + boss.ActivePatternName + "\n" +
             (boss.StatusMessage.StartsWith("패턴:") ? "단계: " + boss.CueTitle : boss.StatusMessage);
         latest.text = tools.LatestSignal;
-        if (!showDetails) return;
-        details.Clear().Append("세대 ").Append(boss.Generation).Append(" / 일반 ").Append(boss.PatternId).Append(" / 믿음 ").Append(boss.BeliefPatternId);
-        details.Append("\n예언 ").Append(boss.Prophecies.Count).Append(" / 화상 강화 ").Append(boss.IsBurning ? boss.BurnRemaining.ToString("0.0") + "초" : "없음")
-            .Append(" / 번개 ").Append(boss.Clouds != null && boss.Clouds.LightningActive ? "진행" : "없음")
-            .Append(" / 충격파 ").Append(boss.IsShockwavePending ? "예약·진행" : "없음");
-        foreach (var record in boss.ActiveAttacks)
-            details.Append("\n#").Append(record.Id).Append(' ').Append(record.Kind)
-                .Append(record.Activated ? " 활성" : " 예고").Append(" / 위협 ").Append(record.WasThreatened ? "있음" : "없음")
-                .Append(" / 접촉 ").Append(record.Contacted ? "있음" : "없음");
-        if (boss.AttackHistory.Count > 0)
-        {
-            var last = boss.AttackHistory[boss.AttackHistory.Count - 1];
-            details.Append("\n최근 #").Append(last.Id).Append(' ').Append(last.Outcome)
-                .Append("\n종료: ").Append(last.EndReason).Append(" / 믿음: ").Append(last.Belief);
-        }
-        diagnostics.text = details.ToString();
-        manualLabel.text = boss.AllowManualEvadeInjection ? "L 수동 회피 진단: 켜짐" : "L 수동 회피 진단: 꺼짐";
     }
     private void OnDisable() { SetVisible(false); }
 

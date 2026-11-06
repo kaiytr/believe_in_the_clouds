@@ -30,8 +30,7 @@ public static class BossStageSceneryProjectSetup
         try
         {
             BuildPrefab();
-            ApplyScene(ProjectScenes.BossTest, ArenaMinX, ArenaMaxX, true);
-            ApplyScene(ProjectScenes.StageTest, -18f, 18f, false);
+            ApplyScene(ProjectScenes.Boss, ArenaMinX, ArenaMaxX, true);
             GameObject encounter = PrefabUtility.LoadPrefabContents("Assets/Prefabs/Boss/BossEncounter.prefab");
             try
             {

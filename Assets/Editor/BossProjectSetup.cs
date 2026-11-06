@@ -8,12 +8,12 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-/// <summary>Reproducible asset/scene setup. Never changes PlayerTEST or general-enemy assets.</summary>
+/// <summary>Reproducible boss asset setup. The Boss scene itself is authored by hand and is never rebuilt here.</summary>
 public static class BossProjectSetup
 {
     public const string SettingsPath = "Assets/Data/Boss/BossCombatSettings.asset";
     public const string BossPath = "Assets/Prefabs/Boss/Boss.prefab";
-    public const string ScenePath = ProjectScenes.BossTest;
+    public const string ScenePath = ProjectScenes.Boss;
     private const string ShockwaveMaterialPath = "Assets/Art/Boss/WhiteGroundShockwave.mat";
     private const string EnemyProjectileSpritePath = "Assets/Art/Enemy/EnemyProjectile.png";
     private const string Art = "Assets/Art/Boss";
@@ -21,7 +21,7 @@ public static class BossProjectSetup
     private static Material material;
     private static Sprite square, disc, cloud, slash, spikes, flame, wave;
 
-    [MenuItem("Tools/Boss/Rebuild Boss assets and BossTest from PlayerTEST")]
+    [MenuItem("Tools/Boss/Rebuild Boss assets (Boss scene untouched)")]
     public static void Build()
     {
         Folder("Assets/Art"); Folder(Art); Folder("Assets/Data/Boss"); Folder(Fx);
@@ -80,9 +80,8 @@ public static class BossProjectSetup
         EditorUtility.SetDirty(data);
         BuildBoss(data);
         BuildEncounterPrefab();
-        BuildScene();
         AssetDatabase.SaveAssets();
-        Debug.Log("Boss assets, encounter prefab and BossTest are ready.");
+        Debug.Log("Boss assets and encounter prefab are ready; the Boss scene was not changed.");
     }
 
     [MenuItem("Tools/Boss/Update cloud lightning prefabs only")]
@@ -201,7 +200,7 @@ public static class BossProjectSetup
         PrefabUtility.SaveAsPrefabAsset(root, BossPath); Object.DestroyImmediate(root);
     }
 
-    [MenuItem("Tools/Boss/Update placeholder body (preserve BossTest scene)")]
+    [MenuItem("Tools/Boss/Update placeholder body (Boss scene untouched)")]
     public static void UpdatePlaceholderBody()
     {
         square = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "/UnitSquare.png");
@@ -224,7 +223,7 @@ public static class BossProjectSetup
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         AssetDatabase.SaveAssets();
-        Debug.Log("Boss body updated; BossTest scene preserved.");
+        Debug.Log("Boss body updated; Boss scene untouched.");
     }
 
     internal static void ConfigureBossSprites(BossCombatView view, SpriteRenderer renderer)
@@ -259,7 +258,7 @@ public static class BossProjectSetup
         renderer.transform.localScale = Vector3.one;
     }
 
-    [MenuItem("Tools/Boss/Upgrade pattern UX (preserve BossTest scene)")]
+    [MenuItem("Tools/Boss/Upgrade pattern UX (Boss scene untouched)")]
     public static void UpgradePatternPresentation()
     {
         square = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "/UnitSquare.png");
@@ -278,10 +277,10 @@ public static class BossProjectSetup
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         AssetDatabase.SaveAssets();
-        Debug.Log("Cloud lightning markers and pattern HUD upgraded; BossTest scene preserved.");
+        Debug.Log("Cloud lightning markers and pattern HUD upgraded; Boss scene untouched.");
     }
 
-    [MenuItem("Tools/Boss/Update gameplay and debug UI (preserve BossTest scene)")]
+    [MenuItem("Tools/Boss/Update gameplay and debug UI (Boss scene untouched)")]
     public static void UpdateGameplayPresentation()
     {
         square = AssetDatabase.LoadAssetAtPath<Sprite>(Art + "/UnitSquare.png");
@@ -294,7 +293,7 @@ public static class BossProjectSetup
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
         AssetDatabase.SaveAssets();
-        Debug.Log("Enemy-style gameplay UI added; detailed HUD retained for debug mode. BossTest scene preserved.");
+        Debug.Log("Enemy-style gameplay UI added; detailed HUD retained for debug mode. Boss scene untouched.");
     }
 
     private static void ClearHudHierarchy(Transform parent)
@@ -399,47 +398,6 @@ public static class BossProjectSetup
             BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, -3.35f, null);
         CutsceneSceneInstaller.ConfigureBossIntroduction(entry);
         PrefabUtility.SaveAsPrefabAsset(root,"Assets/Prefabs/Boss/BossEncounter.prefab"); Object.DestroyImmediate(root);
-    }
-    private static void BuildScene()
-    {
-        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.PlayerTEST,OpenSceneMode.Single);
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player.GetComponent<PlayerHealth>() == null) player.AddComponent<PlayerHealth>();
-        if (player.GetComponent<PlayerCombatEvents>() == null) player.AddComponent<PlayerCombatEvents>();
-        foreach (GameObject root in scene.GetRootGameObjects())
-            if (root.name == "Ground" || root.name == "CinemachineCamera") Object.DestroyImmediate(root);
-        Camera camera = Camera.main;
-        foreach (MonoBehaviour component in camera.GetComponents<MonoBehaviour>())
-            if (component.GetType().Name == "CinemachineBrain") component.enabled = false;
-        camera.transform.position = new Vector3(-6.44f,0f,-10f); camera.orthographicSize = 6.5f; camera.backgroundColor = new Color(.075f,.1f,.17f);
-        float floor = -3.35f;
-        player.transform.position = new Vector3(-15f, floor + 1.05f, 0f);
-        LobbyCameraFollow exploration = camera.GetComponent<LobbyCameraFollow>();
-        if (exploration == null) exploration = camera.gameObject.AddComponent<LobbyCameraFollow>();
-        exploration.Target = player.transform; exploration.MinX = -18f; exploration.MaxX = 18f;
-        var arena = new GameObject("Arena (36 world units)");
-        Solid(arena.transform,"Main ground",new Vector2(0f,floor-.5f),new Vector2(36f,1f));
-        Solid(arena.transform,"Left wall",new Vector2(-18.25f,floor+4.5f),new Vector2(.5f,10f));
-        Solid(arena.transform,"Right wall",new Vector2(18.25f,floor+4.5f),new Vector2(.5f,10f));
-        var fixture = Solid(arena.transform,"Optional wall fixture (enable for blocking tests)",new Vector2(5f,floor+1.7f),new Vector2(.25f,3.4f));
-        fixture.SetActive(false);
-        var boss = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(BossPath)); boss.transform.position = new Vector3(2f,floor+.95f);
-        var bootstrap = new GameObject("BossTest tools").AddComponent<BossTestBootstrap>(); Set(bootstrap,"boss",boss.GetComponent<BossCombatController>());
-        Set(bootstrap, "startAutomatically", false);
-        var entrance = new GameObject("Boss arena entry");
-        entrance.AddComponent<BoxCollider2D>();
-        BossArenaProjectSetup.Configure(entrance.AddComponent<BossEncounterTrigger>(), boss.GetComponent<BossCombatController>(),
-            BossStageSceneryProjectSetup.ArenaMinX, BossStageSceneryProjectSetup.ArenaMaxX, floor, camera, true);
-        CutsceneSceneInstaller.ConfigureBossIntroduction(entrance.GetComponent<BossEncounterTrigger>());
-        ProjectSceneSynchronization.SynchronizeScene(scene);
-        BossStageSceneryProjectSetup.ConfigureLayout(scene, camera);
-        BossStageSceneryProjectSetup.Decorate(scene);
-        EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene,ScenePath);
-    }
-    private static GameObject Solid(Transform parent, string name, Vector2 position, Vector2 size)
-    {
-        var renderer = Part(parent,name,position,size,new Color(.22f,.28f,.38f),square,0);
-        renderer.gameObject.layer = 6; renderer.gameObject.AddComponent<BoxCollider2D>(); return renderer.gameObject;
     }
     private static void Folder(string path)
     {

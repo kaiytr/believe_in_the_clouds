@@ -15,7 +15,7 @@ public sealed class DeathResultEditModeTests
     }
     private DeathResultData Result() => new DeathResultData
     {
-        cause = "개 · 돌진", occurredAtUtc = DateTime.UtcNow.ToString("O"), sceneName = "DogCombatTest",
+        cause = "개 · 돌진", occurredAtUtc = DateTime.UtcNow.ToString("O"), sceneName = "CombatLevel1",
         statistics = service.StatisticsSnapshot(), screenshotPngBase64 = "cG5n"
     };
 

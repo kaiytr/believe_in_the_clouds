@@ -49,16 +49,11 @@ public sealed class BossTestBootstrap : MonoBehaviour
 
     private void Update()
     {
-        if (!ready || activeRunStage) return;
+        if (!ready) return;
         if (Input.GetKeyDown(KeyCode.F1)) ShowDebugPanel = !ShowDebugPanel;
+        // In a real run the shortcut keys only work while the test panel is open, so normal play never triggers them.
+        if (activeRunStage && !ShowDebugPanel) return;
         if (boss.WaitingForArenaEntry) return;
-        if (Input.GetKeyDown(KeyCode.J)) PublishTestAttack(false);
-        if (Input.GetKeyDown(KeyCode.K)) PublishTestAttack(true);
-        if (Input.GetKeyDown(KeyCode.L) && boss.AllowManualEvadeInjection && boss.ActiveBossAttackId > 0)
-        {
-            playerEvents.PublishAttackEvaded(boss.ActiveBossAttackId, boss.gameObject);
-            LatestSignal = "수동 회피 신호 (결과에는 미반영)";
-        }
         if (Input.GetKeyDown(KeyCode.B)) boss.ReduceBeliefForTest(20f);
         if (Input.GetKeyDown(KeyCode.P)) boss.ForcePhaseTwoForTest();
         if (Input.GetKeyDown(KeyCode.R)) RestartForTest();
@@ -71,13 +66,6 @@ public sealed class BossTestBootstrap : MonoBehaviour
     {
         if (boss.AutomaticPatterns) boss.PauseAndCancelForTest();
         else boss.AutomaticPatterns = true;
-    }
-    public void PublishTestAttack(bool hit)
-    {
-        if (!ready || boss.WaitingForArenaEntry) return;
-        using var attack = playerEvents.PublishAttackAttempt(boss.gameObject);
-        if (hit) playerEvents.TryApplyHitAndPublish(attack, boss.gameObject, 10f);
-        LatestSignal = hit ? "더미 적중 #" + attack?.Id + " (기본 피해 10)" : "더미 공격 시도 #" + attack?.Id;
     }
     public void RestartForTest()
     {

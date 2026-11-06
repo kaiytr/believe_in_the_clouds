@@ -25,7 +25,7 @@ public sealed class BossCombatPlayModeTests
         { editorSceneManager = assembly.GetType("UnityEditor.SceneManagement.EditorSceneManager",false); if (editorSceneManager != null) break; }
         var method = editorSceneManager.GetMethod("LoadSceneAsyncInPlayMode",BindingFlags.Public|BindingFlags.Static,null,
             new[] {typeof(string),typeof(LoadSceneParameters)},null);
-        var load = (AsyncOperation)method.Invoke(null,new object[] {ProjectScenes.BossTest,new LoadSceneParameters(LoadSceneMode.Single)});
+        var load = (AsyncOperation)method.Invoke(null,new object[] {ProjectScenes.Boss,new LoadSceneParameters(LoadSceneMode.Single)});
         while (!load.isDone) yield return null;
         SceneManager.sceneLoaded -= PauseOnLoad;
         yield return null;
@@ -33,7 +33,7 @@ public sealed class BossCombatPlayModeTests
         player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerHealth>();
         playerBody = player.GetComponent<Rigidbody2D>();
         player.GetComponent<PlayerMove>().enabled = false;
-        // BossTest now waits for arena entry; put combat fixtures inside before preparing each case.
+        // The Boss scene now waits for arena entry; put combat fixtures inside before preparing each case.
         PutPlayer(new Vector2(-4.21f,-2.33f));
         yield return Until(() => boss.EncounterStarted);
         Assert.That(boss.EncounterStarted,Is.True,boss.StatusMessage);

@@ -31,7 +31,7 @@ public static class StageAtmosphere
         foreach (GameObject root in scene.GetRootGameObjects())
             if (root.name == RootName) return;
 
-        bool boss = scene.name == LobbyFlowRuntime.BossTestScene;
+        bool boss = scene.name == LobbyFlowRuntime.BossScene;
         var torches = new System.Collections.Generic.List<Transform>();
         foreach (GameObject root in scene.GetRootGameObjects())
             foreach (Transform child in root.GetComponentsInChildren<Transform>(true))

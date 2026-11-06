@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Ending scene. Fades in on a rainy sunset: the player walks in from off-screen left along a ground strip,
+/// Ending scene. Fades in on a sunset: the player walks in from off-screen left along a ground strip,
 /// and once near the centre keeps walking in place while the ground and backdrop scroll past forever.
 /// The credits roll up over it; once the last line has left the screen it fades to black and returns to the title.
 /// Everything is built at runtime; only the sprite references and the credits text are serialized.
@@ -70,7 +70,6 @@ public sealed class EndingSceneController : MonoBehaviour
         backdrop = EndingBackdrop.Build(world, GroundTopY, ViewHalfHeight);
         BuildGround();
         BuildPlayer();
-        EndingRain.Build(world, GroundTopY, ViewHalfHeight, halfWidth);
         BuildUi();
         StartCoroutine(FadeIn());
     }

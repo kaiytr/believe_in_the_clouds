@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-// Shared authoring for BossTest, StageTest and the reusable encounter prefab.
+// Shared authoring for the Boss scene and the reusable encounter prefab.
 public static class BossArenaProjectSetup
 {
     public static void Configure(BossEncounterTrigger entry, BossCombatController boss, float minX, float maxX,

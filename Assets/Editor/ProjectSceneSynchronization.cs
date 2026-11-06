@@ -11,6 +11,9 @@ using Object = UnityEngine.Object;
 // The shared prefabs own player combat and HUD settings across gameplay and development scenes.
 public static class ProjectSceneSynchronization
 {
+    public const string PlayerPath = "Assets/Prefabs/Player/Player.prefab";
+    public const string HudPath = "Assets/Prefabs/UI/PlayerHud.prefab";
+
     [Serializable]
     public sealed class SceneAudit
     {
@@ -80,13 +83,13 @@ public static class ProjectSceneSynchronization
     public static bool SynchronizeScene(Scene scene)
     {
         bool changed = false;
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.PlayerPath);
-        GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.HudPath);
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPath);
+        GameObject hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPath);
         if (prefab == null || hudPrefab == null) throw new InvalidOperationException("Shared Player and PlayerHud prefabs are required.");
         foreach (PlayerHealth health in Components<PlayerHealth>(scene).Where(item => item.CompareTag("Player")).ToArray())
         {
             GameObject player = health.gameObject;
-            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(player) != StageTestProjectSetup.PlayerPath)
+            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(player) != PlayerPath)
             {
                 Physics2D.SyncTransforms();
                 Collider2D oldBody = player.GetComponent<Collider2D>();
@@ -114,7 +117,7 @@ public static class ProjectSceneSynchronization
         }
 
         DoctrineHud[] huds = Components<DoctrineHud>(scene).ToArray();
-        DoctrineHud keeper = huds.FirstOrDefault(item => PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(item.gameObject) == StageTestProjectSetup.HudPath);
+        DoctrineHud keeper = huds.FirstOrDefault(item => PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(item.gameObject) == HudPath);
         if (keeper == null)
         {
             keeper = ((GameObject)PrefabUtility.InstantiatePrefab(hudPrefab, scene)).GetComponent<DoctrineHud>();
@@ -153,7 +156,7 @@ public static class ProjectSceneSynchronization
         var result = new SceneAudit {
             path = scene.path, players = players.Length, huds = huds.Length,
             playerPrefab = players.Length == 1 ? PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(players[0].gameObject) : "",
-            sharedHud = huds.Length == 1 && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(huds[0].gameObject) == StageTestProjectSetup.HudPath,
+            sharedHud = huds.Length == 1 && PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(huds[0].gameObject) == HudPath,
             playerDoctrineIdentity = players.Length == 1 && players[0].GetComponent<DoctrineSubject>() != null &&
                 players[0].GetComponent<DoctrineSubject>().Identity == SubjectType.Player,
             attackOverrides = players.Sum(item => AttackOverrides(item.gameObject)),
@@ -161,7 +164,7 @@ public static class ProjectSceneSynchronization
             horizontalCameras = Components<MonoBehaviour>(scene).Where(item => item != null && item.GetType().Name == "CinemachineCamera")
                 .All(item => item.GetComponent<CinemachineHorizontalFollow>() != null)
         };
-        result.valid = result.players == 1 && result.playerPrefab == StageTestProjectSetup.PlayerPath &&
+        result.valid = result.players == 1 && result.playerPrefab == PlayerPath &&
             players[0].GetComponent<PlayerAttack>() != null && result.sharedHud && result.attackOverrides == 0 &&
             result.missingScripts == 0 && result.horizontalCameras && result.playerDoctrineIdentity;
         return result;

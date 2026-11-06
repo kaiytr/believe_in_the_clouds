@@ -26,7 +26,7 @@ public sealed class TorchLight : MonoBehaviour
 
     private void Awake()
     {
-        smooth = SceneManager.GetActiveScene().name == LobbyFlowRuntime.BossTestScene;
+        smooth = SceneManager.GetActiveScene().name == LobbyFlowRuntime.BossScene;
         seed = Random.value * 100f;
         if (smooth)
         {
