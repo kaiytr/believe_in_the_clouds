@@ -19,6 +19,10 @@ public sealed class EndingSceneController : MonoBehaviour
 
     [Header("Art (the 16 interior ground tiles, index = column + row * 4)")]
     [SerializeField] private Sprite[] groundSprites = new Sprite[0];
+    [Header("Backdrop layers (Assets/Art/Ending)")]
+    [SerializeField] private EndingBackdrop.Art backdropArt;
+    [Tooltip("World height of the bottom edge of the backdrop art (the ground top is at -3).")]
+    [SerializeField] private float backdropBottomY = -4f;
     [Header("Player")]
     [SerializeField] private Sprite[] playerWalkFrames = new Sprite[0];
     [SerializeField, Min(1f)] private float walkFramesPerSecond = 8f;
@@ -67,7 +71,7 @@ public sealed class EndingSceneController : MonoBehaviour
         world.SetParent(transform, false);
 
         BuildLight();
-        backdrop = EndingBackdrop.Build(world, GroundTopY, ViewHalfHeight);
+        backdrop = EndingBackdrop.Build(world, backdropBottomY, backdropArt);
         BuildGround();
         BuildPlayer();
         BuildUi();
