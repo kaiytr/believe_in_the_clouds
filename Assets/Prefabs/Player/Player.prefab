@@ -353,6 +353,8 @@ MonoBehaviour:
   blinkInterval: 0.2
   bodyCollider: {fileID: 9096975266081764243}
   lowHealthRatio: 0.3
+  deathSound: {fileID: 8300000, guid: bc159f978eb98d843a8990987d8a1493, type: 3}
+  deathSoundVolume: 0.9
 --- !u!114 &7138799533125009962
 MonoBehaviour:
   m_ObjectHideFlags: 0

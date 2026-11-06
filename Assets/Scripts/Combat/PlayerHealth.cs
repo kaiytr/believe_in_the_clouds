@@ -15,12 +15,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     [Tooltip("LowHealth event fires when HP falls to this ratio or below.")]
     [SerializeField, Range(0f, 0.95f)] private float lowHealthRatio = 0.3f;
 
+    [Header("Death Sound")]
+    [Tooltip("사망하는 순간 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] private AudioClip deathSound;
+    [Tooltip("사망 사운드 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] private float deathSoundVolume = 0.9f;
+
     private float currentHp;
     private bool isInvulnerable;
     private bool isDashInvulnerable;
     private bool lowHealthNotified;
     private Coroutine invulnerabilityRoutine;
     private PlayerDeathCoordinator deathCoordinator;
+    private AudioSource deathAudioSource;
     public event System.Action<PlayerHealth> HealthChanged;
 
     public float CurrentHp => currentHp;
@@ -48,6 +55,23 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
             bodyCollider = GetComponent<Collider2D>();
         if (bodyCollider == null || bodyCollider.isTrigger)
             Debug.LogError($"{name}: Assign one non-trigger Player body Collider2D on the Player root.", this);
+
+        ResolveDeathAudio();
+    }
+
+    // 사망음은 사망 연출(타임스케일 저하) 중에도 들려야 하므로
+    // Awake에서 미리 AudioSource를 준비해 두고 Die()에서 즉시 재생한다.
+    private void ResolveDeathAudio()
+    {
+        // 공격음용 AudioSource가 이미 있으면 함께 쓴다 (PlayOneShot은 겹쳐 재생 가능).
+        deathAudioSource = GetComponent<AudioSource>();
+        if (deathAudioSource == null)
+            deathAudioSource = gameObject.AddComponent<AudioSource>();
+        deathAudioSource.playOnAwake = false;
+        deathAudioSource.loop = false;
+        deathAudioSource.spatialBlend = 0f; // 2D
+        if (deathAudioSource.volume <= 0f)
+            deathAudioSource.volume = 1f;
     }
 
     private void Start() { deathCoordinator.BeginLife(); }
@@ -178,6 +202,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
         isInvulnerable = true;
         isDashInvulnerable = false;
         Debug.Log("[Player] Dead");
+
+        // 사망 확정 순간에 재생. PlayOneShot은 타임스케일 영향을 받지 않아
+        // 사망 슬로우(0.25배)·결과창 정지(0배) 중에도 소리가 끊기지 않는다.
+        if (deathSound != null && deathAudioSource != null)
+            deathAudioSource.PlayOneShot(deathSound, deathSoundVolume);
 
         deathCoordinator.CaptureDeath(() =>
         {
