@@ -39,7 +39,7 @@ public sealed class GaugeChip : MonoBehaviour
         chip.sprite = WhiteSprite();
         chip.type = Image.Type.Filled;
         chip.fillMethod = Image.FillMethod.Horizontal;
-        chip.fillOrigin = (int)Image.OriginHorizontal.Left;
+        chip.fillOrigin = fill.fillOrigin;
         chip.color = ChipColor;
         chip.raycastTarget = false;
 

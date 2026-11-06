@@ -8,6 +8,8 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class DoctrineHud : MonoBehaviour
 {
+    private const float HpGaugeLeftPosition = 178.948f;
+
     [Header("하단 HUD")]
     [SerializeField] private float bandHeight = 220f;
     [SerializeField] private Color bandColor = new Color(0.76f, 0.76f, 0.76f, 0.94f);
@@ -683,6 +685,23 @@ public class DoctrineHud : MonoBehaviour
             canvas.transform);
         if (portrait != null)
             portrait.transform.SetAsLastSibling();
+
+        ApplyHpFillBounds();
+    }
+
+    private void ApplyHpFillBounds()
+    {
+        if (hpFill == null)
+            return;
+
+        RectTransform fillRect = hpFill.rectTransform;
+        float fillLeft = fillRect.anchoredPosition.x;
+        float fillRight = fillLeft + fillRect.sizeDelta.x;
+        float visibleLeft = Mathf.Clamp(HpGaugeLeftPosition, fillLeft, fillRight);
+
+        // Match the authored HUD layout while keeping the original right edge and fill direction.
+        fillRect.anchoredPosition = new Vector2(visibleLeft, fillRect.anchoredPosition.y);
+        fillRect.sizeDelta = new Vector2(fillRight - visibleLeft, fillRect.sizeDelta.y);
     }
 
     private Image CreatePixelArtImage(string name, HudArtworkSprite artwork, Transform parent)
