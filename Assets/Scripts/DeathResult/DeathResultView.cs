@@ -62,8 +62,9 @@ public sealed class DeathResultView : MonoBehaviour
                 .Append(kind == EnemyRewardKind.Dog ? " 마리" : " 명");
         }
         Label(composition, kills.ToString(), 18, Ink, .178f, .455f, .49f, .50f);
-        // The cause replaces the old "사망원인" heading, in the same spot above the capture.
-        Label(composition, data.cause, 22, Ink, .56f, .715f, .83f, .775f);
+        // The cause replaces the old "사망원인" heading, centered in the gap
+        // between the right panel's inner top edge (y=254) and the capture (y=355).
+        Label(composition, data.cause, 22, Ink, .56f, .688f, .83f, .748f);
 
         var imageArea = Box("Capture frame", composition, new Color(0, 0, 0, 0), .568f, .374f, .82f, .671f);
         imageArea.GetComponent<Image>().raycastTarget = false;
