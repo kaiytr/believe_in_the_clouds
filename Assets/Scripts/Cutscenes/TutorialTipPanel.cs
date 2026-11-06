@@ -111,6 +111,13 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "상점에서 구매한 교리들을 재단에서\n조합하여 사용 할 수 있습니다.",
     };
 
+    // 상점 TIP 페이지별 그림. Resources/Tip/Shop 아래 파일 이름 (시간순).
+    private static readonly string[] ShopIllustrations =
+    {
+        "Shop/ShopStep1",
+        "Shop/ShopStep2",
+    };
+
     private GameObject canvasObject;
     private Text pageLabel;
     private GameObject prevArrow;
@@ -225,7 +232,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
         activeLabels = ShopLabels;
         activeBodies = ShopBodies;
-        activeIllustrations = null;
+        activeIllustrations = ShopIllustrations;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
