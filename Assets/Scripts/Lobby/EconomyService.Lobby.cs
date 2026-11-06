@@ -156,6 +156,16 @@ public sealed partial class EconomyService
 
     private static bool IsCurrentStage(EconomyProfileData data, string stageId) =>
         data.hasRun && data.run.area == RunArea.TemporaryStage && data.run.hasStage && data.run.stage.id == stageId;
+
+    // 재단 TIP 최초 1회 열람 기록 (멱등: 이미 봤으면 성공으로 통과).
+    public CurrencyResult TryMarkFoundationTipSeen()
+    {
+        return Execute("foundation.tip.seen", RequestKey("foundation.tip.seen"), "foundation.tip.seen", data =>
+        {
+            data.foundationTipSeen = true;
+            return Success(0, 0, data.balance, activeTransactionId);
+        });
+    }
     private static void FlushReservations(EconomyProfileData data)
     { data.balance += EconomyLedger.Pending(data); data.pendingGrants.Clear(); }
 }

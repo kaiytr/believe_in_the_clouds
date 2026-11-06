@@ -23,6 +23,9 @@ public class FoundationScreen : MonoBehaviour
 
     private FoundationPanelView panel;
     private FoundationInteractable openFoundation;
+    private FoundationInteractable pendingFoundation;
+    private GameObject pendingInteractor;
+    private object foundationTipModalOwner;
 
     private ShopColumn currentTab = ShopColumn.Subject;
 
@@ -190,11 +193,24 @@ public class FoundationScreen : MonoBehaviour
             return;
         }
 
+        // 런당 최초 1회: 재단을 열기 전에 재단 TIP를 먼저 보여준다.
+        if (!HasSeenFoundationTip() && TutorialTipPanel.Instance != null)
+        {
+            ShowFoundationTip(foundation, interactor);
+            return;
+        }
+
         Open(foundation, interactor);
     }
 
     private void HandleCloseRequested()
     {
+        // 재단 TIP가 열려 있으면 TIP를 닫는다 (재단 패널은 아직 안 열린 상태).
+        if (foundationTipModalOwner != null && TutorialTipPanel.Instance != null && TutorialTipPanel.Instance.IsOpen)
+        {
+            TutorialTipPanel.Instance.HandleCloseRequested();
+            return;
+        }
         if (IsOpen)
         {
             Close();
@@ -250,6 +266,53 @@ public class FoundationScreen : MonoBehaviour
         FoundationInteractable closed = openFoundation;
         openFoundation = null;
         Debug.Log($"[재단] {closed?.FoundationName} 닫힘");
+    }
+
+    // ---- 재단 TIP (런당 최초 1회) ----
+    // 재단 패널을 열기 전에 TIP를 먼저 보여주고, 닫히면 재단 패널을 연다.
+    private static bool HasSeenFoundationTip()
+    {
+        EconomyService service = Currency.Service;
+        if (service == null || !service.IsReady)
+            return true; // 서비스 없으면 TIP 없이 바로 연다 (테스트 씬 등).
+        return service.Snapshot().foundationTipSeen;
+    }
+
+    private void ShowFoundationTip(FoundationInteractable foundation, GameObject interactor)
+    {
+        TutorialTipPanel tip = TutorialTipPanel.Instance;
+        if (tip == null)
+        {
+            Open(foundation, interactor);
+            return;
+        }
+
+        pendingFoundation = foundation;
+        pendingInteractor = interactor;
+        foundationTipModalOwner = new object();
+        UiModal.Push(foundationTipModalOwner);
+        tip.Closed -= OnFoundationTipClosed;
+        tip.Closed += OnFoundationTipClosed;
+        tip.OpenFoundationTip();
+    }
+
+    private void OnFoundationTipClosed()
+    {
+        TutorialTipPanel tip = TutorialTipPanel.Instance;
+        if (tip != null)
+            tip.Closed -= OnFoundationTipClosed;
+        if (foundationTipModalOwner != null)
+            UiModal.Pop(foundationTipModalOwner);
+        foundationTipModalOwner = null;
+
+        Currency.Service?.TryMarkFoundationTipSeen();
+
+        FoundationInteractable foundation = pendingFoundation;
+        GameObject interactor = pendingInteractor;
+        pendingFoundation = null;
+        pendingInteractor = null;
+        if (foundation != null)
+            Open(foundation, interactor);
     }
 
     private void HandleTabClicked(ShopColumn column)
