@@ -11,6 +11,8 @@ public sealed class TorchLight : MonoBehaviour
     private const float Intensity = 1.15f;
     private const float Radius = 7.5f;
     private const float MinHold = .3f, MaxHold = .9f;   // seconds between rim changes
+    // The flame sits in the upper part of the 1x2 torch sprite.
+    private static readonly Vector3 FlameOffset = new Vector3(0f, .6f, 0f);
     private static readonly Color Warm = new Color(1f, .6f, .27f);
 
     // Smooth look used in the boss stage.
@@ -30,7 +32,7 @@ public sealed class TorchLight : MonoBehaviour
         {
             var holder = new GameObject("Torch light");
             holder.transform.SetParent(transform, false);
-            holder.transform.localPosition = new Vector3(0f, .1f, 0f);
+            holder.transform.localPosition = FlameOffset;
             glow = holder.AddComponent<Light2D>();
             glow.lightType = Light2D.LightType.Point;
             glow.color = Warm;
@@ -41,7 +43,7 @@ public sealed class TorchLight : MonoBehaviour
             glow.shadowsEnabled = false;
             return;
         }
-        glow = PixelLight.CreateRadial(transform, "Torch light", new Vector3(0f, .1f, 0f),
+        glow = PixelLight.CreateRadial(transform, "Torch light", FlameOffset,
             Radius, .6f / Radius, .7f, Warm, Intensity);
         glow.transform.position = PixelLight.Snap(glow.transform.position);
         nextChange = Time.time + Random.Range(MinHold, MaxHold);

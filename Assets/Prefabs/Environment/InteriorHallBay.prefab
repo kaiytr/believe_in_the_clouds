@@ -787,6 +787,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1091}
   - component: {fileID: 1092}
+  - component: {fileID: 1093}
   m_Layer: 0
   m_Name: Wall Torch
   m_TagString: Untagged
@@ -858,7 +859,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -36
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 3a92c525e7a551e5a81849fc716cf311, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 80639418a069e3147bff7c5c3e2618cc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -868,6 +869,24 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ffaafdb41a64a4f992766a20d4c9d10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::SpriteFrameAnimator
+  frames:
+  - {fileID: 21300000, guid: 80639418a069e3147bff7c5c3e2618cc, type: 3}
+  - {fileID: 21300000, guid: 40d53443c5f19e942b076aad9edb4bb6, type: 3}
+  - {fileID: 21300000, guid: 0e90fd29aeb54c24dabf651ddfade11c, type: 3}
+  - {fileID: 21300000, guid: aa29ff8d97b59d04080af7cbb125622e, type: 3}
+  framesPerSecond: 8
 --- !u!1 &1100
 GameObject:
   m_ObjectHideFlags: 0
