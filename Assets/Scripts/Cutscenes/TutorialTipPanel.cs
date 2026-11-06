@@ -77,13 +77,15 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "적들은 각자의 고유한 믿음을\n갖고 있습니다.\n반대되는 행동으로 믿음을\n무너뜨리면 적이 약해집니다.",
     };
 
-    // 재단 TIP (런당 최초 1회): 재단 사용 전에 재단이 뭔지 알려준다.
-    private static readonly string[] FoundationLabels = { "재단", "교리 조합", "사용 시기" };
+    // 재단 TIP (런당 최초 1회): 재단 사용 전에 재단과 교리를 알려준다.
+    private static readonly string[] FoundationLabels = { "재단", "교리", "획득", "조합", "사용 시기" };
 
     private static readonly string[] FoundationBodies =
     {
         "재단은 나만의 교리를\n조합 할 수 있는 장소입니다.",
-        "주어/조건/결과로 이루어진 교리를\n마음대로 조합하여 강해지세요!",
+        "교리는 [주어] [조건] [결과]의\n세 가지 키워드를 조합해\n게임 내 규칙을 직접 생성하고\n변경하는 시스템입니다.",
+        "상자 개방과 상점 구매로\n새로운 교리를 획득할 수 있습니다.",
+        "자신만의 교리를 조합해\n강해지세요",
         "매 분기마다 재단을\n사용할 수 있습니다.",
     };
 
