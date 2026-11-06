@@ -23,17 +23,16 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField] private float stageMaxX = 10f;
     [SerializeField] private float stageMaxY = 8f;
     [SerializeField] private float lobbyMinX = -23f, lobbyMaxX = 31f;
-    [SerializeField] private Vector2 lobbyTitlePosition = new Vector2(-15f, 2.3f);
     [SerializeField] private TemporaryStageExit authoredExit;
     [SerializeField] private bool showTestTools = true;
+    [Header("Scene-placed labels (optional; created at run time when empty)")]
     public bool IsLobby => isLobby;
     public PlayerHealth Player => player;
     public bool ShowTestTools { get => showTestTools; set { showTestTools = value; if (tools != null) tools.SetActive(value); } }
     private LobbyFlowRuntime flow;
     private GameObject generated, tools;
     private string contentKey;
-    private Text status, message;
-    private TextMesh stageTitle, exitLabel;
+    private TextMesh stageTitle;
     private SpriteRenderer exitBody;
     private TemporaryStageExit stageExit;
     private bool exitRevealStarted;
@@ -93,21 +92,13 @@ public sealed class LobbySceneController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F2) && (!runStageOnly || flow.IsPlayLoopTestMode))
             ShowTestTools = !ShowTestTools;
         LobbyRunData run = flow.State;
-        if (run == null) { status.text = "저장 확인 중"; message.text = flow.Message; return; }
+        if (run == null) return;
         bool matches = isLobby ? run.area == RunArea.Lobby : run.area == RunArea.TemporaryStage || run.area == RunArea.Complete;
         if (matches)
         {
             string key = isLobby ? run.batchId : run.stage.id;
             if (contentKey != key) { contentKey = key; BuildContent(run); }
         }
-        status.text = isLobby ? $"로비  |  전투 클리어 {run.combatClears}회" + (run.combatClears >= 3 ? " · 보스 후보 해금" : " · 3회부터 보스 후보 등장")
-            : run.area == RunArea.Complete ? "임시 보스 완료  |  런 완료 검증 · 정식 엔딩은 후속 연결"
-            : run.hasStage ? $"{LobbyRules.RoleLabel(run.stage.role)} 임시 스테이지  |  " +
-                (run.stage.completed ? "완료 · 출구에서 E로 복귀" : run.stage.role == BranchRole.Shop
-                    ? "상점 이용 후 출구에서 E로 복귀 · 바로 떠날 수도 있습니다"
-                    : "역할 완료 후 출구가 나타납니다")
-            : "스테이지 확인 중";
-        message.text = flow.Message;
         bool ready = flow.InputReady;
         complete.interactable = ready && !isLobby && run.hasStage && !run.stage.completed;
         damage.interactable = ready;
@@ -131,7 +122,6 @@ public sealed class LobbySceneController : MonoBehaviour
             if (isShop)
             {
                 exitBody.enabled = true;
-                SetExitLabelVisible(true);
             }
             else if (isCombat)
             {
@@ -139,13 +129,11 @@ public sealed class LobbySceneController : MonoBehaviour
                 else if (exitRevealStarted && !revealPlaying)
                 {
                     exitBody.enabled = true;
-                    SetExitLabelVisible(true);
                 }
             }
             else
             {
                 exitBody.enabled = false;
-                SetExitLabelVisible(false);
             }
 
             bool available = isShop || isCombat && run.stage.completed;
@@ -153,7 +141,6 @@ public sealed class LobbySceneController : MonoBehaviour
                 exitBody.color = available ? Color.white : new Color(.55f, .55f, .55f);
             else
                 exitBody.color = available ? new Color(.27f, .65f, .53f) : new Color(.22f, .25f, .3f);
-            exitLabel.text = run.area == RunArea.Complete ? "검증 완료" : available ? "출구 · E" : "완료 후 출구 사용";
         }
     }
 
@@ -165,7 +152,6 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             SpawnFoundation(generated.transform);
             SpawnBranches(run, generated.transform);
-            WorldLabel(generated.transform, "Lobby title", "다음 목적지를 선택하세요", lobbyTitlePosition, new Color(.75f, .86f, .95f));
         }
         else
         {
@@ -173,8 +159,6 @@ public sealed class LobbySceneController : MonoBehaviour
             {
                 stageExit = authoredExit;
                 exitBody = authoredExit.GetComponentInChildren<SpriteRenderer>();
-                exitLabel = WorldLabel(generated.transform, "Exit label", "완료 후 출구 사용",
-                    authoredExit.transform.position + Vector3.up * 2.25f, Color.white);
                 InitializeExitPresentation(run);
                 return;
             }
@@ -193,8 +177,6 @@ public sealed class LobbySceneController : MonoBehaviour
             exitBody.sharedMaterial = worldMaterial;
             exitBody.sortingOrder = -8;
             stageExit = exit.AddComponent<TemporaryStageExit>();
-            exitLabel = WorldLabel(exit.transform, "Exit label", "완료 후 출구 사용",
-                new Vector2(0, returnDoorSprite != null ? 2.25f : 2.7f), Color.white);
             InitializeExitPresentation(run);
         }
     }
@@ -204,7 +186,6 @@ public sealed class LobbySceneController : MonoBehaviour
         exitRevealStarted = false;
         bool showImmediately = run != null && run.stage != null && run.stage.role == BranchRole.Shop;
         if (exitBody != null) exitBody.enabled = showImmediately;
-        SetExitLabelVisible(showImmediately);
     }
 
     private void StartExitReveal()
@@ -218,14 +199,7 @@ public sealed class LobbySceneController : MonoBehaviour
         {
             Destroy(effect);
             exitBody.enabled = true;
-            SetExitLabelVisible(true);
         }
-    }
-
-    private void SetExitLabelVisible(bool visible)
-    {
-        if (exitLabel != null && exitLabel.TryGetComponent(out Renderer labelRenderer))
-            labelRenderer.enabled = visible;
     }
 
     private void SpawnFoundation(Transform parent)
@@ -277,14 +251,49 @@ public sealed class LobbySceneController : MonoBehaviour
         return label;
     }
 
+    private LobbyUiRefs FindPlacedUi()
+    {
+        foreach (LobbyUiRefs refs in FindObjectsByType<LobbyUiRefs>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (refs.gameObject.scene == gameObject.scene && refs.IsComplete) return refs;
+        return null;
+    }
+
+    // The screen UI placed in the scene (LobbyUiRefs): only wire it up.
+    private void BindPlacedUi(LobbyUiRefs refs)
+    {
+        tools = refs.Tools;
+        foreach (Text text in refs.GetComponentsInChildren<Text>(true)) text.font = UiTheme.GetFont();
+        fresh = Bind(refs.FreshMemory, () => flow.StartMemoryFixture());
+        grant = Bind(refs.GrantCoins, () => flow.GrantForTest());
+        complete = Bind(refs.CompleteStage, () => flow.CompleteStage());
+        damage = Bind(refs.Damage, () => flow.DamageForTest());
+        death = Bind(refs.Death, () => flow.DieForTest());
+        reload = Bind(refs.ReloadSave, () => flow.ReloadForTest());
+        fail = Bind(refs.FailSave, () => flow.ToggleSaveFailure());
+        Bind(refs.HideTools, () => ShowTestTools = false);
+        Bind(refs.PlayLoop, () => flow.StartPlayLoopTest());
+        ShowTestTools = showTestTools && (!runStageOnly || flow.IsPlayLoopTestMode);
+        UiEventSystemBoot.Ensure();
+    }
+
+    private static Button Bind(Button button, Action action)
+    {
+        button.onClick.RemoveAllListeners();
+        button.onClick.AddListener(() => action());
+        return button;
+    }
+
     private void BuildUi()
     {
+        LobbyUiRefs placed = FindPlacedUi();
+        if (placed != null) { BindPlacedUi(placed); return; }
+
+        // Scenes without a placed LobbyUi prefab still get the same UI built at run time.
         var root = new GameObject("Lobby verification UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         root.transform.SetParent(transform, false);
         var canvas = root.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 110;
         var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
-        status = UiLabel(root.transform, "Progress", "로비 확인 중", 24, new Vector2(24, -20), new Vector2(1750, 42));
         tools = UiTheme.CreateImage("Test tools", root.transform, new Color(.06f, .1f, .17f, .94f));
         var rect = tools.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(24, -76); rect.sizeDelta = new Vector2(530, 320);
@@ -299,8 +308,6 @@ public sealed class LobbySceneController : MonoBehaviour
         UiButton(7, "도구 숨기기", () => ShowTestTools = false);
         UiButton(8, "전체 플레이 루프 테스트", () => flow.StartPlayLoopTest());
         UiLabel(tools.transform, "Fixture note", "루프 테스트는 격리된 메모리 프로필을 사용합니다.", 15, new Vector2(16, -264), new Vector2(498, 30));
-        message = UiLabel(root.transform, "Message", "", 18, new Vector2(24, -350), new Vector2(1100, 56));
-        message.color = new Color(1, .85f, .5f);
         ShowTestTools = showTestTools && (!runStageOnly || flow.IsPlayLoopTestMode);
         UiEventSystemBoot.Ensure();
     }

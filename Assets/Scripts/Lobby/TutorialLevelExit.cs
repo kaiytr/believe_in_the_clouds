@@ -11,8 +11,9 @@ public sealed class TutorialLevelExit : InteractableBehaviour, IWorldInteraction
     private bool leaving;
 
     public Transform PromptAnchor => transform;
-    public Vector3 PromptOffset => GetPromptOffsetAboveArt();
-    public override string InteractionPrompt => "E : 로비로 이동";
+    public Vector3 PromptOffset => GetPromptOffsetAtArtCenter();
+    public bool PromptCentered => true;
+    public override string InteractionPrompt => "E : 진입";
 
     private void Start()
     {

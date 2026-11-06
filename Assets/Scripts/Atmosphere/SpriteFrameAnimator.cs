@@ -12,6 +12,14 @@ public sealed class SpriteFrameAnimator : MonoBehaviour
     private float offset;
     private int shown = -1;
 
+    /// <summary>For code-built users: set the frames and speed before the first Update.</summary>
+    public void Configure(Sprite[] newFrames, float fps)
+    {
+        frames = newFrames ?? new Sprite[0];
+        framesPerSecond = Mathf.Max(.1f, fps);
+        shown = -1;
+    }
+
     private void Awake()
     {
         target = GetComponent<SpriteRenderer>();

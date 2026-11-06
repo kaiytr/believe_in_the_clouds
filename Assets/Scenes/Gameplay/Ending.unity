@@ -146,8 +146,42 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e103f69544094c189ad6bec5847456e7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::EndingSceneController
+  groundSprites:
+  - {fileID: 188700100, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700101, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700102, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700103, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700104, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700105, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700106, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700107, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700108, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700109, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700110, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700111, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700112, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700113, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700114, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  - {fileID: 188700115, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  playerWalkFrames:
+  - {fileID: 8598911646308356358, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -8971905496091981746, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -2912558134338543859, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: 1712548768681341929, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  walkFramesPerSecond: 8
+  walkSpeed: 2.8
+  centerX: 0
+  handOverDistance: 3
+  fadeInSeconds: 1.8
+  creditsDelay: 2.5
+  creditsScrollSpeed: 55
+  fadeOutSeconds: 1.5
+  creditsText: "# \uAD6C\uB984\uC744 \uBBFF\uC73C\uC138\uC694!\n\n\n## \uAE30\uD68D\n[\uC774\uB984]\n[\uC774\uB984]\n\n##
+    \uD504\uB85C\uADF8\uB798\uBC0D\n[\uC774\uB984]\n[\uC774\uB984]\n\n## \uC544\uD2B8\n[\uC774\uB984]\n[\uC774\uB984]\n\n##
+    \uC0AC\uC6B4\uB4DC\n[\uC774\uB984]\n\n## Special Thanks\n[\uC774\uB984]\n[\uC774\uB984]\n\n\n\uD50C\uB808\uC774\uD574
+    \uC8FC\uC154\uC11C \uAC10\uC0AC\uD569\uB2C8\uB2E4"
 --- !u!4 &1737599110
 Transform:
   m_ObjectHideFlags: 0

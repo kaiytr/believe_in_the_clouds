@@ -3,10 +3,12 @@ using UnityEngine;
 public sealed class TemporaryStageExit : InteractableBehaviour, IWorldInteractionPrompt
 {
     public Transform PromptAnchor => transform;
-    public Vector3 PromptOffset => GetPromptOffsetAboveArt();
+    // Like the branch doors: the prompt sits in the middle of the door.
+    public Vector3 PromptOffset => GetPromptOffsetAtArtCenter();
+    public bool PromptCentered => true;
 
     private void Awake() { displayName = "로비 복귀 출구"; interactRadius = 1.5f; }
-    public override string InteractionPrompt => "E : 로비로 복귀";
+    public override string InteractionPrompt => "E : 진입";
     public override bool CanInteract(GameObject interactor)
     {
         var flow = LobbyFlowRuntime.Instance;

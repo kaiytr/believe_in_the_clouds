@@ -1551,6 +1551,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2557876721059575650, guid: e2a7ced3ea995e34f8c1989e49a050a0, type: 3}
   m_PrefabInstance: {fileID: 2061838493}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7100000000
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 35760a63cfec454e9603340164960736, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1565,3 +1578,4 @@ SceneRoots:
   - {fileID: 132853813}
   - {fileID: 1736758528}
   - {fileID: 3500000003}
+  - {fileID: 7100000000}
