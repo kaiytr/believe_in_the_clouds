@@ -11,15 +11,21 @@ public sealed class TitleScreen : MonoBehaviour
     private const float ArtworkWidth = 1920f;
     private const float ArtworkHeight = 1080f;
 
+    [Header("BGM")]
+    [SerializeField] private AudioClip titleBgm;
+    [SerializeField, Range(0f, 1f)] private float titleBgmVolume = 0.6f;
+
     private Button start;
     private Button quit;
     private Text message;
+    private AudioSource bgmSource;
     private bool loading;
 
     private void Start()
     {
         Time.timeScale = 1f;
         EconomyRuntime.Ensure();
+        PlayTitleBgm();
 
         Canvas canvas = DeathResultView.CreateCanvas("Title menu", 1000);
         canvas.transform.SetParent(transform, false);
@@ -34,6 +40,40 @@ public sealed class TitleScreen : MonoBehaviour
             .20f, .255f, .80f, .31f);
 
         UiEventSystemBoot.Ensure().SetSelectedGameObject(start.gameObject);
+    }
+
+    // 타이틀 화면에서는 이 씬 전용 AudioSource로 BGM을 반복 재생한다.
+    // 씬을 떠나면 오브젝트와 함께 정리되므로 다른 씬으로 번지지 않는다.
+    private void PlayTitleBgm()
+    {
+        if (titleBgm == null)
+        {
+            Debug.LogWarning("타이틀 BGM 클립이 연결되지 않았습니다.", this);
+            return;
+        }
+
+        EnsureAudioListener();
+
+        bgmSource = gameObject.AddComponent<AudioSource>();
+        bgmSource.playOnAwake = false;
+        bgmSource.loop = true;
+        bgmSource.spatialBlend = 0f; // 2D
+        bgmSource.volume = titleBgmVolume;
+        bgmSource.clip = titleBgm;
+        bgmSource.Play();
+    }
+
+    // 타이틀 씬에는 카메라가 없어 AudioListener도 없다. 소리가 들리려면 하나 필요하다.
+    private static void EnsureAudioListener()
+    {
+        if (AudioListener.pause)
+            AudioListener.pause = false;
+
+        if (UnityEngine.Object.FindFirstObjectByType<AudioListener>() != null)
+            return;
+
+        var listener = new GameObject("Title Audio Listener", typeof(AudioListener));
+        listener.transform.SetParent(null, false);
     }
 
     private static RectTransform CreateButtonLayout(Transform parent)
