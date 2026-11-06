@@ -30,7 +30,10 @@ public class DangerIndicator : MonoBehaviour
     {
         fill = GetComponent<SpriteRenderer>();
         if (fill != null)
+        {
             fullAlpha = fill.color.a;
+            AtmosphereMaterials.ApplyUnlit(fill);
+        }
     }
 
     public void Setup(Vector2 center, float angle, Vector2 size)

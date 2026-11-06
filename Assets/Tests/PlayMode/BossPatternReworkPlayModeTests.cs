@@ -334,7 +334,7 @@ public sealed class BossPatternReworkPlayModeTests
         Assert.That(player.CurrentHp, Is.EqualTo(100f));
         boss.BeginEncounter(); boss.BeginEncounter();
         Assert.That(boss.EncounterStarted, Is.True);
-        Assert.That(boss.Clouds.StormClouds.Count, Is.InRange(3, 4), "Beginning the fight keeps the prepared clouds.");
+        Assert.That(boss.Clouds.StormClouds.Count, Is.EqualTo(3), "Beginning the fight keeps the prepared clouds.");
         Assert.That(entry.HoldingForIntro, Is.False);
     }
 

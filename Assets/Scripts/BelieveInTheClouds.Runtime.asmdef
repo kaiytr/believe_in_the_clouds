@@ -2,7 +2,9 @@
   "name": "BelieveInTheClouds.Runtime",
   "references": [
     "Unity.ugui",
-    "Unity.Cinemachine"
+    "Unity.Cinemachine",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.RenderPipelines.Universal.2D.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

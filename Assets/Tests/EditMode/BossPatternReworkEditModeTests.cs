@@ -17,7 +17,7 @@ public sealed class BossPatternReworkEditModeTests
         Assert.That(data.BeliefCooldown, Is.EqualTo(3f));
         Assert.That(data.ProphecyReactionTime, Is.GreaterThanOrEqualTo(1f));
         Assert.That(data.BurnWindow, Is.EqualTo(10f));
-        Assert.That(data.StormCloudCountRange, Is.EqualTo(new Vector2Int(3, 4)));
+        Assert.That(data.StormCloudCountRange, Is.EqualTo(new Vector2Int(3, 3)));
         Assert.That(data.WhiteCloudCount, Is.EqualTo(2));
         Assert.That(data.PatternRecovery, Is.EqualTo(.65f), "Regular attack spacing keeps its current value.");
     }

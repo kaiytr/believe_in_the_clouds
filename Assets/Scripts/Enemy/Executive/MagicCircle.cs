@@ -53,6 +53,7 @@ public class MagicCircle : MonoBehaviour
 
         sprite = GetComponent<SpriteRenderer>();
         if (sprite == null) sprite = gameObject.AddComponent<SpriteRenderer>();
+        AtmosphereMaterials.ApplyUnlit(sprite);
         float scale = radius / BaseRadius;
         transform.localScale = new Vector3(scale, scale, 1f);
         // The sigil's ellipse sits just on the floor line; the hit box above still starts at the floor point.

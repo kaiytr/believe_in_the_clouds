@@ -60,8 +60,11 @@ public sealed class BossCloudField : MonoBehaviour
             float slotCenter = LimitsX.x + slot * (i + .5f);
             float half = stormWidth * .5f;
             // Each cloud drifts only around its own slot, so together they keep covering almost the whole arena.
-            var drift = new Vector2(Mathf.Max(LimitsX.x, slotCenter - half - data.StormCloudWander),
-                Mathf.Min(LimitsX.y, slotCenter + half + data.StormCloudWander));
+            // The outermost clouds may leave the arena by a fraction of their own width, so the edge is not a hard wall.
+            float overhang = stormWidth * data.StormCloudOverhang;
+            float driftMin = slotCenter - half - data.StormCloudWander, driftMax = slotCenter + half + data.StormCloudWander;
+            var drift = new Vector2(i == 0 ? Mathf.Min(driftMin, LimitsX.x - overhang) : Mathf.Max(LimitsX.x, driftMin),
+                i == stormCount - 1 ? Mathf.Max(driftMax, LimitsX.y + overhang) : Mathf.Min(LimitsX.y, driftMax));
             float x = Mathf.Clamp(slotCenter, drift.x + half, Mathf.Max(drift.x + half, drift.y - half));
             var cloud = Instantiate(data.BlackCloudPrefab, root);
             cloud.name = "Storm cloud " + (i + 1);
