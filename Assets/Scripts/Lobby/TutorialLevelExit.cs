@@ -17,11 +17,13 @@ public sealed class TutorialLevelExit : InteractableBehaviour, IWorldInteraction
     private void Start()
     {
         Font font = UiTheme.GetFont();
-        foreach (TextMesh instruction in instructions)
-        {
-            instruction.font = font;
-            instruction.GetComponent<MeshRenderer>().sharedMaterial = font.material;
-        }
+        if (instructions != null)
+            foreach (TextMesh instruction in instructions)
+            {
+                if (instruction == null) continue;
+                instruction.font = font;
+                instruction.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+            }
 
         EconomyRuntime.Ensure();
         previous = Currency.Service;

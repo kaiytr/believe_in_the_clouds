@@ -4,6 +4,7 @@ using UnityEngine;
 public static class CombatUiResources
 {
     private static readonly Dictionary<string, Font> fonts = new Dictionary<string, Font>();
+    private static readonly HashSet<Font> dynamicFonts = new HashSet<Font>();
     private static HashSet<string> installedFonts;
     private static CombatantHudView hudPrefab;
     public static CombatantHudView HudPrefab => hudPrefab != null ? hudPrefab :
@@ -27,7 +28,7 @@ public static class CombatUiResources
         {
             if (!installedFonts.Contains(family)) continue;
             Font font = Font.CreateDynamicFontFromOSFont(family, 19);
-            if (font != null && font.HasCharacter('너')) { fonts[preferred] = font; return font; }
+            if (font != null && font.HasCharacter('너')) { dynamicFonts.Add(font); fonts[preferred] = font; return font; }
             if (font != null) Release(font);
         }
         fonts[preferred] = null;
@@ -58,7 +59,9 @@ public static class CombatUiResources
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Reset()
     {
-        foreach (Font font in fonts.Values) if (font != null) Release(font);
+        // OS에서 동적 생성한 폰트만 파괴한다. 번들 에셋 폰트는 Destroy 금지라 건너뛴다.
+        foreach (Font font in dynamicFonts) if (font != null) Release(font);
+        dynamicFonts.Clear();
         fonts.Clear(); installedFonts = null; hudPrefab = null;
         Application.quitting -= Reset;
         Application.quitting += Reset;
