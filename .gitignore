@@ -107,3 +107,7 @@ InitTestScene*.unity*
 
 # Local tool config (contains API keys)
 opencode.json
+
+# Local compile check leftovers (csc output)
+/*.dll
+/Temp/*.dll
