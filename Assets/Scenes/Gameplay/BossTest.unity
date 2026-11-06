@@ -223,7 +223,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHealth
 --- !u!1 &132853815 stripped
 GameObject:
@@ -240,7 +240,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3a981ef409750d42be4083532b9436e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerDeathCoordinator
 --- !u!1 &301792570
 GameObject:
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87ced436d522420c83b716cc2d5d0da2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossTestBootstrap
   boss: {fileID: 1145974078}
   startAutomatically: 0
@@ -532,7 +532,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -576,7 +576,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
@@ -625,7 +625,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec58794297f446d89f8856ea0e590bd7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::LobbySceneController
   isLobby: 0
   player: {fileID: 132853814}
@@ -729,7 +729,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9123955440747777886, guid: d6450c0e8ebb9e344bf4a358a840c497, type: 3}
       propertyPath: actors.Array.data[0].character
-      value:
+      value: 
       objectReference: {fileID: 1145974080}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -745,7 +745,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbca8cc7b03e22742a77dcf595cf0266, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneRunner
 --- !u!4 &1071644618 stripped
 Transform:
@@ -959,7 +959,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 127bfdb724e741d09c9e1768ca8812bc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossCombatController
 --- !u!1 &1145974079 stripped
 GameObject:
@@ -976,7 +976,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41e2c8b36f1c9754aa11d876b8b969fc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneCharacter
   displayName: "\uBCF4\uC2A4"
   headAnchor: {fileID: 0}
@@ -1174,7 +1174,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 2127468311612849796, guid: 92f88948b5b48d24fae735a4fa02a1ae, type: 3}
+    - {fileID: 8337122509622089042, guid: 92f88948b5b48d24fae735a4fa02a1ae, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 92f88948b5b48d24fae735a4fa02a1ae, type: 3}
@@ -1205,7 +1207,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d69c462a9f710b4a838ba0fece6e43d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::RunStageCompletionWatcher
   role: 3
   authoredEnemies: []
@@ -1554,7 +1556,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ecd8512e2d584e9e8f8a130c63ab91ec, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossEncounterTrigger
   boss: {fileID: 1145974078}
   gates:
@@ -1572,7 +1574,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 29658207ae35411a9055675d5dbe5bde, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossArenaCamera
   view: {fileID: 944339747}
   cameraBounds: {fileID: 4600000132}
@@ -1599,7 +1601,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c1e6a9c8243ff68428a332be8039e64f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneBossEncounterCoordinator
   arena: {fileID: 4600000103}
   introRunner: {fileID: 1071644617}
@@ -1971,7 +1973,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aca6dc8bf9ed490a9649921b299aca62, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::LobbyCameraFollow
   Target: {fileID: 4600000141}
   MinX: -42
