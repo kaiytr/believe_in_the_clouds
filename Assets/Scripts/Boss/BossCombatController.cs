@@ -254,6 +254,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             SetStatus("플레이어 전투 종료 · R 재시작");
             return;
         }
+        // 공격 동작 중이 아닐 때는 항상 플레이어 쪽을 바라본다.
+        // (베기/돌진 판정이 이미 만들어진 뒤에 돌면 예고와 어긋나므로 공격이 끝난 뒤에만 돈다.)
+        if (!regularAttackActive && !beliefProcessing && !bodyActionActive && !shockwaveReserved &&
+            (clouds == null || !clouds.LightningActive))
+            FacePlayerWhileIdle();
         if (belief.Tick(Time.time, settings.BeliefRecoveryRatio))
         {
             if (!regularRunning && !bodyActionActive)
@@ -913,6 +918,16 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, null);
     }
     public void FacePlayer() { if (TargetValid) Face(PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1); }
+    // 대기 중 매 프레임 호출용. 이미 같은 방향이면 아무 일도 하지 않는다.
+    private void FacePlayerWhileIdle()
+    {
+        if (!TargetValid) return;
+        float deltaX = PlayerCollider.bounds.center.x - transform.position.x;
+        // 보스 몸 위에 겹쳐 있을 때 좌우로 덜덜 떨리지 않도록 작은 데드존을 둔다.
+        if (Mathf.Abs(deltaX) < .05f) return;
+        int direction = deltaX > 0f ? 1 : -1;
+        if (direction != facing) Face(direction);
+    }
     private void Face(int direction)
     {
         facing = direction;

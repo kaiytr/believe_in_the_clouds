@@ -110,14 +110,15 @@ public sealed class BossAttackExecutor : MonoBehaviour
             yield break;
         }
 
-        owner.FacePlayer();
-        int direction = owner.Facing;
         int token = owner.Generation;
         for (int index = 0; index < stepCount && token == owner.Generation && owner.CanStartNextHit; index++)
         {
             if (!owner.PlayerAttack.TryGetComboStep(index, out PlayerAttack.ComboStep step))
                 yield break;
 
+            // 각 타의 예고를 그리기 전에 다시 플레이어 쪽을 본다 (예고와 판정은 항상 같은 방향).
+            owner.FacePlayer();
+            int direction = owner.Facing;
             float warning = index == 0 ? Data.MeleeComboFirstWarning : Data.MeleeComboFollowupWarning;
             float damage = index < Data.MeleeComboDamage.Length
                 ? Data.MeleeComboDamage[index]
