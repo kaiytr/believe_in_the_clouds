@@ -240,8 +240,8 @@ MonoBehaviour:
   indicatorWidth: 0.3
   verticalAttackTolerance: 1.5
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
-  attackHitSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
+  attackHitSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
   attackSoundVolume: 0.9
 --- !u!70 &293926172
 CapsuleCollider2D:

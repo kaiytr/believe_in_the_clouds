@@ -703,8 +703,8 @@ MonoBehaviour:
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
-  attackHitSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
+  attackHitSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
   attackSoundVolume: 0.9
 --- !u!70 &279902392
 CapsuleCollider2D:
@@ -4227,8 +4227,8 @@ MonoBehaviour:
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
-  attackHitSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
+  attackHitSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
   attackSoundVolume: 0.9
 --- !u!70 &1398954453
 CapsuleCollider2D:
@@ -28134,8 +28134,8 @@ MonoBehaviour:
   dangerIndicatorPrefab: {fileID: 2577131981598434726, guid: 65aade48b8895c842865f78c939afa9d, type: 3}
   indicatorWidth: 0.3
   attackWindupSound: {fileID: 0}
-  attackCastSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
-  attackHitSound: {fileID: 0}
+  attackCastSound: {fileID: 0}
+  attackHitSound: {fileID: 8300000, guid: 0394f56f1c93f6b49be14275d239bfb6, type: 3}
   attackSoundVolume: 0.9
 --- !u!70 &1945609985
 CapsuleCollider2D:
