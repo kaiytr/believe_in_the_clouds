@@ -29,9 +29,13 @@ public sealed class BeliefView : MonoBehaviour
     private void HandleStateChanged(BeliefController source, BeliefState state) => Refresh();
     private void Refresh()
     {
-        if (view != null && controller != null)
-            view.UpdateBelief(controller.NormalizedBelief, controller.IsVulnerable,
-                controller.IsVulnerable ? "방어력 저하" : controller.Profile.Phrase);
+        if (view == null || controller == null)
+            return;
+
+        bool collapsed = controller.IsCollapsed;
+        view.UpdateBelief(controller.NormalizedBelief, controller.IsDefenseReduced,
+            collapsed ? string.Empty : controller.IsDefenseReduced ? "방어력 저하" : controller.DisplayPhrase,
+            collapsed);
     }
     public void Hide() { hidden = true; if (view != null) view.SetVisible(false); }
     private void LateUpdate()

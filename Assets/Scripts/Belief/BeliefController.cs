@@ -22,6 +22,9 @@ public sealed class BeliefController : MonoBehaviour
     public event Action<BeliefController, float, float> BeliefChanged;
     public event Action<BeliefController, BeliefState> StateChanged;
 
+    // 믿음 붕괴는 회복 타이머가 없다. 컨트롤러가 멈추거나 적 주인이 죽어도 유지된다.
+    public bool IsCollapsed => currentState == BeliefState.Collapsed;
+
     public BeliefType Type => profile != null ? profile.Type : selectedBeliefType;
     public bool UsesRandomCandidate => beliefTypeCandidates != null && beliefTypeCandidates.Count > 0;
     public IReadOnlyList<BeliefType> CandidateTypes => beliefTypeCandidates;
@@ -31,6 +34,8 @@ public sealed class BeliefController : MonoBehaviour
     public float NormalizedBelief => MaxBelief <= 0f ? 0f : Mathf.Clamp01(currentBelief / MaxBelief);
     public BeliefState CurrentState => currentState;
     public bool IsVulnerable => currentState == BeliefState.Vulnerable;
+    // 방어력 저하 피해 배율이 적용되는 상태 (취약 5초 + 붕괴 영구).
+    public bool IsDefenseReduced => currentState == BeliefState.Vulnerable || currentState == BeliefState.Collapsed;
     public bool IsStopped => stopped;
     public bool IsConfigured => profile != null;
 
@@ -43,6 +48,9 @@ public sealed class BeliefController : MonoBehaviour
     private void OnEnable()
     {
         if (profile == null || owner != null && owner.IsDead) return;
+        // 붕괴된 믿음은 다시 켜도 회복하지 않는다.
+        if (IsCollapsed)
+            return;
         stopped = false;
         if (IsVulnerable && vulnerabilityRoutine == null)
             vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
@@ -100,7 +108,9 @@ public sealed class BeliefController : MonoBehaviour
         }
 
         currentBelief = profile.MaxBelief;
-        currentState = BeliefState.Maintained;
+        currentState = BeliefState.Maintained; // 붕괴는런타임 전환으로만 진입한다. ConfigureProfile는 풀로 다시 켜질 때 호출될 수 있어 조기 상태 리셋용으로 Maintained를 유지한다.
+        vulnerabilityRemaining = 0f;
+        vulnerabilityRoutine = null;
     }
 
     private BeliefType SelectBeliefType()
@@ -136,7 +146,7 @@ public sealed class BeliefController : MonoBehaviour
 
     public bool ReduceBelief(float amount)
     {
-        if (stopped || IsVulnerable || profile == null || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
+        if (stopped || IsVulnerable || IsCollapsed || profile == null || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
             return false;
 
         float previousBelief = currentBelief;
@@ -146,7 +156,7 @@ public sealed class BeliefController : MonoBehaviour
 
         RaiseBeliefChanged();
         if (currentBelief <= 0f)
-            StartVulnerability();
+            Collapse();
         return true;
     }
 
@@ -158,7 +168,8 @@ public sealed class BeliefController : MonoBehaviour
         if (damageInfo.Source != DamageSource.PlayerOwned || stopped || profile == null)
             return damageInfo.Amount;
 
-        float multiplier = IsVulnerable
+        // 방어력 저하 피해 배율이 적용되는 상태 (취약 5초 + 붕괴 영구).
+        float multiplier = IsDefenseReduced
             ? profile.VulnerablePlayerDamageMultiplier
             : profile.MaintainedPlayerDamageMultiplier;
         return damageInfo.Amount * multiplier;
@@ -170,6 +181,7 @@ public sealed class BeliefController : MonoBehaviour
             return;
 
         stopped = true;
+        // 붕괴된 믿음은 비활성화해도 유지된다. (다시 켜도 게이지 회복 없음)
         if (vulnerabilityRoutine != null)
         {
             StopCoroutine(vulnerabilityRoutine);
@@ -179,7 +191,7 @@ public sealed class BeliefController : MonoBehaviour
 
     private void StartVulnerability()
     {
-        if (stopped || IsVulnerable || profile == null)
+        if (stopped || IsVulnerable || IsCollapsed || profile == null)
             return;
 
         currentBelief = 0f;
@@ -189,6 +201,20 @@ public sealed class BeliefController : MonoBehaviour
         RaiseBeliefChanged();
         vulnerabilityRemaining = profile.VulnerableDuration;
         vulnerabilityRoutine = StartCoroutine(VulnerabilityRoutine());
+    }
+
+    // 믿음 붕괴: 단일 플레이어 타격(또는 소진)으로 한 번에 진입하며,
+    // 회복 타이머·게이지 회복 없이 방어력 저하 피해 배율만 영구 유지한다.
+    private void Collapse()
+    {
+        if (stopped || IsCollapsed || profile == null)
+            return;
+
+        currentBelief = 0f;
+        currentState = BeliefState.Collapsed;
+        LogState("Belief collapsed");
+        StateChanged?.Invoke(this, currentState);
+        RaiseBeliefChanged();
     }
 
     private IEnumerator VulnerabilityRoutine()
@@ -214,6 +240,9 @@ public sealed class BeliefController : MonoBehaviour
     {
         BeliefChanged?.Invoke(this, currentBelief, MaxBelief);
     }
+
+    // UI가 믿음 게이지를 숨긴 뒤에도, 붕괴된 말풍선을 띄우지 않게 문구를 비운다.
+    public string DisplayPhrase => IsCollapsed ? string.Empty : profile != null ? profile.Phrase : string.Empty;
 
     private void LogState(string message)
     {

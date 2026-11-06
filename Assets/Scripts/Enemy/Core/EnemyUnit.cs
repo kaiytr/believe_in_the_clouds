@@ -50,6 +50,8 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
     public bool IsDead => currentState == EnemyState.Dead;
     public bool IsVulnerable => beliefController != null && beliefController.IsVulnerable;
+    // 방어력 저하 피해 배율이 적용되는 상태 (취약 5초 + 붕괴 영구).
+    public bool IsDefenseReduced => beliefController != null && beliefController.IsDefenseReduced;
     public bool IsMovementLocked => movementLocked;
     public EnemyState CurrentState => currentState;
     public Transform Target => target;
@@ -113,8 +115,8 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
             return;
         }
         beliefController.StateChanged += HandleBeliefStateChanged;
-        if (IsVulnerable)
-            HandleBeliefStateChanged(beliefController, BeliefState.Vulnerable);
+        if (IsVulnerable || Belief != null && Belief.IsCollapsed)
+            HandleBeliefStateChanged(beliefController, Belief.CurrentState);
     }
 
     protected virtual void Update()
@@ -212,7 +214,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
     private void HandleBeliefStateChanged(BeliefController controller, BeliefState state)
     {
-        if (state != BeliefState.Vulnerable)
+        if (state != BeliefState.Vulnerable && state != BeliefState.Collapsed)
             return;
 
         foreach (EnemyAttack attack in attacks)

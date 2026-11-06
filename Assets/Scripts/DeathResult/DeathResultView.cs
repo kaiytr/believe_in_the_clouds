@@ -27,7 +27,7 @@ public sealed class DeathResultView : MonoBehaviour
         aspect.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
         aspect.aspectRatio = 16f / 9f;
 
-        Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/DeathResultPanel");
+        Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/result_BG");
         if (panelSprite != null)
         {
             AddFullCanvasArtwork(composition, "Result panel artwork", panelSprite);

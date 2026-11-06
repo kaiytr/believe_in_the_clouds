@@ -166,6 +166,16 @@ public sealed partial class EconomyService
             return Success(0, 0, data.balance, activeTransactionId);
         });
     }
+
+    // 상점 TIP 최초 1회 열람 기록 (멱등: 이미 봤으면 성공으로 통과).
+    public CurrencyResult TryMarkShopTipSeen()
+    {
+        return Execute("shop.tip.seen", RequestKey("shop.tip.seen"), "shop.tip.seen", data =>
+        {
+            data.shopTipSeen = true;
+            return Success(0, 0, data.balance, activeTransactionId);
+        });
+    }
     private static void FlushReservations(EconomyProfileData data)
     { data.balance += EconomyLedger.Pending(data); data.pendingGrants.Clear(); }
 }

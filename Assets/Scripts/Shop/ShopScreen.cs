@@ -17,6 +17,9 @@ public class ShopScreen : MonoBehaviour
     public static ShopScreen Instance { get; private set; }
     private ShopPanelView panel;
     private ShopInteractable openShop;
+    private ShopInteractable pendingShop;
+    private GameObject pendingInteractor;
+    private object shopTipModalOwner;
 
     // 구매 칸: 담은 순서대로 항목 Id. 교리칸은 "slot", 체력 회복은 "heal".
     private readonly List<string> cart = new List<string>();
@@ -118,9 +121,23 @@ public class ShopScreen : MonoBehaviour
     {
         if (target is not ShopInteractable shop) return;
         if (openShop == shop && IsOpen) Close();
+        else if (!HasSeenShopTip() && TutorialTipPanel.Instance != null)
+        {
+            // 런당 최초 1회: 상점을 열기 전에 상점 TIP를 먼저 보여준다.
+            ShowShopTip(shop, interactor);
+        }
         else Open(shop, interactor);
     }
-    private void HandleCloseRequested() { if (IsOpen) Close(); }
+    private void HandleCloseRequested()
+    {
+        // 상점 TIP가 열려 있으면 TIP를 닫는다 (상점 패널은 아직 안 열린 상태).
+        if (shopTipModalOwner != null && TutorialTipPanel.Instance != null && TutorialTipPanel.Instance.IsOpen)
+        {
+            TutorialTipPanel.Instance.HandleCloseRequested();
+            return;
+        }
+        if (IsOpen) Close();
+    }
     private void HandleCurrencyChanged(CurrencyChange change) { if (IsOpen) RefreshCart(); }
 
     public void Open(ShopInteractable shop, GameObject interactor)
@@ -141,6 +158,53 @@ public class ShopScreen : MonoBehaviour
         ShopInteractable closedShop = openShop;
         panel.Close(); UiModal.Pop(this); openShop = null;
         if (closedShop != null) ShopClosed?.Invoke(closedShop);
+    }
+
+    // ---- 상점 TIP (런당 최초 1회) ----
+    // 상점 패널을 열기 전에 TIP를 먼저 보여주고, 닫히면 상점 패널을 연다.
+    private static bool HasSeenShopTip()
+    {
+        EconomyService service = Currency.Service;
+        if (service == null || !service.IsReady)
+            return true; // 서비스 없으면 TIP 없이 바로 연다 (테스트 씬 등).
+        return service.Snapshot().shopTipSeen;
+    }
+
+    private void ShowShopTip(ShopInteractable shop, GameObject interactor)
+    {
+        TutorialTipPanel tip = TutorialTipPanel.Instance;
+        if (tip == null)
+        {
+            Open(shop, interactor);
+            return;
+        }
+
+        pendingShop = shop;
+        pendingInteractor = interactor;
+        shopTipModalOwner = new object();
+        UiModal.Push(shopTipModalOwner);
+        tip.Closed -= OnShopTipClosed;
+        tip.Closed += OnShopTipClosed;
+        tip.OpenShopTip();
+    }
+
+    private void OnShopTipClosed()
+    {
+        TutorialTipPanel tip = TutorialTipPanel.Instance;
+        if (tip != null)
+            tip.Closed -= OnShopTipClosed;
+        if (shopTipModalOwner != null)
+            UiModal.Pop(shopTipModalOwner);
+        shopTipModalOwner = null;
+
+        Currency.Service?.TryMarkShopTipSeen();
+
+        ShopInteractable shop = pendingShop;
+        GameObject interactor = pendingInteractor;
+        pendingShop = null;
+        pendingInteractor = null;
+        if (shop != null)
+            Open(shop, interactor);
     }
 
     /// <summary>교리 나열 칸 카드 클릭 → 구매 칸에 1개 추가 (중복 가능).</summary>

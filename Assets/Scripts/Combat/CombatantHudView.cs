@@ -128,13 +128,16 @@ public sealed class CombatantHudView : MonoBehaviour
         if (healthChip != null) healthChip.Set(normalized);
         else healthFill.fillAmount = normalized;
     }
-    public void UpdateBelief(float normalized, bool vulnerable, string text)
+    public void UpdateBelief(float normalized, bool vulnerable, string text, bool hideBelief = false)
     {
-        beliefFill.fillAmount = vulnerable ? 0f : Mathf.Clamp01(normalized);
+        // 믿음 붕괴: 말풍선과 믿음 게이지를 함께 숨긴다. (체력바는 유지)
+        beliefFill.gameObject.SetActive(!hideBelief);
+        beliefBackground.gameObject.SetActive(!hideBelief);
+        beliefFill.fillAmount = vulnerable || hideBelief ? 0f : Mathf.Clamp01(normalized);
         beliefFill.color = Color.white;
         beliefBackground.color = vulnerable ? new Color(.78f, .64f, .62f) : new Color(.73f, .73f, .73f);
-        phrase.text = text;
-        speechBubble.gameObject.SetActive(!string.IsNullOrEmpty(text));
+        phrase.text = hideBelief ? string.Empty : text;
+        speechBubble.gameObject.SetActive(!hideBelief && !string.IsNullOrEmpty(text));
     }
     public void SetVisible(bool visible) => beliefCanvas.enabled = healthCanvas.enabled = visible;
     public void Position(Bounds body)

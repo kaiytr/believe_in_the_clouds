@@ -24,7 +24,7 @@ public sealed class RearPositionBeliefCondition : BeliefCondition
     private void Update()
     {
         if (owner == null || owner.IsDead || Controller == null || Controller.Type != SupportedType ||
-            Controller.IsVulnerable || Controller.Profile == null)
+            Controller.IsDefenseReduced || Controller.Profile == null)
         {
             return;
         }
