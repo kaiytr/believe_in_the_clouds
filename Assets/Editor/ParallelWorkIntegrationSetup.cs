@@ -17,7 +17,7 @@ public static class ParallelWorkIntegrationSetup
 
     private static void InstallShopExit()
     {
-        Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/Gameplay/ShopTest.unity", OpenSceneMode.Single);
+        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.Shop, OpenSceneMode.Single);
         LobbySceneController controller = UnityEngine.Object.FindFirstObjectByType<LobbySceneController>();
         GameObject floorObject = GameObject.Find("Platformer Floor");
         Tilemap floor = floorObject != null ? floorObject.GetComponentInChildren<Tilemap>() : null;

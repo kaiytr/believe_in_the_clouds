@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public static class CutsceneSceneInstaller
 {
-    private const string TutorialScenePath = "Assets/Scenes/Gameplay/Designed/Tutorial.unity";
+    private const string TutorialScenePath = ProjectScenes.Tutorial;
     private const string TutorialRigPath = "Assets/Prefabs/Cutscenes/TutorialCutsceneRig.prefab";
     private const string BossEncounterPrefabPath = "Assets/Prefabs/Boss/BossEncounter.prefab";
     private const string RunnerPrefabPath = "Assets/Prefabs/Cutscenes/CutsceneRunner.prefab";
@@ -113,7 +113,7 @@ public static class CutsceneSceneInstaller
     public static void InstallBossIntroduction()
     {
         if (!EditorUtility.DisplayDialog("보스 도입 컷씬 설치",
-                "BossEncounter 프리팹과 BossTest 씬에 도입 컷씬을 연결합니다.", "설치", "취소"))
+                "BossEncounter 프리팹과 Boss 씬에 도입 컷씬을 연결합니다.", "설치", "취소"))
             return;
         if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             InstallBossIntroductionForIntegration();
@@ -134,8 +134,8 @@ public static class CutsceneSceneInstaller
             PrefabUtility.UnloadPrefabContents(contents);
         }
 
-        // BossTest는 BossEncounter 전체가 아닌 Boss 프리팹과 독립 아레나를 사용한다.
-        Scene scene = EditorSceneManager.OpenScene("Assets/Scenes/Gameplay/BossTest.unity", OpenSceneMode.Single);
+        // Boss는 BossEncounter 전체가 아닌 Boss 프리팹과 독립 아레나를 사용한다.
+        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.Boss, OpenSceneMode.Single);
         BossEncounterTrigger sceneArena = null;
         foreach (GameObject root in scene.GetRootGameObjects())
         {
@@ -143,11 +143,11 @@ public static class CutsceneSceneInstaller
             if (candidate != null) { sceneArena = candidate; break; }
         }
         if (!ConfigureBossIntroduction(sceneArena))
-            throw new System.InvalidOperationException("BossTest 도입 컷씬 참조가 없습니다.");
+            throw new System.InvalidOperationException("Boss 도입 컷씬 참조가 없습니다.");
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
-        Debug.Log("BossEncounter와 BossTest에 기존 아레나를 유지한 도입 컷씬을 연결했습니다.");
+        Debug.Log("BossEncounter와 Boss에 기존 아레나를 유지한 도입 컷씬을 연결했습니다.");
     }
 
     public static bool ConfigureBossIntroduction(BossEncounterTrigger arena)

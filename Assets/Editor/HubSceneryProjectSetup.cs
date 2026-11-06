@@ -132,8 +132,8 @@ public static class HubSceneryProjectSetup
     {
         var scenePaths = new string[7];
         for (int level = 1; level <= 6; level++)
-            scenePaths[level - 1] = $"Assets/Scenes/Gameplay/Designed/CombatLevel{level}.unity";
-        scenePaths[6] = "Assets/Scenes/Gameplay/Designed/Tutorial.unity";
+            scenePaths[level - 1] = ProjectScenes.CombatLevelPath(level);
+        scenePaths[6] = ProjectScenes.Tutorial;
 
         foreach (string path in scenePaths)
         {
@@ -165,7 +165,7 @@ public static class HubSceneryProjectSetup
 
     private static void ApplyShopDecoration()
     {
-        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.ShopTest, OpenSceneMode.Single);
+        Scene scene = EditorSceneManager.OpenScene(ProjectScenes.Shop, OpenSceneMode.Single);
         if (GameObject.Find(DecorationRootName) != null)
             return;
 

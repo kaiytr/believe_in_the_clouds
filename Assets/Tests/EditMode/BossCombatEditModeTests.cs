@@ -172,32 +172,20 @@ public sealed class BossCombatEditModeTests
     }
 
     [Test]
-    public void BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls()
+    public void BossSceneContainsBossPrefabAndBootstrap()
     {
-        Scene source = EditorSceneManager.OpenScene(ProjectScenes.PlayerTEST,OpenSceneMode.Additive);
-        Scene test = EditorSceneManager.OpenScene(ProjectScenes.BossTest,OpenSceneMode.Additive);
+        Scene test = EditorSceneManager.OpenScene(ProjectScenes.Boss,OpenSceneMode.Additive);
         try
         {
-            GameObject original = Find(source,"Player"), clone = Find(test,"Player");
-            Assert.That(original, Is.Not.Null); Assert.That(clone, Is.Not.Null);
-            var a = new SerializedObject(original.GetComponent<PlayerMove>()); var b = new SerializedObject(clone.GetComponent<PlayerMove>());
-            foreach (string field in new[] {"moveSpeed","jumpPower","groundCheckRadius"})
-                Assert.That(b.FindProperty(field).floatValue, Is.EqualTo(a.FindProperty(field).floatValue),field);
-            Assert.That(b.FindProperty("groundLayer").intValue, Is.EqualTo(a.FindProperty("groundLayer").intValue));
-            Assert.That(((Transform)b.FindProperty("groundCheck").objectReferenceValue).localPosition,
-                Is.EqualTo(((Transform)a.FindProperty("groundCheck").objectReferenceValue).localPosition));
-            var ar = original.GetComponent<Rigidbody2D>(); var br = clone.GetComponent<Rigidbody2D>();
-            Assert.That(br.gravityScale,Is.EqualTo(ar.gravityScale)); Assert.That(br.linearDamping,Is.EqualTo(ar.linearDamping));
-            Assert.That(br.angularDamping,Is.EqualTo(ar.angularDamping)); Assert.That(br.interpolation,Is.EqualTo(ar.interpolation));
-            Assert.That(br.constraints,Is.EqualTo(ar.constraints)); Assert.That(br.collisionDetectionMode,Is.EqualTo(ar.collisionDetectionMode));
-            Assert.That(clone.GetComponent<CapsuleCollider2D>().size,Is.EqualTo(original.GetComponent<CapsuleCollider2D>().size));
-            Assert.That(clone.GetComponent<CapsuleCollider2D>().offset,Is.EqualTo(original.GetComponent<CapsuleCollider2D>().offset));
+            GameObject clone = Find(test,"Player");
+            Assert.That(clone, Is.Not.Null);
+            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(clone), Is.EqualTo("Assets/Prefabs/Player/Player.prefab"));
             var boss = Find(test,"Boss"); Assert.That(PrefabUtility.IsPartOfPrefabInstance(boss),Is.True);
             Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(boss),Is.EqualTo("Assets/Prefabs/Boss/Boss.prefab"));
             Assert.That(boss.transform.localScale,Is.EqualTo(Vector3.one));
             Assert.That(Find(test,"BossTest tools").GetComponent<BossTestBootstrap>().Boss,Is.EqualTo(boss.GetComponent<BossCombatController>()));
         }
-        finally { EditorSceneManager.CloseScene(test,true); EditorSceneManager.CloseScene(source,true); }
+        finally { EditorSceneManager.CloseScene(test,true); }
     }
     private static GameObject Find(Scene scene,string name)
     { foreach(var root in scene.GetRootGameObjects()) if(root.name==name) return root; return null; }

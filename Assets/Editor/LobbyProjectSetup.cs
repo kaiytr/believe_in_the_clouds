@@ -20,13 +20,12 @@ public static class LobbyProjectSetup
         if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
         EnsureLobbyPrefabs();
         BuildScene();
-        var scenes = EditorBuildSettings.scenes.Where(scene => scene.path != LobbyPath &&
-            scene.path != "Assets/Scenes/Gameplay/TemporaryStage.unity").ToList();
+        var scenes = EditorBuildSettings.scenes.Where(scene => scene.path != LobbyPath).ToList();
         int titleIndex = scenes.FindIndex(scene => scene.path == ProjectScenes.Title);
         scenes.Insert(titleIndex >= 0 ? titleIndex + 1 : 0, new EditorBuildSettingsScene(LobbyPath, true));
         EditorBuildSettings.scenes = scenes.ToArray();
         AssetDatabase.SaveAssets();
-        Debug.Log("Lobby built; removed event stage excluded. Existing scene registrations are preserved.");
+        Debug.Log("Lobby built. Existing scene registrations are preserved.");
     }
 
     [MenuItem("Tools/Lobby/Configure existing lobby prefab layout")]
@@ -52,7 +51,7 @@ public static class LobbyProjectSetup
     private static void BuildScene()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.PlayerPath));
+        var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ProjectSceneSynchronization.PlayerPath));
         player.name = "Player"; player.transform.position = new Vector3(-12, -1.95f, 0);
         var cameraRoot = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener), typeof(LobbyCameraFollow));
         cameraRoot.tag = "MainCamera"; cameraRoot.transform.position = new Vector3(-13, 0, -10);
@@ -74,7 +73,7 @@ public static class LobbyProjectSetup
         for (int i = 0; i < 7; i++)
             Visual(scenery.transform, "Background pillar " + i, new Vector2(-20 + i * 8, 1), new Vector2(.3f, 12), new Color(.105f, .16f, .24f), -25);
 
-        PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(StageTestProjectSetup.HudPath));
+        PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ProjectSceneSynchronization.HudPath));
         var controller = new GameObject("[LobbyScene]").AddComponent<LobbySceneController>();
         var settings = new SerializedObject(controller);
         settings.FindProperty("isLobby").boolValue = true;

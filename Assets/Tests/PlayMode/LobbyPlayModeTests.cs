@@ -14,7 +14,7 @@ public sealed class LobbyPlayModeTests
 {
     private EconomyService previous;
     private MemoryEconomyStore store;
-    private static readonly string[] CombatScenes = { "DogCombatTest", "BelieverCombatTest", "ExecutiveCombatTest" };
+    private static readonly string[] CombatScenes = { "CombatLevel1", "CombatLevel2", "CombatLevel3", "CombatLevel4", "CombatLevel5", "CombatLevel6" };
     private LobbyFlowRuntime Flow => LobbyFlowRuntime.Instance;
     private PlayerHealth Player => Flow.Scene.Player;
 
@@ -35,7 +35,7 @@ public sealed class LobbyPlayModeTests
         // A persistent router must not route other suites back into this fixture.
         if (Flow != null) Object.Destroy(Flow.gameObject);
         yield return null;
-        yield return Load("StageTest");
+        yield return Load("Title");
         EconomyRuntime.Instance.SetService(previous); Time.timeScale = 1;
     }
 

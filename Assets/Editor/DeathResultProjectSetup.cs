@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class DeathResultProjectSetup
 {
-    public const string TitlePath = "Assets/Scenes/Gameplay/Title.unity";
+    public const string TitlePath = ProjectScenes.Title;
 
     [MenuItem("Tools/Death Result/Create minimal title scene")]
     public static void BuildTitle()

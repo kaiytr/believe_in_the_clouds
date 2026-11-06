@@ -66,7 +66,7 @@ public sealed class ParallelWorkIntegrationPlayModeTests
     [UnityTest]
     public IEnumerator BossIntroKeepsArenaBoundsAndCloudsThenStartsOnceAndOpensOnDefeat()
     {
-        yield return Load(ProjectScenes.BossTest, () =>
+        yield return Load(ProjectScenes.Boss, () =>
             Object.FindFirstObjectByType<BossCombatController>().AutomaticPatterns = false);
         BossEncounterTrigger arena = Object.FindFirstObjectByType<BossEncounterTrigger>();
         CutsceneBossEncounterCoordinator coordinator = Object.FindFirstObjectByType<CutsceneBossEncounterCoordinator>();
@@ -112,7 +112,7 @@ public sealed class ParallelWorkIntegrationPlayModeTests
     [UnityTest]
     public IEnumerator LeavingDuringBossIntroCancelsWithoutStartingCombatOrKeepingTheModal()
     {
-        yield return Load(ProjectScenes.BossTest, () =>
+        yield return Load(ProjectScenes.Boss, () =>
             Object.FindFirstObjectByType<BossCombatController>().AutomaticPatterns = false);
         var coordinator = Object.FindFirstObjectByType<CutsceneBossEncounterCoordinator>();
         var runner = coordinator.GetComponentInChildren<CutsceneRunner>();
@@ -143,7 +143,7 @@ public sealed class ParallelWorkIntegrationPlayModeTests
         CutsceneDefinition encounter = null;
         CutsceneDefinition afterDeath = External("integration.tutorial.after-death");
         Action<CutsceneExternalStage> capture = stage => introStage = stage;
-        yield return Load("Assets/Scenes/Gameplay/Designed/Tutorial.unity", () =>
+        yield return Load(ProjectScenes.Tutorial, () =>
         {
             var flow = Object.FindFirstObjectByType<CutsceneTutorialFlow>();
             Assert.That(flow, Is.Not.Null);

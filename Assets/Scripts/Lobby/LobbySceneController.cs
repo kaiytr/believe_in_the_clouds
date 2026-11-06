@@ -48,7 +48,7 @@ public sealed class LobbySceneController : MonoBehaviour
             flow = LobbyFlowRuntime.Instance;
 
 #if UNITY_EDITOR
-            if (flow == null && gameObject.scene.name == LobbyFlowRuntime.ShopTestScene)
+            if (flow == null && gameObject.scene.name == LobbyFlowRuntime.ShopScene)
             {
                 flow = LobbyFlowRuntime.Ensure();
                 if (!flow.PrepareStandaloneShopTest(player))

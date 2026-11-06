@@ -7,7 +7,6 @@ public static class CutsceneOwnedAssetBuilder
 {
     private const string DataRoot = "Assets/Data/Cutscenes";
     private const string PrefabRoot = "Assets/Prefabs/Cutscenes";
-    private const string SceneRoot = "Assets/Scenes/Cutscenes";
     private const string StonePrefabPath = "Assets/Prefabs/Enemy/Believer/StoneProjectile.prefab";
 
     [MenuItem("Tools/Cutscenes/Create Owned Samples")]
@@ -16,7 +15,7 @@ public static class CutsceneOwnedAssetBuilder
         if (!Application.isBatchMode)
         {
             if (!EditorUtility.DisplayDialog("Create Cutscene Samples",
-                    "Create missing assets and open the showcase scene? Current scenes will be saved first.",
+                    "Create missing cutscene assets? Current scenes will be saved first.",
                     "Continue", "Cancel"))
                 return;
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -25,7 +24,6 @@ public static class CutsceneOwnedAssetBuilder
 
         EnsureFolder("Assets/Data", "Cutscenes");
         EnsureFolder("Assets/Prefabs", "Cutscenes");
-        EnsureFolder("Assets/Scenes", "Cutscenes");
         EnsureFolder("Assets/Art", "Cutscenes");
         EnsureFolder("Assets/Editor", "Cutscenes");
 
@@ -84,11 +82,10 @@ public static class CutsceneOwnedAssetBuilder
         CreateActorPrefab();
         CreateEntryTriggerPrefab();
         CreateTutorialRigPrefab(intro, encounter, afterDeath);
-        CreateShowcaseScene(boss);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log("Created missing cutscene-owned definitions, prefabs, and showcase scene.");
+        Debug.Log("Created missing cutscene-owned definitions and prefabs.");
     }
 
     private static CutsceneDefinition CreateDefinition(string fileName, string id, CutsceneStep[] steps)
@@ -161,38 +158,6 @@ public static class CutsceneOwnedAssetBuilder
         runner.SetDefaultDefinition(intro);
         PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
-    }
-
-    private static void CreateShowcaseScene(CutsceneDefinition bossIntroduction)
-    {
-        string path = SceneRoot + "/CutsceneBubbleShowcase.unity";
-        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) != null)
-            return;
-
-        Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-        GameObject cameraObject = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
-        cameraObject.tag = "MainCamera";
-        cameraObject.transform.position = new Vector3(0f, 1f, -10f);
-        Camera camera = cameraObject.GetComponent<Camera>();
-        camera.orthographic = true;
-        camera.orthographicSize = 4.4f;
-        camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color32(34, 43, 54, 255);
-
-        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        ground.name = "Showcase Ground";
-        ground.transform.position = new Vector3(0f, -1.55f, 0f);
-        ground.transform.localScale = new Vector3(12f, 0.35f, 1f);
-
-        GameObject rig = new GameObject("Cutscene Showcase");
-        CutsceneBubbleView view = rig.AddComponent<CutsceneBubbleView>();
-        CutsceneRunner runner = rig.AddComponent<CutsceneRunner>();
-        runner.SetDefaultDefinition(bossIntroduction);
-        CutsceneShowcaseBootstrap bootstrap = rig.AddComponent<CutsceneShowcaseBootstrap>();
-        bootstrap.Configure(runner, bossIntroduction);
-
-        EditorSceneManager.SaveScene(scene, path);
     }
 
     private static void EnsureFolder(string parent, string child)

@@ -177,7 +177,7 @@ public sealed class DeathResultPlayModeTests
     }
     [UnityTest] public IEnumerator ActualEnemyIdentityReachesLethalDamageAndKillStatistics()
     {
-        yield return SceneManager.LoadSceneAsync("DogCombatTest"); yield return null;
+        yield return SceneManager.LoadSceneAsync("CombatLevel1"); yield return null;
         player = Object.FindFirstObjectByType<PlayerHealth>();
         EnemyUnit dog = Object.FindFirstObjectByType<DogEnemy>();
         Assert.That(dog, Is.Not.Null);
@@ -192,7 +192,7 @@ public sealed class DeathResultPlayModeTests
         Assert.That(coordinator.Result.cause, Is.EqualTo("개 · 돌진"));
         Assert.That(coordinator.Result.statistics.Count(EnemyRewardKind.Dog), Is.EqualTo(1));
         Assert.That(coordinator.Result.statistics.coins, Is.EqualTo(actualReward));
-        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("DogCombatTest"));
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo("CombatLevel1"));
         yield return WaitForResult();
         yield return null;
         Assert.That(camera.orthographicSize, Is.EqualTo(cameraSize * .6f).Within(.01f));

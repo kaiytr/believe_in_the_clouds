@@ -2,60 +2,44 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-// Scene names remain stable for saved runs; this catalog owns their asset locations.
+// Scene catalog. Only scenes of the real play loop exist:
+//   Title -> Tutorial (first run) -> Lobby -> CombatLevel1..6 / Shop / Boss -> Ending -> Title
+// Scene names are stable identifiers (LobbyFlowRuntime routes by name); this class owns their asset locations.
 public static class ProjectScenes
 {
-    public const string Title = "Assets/Scenes/Gameplay/Title.unity";
-    public const string Lobby = "Assets/Scenes/Gameplay/Lobby.unity";
-    public const string ShopTest = "Assets/Scenes/Gameplay/ShopTest.unity";
-    public const string Tutorial = "Assets/Scenes/Gameplay/Designed/Tutorial.unity";
-    public const string CombatLevelFolder = "Assets/Scenes/Gameplay/Designed/";
-    public const int CombatLevelCount = 6;
-    public const string DogCombatTest = "Assets/Scenes/Gameplay/DogCombatTest.unity";
-    public const string BelieverCombatTest = "Assets/Scenes/Gameplay/BelieverCombatTest.unity";
-    public const string ExecutiveCombatTest = "Assets/Scenes/Gameplay/ExecutiveCombatTest.unity";
-    public const string BossTest = "Assets/Scenes/Gameplay/BossTest.unity";
-    public const string Ending = "Assets/Scenes/Gameplay/Ending.unity";
+    public const string Title = "Assets/Scenes/Title.unity";
+    public const string Tutorial = "Assets/Scenes/Tutorial.unity";
+    public const string Lobby = "Assets/Scenes/Lobby.unity";
+    public const string Ending = "Assets/Scenes/Ending.unity";
     public const string EndingSceneName = "Ending";
-    public const string StageTest = "Assets/Scenes/Tests/StageTest.unity";
-    public const string EconomyTest = "Assets/Scenes/Tests/EconomyTest.unity";
-    public const string ChestTest = "Assets/Scenes/Tests/ChestTest.unity";
-    public const string FoundationTest = "Assets/Scenes/Tests/FoundationTest.unity";
-    public const string PlayerTEST = "Assets/Scenes/Sources/PlayerTEST.unity";
-    public const string EnemyTest = "Assets/Scenes/Sources/EnemyTest.unity";
-    public const string BeliefTest = "Assets/Scenes/Sources/BeliefTest.unity";
+    public const string StageFolder = "Assets/Scenes/Stages/";
+    public const int CombatLevelCount = 6;
+    public const string Shop = StageFolder + "Shop.unity";
+    public const string Boss = StageFolder + "Boss.unity";
 
     public static IEnumerable<string> GameplayPaths
     {
         get
         {
             yield return Lobby;
-            yield return ShopTest;
+            yield return Shop;
             yield return Tutorial;
             for (int number = 1; number <= CombatLevelCount; number++)
-                yield return CombatLevelFolder + CombatLevelName(number) + ".unity";
-            yield return DogCombatTest;
-            yield return BelieverCombatTest;
-            yield return ExecutiveCombatTest;
-            yield return BossTest;
+                yield return CombatLevelPath(number);
+            yield return Boss;
             yield return Ending;
         }
     }
 
     public static string CombatLevelName(int number) => "CombatLevel" + number;
+    public static string CombatLevelPath(int number) => StageFolder + CombatLevelName(number) + ".unity";
 
     public static IEnumerable<string> AllPaths
     {
         get
         {
+            yield return Title;
             foreach (string path in GameplayPaths) yield return path;
-            yield return StageTest;
-            yield return EconomyTest;
-            yield return ChestTest;
-            yield return FoundationTest;
-            yield return PlayerTEST;
-            yield return EnemyTest;
-            yield return BeliefTest;
         }
     }
 

@@ -7,9 +7,8 @@ using UnityEngine.SceneManagement;
 public sealed class LobbyFlowRuntime : MonoBehaviour
 {
     public const string LobbyScene = "Lobby";
-    public const string ShopTestScene = "ShopTest";
-    public const string BossTestScene = "BossTest";
-    private static readonly string[] CombatTestScenes = { "DogCombatTest", "BelieverCombatTest", "ExecutiveCombatTest" };
+    public const string ShopScene = "Shop";
+    public const string BossScene = "Boss";
     public static LobbyFlowRuntime Instance { get; private set; }
     public LobbyRunData State { get; private set; }
     public string Message { get; private set; } = "";
@@ -102,14 +101,13 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         switch (State.stage.role)
         {
             case BranchRole.Combat:
-                if (!playLoopTestMode && State.stage.usesDesignedCombatLevel)
-                    return ProjectScenes.CombatLevelName(StableCombatSceneIndex(State.stage.id, ProjectScenes.CombatLevelCount) + 1);
-                int index = playLoopTestMode
-                    ? State.combatClears % CombatTestScenes.Length
-                    : StableCombatSceneIndex(State.stage.id, CombatTestScenes.Length);
-                return CombatTestScenes[index];
-            case BranchRole.Shop: return ShopTestScene;
-            case BranchRole.Boss: return BossTestScene;
+                // Combat stages are always the designed levels. The play-loop test walks through them in order.
+                int level = playLoopTestMode
+                    ? State.combatClears % ProjectScenes.CombatLevelCount
+                    : StableCombatSceneIndex(State.stage.id, ProjectScenes.CombatLevelCount);
+                return ProjectScenes.CombatLevelName(level + 1);
+            case BranchRole.Shop: return ShopScene;
+            case BranchRole.Boss: return BossScene;
             default: throw new System.InvalidOperationException("지원하지 않는 스테이지 역할입니다.");
         }
     }

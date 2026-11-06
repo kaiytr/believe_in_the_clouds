@@ -6,10 +6,10 @@ using UnityEngine.SceneManagement;
 
 public static class ShopProjectSetup
 {
-    public const string ScenePath = ProjectScenes.ShopTest;
+    public const string ScenePath = ProjectScenes.Shop;
     public const string PrefabPath = "Assets/Prefabs/Shop/Shop.prefab";
 
-    [MenuItem("Tools/Shop/Build Shop prefab and update ShopTest")]
+    [MenuItem("Tools/Shop/Build Shop prefab and update Shop scene")]
     public static void BuildShopPrefabAndScene()
     {
         if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
@@ -19,11 +19,11 @@ public static class ShopProjectSetup
         ProjectSceneSynchronization.SynchronizeScene(scene);
         GameObject shop = scene.GetRootGameObjects().FirstOrDefault(root => root.name == "Shop");
         if (shop == null)
-            throw new System.InvalidOperationException("ShopTest requires a root object named Shop.");
+            throw new System.InvalidOperationException("Shop scene requires a root object named Shop.");
 
         PlayerHealth player = Object.FindFirstObjectByType<PlayerHealth>();
         if (player == null)
-            throw new System.InvalidOperationException("ShopTest requires a PlayerHealth player.");
+            throw new System.InvalidOperationException("Shop scene requires a PlayerHealth player.");
         ConfigureCamera(scene, player.transform);
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
@@ -62,7 +62,7 @@ public static class ShopProjectSetup
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
-        Debug.Log("ShopTest now uses a pass-through Shop prefab.");
+        Debug.Log("Shop scene now uses a pass-through Shop prefab.");
     }
 
     private static void ConfigureShop(GameObject root)
@@ -84,7 +84,7 @@ public static class ShopProjectSetup
     {
         GameObject cameraObject = scene.GetRootGameObjects().FirstOrDefault(root => root.name == "Main Camera");
         if (cameraObject == null || cameraObject.GetComponent<Camera>() == null)
-            throw new System.InvalidOperationException("ShopTest requires a Main Camera with a Camera component.");
+            throw new System.InvalidOperationException("Shop scene requires a Main Camera with a Camera component.");
 
         LobbyCameraFollow follow = cameraObject.GetComponent<LobbyCameraFollow>();
         if (follow == null) follow = cameraObject.AddComponent<LobbyCameraFollow>();

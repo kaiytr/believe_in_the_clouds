@@ -8,11 +8,9 @@ public static class PlayLoopProjectSetup
 {
     private static readonly (string path, BranchRole role)[] RunScenes =
     {
-        (ProjectScenes.ShopTest, BranchRole.Shop),
-        (ProjectScenes.DogCombatTest, BranchRole.Combat),
-        (ProjectScenes.BelieverCombatTest, BranchRole.Combat),
-        (ProjectScenes.ExecutiveCombatTest, BranchRole.Combat),
-        (ProjectScenes.BossTest, BranchRole.Boss)
+        // The designed combat levels are authored by hand and are not touched here.
+        (ProjectScenes.Shop, BranchRole.Shop),
+        (ProjectScenes.Boss, BranchRole.Boss)
     };
 
     [MenuItem("Tools/Lobby/Connect run content scenes")]
@@ -34,7 +32,7 @@ public static class PlayLoopProjectSetup
             EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
         }
 
-        Debug.Log("Lobby run roles now load their combat, shop, and boss scenes. Standalone test scenes remain usable.");
+        Debug.Log("Shop and boss scenes are connected to the lobby run and the build settings now list every scene of the play loop.");
     }
 
     private static void ConfigureScene(string path, BranchRole role)

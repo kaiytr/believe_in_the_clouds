@@ -26,7 +26,7 @@ public sealed class BossStagePlayModeTests
         MethodInfo loadMethod = editor.GetMethod("LoadSceneAsyncInPlayMode", BindingFlags.Public | BindingFlags.Static,
             null, new[] { typeof(string), typeof(LoadSceneParameters) }, null);
         var load = (AsyncOperation)loadMethod.Invoke(null,
-            new object[] { ProjectScenes.BossTest, new LoadSceneParameters(LoadSceneMode.Single) });
+            new object[] { ProjectScenes.Boss, new LoadSceneParameters(LoadSceneMode.Single) });
         while (!load.isDone) yield return null;
         SceneManager.sceneLoaded -= PauseBoss;
         yield return null;
