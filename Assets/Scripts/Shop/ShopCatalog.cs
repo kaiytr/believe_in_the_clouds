@@ -17,6 +17,8 @@ public sealed class ShopEntry
     public ShopColumn Column { get; internal set; }
     public string Label { get; internal set; }
     public string Detail { get; internal set; }
+    // 카드 빈 칸에 표시되는 설명 (Detail은 교리 문장 조립용이라 분리).
+    public string CardDescription { get; internal set; }
     public ShopRarity Rarity { get; internal set; }
     public int Price => Rarity == ShopRarity.Rare ? 95 : Rarity == ShopRarity.Uncommon ? 55 : 30;
 
@@ -35,7 +37,8 @@ public static class ShopCatalog
             Subject = SubjectType.Player,
             Id = "subject.player", Rarity = ShopRarity.Common,
             Label = "플레이어",
-            Detail = "플레이어는"
+            Detail = "플레이어는",
+            CardDescription = "자신에게 적용되는 교리\n플레이어 본인이 주어가 됩니다"
         },
         new ShopEntry
         {
@@ -43,7 +46,8 @@ public static class ShopCatalog
             Subject = SubjectType.Enemy,
             Id = "subject.enemy", Rarity = ShopRarity.Common,
             Label = "일반 적",
-            Detail = "일반 적은"
+            Detail = "일반 적은",
+            CardDescription = "일반 적에게 적용되는 교리\n보스·플레이어에는 적용 안 됨"
         },
         new ShopEntry
         {
@@ -51,7 +55,8 @@ public static class ShopCatalog
             Subject = SubjectType.Boss,
             Id = "subject.boss", Rarity = ShopRarity.Uncommon,
             Label = "보스",
-            Detail = "보스는"
+            Detail = "보스는",
+            CardDescription = "보스에게 적용되는 교리\n보스전에서만 발동합니다"
         },
         new ShopEntry
         {
@@ -59,7 +64,8 @@ public static class ShopCatalog
             Subject = SubjectType.All,
             Id = "subject.all", Rarity = ShopRarity.Rare,
             Label = "모든 존재",
-            Detail = "모든 존재는"
+            Detail = "모든 존재는",
+            CardDescription = "조건을 만족한 모두에게 적용\n아군·적군 가리지 않습니다"
         }
     };
 
@@ -71,7 +77,8 @@ public static class ShopCatalog
             Condition = ConditionType.OnHit,
             Id = "condition.hit", Rarity = ShopRarity.Uncommon,
             Label = "피격",
-            Detail = "피격당하면"
+            Detail = "피격당하면",
+            CardDescription = "공격을 맞을 때마다 발동\n맞을 때마다 1회 발동합니다"
         },
         new ShopEntry
         {
@@ -79,7 +86,8 @@ public static class ShopCatalog
             Condition = ConditionType.OnAttack,
             Id = "condition.attack", Rarity = ShopRarity.Uncommon,
             Label = "공격",
-            Detail = "공격하면"
+            Detail = "공격하면",
+            CardDescription = "공격이 적중할 때마다 발동\n빗나가면 발동하지 않습니다"
         },
         new ShopEntry
         {
@@ -87,7 +95,8 @@ public static class ShopCatalog
             Condition = ConditionType.OnDeath,
             Id = "condition.death", Rarity = ShopRarity.Common,
             Label = "사망",
-            Detail = "사망하면"
+            Detail = "사망하면",
+            CardDescription = "주어가 사망하면 1회 발동\n사망 연출이 끝난 뒤 적용"
         },
         new ShopEntry
         {
@@ -95,7 +104,8 @@ public static class ShopCatalog
             Condition = ConditionType.LowHealth,
             Id = "condition.low-health", Rarity = ShopRarity.Common,
             Label = "체력 30% 이하",
-            Detail = "체력이 30% 이하가 되면"
+            Detail = "체력이 30% 이하가 되면",
+            CardDescription = "체력이 30% 이하가 되면 발동\n떨어지는 순간 1회 발동합니다"
         }
     };
 
@@ -107,7 +117,8 @@ public static class ShopCatalog
             Result = ResultType.Heal,
             Id = "result.heal", Rarity = ShopRarity.Uncommon,
             Label = "회복",
-            Detail = "회복한다 · 최대체력 10%"
+            Detail = "회복한다 · 최대체력 10%",
+            CardDescription = "최대체력의 10% 회복\n쿨타임 20초 (교리별)"
         },
         new ShopEntry
         {
@@ -115,7 +126,8 @@ public static class ShopCatalog
             Result = ResultType.Explode,
             Id = "result.explode", Rarity = ShopRarity.Rare,
             Label = "폭발",
-            Detail = "폭발한다 · 최대체력 30%"
+            Detail = "폭발한다 · 최대체력 30%",
+            CardDescription = "최대체력의 30% 범위 피해\n아군·적군 구분 없음 · 쿨타임 5초"
         },
         new ShopEntry
         {
@@ -123,7 +135,8 @@ public static class ShopCatalog
             Result = ResultType.IncreaseSpeed,
             Id = "result.speed", Rarity = ShopRarity.Common,
             Label = "이속 증가",
-            Detail = "이동속도가 증가한다 · +40%, 5초"
+            Detail = "이동속도가 증가한다 · +40%, 5초",
+            CardDescription = "이동속도 +40%, 5초 지속\n쿨타임 10초 · 중첩 안 됨"
         },
         new ShopEntry
         {
@@ -131,7 +144,8 @@ public static class ShopCatalog
             Result = ResultType.IncreaseAttack,
             Id = "result.attack", Rarity = ShopRarity.Uncommon,
             Label = "피해 증가",
-            Detail = "피해가 증가한다 · +20%, 5초"
+            Detail = "피해가 증가한다 · +20%, 5초",
+            CardDescription = "가하는 피해 +20%, 5초 지속\n쿨타임 10초 · 중첩 안 됨"
         }
     };
 
