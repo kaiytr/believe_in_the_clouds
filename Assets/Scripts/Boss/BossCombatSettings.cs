@@ -58,11 +58,11 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("White (platform) cloud size. The underside must stay above the player's head.")]
     public Vector2 CloudSize = new Vector2(3f, 0.55f);
     [Tooltip("Minimum storm cloud size. The width grows so that the clouds together span the arena (see StormCloudCoverage).")]
-    public Vector2 StormCloudSize = new Vector2(11f, 2f);
+    public Vector2 StormCloudSize = new Vector2(4f, 2f);
     [Tooltip("Number of storm clouds chosen once when the arena is prepared (inclusive range).")]
     public Vector2Int StormCloudCountRange = new Vector2Int(3, 3);
     [Tooltip("Each storm cloud is at least arenaWidth / count * this wide, so neighbours keep overlapping while they wander.")]
-    [Min(.5f)] public float StormCloudCoverage = .85f;
+    [Min(.5f)] public float StormCloudCoverage = .7f;
     [Tooltip("How far a storm cloud may drift from its own slot, world units. Keeps the arena covered while clouds move.")]
     [Min(0f)] public float StormCloudWander = 1.5f;
     [Tooltip("The outermost storm clouds may drift past the arena edge by this fraction of their own width.")]

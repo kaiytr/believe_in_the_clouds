@@ -86,9 +86,9 @@ MonoBehaviour:
   CloudDuration: 3
   CloudTopHeight: 8
   CloudSize: {x: 3, y: 0.55}
-  StormCloudSize: {x: 11, y: 2}
+  StormCloudSize: {x: 4, y: 2}
   StormCloudCountRange: {x: 3, y: 3}
-  StormCloudCoverage: 0.85
+  StormCloudCoverage: 0.7
   StormCloudOverhang: 0.3
   StormCloudWander: 1.5
   WhiteCloudCount: 2
