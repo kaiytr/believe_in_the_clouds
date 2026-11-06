@@ -148,6 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c502917affec4ba880adc3aa9fac2441, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::TitleScreen
+  titleBgm: {fileID: 8300000, guid: 4c357542e26f769429ef04bc7ca1aa0c, type: 3}
+  titleBgmVolume: 0.6
 --- !u!4 &1737599110
 Transform:
   m_ObjectHideFlags: 0

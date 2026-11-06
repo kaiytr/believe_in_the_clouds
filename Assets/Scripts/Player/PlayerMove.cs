@@ -15,9 +15,9 @@ public class PlayerMove : MonoBehaviour, ISlowable
     [Header("점프")]
     // 0.74 유닛 타일 4칸: 중력 배율 4, 0.02초 물리 틱에서 약 2.96 유닛 상승.
     [SerializeField] private float jumpPower = 15.64f;
-    [Tooltip("점프가 실제로 발동되는 순간 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
+    [Tooltip("착지 순간 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
     [SerializeField] private AudioClip jumpSound;
-    [Tooltip("점프 사운드 볼륨 (0~1).")]
+    [Tooltip("착지 사운드 볼륨 (0~1).")]
     [SerializeField, Range(0f, 1f)] private float jumpSoundVolume = 0.8f;
 
     [Header("바닥 체크")]
@@ -125,6 +125,7 @@ public class PlayerMove : MonoBehaviour, ISlowable
         Collider2D ground = groundCheck != null
             ? Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer)
             : null;
+        bool wasGrounded = isGrounded;
         isGrounded = ground != null;
         IMovingGround moving = ground != null ? ground.GetComponentInParent<IMovingGround>() : null;
         GroundVelocityX = moving != null ? moving.GroundVelocityX : 0f;
@@ -137,6 +138,10 @@ public class PlayerMove : MonoBehaviour, ISlowable
                 Jump();
             }
         }
+
+        // 착지 순간(공중 → 접지 전환)에 사운드 재생.
+        if (isGrounded && !wasGrounded)
+            PlayLandingSound();
 
         // 좌우 이동 (공격이 전진 속도를 직접 넣는 동안은 덮어쓰지 않음)
         // 교리 이속 증가(+40%)는 DoctrineStats.SpeedMultiplier로 합산된다.
@@ -183,7 +188,10 @@ public class PlayerMove : MonoBehaviour, ISlowable
             rb.linearVelocity.x,
             jumpPower
         );
+    }
 
+    private void PlayLandingSound()
+    {
         if (jumpSound != null && jumpAudioSource != null)
             jumpAudioSource.PlayOneShot(jumpSound, jumpSoundVolume);
     }

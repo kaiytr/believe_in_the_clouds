@@ -74,16 +74,18 @@ public sealed class TutorialTipPanel : MonoBehaviour
     {
         "마우스 좌클릭으로 공격합니다.\n지상에서는 3연타가 나가고,\n공중에서는 내리찍습니다.\n\n신도를 쓰러뜨려 보세요.",
         "A / D 또는 ← → 로 이동합니다.\nSpace 점프, Shift 회피.\n\n돌이 날아오면 피하세요.",
-        "적 머리 위 말풍선이 믿음입니다.\n믿음을 무너뜨리면 약해집니다.\n\n방법은 말풍선마다 다릅니다.\n잘 보고 공략하세요.",
+        "적들은 각자의 고유한 믿음을\n갖고 있습니다.\n반대되는 행동으로 믿음을\n무너뜨리면 적이 약해집니다.",
     };
 
-    // 재단 TIP (런당 최초 1회): 재단 사용 전에 재단이 뭔지 알려준다.
-    private static readonly string[] FoundationLabels = { "재단", "교리 조합", "사용 시기" };
+    // 재단 TIP (런당 최초 1회): 재단 사용 전에 재단과 교리를 알려준다.
+    private static readonly string[] FoundationLabels = { "재단", "교리", "획득", "조합", "사용 시기" };
 
     private static readonly string[] FoundationBodies =
     {
         "재단은 나만의 교리를\n조합 할 수 있는 장소입니다.",
-        "주어/조건/결과로 이루어진 교리를\n마음대로 조합하여 강해지세요!",
+        "교리는 [주어] [조건] [결과]의\n세 가지 키워드를 조합해\n게임 내 규칙을 직접 생성하고\n변경하는 시스템입니다.",
+        "상자 개방과 상점 구매로\n새로운 교리를 획득할 수 있습니다.",
+        "자신만의 교리를 조합해\n강해지세요",
         "매 분기마다 재단을\n사용할 수 있습니다.",
     };
 
@@ -98,6 +100,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
     private GameObject canvasObject;
     private Text pageLabel;
+    private GameObject prevArrow;
+    private GameObject nextArrow;
     private readonly List<Text> bodyLines = new List<Text>();
     private string[] activeLabels = PageLabels;
     private string[] activeBodies = PageBodies;
@@ -246,6 +250,12 @@ public sealed class TutorialTipPanel : MonoBehaviour
         if (pageLabel != null)
             pageLabel.text = activeLabels[pageIndex];
 
+        // 첫 페이지에서는 왼쪽 화살표, 마지막 페이지에서는 오른쪽 화살표를 숨긴다.
+        if (prevArrow != null)
+            prevArrow.SetActive(pageIndex > 0);
+        if (nextArrow != null)
+            nextArrow.SetActive(pageIndex < activeLabels.Length - 1);
+
         string[] lines = activeBodies[pageIndex].Split('\n');
 
         // 1) 텍스트/활성 먼저 반영.
@@ -336,8 +346,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
         }
 
         // 좌/우 화살표 (아트 위치 그대로, 살짝 확대)
-        BuildArrowButton(content, "PrevPage", LeftArrowRect, () => ShowPage(pageIndex - 1));
-        BuildArrowButton(content, "NextPage", RightArrowRect, () => ShowPage(pageIndex + 1));
+        prevArrow = BuildArrowButton(content, "PrevPage", LeftArrowRect, () => ShowPage(pageIndex - 1));
+        nextArrow = BuildArrowButton(content, "NextPage", RightArrowRect, () => ShowPage(pageIndex + 1));
 
         // ESC + 나가기: 아트 한 장 (글자 baked). 텍스트를 다시 그리지 않는다.
         BuildEscArt(content);
@@ -365,7 +375,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
         return text;
     }
 
-    private void BuildArrowButton(Transform parent, string name, RectInt iconRect, Action onClick)
+    private GameObject BuildArrowButton(Transform parent, string name, RectInt iconRect, Action onClick)
     {
         // 아이콘 x는 아트 원본 위치, y는 갈색 박스 세로 중심에 맞춘다.
         float localCenterX = iconRect.x + iconRect.width * 0.5f - BackgroundRect.x;
@@ -407,6 +417,8 @@ public sealed class TutorialTipPanel : MonoBehaviour
             name == "PrevPage" ? LeftArrowRect : RightArrowRect);
         iconImage.preserveAspect = true;
         iconImage.raycastTarget = false;
+
+        return buttonObject;
     }
 
     // TIP_button 아트에는 알약 + "ESC" + "나가기"가 이미 그려져 있다.
