@@ -24,6 +24,32 @@ public sealed partial class EconomyService
         });
     }
 
+    // 체력 밸런스를 바꿔도 기존 런을 유지한다. 남은 체력 비율을 보존하고,
+    // 새 최대 체력을 저장한 뒤에만 플레이어에 반영한다.
+    public CurrencyResult TrySynchronizeRunMaxHp(float maxHp)
+    {
+        if (!LobbyRules.ValidHealth(maxHp, maxHp)) return Fail(EconomyError.InvalidAmount);
+        if (busy || deathWork != null) return Fail(EconomyError.Busy);
+        if (!initialized) return Fail(EconomyError.NotReady);
+        if (!profile.hasRun || profile.run == null || profile.run.area == RunArea.Dying)
+            return Fail(EconomyError.StateConflict);
+        if (Mathf.Approximately(profile.run.maxHp, maxHp)) return Success(0, 0, Balance, null);
+
+        busy = true;
+        try
+        {
+            var work = profile.Copy();
+            work.run.hp = Mathf.Clamp(work.run.hp / work.run.maxHp * maxHp, 0f, maxHp);
+            work.run.maxHp = maxHp;
+            work.revision++;
+            if (!Save(work)) return Fail(EconomyError.SaveFailed);
+            returnPlans.Clear(); // 실패했던 귀환 계획에 예전 최대 체력을 남기지 않는다.
+            Publish(work, "run.max-hp.sync", null);
+            return Success(0, 0, Balance, null);
+        }
+        finally { busy = false; }
+    }
+
     /// <summary>Builds a predictable role set for the isolated end-to-end play loop fixture.</summary>
     public CurrencyResult TryConfigurePlayLoopTestCandidates()
     {

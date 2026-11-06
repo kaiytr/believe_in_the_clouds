@@ -6,8 +6,8 @@ public sealed class BeliefProfile : ScriptableObject
     [SerializeField] private BeliefType type = BeliefType.Unassigned;
     [SerializeField, TextArea] private string phrase;
     [SerializeField, Min(1f)] private float maxBelief = 100f;
-    [SerializeField, Min(0f)] private float maintainedPlayerDamageMultiplier = 0.6f;
-    [SerializeField, Min(0f)] private float vulnerablePlayerDamageMultiplier = 2f;
+    [SerializeField, Min(0f)] private float maintainedPlayerDamageMultiplier = 0.4f;
+    [SerializeField, Min(0f)] private float vulnerablePlayerDamageMultiplier = 3f;
     [SerializeField, Min(0f)] private float vulnerableDuration = 5f;
     [SerializeField, Range(0f, 1f)] private float recoveryRatio = 1f;
     [SerializeField, Min(0f)] private float reductionPerSecond;

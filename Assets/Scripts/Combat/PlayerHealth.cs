@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 {
     [Header("Health")]
-    [SerializeField] private float maxHp = 100f;
+    [SerializeField] private float maxHp = 150f;
 
     [Header("Invulnerability")]
     [Tooltip("Seconds of invulnerability after a hit.")]

@@ -28,8 +28,11 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     public bool IsPlayLoopTestMode => playLoopTestMode;
 
     public bool InputReady => Scene != null && player != null && !player.IsDead && !IsTransitioning &&
-        !healthPending && Service != null && Service.IsReady && State != null && MatchesScene() &&
+        !healthPending && Service != null && Service.IsReady && State != null && !NeedsMaxHpSync && MatchesScene() &&
         State.area != RunArea.Complete && State.area != RunArea.Dying && Time.frameCount >= inputAfterFrame;
+
+    private bool NeedsMaxHpSync => State != null && player != null &&
+        !Mathf.Approximately(State.maxHp, player.MaxHp);
 
     public static LobbyFlowRuntime Ensure()
     {
@@ -49,7 +52,9 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         BindService();
         if (Service.IsReady && State == null) Report(Service.TryInitializeRun(player.MaxHp));
         RefreshState();
-        if (State != null && MatchesScene() && State.area != RunArea.Dying)
+        if (Service.IsReady && State != null && State.area != RunArea.Dying && NeedsMaxHpSync)
+            Report(Service.TrySynchronizeRunMaxHp(player.MaxHp));
+        if (State != null && !NeedsMaxHpSync && MatchesScene() && State.area != RunArea.Dying)
         {
             restoring = true;
             player.GetComponent<PlayerDeathCoordinator>().BindRunLife(State.lifeId);
@@ -144,6 +149,17 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
             if (!HasSaveFailure) Message = "저장을 불러올 수 없습니다: " + Service.LoadStatus;
             return;
         }
+        if (NeedsMaxHpSync && State.area != RunArea.Dying)
+        {
+            Scene.SetPlayable(false);
+            if (Time.unscaledTime >= nextRetry)
+            {
+                nextRetry = Time.unscaledTime + .5f;
+                if (Report(Service.TrySynchronizeRunMaxHp(player.MaxHp)).Success)
+                    Attach(Scene);
+            }
+            return;
+        }
         // A death in the lobby also needs a fresh player instance, even though
         // the committed destination has the same scene name.
         if (!MatchesScene() || (State.area == RunArea.Lobby && player != null && player.IsDead))
@@ -183,7 +199,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     }
     private void SavePlayerCheckpoint()
     {
-        if (IsTransitioning || !MatchesScene() || player == null || player.IsDead || State == null || State.area == RunArea.Complete) return;
+        if (IsTransitioning || !MatchesScene() || player == null || player.IsDead || State == null || NeedsMaxHpSync || State.area == RunArea.Complete) return;
         CurrencyResult result = Service.TryCheckpointRun(player.CurrentHp, player.transform.position);
         healthPending = !result.Success;
         if (!result.Success) Report(result);
