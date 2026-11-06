@@ -102,6 +102,16 @@ public sealed class TutorialTipPanel : MonoBehaviour
         "매 분기마다 재단을\n사용할 수 있습니다.",
     };
 
+    // 재단 TIP 페이지별 그림. Resources/Tip/Foundation 아래 파일 이름 (1→5 순서).
+    private static readonly string[] FoundationIllustrations =
+    {
+        "Foundation/FoundationStep1",
+        "Foundation/FoundationStep2",
+        "Foundation/FoundationStep3",
+        "Foundation/FoundationStep4",
+        "Foundation/FoundationStep5",
+    };
+
     // 상점 TIP (런당 최초 1회): 상점 사용 전에 상점이 뭔지 알려준다.
     private static readonly string[] ShopLabels = { "상점", "교리 활용" };
 
@@ -216,7 +226,7 @@ public sealed class TutorialTipPanel : MonoBehaviour
 
         activeLabels = FoundationLabels;
         activeBodies = FoundationBodies;
-        activeIllustrations = null;
+        activeIllustrations = FoundationIllustrations;
         pageIndex = 0;
         RefreshPage();
         openedFrame = Time.frameCount;
