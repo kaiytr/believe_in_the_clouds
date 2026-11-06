@@ -1991,7 +1991,6 @@ MonoBehaviour:
   attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
-  circleCreateSound: {fileID: 8300000, guid: 09e3e0a3ced445f48b2bc642c3e60d23, type: 3}
 --- !u!70 &715733343
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -3866,7 +3865,6 @@ MonoBehaviour:
   attackCastSound: {fileID: 0}
   attackHitSound: {fileID: 0}
   attackSoundVolume: 0.9
-  circleCreateSound: {fileID: 8300000, guid: 09e3e0a3ced445f48b2bc642c3e60d23, type: 3}
 --- !u!50 &1262934226
 Rigidbody2D:
   serializedVersion: 5

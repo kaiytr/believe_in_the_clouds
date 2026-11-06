@@ -274,7 +274,7 @@ public abstract class EnemyAttack : MonoBehaviour
                 attackTarget != null ? attackTarget.gameObject : null);
     }
 
-    protected void PlayAttackSound(AudioClip clip)
+    private void PlayAttackSound(AudioClip clip)
     {
         if (clip == null || attackAudioSource == null)
             return;
