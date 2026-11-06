@@ -21,6 +21,8 @@ public sealed class BossAttackRecord
     public bool WasThreatened { get; private set; }
     public bool EscapedByMovement { get; private set; }
     public bool Contacted { get; private set; }
+    /// <summary>The attack travelled past the target without touching it (settled as an evade right away).</summary>
+    public bool PassedTarget { get; private set; }
     public bool DamageAccepted { get; private set; }
     public bool IsComplete { get; private set; }
     public AttackOutcome Outcome { get; private set; }
@@ -68,6 +70,16 @@ public sealed class BossAttackRecord
     }
 
     public void Activate() { if (!IsComplete) Activated = true; }
+    /// <summary>
+    /// Called by a moving attack (projectile, dash) once it is farther from its origin than the target is.
+    /// True when that counts as an evade: the player was in its path, and it never touched the player.
+    /// </summary>
+    public bool TryMarkPassedTarget()
+    {
+        if (!Activated || IsComplete || Contacted || !WasThreatened) return false;
+        PassedTarget = true;
+        return true;
+    }
     public bool TryContact()
     {
         if (!Activated || IsComplete || Contacted) return false;
@@ -85,7 +97,7 @@ public sealed class BossAttackRecord
         EndReason = reason;
         Outcome = reason == BossAttackEndReason.Cancelled || reason == BossAttackEndReason.TargetLost ? AttackOutcome.Cancelled :
             DamageAccepted ? AttackOutcome.Hit :
-            Activated && !Contacted && (shelteredFromLightning || WasThreatened && EscapedByMovement) ? AttackOutcome.EvadedByPlayer :
+            Activated && !Contacted && (shelteredFromLightning || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
             reason == BossAttackEndReason.Wall ? AttackOutcome.Blocked : AttackOutcome.Missed;
         return true;
     }

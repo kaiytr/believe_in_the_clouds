@@ -314,14 +314,25 @@ public sealed class BossAttackExecutor : MonoBehaviour
         owner.Presentation.ShowDash();
         float remaining = Data.DashDistance;
         bool blocked = false;
-        while (remaining > 0.001f && owner.IsAttackValid(record))
+        bool settled = false;   // evade already settled; the dash itself still runs to its end
+        while (remaining > 0.001f && (settled ? owner.CanContinue : owner.IsAttackValid(record)))
         {
             Vector2 center = owner.BodyCollider.bounds.center;
             float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
             step = BossCombatPhysics.ClearDistance(center, size, direction, step, owner, false, out blocked);
-            var ahead = new AttackGeometry(center + direction * (size.x * 0.5f + remaining * 0.5f), new Vector2(remaining, size.y));
-            owner.Observe(record, ahead);
-            if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
+            if (!settled)
+            {
+                var ahead = new AttackGeometry(center + direction * (size.x * 0.5f + remaining * 0.5f), new Vector2(remaining, size.y));
+                owner.Observe(record, ahead);
+                if (BossCombatPhysics.SweptTarget(center, size, direction, step, owner, false)) owner.TryHit(record);
+                // Dodged: the boss has dashed farther than the distance to the player without touching them.
+                if (Vector2.Distance(start, center) > Vector2.Distance(start, owner.PlayerCollider.bounds.center) &&
+                    record.TryMarkPassedTarget())
+                {
+                    owner.CompleteAttack(record, BossAttackEndReason.Completed);
+                    settled = true;
+                }
+            }
             Color? tint = record.BurnEnhanced ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
             afterimages.Emit(Data.DashPrefab, owner.BodyRenderer, Data.AttackOrder, tint);
             owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
