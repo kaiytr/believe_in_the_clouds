@@ -31,7 +31,6 @@ public sealed class LobbySceneController : MonoBehaviour
     private LobbyFlowRuntime flow;
     private GameObject generated;
     private string contentKey;
-    private TextMesh stageTitle;
     private SpriteRenderer exitBody;
     private TemporaryStageExit stageExit;
     private bool exitRevealStarted;
@@ -150,8 +149,6 @@ public sealed class LobbySceneController : MonoBehaviour
                 InitializeExitPresentation(run);
                 return;
             }
-            stageTitle = WorldLabel(generated.transform, "Stage role", LobbyRules.RoleLabel(run.stage.role) + " · 임시 스테이지",
-                new Vector2(0, 1.8f), LobbyBranchInteractable.RoleColor(run.stage.role));
             GameObject exit = new GameObject("ReturnExit"); exit.transform.SetParent(generated.transform); exit.transform.position = new Vector3(8, -.7f);
             var box = exit.AddComponent<BoxCollider2D>(); box.isTrigger = true; box.size = new Vector2(2, 4.6f);
             var panel = new GameObject("Panel");
