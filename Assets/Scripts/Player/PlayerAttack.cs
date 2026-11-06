@@ -164,12 +164,19 @@ public class PlayerAttack : MonoBehaviour
     [Tooltip("피니쉬(마지막 타)가 적중했을 때 시간을 잠깐 멈추는 타격감 연출(초). 0이면 끄기.")]
     [SerializeField, Min(0f)] private float finishHitStop = 0.06f;
 
+    [Header("공격 사운드")]
+    [Tooltip("1타/2타/3타 순서로 재생할 클립. 비어 있으면 소리 없이 동작한다.")]
+    [SerializeField] private AudioClip[] attackSounds = new AudioClip[3];
+    [Tooltip("공격 사운드 볼륨 (0~1).")]
+    [SerializeField, Range(0f, 1f)] private float attackSoundVolume = 0.8f;
+
     private Rigidbody2D rb;
     private PlayerMove playerMove;
     private Animator animator;
     private DoctrineStats stats;
     private PlayerHealth health;
     private PlayerDash dash;
+    private AudioSource audioSource;
 
     private int currentCombo; // 다음에 나갈 타수 (0~2)
     private bool isAttacking;
@@ -219,7 +226,41 @@ public class PlayerAttack : MonoBehaviour
         dash = GetComponent<PlayerDash>();
         baseScale = transform.localScale;
 
+        ResolveAttackAudio();
         ResolveDownFanImpact();
+    }
+
+    // 공격음은 플레이어 오브젝트에 2D AudioSource 하나를 붙여 재생한다.
+    private void ResolveAttackAudio()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+            audioSource = gameObject.AddComponent<AudioSource>();
+
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
+        audioSource.spatialBlend = 0f; // 2D
+        audioSource.volume = 1f; // 실제 볼륨은 PlayOneShot 인자로 준다 (이중 감쇠 방지)
+
+        if (attackSounds == null || attackSounds.Length == 0)
+            attackSounds = new AudioClip[3];
+    }
+
+    // 타수별 타격 타이밍(선딜 후 판정이 열리는 순간)에 맞춰 1/2/3타 클립을 재생한다.
+    private void PlayAttackSound(int comboIndex)
+    {
+        if (audioSource == null || attackSounds == null)
+            return;
+
+        int index = comboIndex;
+        if (index < 0 || index >= attackSounds.Length)
+            return;
+
+        AudioClip clip = attackSounds[index];
+        if (clip == null)
+            return;
+
+        audioSource.PlayOneShot(clip, attackSoundVolume);
     }
 
     // 내리찍기 파티클은 씬 루트에 스스로 풀을 만든다.
@@ -401,7 +442,7 @@ public class PlayerAttack : MonoBehaviour
         if (animator != null)
             animator.SetTrigger("Attack" + (index + 1));
         return SwingOnce(comboSteps[index], stopSlide: true,
-            isFinish: index == comboSteps.Length - 1);
+            isFinish: index == comboSteps.Length - 1, soundIndex: index);
     }
 
     /// <summary>
@@ -427,6 +468,9 @@ public class PlayerAttack : MonoBehaviour
 
             if (activeSwing != attack || !isActiveAndEnabled)
                 yield break;
+
+            // 공중 내리찍기도 같은 타이밍에 소리를 낸다 (1/2/3타 클립 중 마지막 사용).
+            PlayAttackSound(attackSounds != null ? attackSounds.Length - 1 : -1);
 
             // 판정과 같은 원점/반경/각도로 칼날 궤적을 그린다.
             PlayDownAttackEffect(downFanImpact, transform.position, facing);
@@ -549,7 +593,7 @@ public class PlayerAttack : MonoBehaviour
         enemyRb.AddForce(force, ForceMode2D.Impulse);
     }
 
-    private IEnumerator SwingOnce(ComboStep step, bool stopSlide, bool isFinish = false)
+    private IEnumerator SwingOnce(ComboStep step, bool stopSlide, bool isFinish = false, int soundIndex = -1)
     {
         float facing = transform.localScale.x >= 0f ? 1f : -1f;
         Vector3 scale = transform.localScale;
@@ -577,6 +621,10 @@ public class PlayerAttack : MonoBehaviour
 
             if (activeSwing != attack || !isActiveAndEnabled)
                 yield break;
+
+            // 선딜이 끝나 판정이 열리는 순간 = 칼날이 실제로 나가는 타이밍.
+            if (soundIndex >= 0)
+                PlayAttackSound(soundIndex);
 
             // 판정 박스를 그리는 대신, 타격 지점에 아래 공격과 같은 칼날 궤적을 그린다.
             PlaySwingEffect(downFanImpact, transform.position, HitCenter(step, facing), step.hitboxSize, facing);

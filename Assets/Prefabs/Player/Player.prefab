@@ -262,6 +262,11 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   finishHitStop: 0.06
+  attackSounds:
+  - {fileID: 8300000, guid: 7fb3b3884d65d554899f5b7bca5fa89b, type: 3}
+  - {fileID: 8300000, guid: e2330ddab7c3015449561a55320de260, type: 3}
+  - {fileID: 8300000, guid: 607959e264035ef4e9280e6230061891, type: 3}
+  attackSoundVolume: 0.8
 --- !u!114 &8151520561007178528
 MonoBehaviour:
   m_ObjectHideFlags: 0
