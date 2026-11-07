@@ -26,9 +26,9 @@ public sealed class EconomySettings : ScriptableObject
     {
         switch (kind)
         {
-            case EnemyRewardKind.Dog: return random.Next(5, 8);
-            case EnemyRewardKind.Believer: return random.Next(3, 6);
-            case EnemyRewardKind.Executive: return random.Next(7, 9);
+            case EnemyRewardKind.Dog: return 2 * random.Next(5, 8);
+            case EnemyRewardKind.Believer: return 2 * random.Next(3, 6);
+            case EnemyRewardKind.Executive: return 2 * random.Next(7, 9);
             case EnemyRewardKind.Boss: return 0;
             default: throw new System.ArgumentOutOfRangeException(nameof(kind));
         }

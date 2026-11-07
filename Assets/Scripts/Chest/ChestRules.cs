@@ -4,14 +4,22 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-// V1 is immutable: stored plans and failed registration retries use this algorithm.
+// 저장된 V1 계획은 보존하고, 새 기본 계획은 같은 추첨값의 코인만 두 배로 만든다.
 public static class ChestRules
 {
     public const float HoldSeconds = 1.5f;
     // 모든 씬의 상자에 공통 적용되는 상호작용 반경(콜라이더 표면 기준).
     // 프리팹에 직렬화된 interactRadius 값은 ChestInteractable이 이 값으로 덮어쓴다.
     public const float InteractionRadius = 1.4f;
-    public const int TableVersion = 1;
+    public const int LegacyTableVersion = 1;
+    public const int TableVersion = 2;
+
+    private static bool IsSupportedTable(int version) => version == LegacyTableVersion || version == TableVersion;
+    private static int ReceiptTableVersion(ChestRewardReceipt reward) =>
+        reward.rewardTableVersion == 0 ? LegacyTableVersion : reward.rewardTableVersion;
+    private static bool ValidCoins(int coins, int version) => version == LegacyTableVersion
+        ? coins >= 7 && coins <= 17
+        : version == TableVersion && coins >= 14 && coins <= 34 && coins % 2 == 0;
 
     public static string OpenId(string stageId, string spawnId) =>
         "chest.open:" + Key(stageId, spawnId);
@@ -30,21 +38,22 @@ public static class ChestRules
             .SelectMany(ShopCatalog.GetColumn).Where(item => item.Rarity == rarity)
             .OrderBy(item => item.Id, StringComparer.Ordinal).ToArray();
 
-    public static ChestRecord Roll(string spawnId, IEconomyRandom random)
+    public static ChestRecord Roll(string spawnId, IEconomyRandom random, int tableVersion = TableVersion)
     {
+        if (!IsSupportedTable(tableVersion)) throw new ArgumentOutOfRangeException(nameof(tableVersion));
         ShopRarity rarity = RarityFor(random.Next(0, 100));
         ShopEntry[] pool = Pool(rarity);
         if (pool.Length == 0) throw new InvalidOperationException("Empty chest reward pool.");
         return new ChestRecord { spawnId = spawnId, rarity = rarity,
             pieceId = pool[random.Next(0, pool.Length)].Id, pieceAmount = 1,
-            rolledCoins = random.Next(7, 18) };
+            rolledCoins = random.Next(7, 18) * (tableVersion == TableVersion ? 2 : 1) };
     }
 
     public static bool TryNormalizeManifest(ChestManifest source, out ChestManifest manifest)
     {
         manifest = null;
         if (source == null || string.IsNullOrWhiteSpace(source.stageInstanceId) ||
-            source.layoutVersion <= 0 || source.rewardTableVersion != TableVersion ||
+            source.layoutVersion <= 0 || !IsSupportedTable(source.rewardTableVersion) ||
             source.spawnIds == null || source.spawnIds.Length == 0 ||
             source.spawnIds.Any(string.IsNullOrWhiteSpace) ||
             source.spawnIds.Distinct(StringComparer.Ordinal).Count() != source.spawnIds.Length ||
@@ -59,8 +68,9 @@ public static class ChestRules
         manifest.stageInstanceId, manifest.layoutVersion.ToString(), manifest.rewardTableVersion.ToString(),
         Key(manifest.spawnIds)));
 
-    public static ChestRecord Plan(string stageId, string spawnId) =>
-        Roll(spawnId, new StableRandom(Key("chest.v1", stageId, spawnId)));
+    // V2도 V1의 시드와 난수 호출 순서를 유지해 조각·등급·기초 추첨값을 바꾸지 않는다.
+    public static ChestRecord Plan(string stageId, string spawnId, int tableVersion = TableVersion) =>
+        Roll(spawnId, new StableRandom(Key("chest.v1", stageId, spawnId)), tableVersion);
 
     public static string Hash(string value)
     {
@@ -98,7 +108,7 @@ public static class ChestRules
         return reward != null && !string.IsNullOrWhiteSpace(reward.stageInstanceId) &&
             !string.IsNullOrWhiteSpace(reward.spawnId) && reward.pieceAmount == 1 &&
             ShopCatalog.TryGet(reward.pieceId, out ShopEntry entry) && entry.Rarity == reward.rarity &&
-            reward.rolledCoins >= 7 && reward.rolledCoins <= 17 &&
+            ValidCoins(reward.rolledCoins, ReceiptTableVersion(reward)) &&
             reward.appliedCoins >= 0 && reward.appliedCoins <= reward.rolledCoins &&
             reward.grantId == OpenId(reward.stageInstanceId, reward.spawnId);
     }
@@ -119,7 +129,7 @@ public static class ChestRules
         if (stage.hasChestState != (stage.chestState != null)) return false;
         if (!stage.hasChestState) return true;
         ChestStageState state = stage.chestState;
-        if (state.stageInstanceId != stage.id || state.rewardTableVersion != TableVersion ||
+        if (state.stageInstanceId != stage.id || !IsSupportedTable(state.rewardTableVersion) ||
             state.records == null || state.records.Any(record => record == null)) return false;
         var manifest = new ChestManifest { stageInstanceId = stage.id, layoutVersion = state.layoutVersion,
             rewardTableVersion = state.rewardTableVersion, spawnIds = state.records.Select(r => r.spawnId).ToArray() };
@@ -130,7 +140,7 @@ public static class ChestRules
         foreach (ChestRecord record in state.records)
         {
             if (!ShopCatalog.TryGet(record.pieceId, out ShopEntry entry) || entry.Rarity != record.rarity ||
-                record.pieceAmount != 1 || record.rolledCoins < 7 || record.rolledCoins > 17) return false;
+                record.pieceAmount != 1 || !ValidCoins(record.rolledCoins, state.rewardTableVersion)) return false;
             if (!record.opened)
             {
                 if (!string.IsNullOrEmpty(record.openTransactionId) || record.appliedCoins != 0 ||
@@ -139,7 +149,8 @@ public static class ChestRules
             }
             EconomyReceipt receipt = data.processedTransactions.Find(r => r.id == record.openTransactionId);
             ChestRewardReceipt reward = receipt?.chestReward;
-            if (reward == null || reward.stageInstanceId != stage.id || reward.spawnId != record.spawnId ||
+            if (reward == null || ReceiptTableVersion(reward) != state.rewardTableVersion ||
+                reward.stageInstanceId != stage.id || reward.spawnId != record.spawnId ||
                 reward.pieceId != record.pieceId || reward.rarity != record.rarity ||
                 reward.pieceAmount != record.pieceAmount || reward.rolledCoins != record.rolledCoins ||
                 reward.appliedCoins != record.appliedCoins) return false;
