@@ -327,8 +327,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
         }
 
         float direction = Mathf.Sign(target.position.x - transform.position.x);
-        SetHorizontalMove(direction);
         TrackFacingToward(direction);
+        // Moves only once the turn is finished: no walking toward the player with the back turned.
+        SetHorizontalMove(CurrentFacingSign == direction ? direction : 0f);
     }
 
     protected void MoveAwayFromTarget(bool keepFacingTarget = true)
@@ -341,8 +342,10 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
         float targetDirection = Mathf.Sign(target.position.x - transform.position.x);
         float moveDirection = -targetDirection;
-        SetHorizontalMove(moveDirection);
-        TrackFacingToward(keepFacingTarget ? targetDirection : moveDirection);
+        float desiredFacing = keepFacingTarget ? targetDirection : moveDirection;
+        TrackFacingToward(desiredFacing);
+        // Same rule as chasing: it starts backing away only after it already faces the way it should face.
+        SetHorizontalMove(CurrentFacingSign == desiredFacing ? moveDirection : 0f);
     }
 
     protected void SetHorizontalMove(float direction)

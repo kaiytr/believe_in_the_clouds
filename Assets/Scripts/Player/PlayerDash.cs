@@ -22,7 +22,7 @@ public class PlayerDash : MonoBehaviour
     [Tooltip("재사용 대기 시간(초).")]
     [SerializeField, Min(0f)] private float cooldown = 0.6f;
     [Tooltip("대시 이동이 끝난 뒤에도 무적이 이어지는 짧은 여유 시간(초). 이동 잠금은 이동이 끝나는 즉시 풀린다.")]
-    [SerializeField, Min(0f)] private float invulnerabilityGraceTime = 0.10f;
+    [SerializeField, Min(0f)] private float invulnerabilityGraceTime = 0.15f;
 
     [Header("대시 잔상")]
     [SerializeField] private CombatAfterimage afterimagePrefab;
