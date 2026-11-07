@@ -139,9 +139,9 @@ public sealed class EconomyEditModeTests
         public int Next(int min, int max) { Calls++; return Upper ? max - 1 : min; }
     }
 
-    [TestCase(EnemyRewardKind.Dog, 5, 7)]
-    [TestCase(EnemyRewardKind.Believer, 3, 5)]
-    [TestCase(EnemyRewardKind.Executive, 7, 8)]
+    [TestCase(EnemyRewardKind.Dog, 10, 14)]
+    [TestCase(EnemyRewardKind.Believer, 6, 10)]
+    [TestCase(EnemyRewardKind.Executive, 14, 16)]
     [TestCase(EnemyRewardKind.Boss, 0, 0)]
     public void DropEndpointsAreInclusiveAndRetriesNeverReroll(EnemyRewardKind kind, int min, int max)
     {
@@ -158,6 +158,33 @@ public sealed class EconomyEditModeTests
             Assert.That(rng.Calls, Is.EqualTo(kind == EnemyRewardKind.Boss ? 0 : 1));
             Assert.That(economy.PendingBalance, Is.EqualTo(upper ? max : min));
         }
+    }
+
+    [Test]
+    public void LegacyDefeatReceiptAndPendingCoinsAreNotDoubledOnLoadOrReplay()
+    {
+        var legacy = new EconomyProfileData { balance = 41 };
+        legacy.processedTransactions.Add(new EconomyReceipt { id = "enemy:legacy", requestKey = "defeat|3:Dog",
+            result = new CurrencyResult { Success = true, RequestedAmount = 7, AppliedAmount = 7,
+                BalanceAfter = 41, TransactionId = "enemy:legacy" } });
+        var grant = new PendingGrant { grantId = "enemy:legacy", transactionId = "enemy:legacy", remainingAmount = 7 };
+        grant.tokens.Add(new PendingToken { tokenId = "0", amount = 7 });
+        legacy.pendingGrants.Add(grant);
+        var memory = new MemoryEconomyStore(); Assert.That(memory.TrySave(legacy), Is.True);
+        var rng = new EndpointRandom(true);
+        var restored = new EconomyService(memory, rng); Assert.That(restored.Initialize(), Is.True);
+        Assert.That(restored.Balance, Is.EqualTo(48)); Assert.That(restored.PendingBalance, Is.Zero);
+        int saves = memory.SaveCount;
+        Assert.That(restored.TryRewardDefeat(EnemyRewardKind.Dog, "enemy:legacy", Vector3.zero).RequestedAmount, Is.EqualTo(7));
+        restored.TrySettleToken("enemy:legacy", "0");
+        Assert.That(restored.Balance, Is.EqualTo(48)); Assert.That(memory.SaveCount, Is.EqualTo(saves));
+        Assert.That(rng.Calls, Is.Zero);
+
+        Assert.That(restored.TryRewardDefeat(EnemyRewardKind.Dog, "enemy:new", Vector3.zero).RequestedAmount, Is.EqualTo(14));
+        Assert.That(restored.PendingBalance, Is.EqualTo(14));
+        restored.TryRewardDefeat(EnemyRewardKind.Dog, "enemy:new", Vector3.one);
+        restored.SettleAllPending(); restored.SettleAllPending();
+        Assert.That(restored.Balance, Is.EqualTo(62)); Assert.That(rng.Calls, Is.EqualTo(1));
     }
 
     [Test]

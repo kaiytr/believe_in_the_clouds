@@ -6,7 +6,7 @@ public sealed class ChestManifest
 {
     public string stageInstanceId;
     public int layoutVersion = 1;
-    public int rewardTableVersion = 1;
+    public int rewardTableVersion = ChestRules.TableVersion;
     public string[] spawnIds;
 }
 
@@ -39,6 +39,8 @@ public sealed class ChestRewardReceipt
 {
     public string stageInstanceId;
     public string spawnId;
+    // 이전 JSON에는 이 필드가 없으므로 0은 V1 영수증으로 해석한다.
+    public int rewardTableVersion;
     public string pieceId;
     public ShopRarity rarity;
     public int pieceAmount;
