@@ -164,11 +164,23 @@ public sealed class DevToolsPanel : MonoBehaviour
         if (CanModifyPlayer(player)) player.KillForTest();
     }
 
-    // Same as the editor menu "Tools/테스트/튜토리얼 최초 실행 초기화", then back to the title.
+    // Full reset, then back to the title: the tutorial "first launch" flag (as the editor menu
+    // "Tools/테스트/튜토리얼 최초 실행 초기화"), the saved profile (coins, pieces, run) and the in-memory leftovers.
+    // Afterwards "시작하기" behaves like a brand-new game.
     private void ResetAndGoToTitle()
     {
+        if (EconomyRuntime.Instance != null && !EconomyRuntime.Instance.ResetSavedProfile())
+        {
+            ShowFeedback("저장 파일을 지우지 못했습니다. 파일이 열려 있지 않은지 확인하세요.", true);
+            return;
+        }
+
         PlayerPrefs.DeleteKey(TitleScreen.TutorialStartedKey);
         PlayerPrefs.Save();
+        DoctrineSlotStore.Instance?.ResetToDefault();
+        DoctrineManager.Instance?.Clear();
+        // The lobby router keeps the old run in memory; it is rebuilt from the fresh profile when needed.
+        if (LobbyFlowRuntime.Instance != null) Destroy(LobbyFlowRuntime.Instance.gameObject);
         Time.timeScale = 1f;
         SetOpen(false);
         SceneManager.LoadScene(TitleScreen.SceneName);

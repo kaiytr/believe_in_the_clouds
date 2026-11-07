@@ -66,6 +66,24 @@ public sealed class EconomyRuntime : MonoBehaviour
         SceneManager.activeSceneChanged += HandleSceneChanged;
     }
 
+    /// <summary>
+    /// Developer reset: wipes the saved profile (file and backups in a build, the in-memory profile in the Editor) and
+    /// starts a brand-new one. The next "start" behaves like the first launch.
+    /// </summary>
+    public bool ResetSavedProfile()
+    {
+        IEconomyStore fresh;
+        if (persistentStore is JsonEconomyStore json)
+        {
+            if (!json.DeleteSaveFiles()) return false;
+            fresh = new JsonEconomyStore(json.FilePath);
+        }
+        else fresh = new MemoryEconomyStore();
+        persistentStore = fresh;
+        SetService(new EconomyService(fresh));
+        return true;
+    }
+
     public void SetService(EconomyService service)
     {
         if (flightView != null)
