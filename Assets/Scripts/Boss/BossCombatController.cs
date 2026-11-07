@@ -48,6 +48,12 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private string phraseCache = "";
     private int phraseSignature = -1;
     private float encounterStartedAt, burnEndsAt;
+    [Tooltip("How long (seconds) the player must stay on the opposite side before the boss turns toward them.")]
+    [SerializeField, Min(0f)] private float turnDelaySeconds = 0.5f;
+    // Pending player-tracking turn: side (+1/-1, 0 = none), since when, and when it was last evaluated.
+    private int pendingTurn;
+    private float pendingTurnSince, pendingTurnLastSeen;
+    private const float PendingTurnStaleSeconds = 0.25f;
     private int generation = 1, regularPatternId, beliefPatternId, patternCounter, nextAttackId = 1, facing = 1, initialFacing;
     private int lastAcceptedComboPatternId = -1;
     private float currentHp;
@@ -873,6 +879,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     // the burn window, lightning and shockwave reservation go together. Persistent clouds stay.
     private void CancelCombat(bool removeBurn)
     {
+        pendingTurn = 0;
         Coroutine cancelledRegular = regularRoutine, cancelledBelief = beliefRoutine;
         regularRoutine = beliefRoutine = null;
         regularRunning = beliefProcessing = regularAttackActive = shockwaveReserved = bodyActionActive = false;
@@ -917,19 +924,47 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         if (DoctrineEventBus.HasListeners)
             DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, null);
     }
+    // Explicit, immediate facing (not the delayed player-tracking turn). Attacks no longer use it: they wait for
+    // the turn through BossAttackExecutor.TurnToPlayer, so the delay cannot be bypassed just before an attack.
     public void FacePlayer() { if (TargetValid) Face(PlayerCollider.bounds.center.x >= transform.position.x ? 1 : -1); }
-    // 대기 중 매 프레임 호출용. 이미 같은 방향이면 아무 일도 하지 않는다.
-    private void FacePlayerWhileIdle()
+
+    /// <summary>True when the player is on the side the boss faces (or overlapping it, inside the dead zone).</summary>
+    public bool IsPlayerOnFacingSide
     {
-        if (!TargetValid) return;
+        get
+        {
+            if (!TargetValid) return true;
+            float deltaX = PlayerCollider.bounds.center.x - transform.position.x;
+            return Mathf.Abs(deltaX) < .05f || (deltaX > 0f ? 1 : -1) == facing;
+        }
+    }
+
+    // 대기 중 매 프레임 호출용. 플레이어가 반대편에 안정적으로 turnDelaySeconds 머문 뒤에야 돈다.
+    // 매 프레임 불러도 대기는 한 번만 시작되고, 원래 방향으로 돌아오면 취소된다.
+    private void FacePlayerWhileIdle() => TrackPlayerFacing();
+
+    /// <summary>Delayed player-tracking turn. Safe to call every frame (see EnemyUnit.TrackFacingToward).</summary>
+    public void TrackPlayerFacing()
+    {
+        if (!TargetValid) { pendingTurn = 0; return; }
         float deltaX = PlayerCollider.bounds.center.x - transform.position.x;
         // 보스 몸 위에 겹쳐 있을 때 좌우로 덜덜 떨리지 않도록 작은 데드존을 둔다.
-        if (Mathf.Abs(deltaX) < .05f) return;
+        if (Mathf.Abs(deltaX) < .05f) { pendingTurn = 0; return; }
         int direction = deltaX > 0f ? 1 : -1;
-        if (direction != facing) Face(direction);
+        if (direction == facing) { pendingTurn = 0; return; }
+
+        float now = Time.time;
+        if (pendingTurn != direction || now - pendingTurnLastSeen > PendingTurnStaleSeconds)
+        {
+            pendingTurn = direction;
+            pendingTurnSince = now;
+        }
+        pendingTurnLastSeen = now;
+        if (now - pendingTurnSince >= turnDelaySeconds) Face(direction);
     }
     private void Face(int direction)
     {
+        pendingTurn = 0;
         facing = direction;
         if (attackOrigin != null) { Vector3 p = attackOrigin.localPosition; p.x = Mathf.Abs(p.x) * facing; attackOrigin.localPosition = p; }
         if (projectileOrigin != null) { Vector3 p = projectileOrigin.localPosition; p.x = Mathf.Abs(p.x) * facing; projectileOrigin.localPosition = p; }

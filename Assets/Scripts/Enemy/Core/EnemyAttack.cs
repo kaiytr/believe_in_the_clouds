@@ -110,6 +110,14 @@ public abstract class EnemyAttack : MonoBehaviour
         if (!IsReady || target == null || !CanAttack(target))
             return false;
 
+        // An attack never turns the enemy around by itself: the enemy first has to face the player through its
+        // normal delayed turn, so the telegraph and the real attack both point the way it already faces.
+        if (!owner.IsFacingTarget(target))
+        {
+            owner.FaceTarget();
+            return false;
+        }
+
         lockedDirection = GetLockedAttackDirection(target);
         if (lockedDirection.sqrMagnitude <= 0.0001f)
             lockedDirection = new Vector2(transform.localScale.x >= 0f ? 1f : -1f, 0f);
