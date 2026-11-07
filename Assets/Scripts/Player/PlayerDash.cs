@@ -21,6 +21,8 @@ public class PlayerDash : MonoBehaviour
     [SerializeField, Min(0f)] private float dashTime = 0.18f;
     [Tooltip("재사용 대기 시간(초).")]
     [SerializeField, Min(0f)] private float cooldown = 0.6f;
+    [Tooltip("대시 이동이 끝난 뒤에도 무적이 이어지는 짧은 여유 시간(초). 이동 잠금은 이동이 끝나는 즉시 풀린다.")]
+    [SerializeField, Min(0f)] private float invulnerabilityGraceTime = 0.10f;
 
     [Header("대시 잔상")]
     [SerializeField] private CombatAfterimage afterimagePrefab;
@@ -43,6 +45,7 @@ public class PlayerDash : MonoBehaviour
 
     private float cooldownRemaining;
     private bool isDashing;
+    private Coroutine graceRoutine;
 
     public bool IsDashing => isDashing;
     public KeyCode DashKey => dashKey;
@@ -108,6 +111,9 @@ public class PlayerDash : MonoBehaviour
     {
         isDashing = true;
         spriteAnimator?.ShowDashFrame();
+        // A new dash owns the invulnerability again: a grace period left over from the previous dash must not
+        // switch it off underneath this one.
+        EndInvulnerabilityGrace();
         health?.SetDashInvulnerability(true);
         cooldownRemaining = cooldown;
         playerMove.ControlLocked = true;
@@ -127,9 +133,29 @@ public class PlayerDash : MonoBehaviour
 
         // 살짝 미끄러지듯 멈춘다 (y는 중력에 맡긴다).
         rb.linearVelocity = new Vector2(dir * dashSpeed * 0.25f, rb.linearVelocity.y);
-        health?.SetDashInvulnerability(false);
         playerMove.ControlLocked = false;
         isDashing = false;
+
+        // The movement is over, but invulnerability continues for a moment (dash-owned, separate from the
+        // ordinary post-hit invulnerability).
+        if (invulnerabilityGraceTime > 0f)
+            graceRoutine = StartCoroutine(InvulnerabilityGraceRoutine());
+        else
+            health?.SetDashInvulnerability(false);
+    }
+
+    private IEnumerator InvulnerabilityGraceRoutine()
+    {
+        yield return new WaitForSeconds(invulnerabilityGraceTime);
+        graceRoutine = null;
+        health?.SetDashInvulnerability(false);
+    }
+
+    private void EndInvulnerabilityGrace()
+    {
+        if (graceRoutine == null) return;
+        StopCoroutine(graceRoutine);
+        graceRoutine = null;
     }
 
     private void OnDisable()
@@ -140,6 +166,7 @@ public class PlayerDash : MonoBehaviour
             if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             if (playerMove != null) playerMove.ControlLocked = false;
         }
+        graceRoutine = null;   // StopAllCoroutines above already stopped it
         health?.SetDashInvulnerability(false);
         afterimages?.Clear();
         isDashing = false;

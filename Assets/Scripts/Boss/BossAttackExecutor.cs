@@ -101,6 +101,21 @@ public sealed class BossAttackExecutor : MonoBehaviour
         else if (kind == BossPatternKind.Projectile) yield return Projectile(context);
     }
 
+    /// <summary>
+    /// Before a directional attack: wait until the boss faces the player. The boss turns at its normal delayed
+    /// pace (the player must stay on the other side for the turn delay), so an attack can never be the shortcut
+    /// around it, and the telegraph and the real attack are drawn for the side the boss already faces.
+    /// </summary>
+    private IEnumerator TurnToPlayer()
+    {
+        int token = owner.Generation;
+        while (token == owner.Generation && owner.CanStartNextHit && !owner.IsPlayerOnFacingSide)
+        {
+            owner.TrackPlayerFacing();
+            yield return PhysicsTick;
+        }
+    }
+
     private IEnumerator MeleeCombo(BossRegularAttackContext context)
     {
         int stepCount = owner.PlayerAttack != null ? owner.PlayerAttack.ComboCount : 0;
@@ -116,8 +131,11 @@ public sealed class BossAttackExecutor : MonoBehaviour
             if (!owner.PlayerAttack.TryGetComboStep(index, out PlayerAttack.ComboStep step))
                 yield break;
 
-            // 각 타의 예고를 그리기 전에 다시 플레이어 쪽을 본다 (예고와 판정은 항상 같은 방향).
-            owner.FacePlayer();
+            // 각 타의 예고를 그리기 전에 플레이어 쪽을 본다 (예고와 판정은 항상 같은 방향).
+            // 플레이어가 반대편이면 평소의 지연된 회전이 끝날 때까지 기다린 뒤 시작한다.
+            yield return TurnToPlayer();
+            if (token != owner.Generation || !owner.CanStartNextHit)
+                yield break;
             int direction = owner.Facing;
             float warning = index == 0 ? Data.MeleeComboFirstWarning : Data.MeleeComboFollowupWarning;
             float damage = index < Data.MeleeComboDamage.Length
@@ -296,7 +314,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
     private IEnumerator Dash(BossRegularAttackContext context)
     {
-        owner.FacePlayer();
+        yield return TurnToPlayer();
+        if (!owner.CanStartNextHit) yield break;
         Vector2 direction = Vector2.right * owner.Facing;
         Vector2 size = owner.BodyCollider.bounds.size;
         Vector2 start = owner.BodyCollider.bounds.center;
@@ -367,7 +386,8 @@ public sealed class BossAttackExecutor : MonoBehaviour
 
     private IEnumerator Projectile(BossRegularAttackContext context)
     {
-        owner.FacePlayer();
+        yield return TurnToPlayer();
+        if (!owner.CanStartNextHit) yield break;
         float speed = Data.ProjectileSpeed * owner.SpeedMultiplier;
         float lifetime = Data.ProjectileLifetime / owner.SpeedMultiplier;
         if (!TryPlanProjectile(owner.Facing, out Vector2 origin, out Vector2 direction, out float length, out bool endBlocked, out AttackGeometry geometry))
