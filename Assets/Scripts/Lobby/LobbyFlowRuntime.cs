@@ -24,8 +24,14 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     private bool healthPending, restoring;
     private bool playLoopTestMode;
     private int inputAfterFrame;
+    private string developerRerollId, developerRerollRun, developerRerollBatch;
+    private int developerRerollClears;
 
     public bool IsPlayLoopTestMode => playLoopTestMode;
+    public bool HasPendingDeveloperReroll => developerRerollId != null;
+    public bool CanUseDeveloperRunTools => InputReady && !PlayerDeathCoordinator.IsResultOpen;
+    public bool CanRerollLobbyForDevelopment => CanUseDeveloperRunTools && Scene.IsLobby &&
+        State.area == RunArea.Lobby && !State.hasStage;
 
     public bool InputReady => Scene != null && player != null && !player.IsDead && !IsTransitioning &&
         !healthPending && Service != null && Service.IsReady && State != null && !NeedsMaxHpSync && MatchesScene() &&
@@ -92,6 +98,9 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     {
         if (Service == null || (seenRevision == Service.Revision && boundService == Service)) return;
         State = Service.RunSnapshot(); seenRevision = Service.Revision;
+        if (HasPendingDeveloperReroll && (State == null || State.area != RunArea.Lobby || State.hasStage || State.id != developerRerollRun ||
+            State.batchId != developerRerollBatch || State.combatClears != developerRerollClears))
+            ClearDeveloperReroll();
     }
     private bool MatchesScene() => Scene != null && State != null &&
         (Scene.IsLobby ? State.area == RunArea.Lobby : State.area == RunArea.TemporaryStage || State.area == RunArea.Complete);
@@ -235,6 +244,42 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         }
         if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(LobbyScene));
         return result;
+    }
+
+    public CurrencyResult UnlockBossForDevelopment()
+    {
+        if (!CanUseDeveloperRunTools || HasPendingDeveloperReroll)
+            return Report(CurrencyResult.Failed(EconomyError.Busy));
+        return Report(Service.TryUnlockBossForDevelopment());
+    }
+
+    public CurrencyResult RerollLobbyForDevelopment()
+    {
+        if (!CanRerollLobbyForDevelopment) return Report(CurrencyResult.Failed(EconomyError.StateConflict));
+        if (!HasPendingDeveloperReroll)
+        {
+            // A failed write followed by a process restart keeps the same draw for this source batch.
+            developerRerollId = LobbyRules.StableId("dev:lobby-reroll-request:" + State.id + ":" + State.batchId);
+            developerRerollRun = State.id;
+            developerRerollBatch = State.batchId;
+            developerRerollClears = State.combatClears;
+        }
+        CurrencyResult result = Report(Service.TryRerollLobbyForDevelopment(developerRerollId,
+            developerRerollBatch, developerRerollClears, player.CurrentHp, player.transform.position));
+        if (result.Success)
+        {
+            ClearDeveloperReroll();
+            StartCoroutine(Route(LobbyScene));
+        }
+        else if (result.Error != EconomyError.SaveFailed && result.Error != EconomyError.Busy)
+            ClearDeveloperReroll();
+        return result;
+    }
+
+    private void ClearDeveloperReroll()
+    {
+        developerRerollId = developerRerollRun = developerRerollBatch = null;
+        developerRerollClears = 0;
     }
 
     public void DamageForTest() { if (InputReady) player.TakeDamage(10f); }

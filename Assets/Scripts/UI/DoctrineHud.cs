@@ -373,7 +373,7 @@ public class DoctrineHud : MonoBehaviour
         }
 
         int index = slots.IndexOf(slot);
-        string title = index >= 0 ? $"교리{index + 1} · {DoctrineText.ShortName(slot.Doctrine)}" : DoctrineText.ShortName(slot.Doctrine);
+        string title = index >= 0 ? $"교리{index + 1}" : "교리";
         ShowTooltip(title, DoctrineText.Describe(slot.Doctrine), index);
     }
 
