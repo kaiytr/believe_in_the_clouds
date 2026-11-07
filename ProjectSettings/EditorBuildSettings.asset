@@ -6,8 +6,41 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
+    path: Assets/Scenes/Title.unity
+    guid: 71039babccd5b410cb7e5273808c7604
+  - enabled: 1
+    path: Assets/Scenes/Lobby.unity
+    guid: 09749100502795a44b02e1f64fa4817f
+  - enabled: 1
+    path: Assets/Scenes/Stages/Shop.unity
+    guid: e2380cdbfa5db2844955d9b654dd7aa8
+  - enabled: 1
+    path: Assets/Scenes/Tutorial.unity
+    guid: 23e0f0567cedd3146b75a3733f432203
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel1.unity
+    guid: ce480f84921844d4d97441d0cc8db504
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel2.unity
+    guid: 5edfff092ac09ad4fa7197d2a5be75be
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel3.unity
+    guid: 81cb72293ceb3ea428cf5646899831b2
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel4.unity
+    guid: 58bbcad52e4e8714db7773724c482ec9
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel5.unity
+    guid: 44eb34a05345db94b942376d7f437cd0
+  - enabled: 1
+    path: Assets/Scenes/Stages/CombatLevel6.unity
+    guid: 8fac39f98eae8034185b596095d666fe
+  - enabled: 1
+    path: Assets/Scenes/Stages/Boss.unity
+    guid: a82bfeb8e9fa4b34a261713ca8c83a10
+  - enabled: 1
+    path: Assets/Scenes/Ending.unity
+    guid: 264eed21b105464591288b6927c52b0a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

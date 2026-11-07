@@ -1,0 +1,104 @@
+using UnityEngine;
+using System.Collections.Generic;
+
+/// <summary>One logical hit, including both branches of a ground wave. Never reused after cancellation.</summary>
+public sealed class BossAttackRecord
+{
+    public int Generation { get; }
+    public int PatternId { get; }
+    public int Id { get; }
+    public int HitIndex { get; }
+    public BossAttackKind Kind { get; }
+    public BossBeliefKind Belief { get; }
+    public AttackGeometry Geometry { get; private set; }
+    public float Damage { get; }
+    public bool AllowsBurn { get; }
+    /// <summary>Owning regular attack (null for beliefs such as lightning or shockwave).</summary>
+    public BossRegularAttackContext Context { get; }
+    /// <summary>Burn enhancement recorded when the owning regular attack started.</summary>
+    public bool BurnEnhanced => AllowsBurn && Context != null && Context.BurnEnhanced;
+    public bool Activated { get; private set; }
+    public bool WasThreatened { get; private set; }
+    public bool EscapedByMovement { get; private set; }
+    public bool Contacted { get; private set; }
+    /// <summary>The attack travelled past the target without touching it (settled as an evade right away).</summary>
+    public bool PassedTarget { get; private set; }
+    public bool DamageAccepted { get; private set; }
+    public bool IsComplete { get; private set; }
+    public AttackOutcome Outcome { get; private set; }
+    public BossAttackEndReason EndReason { get; private set; }
+    private bool shelteredFromLightning;
+    private Vector2 threatenedPosition;
+    private readonly List<AttackGeometry> warningGeometry = new List<AttackGeometry>();
+    public IReadOnlyList<AttackGeometry> WarningGeometry => warningGeometry;
+
+    public BossAttackRecord(int generation, int patternId, int id, int hitIndex, BossAttackKind kind,
+        BossBeliefKind belief, AttackGeometry geometry, float damage, bool allowsBurn, BossRegularAttackContext context = null)
+    {
+        Context = context;
+        Generation = generation;
+        PatternId = patternId;
+        Id = id;
+        HitIndex = hitIndex;
+        Kind = kind;
+        Belief = belief;
+        Geometry = geometry;
+        warningGeometry.Add(geometry);
+        Damage = Mathf.Max(0f, damage);
+        AllowsBurn = allowsBurn;
+    }
+
+    public void AddWarningGeometry(AttackGeometry geometry) { if (!Activated && !IsComplete) warningGeometry.Add(geometry); }
+
+    public void TranslateWarning(Vector2 offset)
+    {
+        if (Activated || IsComplete || offset.sqrMagnitude <= 0f)
+            return;
+
+        Geometry = Geometry.Translated(offset);
+        for (int i = 0; i < warningGeometry.Count; i++)
+            warningGeometry[i] = warningGeometry[i].Translated(offset);
+    }
+
+    public void Observe(bool overlaps, Vector2 targetPosition)
+    {
+        if (IsComplete) return;
+        if (overlaps && !WasThreatened) threatenedPosition = targetPosition;
+        WasThreatened |= overlaps;
+        if (WasThreatened && !overlaps && Vector2.SqrMagnitude(targetPosition - threatenedPosition) > 0.0025f)
+            EscapedByMovement = true;
+    }
+
+    public void Activate() { if (!IsComplete) Activated = true; }
+    /// <summary>
+    /// Called by a moving attack (projectile, dash) once it is farther from its origin than the target is.
+    /// True when that counts as an evade: the player was in its path, and it never touched the player.
+    /// </summary>
+    public bool TryMarkPassedTarget()
+    {
+        if (!Activated || IsComplete || Contacted || !WasThreatened) return false;
+        PassedTarget = true;
+        return true;
+    }
+    public bool TryContact()
+    {
+        if (!Activated || IsComplete || Contacted) return false;
+        Contacted = true;
+        return true;
+    }
+    public void ProtectFromLightning()
+    { if (Kind == BossAttackKind.Lightning && Activated && !IsComplete && !Contacted) shelteredFromLightning = true; }
+    public void AcceptDamage() { if (Contacted && !IsComplete) DamageAccepted = true; }
+
+    public bool Finish(BossAttackEndReason reason)
+    {
+        if (IsComplete) return false;
+        IsComplete = true;
+        EndReason = reason;
+        Outcome = reason == BossAttackEndReason.Cancelled || reason == BossAttackEndReason.TargetLost ? AttackOutcome.Cancelled :
+            DamageAccepted ? AttackOutcome.Hit :
+            Activated && !Contacted && (shelteredFromLightning || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
+            reason == BossAttackEndReason.Wall ? AttackOutcome.Blocked : AttackOutcome.Missed;
+        return true;
+    }
+}

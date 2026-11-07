@@ -1,0 +1,305 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+// Effect execution layer. Every Result goes through this common path
+// instead of adding branches per doctrine.
+// Table-fixed values (DoctrineTable) are the defaults:
+//   Explode       = 30% of exploder max HP, friends and foes alike (incl. self)
+//   IncreaseSpeed = x1.4 for 5s, 10s cooldown (replace)
+//   IncreaseAttack= x1.2 for 5s, 10s cooldown (replace)
+//   Heal          = 10% of max HP
+// Doctrine.Magnitude (>0) acts as an explicit damage/amount override when set.
+public static class DoctrineEffectExecutor
+{
+    public static bool VerboseLogs = false;
+
+    private static readonly HashSet<IHealth> OverlapSeen = new HashSet<IHealth>();
+    public const float DefaultExplodeRadius = 3f;
+    public const float DefaultAttackBuffDuration = 5f;
+
+    // 폭발 데미지를 적용하는 동안 true. 이 사이에 TakeDamage가 일으키는
+    // OnHit/LowHealth/OnDeath 이벤트는 DoctrineManager가 무시한다.
+    // 없으면 "맞은 적이 또 폭발 → 그 폭발에 맞은 적이 또 폭발" 연쇄로 맵이 쓸린다.
+    public static bool IsApplyingDoctrineDamage { get; private set; }
+
+    public static bool IsSupported(ResultType result)
+    {
+        switch (result)
+        {
+            case ResultType.Heal:
+            case ResultType.Explode:
+            case ResultType.IncreaseSpeed:
+            case ResultType.IncreaseAttack:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // target: object the effect applies to. Usually the event's SubjectObject.
+    // source: cause object (attacker etc). Passed as source of Explode damage.
+    public static bool Execute(Doctrine doctrine, GameObject target, GameObject source = null)
+    {
+        if (doctrine == null || target == null)
+        {
+            return false;
+        }
+
+        switch (doctrine.Result)
+        {
+            case ResultType.Heal:
+                return ExecuteHealMaxRatio(target, DoctrineTable.HealMaxHpRatio, doctrine.Magnitude);
+
+            case ResultType.IncreaseSpeed:
+                return ExecuteSpeedBuff(
+                    target,
+                    1f + DoctrineTable.SpeedIncreaseRatio,
+                    ResolveDuration(doctrine.Duration, DoctrineTable.SpeedBuffDuration));
+
+            case ResultType.IncreaseAttack:
+                return ExecuteAttackBuff(
+                    target,
+                    1f + DoctrineTable.AttackIncreaseRatio,
+                    ResolveDuration(doctrine.Duration, DoctrineTable.AttackBuffDuration));
+
+            case ResultType.Explode:
+                return ExecuteExplodeMaxRatio(
+                    target,
+                    DoctrineTable.ExplodeMaxHpRatio,
+                    ResolveRadius(doctrine.Radius),
+                    source,
+                    doctrine.Magnitude);
+
+            default:
+                Debug.LogWarning($"[Doctrine] Unimplemented Result: {doctrine.Result}.");
+                return false;
+        }
+    }
+
+    public static bool ExecuteHeal(GameObject target, float amount)
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        IHealth health = target.GetComponent<IHealth>();
+        if (health == null)
+        {
+            Debug.LogWarning($"[Doctrine] Heal failed: {target.name} has no IHealth.");
+            return false;
+        }
+
+        health.Heal(amount);
+        // 실제 회복량이 0이어도(이미 가득 참) "교리가 발동했다"는 피드백은 보여준다.
+        DoctrineHealEffect.Play(target);
+        return true;
+    }
+
+    // Table heal: 10% of max HP. amountOverride (>0) replaces the ratio amount.
+    public static bool ExecuteHealMaxRatio(GameObject target, float ratio, float amountOverride = 0f)
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        IHealth health = target.GetComponent<IHealth>();
+        if (health == null)
+        {
+            Debug.LogWarning($"[Doctrine] Heal failed: {target.name} has no IHealth.");
+            return false;
+        }
+
+        float amount = amountOverride > 0f ? amountOverride : health.MaxHealth * ratio;
+        if (amount <= 0f)
+        {
+            return false;
+        }
+
+        health.Heal(amount);
+        DoctrineHealEffect.Play(target);
+        return true;
+    }
+
+    private static DoctrineStats ResolveDoctrineStats(GameObject target)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        DoctrineStats stats = target.GetComponent<DoctrineStats>();
+        if (stats == null)
+        {
+            // Enemies and bosses opt into doctrines without prefab edits:
+            // keep the rule engine common, attach the stat holder on demand.
+            stats = target.AddComponent<DoctrineStats>();
+        }
+
+        return stats;
+    }
+
+    public static bool ExecuteAttackBuff(GameObject target, float multiplier, float duration)
+    {
+        DoctrineStats stats = ResolveDoctrineStats(target);
+        if (stats == null)
+        {
+            Debug.LogWarning($"[Doctrine] IncreaseAttack failed: target is null.");
+            return false;
+        }
+
+        stats.ApplyAttackBuff(multiplier, duration);
+        DoctrineHealEffect.PlayAttackBuff(target);
+        return true;
+    }
+
+    public static bool ExecuteSpeedBuff(GameObject target, float multiplier, float duration)
+    {
+        DoctrineStats stats = ResolveDoctrineStats(target);
+        if (stats == null)
+        {
+            Debug.LogWarning($"[Doctrine] Speed change failed: target is null.");
+            return false;
+        }
+
+        stats.ApplySpeedBuff(multiplier, duration);
+        DoctrineHealEffect.PlaySpeedBuff(target);
+        return true;
+    }
+
+    // Table explode: ratio of the exploder's max HP, friends and foes alike (incl. self).
+    // damageOverride (>0) replaces the ratio damage (legacy params / tuning).
+    // The visual plays even when damage is 0: the feedback (range flash) is shown regardless.
+    public static bool ExecuteExplodeMaxRatio(
+        GameObject center,
+        float ratio,
+        float radius,
+        GameObject source = null,
+        float damageOverride = 0f)
+    {
+        if (center == null)
+        {
+            return false;
+        }
+
+        float damage = damageOverride;
+        if (damage <= 0f)
+        {
+            IHealth selfHealth = center.GetComponent<IHealth>();
+            float maxHp = selfHealth != null ? selfHealth.MaxHealth : 0f;
+            damage = maxHp * ratio;
+        }
+
+        float effectRadius = radius > 0f ? radius : DefaultExplodeRadius;
+        DoctrineExplodeEffect.Play(center, effectRadius);
+
+        if (damage <= 0f)
+        {
+            return false;
+        }
+
+        List<IHealth> targets = FindTargetsInRadius(center, radius);
+        return ApplyExplodeDamage(targets, damage, source, null);
+    }
+
+    public static bool ExecuteExplode(GameObject center, float damage, float radius, GameObject source = null)
+    {
+        if (center == null)
+        {
+            return false;
+        }
+
+        DoctrineExplodeEffect.Play(center, radius > 0f ? radius : DefaultExplodeRadius);
+
+        List<IHealth> targets = FindTargetsInRadius(center, radius);
+        return ApplyExplodeDamage(targets, damage, source, null);
+    }
+
+    public static List<IHealth> FindTargetsInRadius(GameObject center, float radius)
+    {
+        List<IHealth> result = new List<IHealth>();
+        if (center == null || radius <= 0f)
+        {
+            return result;
+        }
+
+        // OverlapCircleAll: NonAlloc/ContactFilter overloads fail overload
+        // resolution in this project setup, so use the reliable overload.
+        Collider2D[] hits = Physics2D.OverlapCircleAll((Vector2)center.transform.position, radius);
+        OverlapSeen.Clear();
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider2D hit = hits[i];
+            if (hit == null)
+            {
+                continue;
+            }
+
+            IHealth health = hit.GetComponent<IHealth>()
+                ?? hit.GetComponentInParent<IHealth>();
+            if (health == null)
+            {
+                continue;
+            }
+
+            if (OverlapSeen.Add(health))
+            {
+                result.Add(health);
+            }
+        }
+
+        return result;
+    }
+
+    // Pure damage application separated from physics query. Callable from tests.
+    // Table rule: friends and foes alike, so exclude is normally null (self included).
+    // exclude is kept for explicit cases only.
+    public static bool ApplyExplodeDamage(
+        List<IHealth> targets,
+        float damage,
+        GameObject source,
+        IHealth exclude)
+    {
+        if (targets == null)
+        {
+            return false;
+        }
+
+        IsApplyingDoctrineDamage = true;
+        try
+        {
+            int hitCount = 0;
+            foreach (IHealth health in targets)
+            {
+                if (health == null || health == exclude)
+                {
+                    continue;
+                }
+
+                health.TakeDamage(damage, source);
+                hitCount++;
+            }
+
+            if (VerboseLogs)
+            {
+                Debug.Log($"[Doctrine] Explode executed: {hitCount} hit (damage {damage}).");
+            }
+            return true;
+        }
+        finally
+        {
+            IsApplyingDoctrineDamage = false;
+        }
+    }
+
+    private static float ResolveDuration(float value, float defaultValue)
+    {
+        return value > 0f ? value : defaultValue;
+    }
+
+    private static float ResolveRadius(float value)
+    {
+        return value > 0f ? value : DefaultExplodeRadius;
+    }
+}

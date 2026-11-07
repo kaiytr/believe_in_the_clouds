@@ -1,0 +1,2268 @@
+fileFormatVersion: 2
+guid: e54146265ed9b7b4b9e28267312f2508
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8253472916733366188
+    second: PlatformerTerrain_0
+  - first:
+      213: 526197933787408394
+    second: PlatformerTerrain_1
+  - first:
+      213: -5952558314739213592
+    second: PlatformerTerrain_2
+  - first:
+      213: -3163544055406452564
+    second: PlatformerTerrain_3
+  - first:
+      213: 1120514808043946732
+    second: PlatformerTerrain_4
+  - first:
+      213: -6418465294478931579
+    second: PlatformerTerrain_5
+  - first:
+      213: 7401899179471692687
+    second: PlatformerTerrain_6
+  - first:
+      213: -1441089866419462706
+    second: PlatformerTerrain_7
+  - first:
+      213: -3537102522751405654
+    second: PlatformerTerrain_8
+  - first:
+      213: -1094282446513760753
+    second: PlatformerTerrain_9
+  - first:
+      213: 407058471944611914
+    second: PlatformerTerrain_10
+  - first:
+      213: 1923048151757681164
+    second: PlatformerTerrain_11
+  - first:
+      213: -3495038160816774879
+    second: PlatformerTerrain_12
+  - first:
+      213: -4433952825211876096
+    second: PlatformerTerrain_13
+  - first:
+      213: -1246274160742395873
+    second: PlatformerTerrain_14
+  - first:
+      213: 8347178464512742195
+    second: PlatformerTerrain_15
+  - first:
+      213: 8988263305165450537
+    second: PlatformerTerrain_16
+  - first:
+      213: -3057232333203828007
+    second: PlatformerTerrain_17
+  - first:
+      213: 6186141796714236841
+    second: PlatformerTerrain_18
+  - first:
+      213: -2583257164962470944
+    second: PlatformerTerrain_19
+  - first:
+      213: -239217648728514172
+    second: PlatformerTerrain_20
+  - first:
+      213: 4876046749375728137
+    second: PlatformerTerrain_21
+  - first:
+      213: 5629859496232751900
+    second: PlatformerTerrain_22
+  - first:
+      213: 7939231347188168911
+    second: PlatformerTerrain_23
+  - first:
+      213: 4632980390420935900
+    second: PlatformerTerrain_24
+  - first:
+      213: -1979954544425607007
+    second: PlatformerTerrain_25
+  - first:
+      213: -8547437473215182618
+    second: PlatformerTerrain_26
+  - first:
+      213: -9147851729860089690
+    second: PlatformerTerrain_27
+  - first:
+      213: 360146277987022375
+    second: PlatformerTerrain_28
+  - first:
+      213: 1103031703750316053
+    second: PlatformerTerrain_29
+  - first:
+      213: 8552515405098653920
+    second: PlatformerTerrain_30
+  - first:
+      213: 6827174395175225519
+    second: PlatformerTerrain_31
+  - first:
+      213: -8709164328163743495
+    second: PlatformerTerrain_32
+  - first:
+      213: -1917261313114024047
+    second: PlatformerTerrain_33
+  - first:
+      213: -8186018724601392599
+    second: PlatformerTerrain_34
+  - first:
+      213: 3455717068474902387
+    second: PlatformerTerrain_35
+  - first:
+      213: -2955449777404755701
+    second: PlatformerTerrain_36
+  - first:
+      213: 5478121567260097794
+    second: PlatformerTerrain_37
+  - first:
+      213: 8807545704604792537
+    second: PlatformerTerrain_38
+  - first:
+      213: -4667033478422441200
+    second: PlatformerTerrain_39
+  - first:
+      213: 3384150536299677976
+    second: PlatformerTerrain_40
+  - first:
+      213: 8946538917280499370
+    second: PlatformerTerrain_41
+  - first:
+      213: 3624846550648869788
+    second: PlatformerTerrain_42
+  - first:
+      213: 7567568650495875149
+    second: PlatformerTerrain_43
+  - first:
+      213: 3730148256415772938
+    second: PlatformerTerrain_44
+  - first:
+      213: -3804096398903486211
+    second: PlatformerTerrain_45
+  - first:
+      213: -7066480896929813909
+    second: PlatformerTerrain_46
+  - first:
+      213: 75423537642622542
+    second: PlatformerTerrain_47
+  - first:
+      213: -8225039116027500543
+    second: PlatformerTerrain_48
+  - first:
+      213: 7001318958336238207
+    second: PlatformerTerrain_49
+  - first:
+      213: 8650099899736963053
+    second: PlatformerTerrain_50
+  - first:
+      213: -6201984259363539717
+    second: PlatformerTerrain_51
+  - first:
+      213: -3109778446957160457
+    second: PlatformerTerrain_52
+  - first:
+      213: 876434872997502012
+    second: PlatformerTerrain_53
+  - first:
+      213: -1577539333329581829
+    second: PlatformerTerrain_54
+  - first:
+      213: -4305615896934134989
+    second: PlatformerTerrain_55
+  - first:
+      213: -3661975712090631238
+    second: PlatformerTerrain_56
+  - first:
+      213: -3294690471617897436
+    second: PlatformerTerrain_57
+  - first:
+      213: 679399780804119356
+    second: PlatformerTerrain_58
+  - first:
+      213: -9050288588004339410
+    second: PlatformerTerrain_59
+  - first:
+      213: -796113147858464524
+    second: PlatformerTerrain_60
+  - first:
+      213: 9190241065459848518
+    second: PlatformerTerrain_61
+  - first:
+      213: -5385048130779838748
+    second: PlatformerTerrain_62
+  - first:
+      213: -2106288441858853267
+    second: PlatformerTerrain_63
+  - first:
+      213: 4397580943290861040
+    second: PlatformerTerrain_64
+  - first:
+      213: 848746552137314166
+    second: PlatformerTerrain_65
+  - first:
+      213: -655274303586155778
+    second: PlatformerTerrain_66
+  - first:
+      213: -2646315300564309575
+    second: PlatformerTerrain_67
+  - first:
+      213: 4198642898124875389
+    second: PlatformerTerrain_68
+  - first:
+      213: -2503200255309173002
+    second: PlatformerTerrain_69
+  - first:
+      213: 5773682269126853838
+    second: PlatformerTerrain_70
+  - first:
+      213: 4048748717445939226
+    second: PlatformerTerrain_71
+  - first:
+      213: 511060192940453393
+    second: PlatformerTerrain_72
+  - first:
+      213: 7322567563654202563
+    second: PlatformerTerrain_73
+  - first:
+      213: -2305018443961344973
+    second: PlatformerTerrain_74
+  - first:
+      213: -5884338359009998585
+    second: PlatformerTerrain_75
+  - first:
+      213: 2912092392923601925
+    second: PlatformerTerrain_76
+  - first:
+      213: -4249904798384701407
+    second: PlatformerTerrain_77
+  - first:
+      213: -7473107848788619532
+    second: PlatformerTerrain_78
+  - first:
+      213: 5586700844212293630
+    second: PlatformerTerrain_79
+  - first:
+      213: 1144826543352960419
+    second: PlatformerTerrain_80
+  - first:
+      213: -4229556213297888439
+    second: PlatformerTerrain_81
+  - first:
+      213: 6475011991510019846
+    second: PlatformerTerrain_82
+  - first:
+      213: 343820929697223577
+    second: PlatformerTerrain_83
+  - first:
+      213: -4038601698683121101
+    second: PlatformerTerrain_84
+  - first:
+      213: 6993536130873742380
+    second: PlatformerTerrain_85
+  - first:
+      213: 8557895626896114822
+    second: PlatformerTerrain_86
+  - first:
+      213: -2556003146308632799
+    second: PlatformerTerrain_87
+  - first:
+      213: -4863651091402110150
+    second: PlatformerTerrain_88
+  - first:
+      213: -5316189955723306883
+    second: PlatformerTerrain_89
+  - first:
+      213: -7973566621181800929
+    second: PlatformerTerrain_90
+  - first:
+      213: -2876423655099807805
+    second: PlatformerTerrain_91
+  - first:
+      213: 4329885272894944316
+    second: PlatformerTerrain_92
+  - first:
+      213: 4305296148648048053
+    second: PlatformerTerrain_93
+  - first:
+      213: 23850219692140709
+    second: PlatformerTerrain_94
+  - first:
+      213: -6657910176551446250
+    second: PlatformerTerrain_95
+  - first:
+      213: -5950759505879302885
+    second: PlatformerTerrain_96
+  - first:
+      213: -2382356172546207586
+    second: PlatformerTerrain_97
+  - first:
+      213: 5381324578408525546
+    second: PlatformerTerrain_98
+  - first:
+      213: 4869469927397463869
+    second: PlatformerTerrain_99
+  - first:
+      213: 8925223242712363703
+    second: PlatformerTerrain_100
+  - first:
+      213: -6548311670937356085
+    second: PlatformerTerrain_101
+  - first:
+      213: 7412112694401800716
+    second: PlatformerTerrain_102
+  - first:
+      213: -2013038179363611320
+    second: PlatformerTerrain_103
+  - first:
+      213: -4145603074030517315
+    second: PlatformerTerrain_104
+  - first:
+      213: -5742810477619329975
+    second: PlatformerTerrain_105
+  - first:
+      213: -7473019986158363839
+    second: PlatformerTerrain_106
+  - first:
+      213: 7520000782815955314
+    second: PlatformerTerrain_107
+  - first:
+      213: 4698624543929086378
+    second: PlatformerTerrain_108
+  - first:
+      213: -5969471275183268251
+    second: PlatformerTerrain_109
+  - first:
+      213: 690227966940404340
+    second: PlatformerTerrain_110
+  - first:
+      213: -353792462257464445
+    second: PlatformerTerrain_111
+  - first:
+      213: -5702540400167736859
+    second: PlatformerTerrain_112
+  - first:
+      213: -3558075334997964941
+    second: PlatformerTerrain_113
+  - first:
+      213: -8364188365211864339
+    second: PlatformerTerrain_114
+  - first:
+      213: -5688165595842347642
+    second: PlatformerTerrain_115
+  - first:
+      213: -6311856600398299403
+    second: PlatformerTerrain_116
+  - first:
+      213: 2159354817289422796
+    second: PlatformerTerrain_117
+  - first:
+      213: 8742683521834352728
+    second: PlatformerTerrain_118
+  - first:
+      213: 639898768321028336
+    second: PlatformerTerrain_119
+  - first:
+      213: 8339867579815639440
+    second: PlatformerTerrain_120
+  - first:
+      213: 7608271048987601562
+    second: PlatformerTerrain_121
+  - first:
+      213: 7643181637888116538
+    second: PlatformerTerrain_122
+  - first:
+      213: 668915642447673079
+    second: PlatformerTerrain_123
+  - first:
+      213: 2836350181987211503
+    second: PlatformerTerrain_124
+  - first:
+      213: -85704848708847578
+    second: PlatformerTerrain_125
+  - first:
+      213: 6743823404327186255
+    second: PlatformerTerrain_126
+  - first:
+      213: -5211136778681765893
+    second: PlatformerTerrain_127
+  - first:
+      213: 4307030007462297479
+    second: PlatformerTerrain_128
+  - first:
+      213: 5518502365083148881
+    second: PlatformerTerrain_129
+  - first:
+      213: -259735593563413539
+    second: PlatformerTerrain_130
+  - first:
+      213: -2927637610844415936
+    second: PlatformerTerrain_131
+  - first:
+      213: 820902566503515554
+    second: PlatformerTerrain_132
+  - first:
+      213: -4432914278087403391
+    second: PlatformerTerrain_133
+  - first:
+      213: 7112096182296391258
+    second: PlatformerTerrain_134
+  - first:
+      213: 6637201838053653840
+    second: PlatformerTerrain_135
+  - first:
+      213: -7322450421510631149
+    second: PlatformerTerrain_136
+  - first:
+      213: -8360075505408122478
+    second: PlatformerTerrain_137
+  - first:
+      213: 8925493171319278857
+    second: PlatformerTerrain_138
+  - first:
+      213: -6040737359185540515
+    second: PlatformerTerrain_139
+  - first:
+      213: 7931347037389630084
+    second: PlatformerTerrain_140
+  - first:
+      213: 1160465105127926652
+    second: PlatformerTerrain_141
+  - first:
+      213: 3076391043012097307
+    second: PlatformerTerrain_142
+  - first:
+      213: -513017319038227824
+    second: PlatformerTerrain_143
+  - first:
+      213: -5523438057442828122
+    second: PlatformerTerrain_144
+  - first:
+      213: -436373813343142072
+    second: PlatformerTerrain_145
+  - first:
+      213: -3203329711911507069
+    second: PlatformerTerrain_146
+  - first:
+      213: -9050632856359732716
+    second: PlatformerTerrain_147
+  - first:
+      213: -2603327163491981375
+    second: PlatformerTerrain_148
+  - first:
+      213: -2984217283312744899
+    second: PlatformerTerrain_149
+  - first:
+      213: -3837562628274294110
+    second: PlatformerTerrain_150
+  - first:
+      213: -3237340713072349439
+    second: PlatformerTerrain_151
+  - first:
+      213: 4480951465328336485
+    second: PlatformerTerrain_152
+  - first:
+      213: 7012694466168395778
+    second: PlatformerTerrain_153
+  - first:
+      213: -1988366325198974940
+    second: PlatformerTerrain_154
+  - first:
+      213: 4384047764759798832
+    second: PlatformerTerrain_155
+  - first:
+      213: -8745054293518303673
+    second: PlatformerTerrain_156
+  - first:
+      213: 4408339518385805778
+    second: PlatformerTerrain_157
+  - first:
+      213: -6687578690497002068
+    second: PlatformerTerrain_158
+  - first:
+      213: -2196675524696521917
+    second: PlatformerTerrain_159
+  - first:
+      213: 3962870119767446198
+    second: PlatformerTerrain_160
+  - first:
+      213: 8260272656851624410
+    second: PlatformerTerrain_161
+  - first:
+      213: 5001706171157331114
+    second: PlatformerTerrain_162
+  - first:
+      213: -1857652164820275730
+    second: PlatformerTerrain_163
+  - first:
+      213: -7840327405743705503
+    second: PlatformerTerrain_164
+  - first:
+      213: -1490371959752129222
+    second: PlatformerTerrain_165
+  - first:
+      213: -8093160751820794952
+    second: PlatformerTerrain_166
+  - first:
+      213: 6075607773095800191
+    second: PlatformerTerrain_167
+  - first:
+      213: 8168567279585761032
+    second: PlatformerTerrain_168
+  - first:
+      213: 4206766645749080835
+    second: PlatformerTerrain_169
+  - first:
+      213: -3761215684414143261
+    second: PlatformerTerrain_170
+  - first:
+      213: -3267651347978354009
+    second: PlatformerTerrain_171
+  - first:
+      213: 5444554458219537949
+    second: PlatformerTerrain_172
+  - first:
+      213: 8315188825375470426
+    second: PlatformerTerrain_173
+  - first:
+      213: 28522731986258254
+    second: PlatformerTerrain_174
+  - first:
+      213: 7156570993352647286
+    second: PlatformerTerrain_175
+  - first:
+      213: 8476156701708538009
+    second: PlatformerTerrain_176
+  - first:
+      213: -127709528445819573
+    second: PlatformerTerrain_177
+  - first:
+      213: -3842096121001705038
+    second: PlatformerTerrain_178
+  - first:
+      213: -4630884214156043889
+    second: PlatformerTerrain_179
+  - first:
+      213: -5948234623148567456
+    second: PlatformerTerrain_180
+  - first:
+      213: -4635463281414519109
+    second: PlatformerTerrain_181
+  - first:
+      213: 588791036165645084
+    second: PlatformerTerrain_182
+  - first:
+      213: -2099303751748703479
+    second: PlatformerTerrain_183
+  - first:
+      213: -1657687905229060935
+    second: PlatformerTerrain_184
+  - first:
+      213: 8525418173044747208
+    second: PlatformerTerrain_185
+  - first:
+      213: 9139460481951435681
+    second: PlatformerTerrain_186
+  - first:
+      213: 4054605859354736250
+    second: PlatformerTerrain_187
+  - first:
+      213: -1452169393086370015
+    second: PlatformerTerrain_188
+  - first:
+      213: -8485733674380698988
+    second: PlatformerTerrain_189
+  - first:
+      213: -4798611030010303593
+    second: PlatformerTerrain_190
+  - first:
+      213: -3943351614208021367
+    second: PlatformerTerrain_191
+  - first:
+      213: -6833267219013503200
+    second: PlatformerTerrain_192
+  - first:
+      213: 5334957482356620137
+    second: PlatformerTerrain_193
+  - first:
+      213: 6209424241362886302
+    second: PlatformerTerrain_194
+  - first:
+      213: 3212463488926282165
+    second: PlatformerTerrain_195
+  - first:
+      213: 2351289878376353741
+    second: PlatformerTerrain_196
+  - first:
+      213: -2574608855405012852
+    second: PlatformerTerrain_197
+  - first:
+      213: -7110066084015152112
+    second: PlatformerTerrain_198
+  - first:
+      213: -1753059635881498455
+    second: PlatformerTerrain_199
+  - first:
+      213: 5166448196741133764
+    second: PlatformerTerrain_200
+  - first:
+      213: 5986970379300458329
+    second: PlatformerTerrain_201
+  - first:
+      213: 8263366924176993112
+    second: PlatformerTerrain_202
+  - first:
+      213: -9066096779427517386
+    second: PlatformerTerrain_203
+  - first:
+      213: 8175374862135109133
+    second: PlatformerTerrain_204
+  - first:
+      213: 7607098240624043555
+    second: PlatformerTerrain_205
+  - first:
+      213: 7884531935328584586
+    second: PlatformerTerrain_206
+  - first:
+      213: 188700001
+    second: InteriorWall
+  - first:
+      213: 188700002
+    second: InteriorCornice
+  - first:
+      213: 188700003
+    second: InteriorArcade
+  - first:
+      213: 188700004
+    second: InteriorColumnShaft
+  - first:
+      213: 188700005
+    second: InteriorColumnCapital
+  - first:
+      213: 188700006
+    second: InteriorColumnBase
+  - first:
+      213: 188700100
+    second: InteriorGround0_0
+  - first:
+      213: 188700101
+    second: InteriorGround1_0
+  - first:
+      213: 188700102
+    second: InteriorGround2_0
+  - first:
+      213: 188700103
+    second: InteriorGround3_0
+  - first:
+      213: 188700104
+    second: InteriorGround0_1
+  - first:
+      213: 188700105
+    second: InteriorGround1_1
+  - first:
+      213: 188700106
+    second: InteriorGround2_1
+  - first:
+      213: 188700107
+    second: InteriorGround3_1
+  - first:
+      213: 188700108
+    second: InteriorGround0_2
+  - first:
+      213: 188700109
+    second: InteriorGround1_2
+  - first:
+      213: 188700110
+    second: InteriorGround2_2
+  - first:
+      213: 188700111
+    second: InteriorGround3_2
+  - first:
+      213: 188700112
+    second: InteriorGround0_3
+  - first:
+      213: 188700113
+    second: InteriorGround1_3
+  - first:
+      213: 188700114
+    second: InteriorGround2_3
+  - first:
+      213: 188700115
+    second: InteriorGround3_3
+  - first:
+      213: 188700200
+    second: InteriorLedgeLeft
+  - first:
+      213: 188700201
+    second: InteriorLedgeRight
+  - first:
+      213: 188700210
+    second: InteriorWindowArch
+  - first:
+      213: 188700211
+    second: InteriorWindowJamb
+  - first:
+      213: 188700212
+    second: InteriorWindowSill
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Floor0_0
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 944
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 030eb9e935a6aec4d9ca9aa2c9dd5041
+      internalID: 702101902
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone0_0
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 928
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7fbe6703a1fd4c649abaf7c7117457dd
+      internalID: 364921205
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor0_1
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 944
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 48a1be1f94bf102478f037cedc7ad57c
+      internalID: -1756798581
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone0_1
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 928
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b2914d5d6b9025428e62b60994abcb7
+      internalID: -799490893
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor0_2
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 944
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9a4c2ccca3bc85a47b107394a078dc48
+      internalID: -402951858
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone0_2
+      rect:
+        serializedVersion: 2
+        x: 320
+        y: 928
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4bf355e39c56a0544aa9f97fff741417
+      internalID: 185641526
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor0_3
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 944
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 99ea55c6cfc698449b9bc75e8fac970e
+      internalID: -818369452
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone0_3
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 928
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc9cf6059c4baa04b9a9009bd70f908e
+      internalID: -1713462228
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform0_0
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 1072
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f65f18e2cbe79534193e8f4750eb51fc
+      internalID: -1534904545
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform0_1
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 1072
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0bff5db07d41ad64bb980bd4474514c4
+      internalID: -459117644
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform0_2
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 1072
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6efc17e612129474c866d0f2c963bb5b
+      internalID: 79271199
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor1_0
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 544
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a3386a85b957d0a47bf32db23748adc9
+      internalID: 1368381321
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone1_0
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 528
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: faf21340a64dbaa43a46cc1943365555
+      internalID: -311461014
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor1_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 544
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6f37e377c5ee3d42bc3afcc53c2eeb9
+      internalID: -1280402046
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone1_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 528
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8c3d680e5266d0246bdf9bca693910cf
+      internalID: 1385148165
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor1_2
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 544
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 44c83f3bd5c36fb4eb78649565a4970e
+      internalID: 1578451961
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone1_2
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 528
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b2490468a16fd20418ebeb8e5daaeb8f
+      internalID: -1027366235
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor1_3
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 544
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d90c917e0b0d124ca763b18945ae7b4
+      internalID: -1604502813
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone1_3
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 528
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a812142fe49cc29439e95c7ce5fc7288
+      internalID: 922534109
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform1_0
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 672
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d4f7e433903a56944aed0973192dc47b
+      internalID: 1884047077
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform1_1
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 672
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5eee67a4b0ca6444289770c9cee7fd88
+      internalID: -613475892
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform1_2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 672
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3452b98a42f6db74a91dca3f8136db7f
+      internalID: 1217020737
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor2_0
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 144
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d6244a0a9715d354f87d4cd0f7a2ba83
+      internalID: 1994279884
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone2_0
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 128
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fe98f77b0acb3d146b1f9d84e110c114
+      internalID: 501925187
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor2_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 144
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7ad1fec239993ce4e9cc7f285a9df9fc
+      internalID: -2101350533
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone2_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 128
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e8ba609602fc85f4f9ecb59c1ab6b58a
+      internalID: -144331860
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor2_2
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 144
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb8eefdac26fc574e9d989707b49c2e5
+      internalID: 1717794078
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone2_2
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 128
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4911c7d3027190f46bf774fc5faea12c
+      internalID: 491889807
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Floor2_3
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 144
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3870fb30574bec54faf16629831b2d2b
+      internalID: 1728806265
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Stone2_3
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 128
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a418c8063374cc74f91c3325d8c01130
+      internalID: 2088852535
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform2_0
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 272
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 312c5e2a96c7e9b478ff245bc20090fa
+      internalID: 491477921
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform2_1
+      rect:
+        serializedVersion: 2
+        x: 272
+        y: 272
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7098ceb9d133cee42a15cfee39835617
+      internalID: 1457580079
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Platform2_2
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 272
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7d198231ff0759e449644d143f16b233
+      internalID: 961573923
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Seal
+      rect:
+        serializedVersion: 2
+        x: 816
+        y: 992
+        width: 32
+        height: 176
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2731d29a5b4057a429548c476106d1ce
+      internalID: 1565781115
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Pillar
+      rect:
+        serializedVersion: 2
+        x: 1600
+        y: 1120
+        width: 16
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c97731e2352eb14429a5a8567789ebf9
+      internalID: -1205254694
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Window
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1120
+        width: 32
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 549f6a14b77f46a4e8a4b1c8533a6328
+      internalID: 322375353
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWall
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1120
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e14ab4012af456c188f96efe6ba7b3de
+      internalID: 188700001
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorCornice
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 1056
+        width: 112
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 97362b7be6f85b8d99f8da118437fac0
+      internalID: 188700002
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorArcade
+      rect:
+        serializedVersion: 2
+        x: 1088
+        y: 912
+        width: 144
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58403838ddb35ef49c678f70391d77d3
+      internalID: 188700003
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnShaft
+      rect:
+        serializedVersion: 2
+        x: 1392
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: adbd06fdefb045d48a3c1cf716fc27ac
+      internalID: 188700004
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnCapital
+      rect:
+        serializedVersion: 2
+        x: 1424
+        y: 1152
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e70e4cd81a6147ebbf1dae740d144a6d
+      internalID: 188700005
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorColumnBase
+      rect:
+        serializedVersion: 2
+        x: 1424
+        y: 1008
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 71d0fe95c7b04556825cf176bf03669d
+      internalID: 188700006
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_0
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52ceb28760985d528b26148145e0cc52
+      internalID: 188700100
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_0
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2921961cc6e513f99df09c8cd90fcfd
+      internalID: 188700101
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_0
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a6e5b2874ed45c0aabdfb086ff70c7b9
+      internalID: 188700102
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_0
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1168
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e19e8bd0996f5e8cbdf0e0c69081ab02
+      internalID: 188700103
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_1
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 17d4b213236c5daa9a369b9dfd75c208
+      internalID: 188700104
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_1
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 624f0a0bf6ba55f1842f8828670064cc
+      internalID: 188700105
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_1
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a9013a0c97465ca0a106fd339398ad10
+      internalID: 188700106
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_1
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1152
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 76839088aec35141a4edfa067cff7366
+      internalID: 188700107
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_2
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30baa023602a52b1bbeeecd09efc8f15
+      internalID: 188700108
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_2
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a676edbc70105604bd1add60fc67e520
+      internalID: 188700109
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_2
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9086ca18cbf05a6a90e323843b00ce99
+      internalID: 188700110
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_2
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1136
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d0a2a9c91744561b95109ce6313064f7
+      internalID: 188700111
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround0_3
+      rect:
+        serializedVersion: 2
+        x: 1168
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7b436d347e8c5f579bc64db831b73ad8
+      internalID: 188700112
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround1_3
+      rect:
+        serializedVersion: 2
+        x: 1184
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd483422fb855858a06e71beede5dfec
+      internalID: 188700113
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround2_3
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08cb36d033005344bc62e3ca41249588
+      internalID: 188700114
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorGround3_3
+      rect:
+        serializedVersion: 2
+        x: 1216
+        y: 1120
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3d9db544f03a5aeeb0f3ac1a55a6ebb7
+      internalID: 188700115
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorLedgeLeft
+      rect:
+        serializedVersion: 2
+        x: 208
+        y: 656
+        width: 48
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 40fbbad7fd5d5215a74648ec9fb2a465
+      internalID: 188700200
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorLedgeRight
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 656
+        width: 48
+        height: 32
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 16661646119758e98c532938b87e2fc3
+      internalID: 188700201
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowArch
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1152
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b99afe74cb665ee8b89299ba51762adb
+      internalID: 188700210
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowJamb
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1136
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 20fa9f4006415395b0110afab06d3e6c
+      internalID: 188700211
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InteriorWindowSill
+      rect:
+        serializedVersion: 2
+        x: 1552
+        y: 1120
+        width: 32
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 063780c677a45affb090bba399f449d6
+      internalID: 188700212
+      vertices: []
+      indices:
+      edges: []
+      weights: []
+    outline: []
+    customData:
+    physicsShape: []
+    bones: []
+    spriteID: 5c737946792a799438776c3d88e8ab32
+    internalID: 0
+    vertices: []
+    indices:
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Floor0_0: 702101902
+      Floor0_1: -1756798581
+      Floor0_2: -402951858
+      Floor0_3: -818369452
+      Floor1_0: 1368381321
+      Floor1_1: -1280402046
+      Floor1_2: 1578451961
+      Floor1_3: -1604502813
+      Floor2_0: 1994279884
+      Floor2_1: -2101350533
+      Floor2_2: 1717794078
+      Floor2_3: 1728806265
+      Pillar: -1205254694
+      Platform0_0: -1534904545
+      Platform0_1: -459117644
+      Platform0_2: 79271199
+      Platform1_0: 1884047077
+      Platform1_1: -613475892
+      Platform1_2: 1217020737
+      Platform2_0: 491477921
+      Platform2_1: 1457580079
+      Platform2_2: 961573923
+      Seal: 1565781115
+      Stone0_0: 364921205
+      Stone0_1: -799490893
+      Stone0_2: 185641526
+      Stone0_3: -1713462228
+      Stone1_0: -311461014
+      Stone1_1: 1385148165
+      Stone1_2: -1027366235
+      Stone1_3: 922534109
+      Stone2_0: 501925187
+      Stone2_1: -144331860
+      Stone2_2: 491889807
+      Stone2_3: 2088852535
+      Window: 322375353
+      InteriorWall: 188700001
+      InteriorCornice: 188700002
+      InteriorArcade: 188700003
+      InteriorColumnShaft: 188700004
+      InteriorColumnCapital: 188700005
+      InteriorColumnBase: 188700006
+      InteriorGround0_0: 188700100
+      InteriorGround1_0: 188700101
+      InteriorGround2_0: 188700102
+      InteriorGround3_0: 188700103
+      InteriorGround0_1: 188700104
+      InteriorGround1_1: 188700105
+      InteriorGround2_1: 188700106
+      InteriorGround3_1: 188700107
+      InteriorGround0_2: 188700108
+      InteriorGround1_2: 188700109
+      InteriorGround2_2: 188700110
+      InteriorGround3_2: 188700111
+      InteriorGround0_3: 188700112
+      InteriorGround1_3: 188700113
+      InteriorGround2_3: 188700114
+      InteriorGround3_3: 188700115
+      InteriorLedgeLeft: 188700200
+      InteriorLedgeRight: 188700201
+      InteriorWindowArch: 188700210
+      InteriorWindowJamb: 188700211
+      InteriorWindowSill: 188700212
+  mipmapLimitGroupName:
+  pSDRemoveMatte: 0
+  userData:
+  assetBundleName:
+  assetBundleVariant:

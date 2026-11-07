@@ -1,0 +1,488 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2116135982240745575
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8866078580113681940}
+  - component: {fileID: 1396390868960783075}
+  - component: {fileID: 9096975266081764243}
+  - component: {fileID: 1582427697236025204}
+  - component: {fileID: 4746578740452528756}
+  - component: {fileID: 8186299191017252677}
+  - component: {fileID: 8151520561007178528}
+  - component: {fileID: 6308225462173386905}
+  - component: {fileID: 6529180636515589746}
+  - component: {fileID: 3230661664895121193}
+  - component: {fileID: 7302189275933370851}
+  - component: {fileID: 3608538687230886213}
+  - component: {fileID: 7138799533125009962}
+  - component: {fileID: 6455396816621203815}
+  - component: {fileID: 5298411138573312401}
+  - component: {fileID: 1995138297358303125}
+  m_Layer: 0
+  m_Name: Player
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8866078580113681940
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.21, y: -1.15, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6043598783600447505}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &1396390868960783075
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 33
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: 1061527380459089461, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 1, y: 2}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
+--- !u!70 &9096975266081764243
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 6200000, guid: 8569f4a5e36a40ccabffbde3eca5148b, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Size: {x: 1, y: 2}
+  m_Direction: 0
+--- !u!50 &1582427697236025204
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0
+  m_GravityScale: 4
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 4
+--- !u!114 &4746578740452528756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fefc0b418b5e474d968906d858c3351, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMove
+  moveSpeed: 7
+  jumpPower: 15.64
+  jumpSound: {fileID: 8300000, guid: 23ad3fec84cdcb845ab0d00a3148cffb, type: 3}
+  jumpSoundVolume: 0.8
+  groundCheck: {fileID: 6043598783600447505}
+  groundCheckRadius: 0.2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+--- !u!114 &8186299191017252677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f4d56ec5862a98499342b760b84b024, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerAttack
+  attackMouseButton: 0
+  comboSteps:
+  - name: "1\uD0C0: \uC219\uC774\uBA70 \uC9E7\uC740 \uC0AC\uC120 \uBCA0\uAE30"
+    damage: 10
+    hitboxSize: {x: 1.5, y: 1}
+    hitboxOffset: {x: 0.8, y: 0.2}
+    hitboxAngle: -30
+    windupTime: 0.07
+    recoveryTime: 0.16
+    comboWindow: 0.35
+    lungeDistance: 0.5
+    knockback: 2
+    launchUp: 0
+  - name: "2\uD0C0: \uBC18\uB300\uB85C \uAE38\uAC8C \uBCA0\uAE30"
+    damage: 12
+    hitboxSize: {x: 2.1, y: 1.1}
+    hitboxOffset: {x: 1, y: 0.2}
+    hitboxAngle: 30
+    windupTime: 0.09
+    recoveryTime: 0.2
+    comboWindow: 0.35
+    lungeDistance: 0.8
+    knockback: 3
+    launchUp: 0
+  - name: "3\uD0C0: \uB0AE\uCD94\uBA70 \uC804\uC9C4 \uCC0C\uB974\uAE30"
+    damage: 14
+    hitboxSize: {x: 2.4, y: 0.6}
+    hitboxOffset: {x: 1.4, y: -0.3}
+    hitboxAngle: 0
+    windupTime: 0.1
+    recoveryTime: 0.24
+    comboWindow: 0.4
+    lungeDistance: 1.8
+    knockback: 4
+    launchUp: 0
+  airAttack:
+    name: "공중: 아래 부채꼴 내리찍기"
+    damage: 14
+    hitboxSize: {x: 2.2, y: 1.2}
+    hitboxOffset: {x: 0, y: 0}
+    hitboxAngle: 0
+    windupTime: 0.05
+    recoveryTime: 0.22
+    comboWindow: 0
+    lungeDistance: 0
+    knockback: 0
+    launchUp: 0
+  downFanRadius: 2.6
+  downFanHalfAngle: 65
+  downFanOriginOffset: {x: 0, y: -0.2}
+  downFanEnemyKnockDown: 4
+  downFanEnemyKnockOut: 2
+  downFanPlayerBounce: 8
+  airAttackResetOnLand: 1
+  downFanImpact: {fileID: 0}
+  spawnDownFanImpact: 1
+  spawnSwingSlash: 1
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  finishHitStop: 0.06
+  attackSounds:
+  - {fileID: 8300000, guid: 7fb3b3884d65d554899f5b7bca5fa89b, type: 3}
+  - {fileID: 8300000, guid: e2330ddab7c3015449561a55320de260, type: 3}
+  - {fileID: 8300000, guid: 607959e264035ef4e9280e6230061891, type: 3}
+  attackSoundVolume: 0.8
+--- !u!114 &8151520561007178528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92241588bfa811146bbdafc90ab3bf00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHitReact
+  hitCrouchScaleY: 0.75
+  hitCrouchDuration: 0.18
+--- !u!114 &6308225462173386905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b480ce343042d6240b342e09dfc79405, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerBody
+--- !u!114 &6529180636515589746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4877988a808fcd40be389870ca97472, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerDash
+  dashKey: 304
+  dashSpeed: 14
+  dashTime: 0.18
+  cooldown: 0.6
+  afterimagePrefab: {fileID: 1735912237729643026, guid: b5d591fa3e5933a4094ab4296da9cd46, type: 3}
+  afterimageTint: {r: 0.6, g: 0.8, b: 1, a: 0.45}
+  dashSound: {fileID: 8300000, guid: ce93c474f714deb4d9e886f15c945c2f, type: 3}
+  dashSoundVolume: 0.8
+--- !u!114 &3230661664895121193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1277b7c0a634e8a8ba71061b7695911, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerCombatEvents
+--- !u!114 &7302189275933370851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79ad4292fa453e848b08acf02ce097ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CombatAfterimageEmitter
+  emissionInterval: 0.05
+--- !u!114 &3608538687230886213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1647dcdab11986d45b5fd6d7669ae56e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerHealth
+  maxHp: 150
+  invulnerabilityDuration: 0.6
+  blinkInterval: 0.2
+  bodyCollider: {fileID: 9096975266081764243}
+  lowHealthRatio: 0.3
+  deathSound: {fileID: 8300000, guid: bc159f978eb98d843a8990987d8a1493, type: 3}
+  deathSoundVolume: 0.9
+--- !u!114 &7138799533125009962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28d4e5c3d21f24845b1177e6d8806dc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineStats
+  baseAttack: 10
+--- !u!114 &6455396816621203815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b3d67a7fb2386c4b92330c55068b3e9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::DoctrineSubject
+  Identity: 1
+--- !u!114 &5298411138573312401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c9176fdf634963aa2d7d803e2a7c51, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIdleSpriteAnimator
+  idleFrames:
+  - {fileID: 1061527380459089461, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  - {fileID: 6207771810069409013, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  - {fileID: -2380374124312247100, guid: 926e0dda219ed3c4fabc449e5b706288, type: 3}
+  idleFramesPerSecond: 4
+  walkFrames:
+  - {fileID: 8598911646308356358, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -8971905496091981746, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: -2912558134338543859, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  - {fileID: 1712548768681341929, guid: 00b81cb0034264049962decae96c480f, type: 3}
+  walkFramesPerSecond: 8
+  dashFrame: {fileID: -1306790213, guid: 58137705221c05b4bbb520abb9f84074, type: 3}
+  jumpFrames:
+  - {fileID: -9062837415071662908, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  - {fileID: 8245629656952527113, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  - {fileID: -8619526791323513395, guid: 4edfa7c366addaf4ab07c7649e6dc069, type: 3}
+  jumpVelocityThreshold: 1
+  deadFrames:
+  - {fileID: -5965892656687719484, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  - {fileID: -2164901213922389267, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  - {fileID: 4383519046183800969, guid: 0f35782f88fcaff40ab6284ae3102970, type: 3}
+  deadFramesPerSecond: 5
+  downAttackFrames:
+  - {fileID: 6074012789666076083, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  - {fileID: -7027990949269339174, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  - {fileID: 1427495894719679787, guid: 4a49dba0ea5cfca48a48b01757c8a962, type: 3}
+  downAttackFramesPerSecond: 12
+  attack1Frames:
+  - {fileID: -4518302543605216317, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -1461705153809937357, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -5254297954493108069, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attack2Frames:
+  - {fileID: 427998804050586947, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -2551861374933727485, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: 3193601639079225981, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attack3Frames:
+  - {fileID: 740032103608935834, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: -8694810538317637598, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  - {fileID: 7975911915541452761, guid: 0e05833c8edc6a745b761ee8daa729b8, type: 3}
+  attackFramesPerSecond: 14
+  movementThreshold: 0.08
+--- !u!1 &2626817653940688287
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6043598783600447505}
+  m_Layer: 0
+  m_Name: GroundCheck
+  m_TagString: Untagged
+  m_Icon: {fileID: 8418204508859773708, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6043598783600447505
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2626817653940688287}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.010000229, y: -0.82000005, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8866078580113681940}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1995138297358303125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116135982240745575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3595845daf149238c855926643513fd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: BelieveInTheClouds.Runtime::PlayerProximityLight
+  lightColor: {r: 1, g: 0.84, b: 0.67, a: 1}
+  intensity: 0.55
+  innerRadius: 1.2
+  outerRadius: 4
+  falloffIntensity: 0.75

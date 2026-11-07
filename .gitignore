@@ -104,3 +104,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Local tool config (contains API keys)
+opencode.json
+
+# Local compile check leftovers (csc output)
+/*.dll
+/Temp/*.dll
