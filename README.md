@@ -56,3 +56,11 @@ Unity에서 **`Assets/Scenes/Tests/ChestTest.unity`를 열고 Play**하면 상�
 플레이어 사망 시 현재 씬 위에 결과 UI가 열리고 게임이 정지한다. **이어하기**를 누르면 기존 사망 페널티 적용 후 로비로 복귀하며, **저장 및 종료**를 누르면 같은 페널티와 결과 기록을 저장한 뒤 최소 타이틀 씬으로 이동한다. 타이틀의 ‘로비로 이동’은 기존 로비 흐름을 사용한다.
 
 통계·캡처·저장 정책·변경 파일·검증 결과는 [사망 결과 UI 구현 결과](Docs/DeathResultSystem_ImplementationStatus.md)를 참고한다. 일반 Editor Play는 기존처럼 메모리 저장이며, 디스크 저장 검증에는 `-usePersistentEditorProfile`을 사용한다.
+
+## 1.1 첫 재단 스토리
+
+`codex/first-altar-story-v1.1`은 1.0 완료 기준인 `main`의 `781af6d`에서 시작했다. 첫 재단 스토리의 전용 방·신도 연출·임시 스토리 UI·저장 및 복귀 흐름을 구현했다. [상세기획](Docs/FirstAltarStory_Design.md), [개발명세서](Docs/FirstAltarStory_TechnicalSpec.md), [구현·검증 결과](Docs/FirstAltarStory_ImplementationStatus.md)를 참고한다.
+
+신규 프로필은 튜토리얼 다음 첫 일반 전투 출구에서, 1.0 기존 프로필은 업데이트 후 다음 일반 전투 출구에서 프로필당 한 번 진입한다.
+
+Puri에서 기존 개발 내용·Leesc·1.1을 합친 기준과 파일 보존·컴파일 결과는 [통합 기록](Docs/PuriStoryLeescIntegration_2026-11-12.md)에 정리했다.

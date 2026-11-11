@@ -9,6 +9,7 @@ public static class UiModal
     private static readonly List<object> Owners = new List<object>();
 
     public static bool IsOpen => Owners.Count > 0;
+    public static bool IsTop(object owner) => Owners.Count > 0 && ReferenceEquals(Owners[Owners.Count - 1], owner);
 
     /// <summary>모달이 닫기 입력을 요청할 때 발생.</summary>
     public static event Action CloseRequested;

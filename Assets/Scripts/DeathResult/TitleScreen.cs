@@ -173,8 +173,7 @@ public sealed class TitleScreen : MonoBehaviour
         }
 
         bool firstStart = PlayerPrefs.GetInt(TutorialStartedKey, 0) == 0;
-        bool hasExistingRun = Currency.Service.Snapshot().hasRun;
-        bool enterTutorial = firstStart && !hasExistingRun;
+        bool enterTutorial = Currency.Service.TutorialState == TutorialProgress.NotCompleted;
         string destination = enterTutorial ? "Tutorial" : LobbyFlowRuntime.LobbyScene;
         try
         {

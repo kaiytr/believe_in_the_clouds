@@ -41,6 +41,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Ending.unity
     guid: 264eed21b105464591288b6927c52b0a
+  - enabled: 1
+    path: Assets/Scenes/Story/FirstAltarStory.unity
+    guid: 1e19fe1567c24d3449411532611145a0
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

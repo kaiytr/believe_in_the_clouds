@@ -6,6 +6,7 @@ public sealed class DevToolsRefs : MonoBehaviour
 {
     [SerializeField] private Button grantCoins, damage, death, resetAndGoToTitle;
     [SerializeField] private Button heal, unlockBoss, rerollBranches;
+    [SerializeField] private Button storyPreview, endStoryPreview;
     [SerializeField] private Text status, feedback;
 
     public Button GrantCoins => grantCoins;
@@ -15,8 +16,11 @@ public sealed class DevToolsRefs : MonoBehaviour
     public Button Heal => heal;
     public Button UnlockBoss => unlockBoss;
     public Button RerollBranches => rerollBranches;
+    public Button StoryPreview => storyPreview;
+    public Button EndStoryPreview => endStoryPreview;
     public Text Status => status;
     public Text Feedback => feedback;
     public bool IsComplete => grantCoins != null && damage != null && death != null && resetAndGoToTitle != null &&
-        heal != null && unlockBoss != null && rerollBranches != null && status != null && feedback != null;
+        heal != null && unlockBoss != null && rerollBranches != null && storyPreview != null && endStoryPreview != null &&
+        status != null && feedback != null;
 }

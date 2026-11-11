@@ -9,6 +9,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     public const string LobbyScene = "Lobby";
     public const string ShopScene = "Shop";
     public const string BossScene = "Boss";
+    public const string FirstAltarScene = "FirstAltarStory";
     public static LobbyFlowRuntime Instance { get; private set; }
     public LobbyRunData State { get; private set; }
     public string Message { get; private set; } = "";
@@ -24,12 +25,33 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     private bool healthPending, restoring;
     private bool playLoopTestMode;
     private int inputAfterFrame;
+    private float nextRouteRetry;
+    private bool developerPreviewSuspended, enabledBeforePreview;
+
+    public void SuspendForDeveloperPreview()
+    {
+        enabledBeforePreview = enabled; developerPreviewSuspended = true; enabled = false;
+        if (Instance == this) Instance = null;
+    }
+    public void ResumeFromDeveloperPreview()
+    {
+        Instance = this; developerPreviewSuspended = false;
+        inputAfterFrame = Time.frameCount + 2; nextCheckpoint = Time.unscaledTime + .75f;
+        enabled = enabledBeforePreview;
+    }
+    public void DiscardDeveloperPreviewRouter()
+    {
+        enabled = false; UnbindPlayer(); Scene = null;
+        if (Instance == this) Instance = null;
+        Destroy(gameObject);
+    }
     private string developerRerollId, developerRerollRun, developerRerollBatch;
     private int developerRerollClears;
 
     public bool IsPlayLoopTestMode => playLoopTestMode;
     public bool HasPendingDeveloperReroll => developerRerollId != null;
-    public bool CanUseDeveloperRunTools => InputReady && !PlayerDeathCoordinator.IsResultOpen;
+    public bool CanUseDeveloperRunTools => InputReady && !PlayerDeathCoordinator.IsResultOpen &&
+        (State.area == RunArea.Lobby || State.area == RunArea.TemporaryStage);
     public bool CanRerollLobbyForDevelopment => CanUseDeveloperRunTools && Scene.IsLobby &&
         State.area == RunArea.Lobby && !State.hasStage;
 
@@ -102,8 +124,12 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
             State.batchId != developerRerollBatch || State.combatClears != developerRerollClears))
             ClearDeveloperReroll();
     }
-    private bool MatchesScene() => Scene != null && State != null &&
-        (Scene.IsLobby ? State.area == RunArea.Lobby : State.area == RunArea.TemporaryStage || State.area == RunArea.Complete);
+    private bool MatchesScene() => Scene != null && State != null && Scene.gameObject.scene.name == DestinationScene() &&
+        (Scene.IsStoryRoom ? State.area == RunArea.StoryRoom : Scene.IsLobby ? State.area == RunArea.Lobby :
+            State.area == RunArea.TemporaryStage || State.area == RunArea.Complete);
+
+    private string DestinationScene() => State?.area == RunArea.StoryRoom ? FirstAltarScene :
+        State == null || State.area == RunArea.Lobby || State.area == RunArea.Dying ? LobbyScene : StageSceneForCurrentRun();
 
     public bool IsActiveRunStage(BranchRole role) => State != null &&
         State.hasStage && State.stage.role == role &&
@@ -173,7 +199,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         // the committed destination has the same scene name.
         if (!MatchesScene() || (State.area == RunArea.Lobby && player != null && player.IsDead))
         {
-            if (!IsTransitioning) StartCoroutine(Route(State.area == RunArea.Lobby ? LobbyScene : StageSceneForCurrentRun()));
+            if (!IsTransitioning && Time.unscaledTime >= nextRouteRetry) StartCoroutine(Route(DestinationScene()));
             return;
         }
         if (!IsTransitioning && State.area != RunArea.Complete && player != null && !player.IsDead &&
@@ -196,7 +222,15 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     {
         IsTransitioning = true; Scene?.SetPlayable(false);
         yield return null; // Consume the press in the old scene only.
-        AsyncOperation load = SceneManager.LoadSceneAsync(sceneName);
+        AsyncOperation load = null;
+        try { load = SceneManager.LoadSceneAsync(sceneName); }
+        catch (System.Exception ex) { Message = "씬 전환 실패 · 재시도 중: " + ex.Message; }
+        if (load == null)
+        {
+            IsTransitioning = false;
+            nextRouteRetry = Time.unscaledTime + 1f;
+            yield break;
+        }
         while (load != null && !load.isDone) yield return null;
         IsTransitioning = false;
         inputAfterFrame = Time.frameCount + 2;
@@ -208,6 +242,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     }
     private void SavePlayerCheckpoint()
     {
+        if (developerPreviewSuspended) return;
         if (IsTransitioning || !MatchesScene() || player == null || player.IsDead || State == null || NeedsMaxHpSync || State.area == RunArea.Complete) return;
         CurrencyResult result = Service.TryCheckpointRun(player.CurrentHp, player.transform.position);
         healthPending = !result.Success;
@@ -236,13 +271,29 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     {
         if (!InputReady || !State.hasStage) return Report(CurrencyResult.Failed(EconomyError.StateConflict));
         CurrencyResult result = Report(Service.TryReturnFromStage(State.stage.id, player.CurrentHp));
-        if (result.Success && playLoopTestMode)
+        if (result.Success && playLoopTestMode && State.area == RunArea.Lobby)
         {
             CurrencyResult candidates = Service.TryConfigurePlayLoopTestCandidates();
             if (candidates.Success) Report(candidates);
             else Debug.LogError("Could not prepare the next play loop test branches: " + candidates.Error, this);
         }
-        if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(LobbyScene));
+        if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(DestinationScene()));
+        return result;
+    }
+
+    public CurrencyResult LeaveFirstAltar(string instanceId)
+    {
+        if (!InputReady || State.area != RunArea.StoryRoom || UiModal.IsOpen)
+            return Report(CurrencyResult.Failed(EconomyError.StateConflict));
+        CurrencyResult result = Report(Service.TryLeaveFirstAltar(instanceId, player.CurrentHp));
+        if (result.Success && FirstAltarStoryPreview.IsActive)
+        {
+            FirstAltarStoryPreview.TryReturn();
+            return result;
+        }
+        if (result.Success && playLoopTestMode && State.area == RunArea.Lobby)
+            Report(Service.TryConfigurePlayLoopTestCandidates());
+        if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(DestinationScene()));
         return result;
     }
 
