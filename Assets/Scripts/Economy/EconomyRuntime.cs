@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(-1000)]
 public sealed class EconomyRuntime : MonoBehaviour
 {
+    public const string TutorialPreviewKey = "believe_in_the_clouds.tutorial_preview_once";
     public static EconomyRuntime Instance { get; private set; }
     public EconomySettings Settings { get; private set; }
     private CoinFlightView flightView;
@@ -49,11 +50,13 @@ public sealed class EconomyRuntime : MonoBehaviour
         bool testRun = Array.Exists(arguments, arg => arg.Equals("-runTests", StringComparison.OrdinalIgnoreCase));
         bool usePersistentEditorProfile = Array.Exists(arguments,
             arg => arg.Equals("-usePersistentEditorProfile", StringComparison.OrdinalIgnoreCase));
+        bool tutorialPreview = !testRun && Application.isEditor && PlayerPrefs.GetInt(TutorialPreviewKey, 0) != 0;
+        if (tutorialPreview) { PlayerPrefs.DeleteKey(TutorialPreviewKey); PlayerPrefs.Save(); }
 
         // Each Editor Play starts clean for scene iteration. Pass
         // -usePersistentEditorProfile only when deliberately testing save/resume in the Editor.
         // Released builds continue using persistentDataPath.
-        if (testRun || (Application.isEditor && !usePersistentEditorProfile))
+        if (testRun || tutorialPreview || (Application.isEditor && !usePersistentEditorProfile))
             store = new MemoryEconomyStore();
         else
         {

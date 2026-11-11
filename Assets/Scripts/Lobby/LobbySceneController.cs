@@ -5,6 +5,7 @@ using UnityEngine;
 public sealed class LobbySceneController : MonoBehaviour
 {
     [SerializeField] private bool isLobby = true;
+    [SerializeField] private bool isStoryRoom;
     [SerializeField] private PlayerHealth player;
     [SerializeField] private LobbyBranchInteractable branchPrefab;
     [SerializeField] private Transform[] twoCandidateSlots = new Transform[2];
@@ -27,6 +28,7 @@ public sealed class LobbySceneController : MonoBehaviour
     [SerializeField] private AudioClip exitRevealSound;
     [SerializeField, Range(0f, 1f)] private float exitRevealSoundVolume = 0.9f;
     public bool IsLobby => isLobby;
+    public bool IsStoryRoom => isStoryRoom;
     public PlayerHealth Player => player;
     private LobbyFlowRuntime flow;
     private GameObject generated;
@@ -40,7 +42,7 @@ public sealed class LobbySceneController : MonoBehaviour
     {
         if (player == null) player = FindFirstObjectByType<PlayerHealth>();
 
-        if (!isLobby && runStageOnly)
+        if (!isLobby && !isStoryRoom && runStageOnly)
         {
             flow = LobbyFlowRuntime.Instance;
 
@@ -71,7 +73,7 @@ public sealed class LobbySceneController : MonoBehaviour
         flow.Attach(this);
     }
     public Vector2 ClampPosition(Vector2 position) => new Vector2(Mathf.Clamp(position.x, isLobby ? lobbyMinX : stageMinX, isLobby ? lobbyMaxX : stageMaxX),
-        Mathf.Clamp(position.y, authoredExit != null ? -3f : -1.95f, stageMaxY));
+        Mathf.Clamp(position.y, isStoryRoom ? -3f : authoredExit != null ? -3f : -1.95f, stageMaxY));
 
     public void SetPlayable(bool value)
     {
@@ -86,6 +88,7 @@ public sealed class LobbySceneController : MonoBehaviour
     private void Update()
     {
         if (flow == null || flow.Scene != this) return;
+        if (isStoryRoom) return; // StoryRoomFlow owns authored NPC, altar and exit presentation.
         LobbyRunData run = flow.State;
         if (run == null) return;
         bool matches = isLobby ? run.area == RunArea.Lobby : run.area == RunArea.TemporaryStage || run.area == RunArea.Complete;

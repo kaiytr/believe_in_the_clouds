@@ -10,7 +10,7 @@ public sealed class FieldMusic : MonoBehaviour
 {
     private const string ClipPath = "Sounds/FieldBgm";
     private const float Volume = .5f, FadeSeconds = .8f;
-    private static readonly string[] SilentScenes = { "Title", "Boss", "Ending" };
+    private static readonly string[] SilentScenes = { "Title", "Boss", "Ending", "FirstAltarStory" };
 
     private static FieldMusic instance;
     private AudioSource source;

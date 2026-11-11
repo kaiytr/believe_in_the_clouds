@@ -81,6 +81,7 @@ public sealed class JsonEconomyStore : IEconomyStore
                 !json.Contains("\"pendingGrants\"") || !json.Contains("\"processedTransactions\""))
                 return new EconomyLoadResult(EconomyLoadStatus.Invalid);
             var data = JsonUtility.FromJson<EconomyProfileData>(json);
+            int sourceVersion = data != null ? data.schemaVersion : 0;
             data?.Normalize();
             if (data != null && data.schemaVersion > EconomyProfileData.CurrentSchemaVersion)
                 return new EconomyLoadResult(EconomyLoadStatus.FutureVersion);
@@ -91,14 +92,64 @@ public sealed class JsonEconomyStore : IEconomyStore
                 if (data.hasRun) return new EconomyLoadResult(EconomyLoadStatus.Invalid);
                 data.schemaVersion = 2;
             }
-            if (data != null && data.schemaVersion >= 2 && data.schemaVersion <= 3)
+            if (data != null && sourceVersion >= 1 && sourceVersion <= 4)
+            {
+                data.narrative = new NarrativeProgressData { tutorial = TutorialProgress.LegacyEligible };
                 data.schemaVersion = EconomyProfileData.CurrentSchemaVersion;
+            }
+            else if (data != null && sourceVersion == 5 && !HasNarrativeFields(json))
+                return new EconomyLoadResult(EconomyLoadStatus.Invalid);
             return EconomyLedger.Validate(data)
                 ? new EconomyLoadResult(EconomyLoadStatus.Loaded, data)
                 : new EconomyLoadResult(EconomyLoadStatus.Invalid);
         }
         catch (Exception ex) when (IsStorageException(ex) || ex is ArgumentException)
         { return new EconomyLoadResult(EconomyLoadStatus.Invalid); }
+    }
+
+    private static bool HasNarrativeFields(string json)
+    {
+        // Missing fields must not acquire new-profile initializers and replay a completed story.
+        // Check at the correct object depth; a death journal also has a field named "phase".
+        string narrative = JsonField(json, "narrative");
+        string story = JsonField(narrative, "firstAltar");
+        return int.TryParse(JsonField(narrative, "version"), out int version) && version == 1 &&
+            int.TryParse(JsonField(narrative, "tutorial"), out _) && int.TryParse(JsonField(story, "phase"), out _);
+    }
+
+    private static string JsonField(string json, string field)
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+        int depth = 0;
+        for (int i = 0; i < json.Length; i++)
+        {
+            char ch = json[i];
+            if (ch == '{' || ch == '[') { depth++; continue; }
+            if (ch == '}' || ch == ']') { depth--; continue; }
+            if (ch != '"') continue;
+            int first = ++i;
+            while (i < json.Length && json[i] != '"') { if (json[i] == '\\') i++; i++; }
+            if (i >= json.Length) return null;
+            string key = json.Substring(first, i - first);
+            if (depth != 1 || key != field) continue;
+            int value = i + 1;
+            while (value < json.Length && char.IsWhiteSpace(json[value])) value++;
+            if (value >= json.Length || json[value++] != ':') continue;
+            while (value < json.Length && char.IsWhiteSpace(json[value])) value++;
+            int end = value, nested = 0;
+            bool quoted = false;
+            for (; end < json.Length; end++)
+            {
+                char part = json[end];
+                if (quoted) { if (part == '\\') end++; else if (part == '"') quoted = false; continue; }
+                if (part == '"') { quoted = true; continue; }
+                if (part == '{' || part == '[') nested++;
+                else if (part == '}' || part == ']') { if (nested == 0) break; nested--; }
+                else if (part == ',' && nested == 0) break;
+            }
+            return json.Substring(value, end - value).Trim();
+        }
+        return null;
     }
 
     private static void WriteFlushed(string path, string json)

@@ -56,7 +56,7 @@ public sealed class DevToolsPanel : MonoBehaviour
     private void Update()
     {
         if (panel == null) return;
-        if (Input.GetKeyDown(ToggleKey)) SetOpen(!panel.activeSelf);
+        if (Input.GetKeyDown(ToggleKey) && (!StoryRoomFlow.BlocksDeveloperActions || panel.activeSelf)) SetOpen(!panel.activeSelf);
         if (!panel.activeSelf) return;
 
         PlayerHealth player = FindPlayer();
@@ -66,7 +66,7 @@ public sealed class DevToolsPanel : MonoBehaviour
         refs.Death.interactable = canModify;
         refs.Heal.interactable = canModify && player.CurrentHp < player.MaxHp;
         bool safe = !PlayerDeathCoordinator.IsResultOpen && !(Currency.Service?.HasPendingDeath ?? false) &&
-            !(flow?.IsTransitioning ?? false);
+            !(flow?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions;
         refs.GrantCoins.interactable = Currency.IsReady && safe;
         refs.ResetAndGoToTitle.interactable = safe;
         refs.UnlockBoss.interactable = flow != null && flow.CanUseDeveloperRunTools && !flow.HasPendingDeveloperReroll;
@@ -100,7 +100,7 @@ public sealed class DevToolsPanel : MonoBehaviour
 
     private static bool CanModifyPlayer(PlayerHealth player) => player != null && !player.IsDead && Currency.IsReady &&
         !PlayerDeathCoordinator.IsResultOpen && !(Currency.Service?.HasPendingDeath ?? false) &&
-        !(LobbyFlowRuntime.Instance?.IsTransitioning ?? false);
+        !(LobbyFlowRuntime.Instance?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions;
 
     private void GrantCoins() => ShowResult(Currency.TryGrant(100, "dev.tools.grant"), "100코인을 지급했습니다.");
 
@@ -169,6 +169,7 @@ public sealed class DevToolsPanel : MonoBehaviour
     // Afterwards "시작하기" behaves like a brand-new game.
     private void ResetAndGoToTitle()
     {
+        if (StoryRoomFlow.BlocksDeveloperActions) return;
         if (EconomyRuntime.Instance != null && !EconomyRuntime.Instance.ResetSavedProfile())
         {
             ShowFeedback("저장 파일을 지우지 못했습니다. 파일이 열려 있지 않은지 확인하세요.", true);
