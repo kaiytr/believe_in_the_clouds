@@ -70,6 +70,14 @@ public class DoctrineSlotStore : MonoBehaviour
     }
 
     /// <summary>교리 칸을 1개 늘린다. 새 총 개수를 반환한다.</summary>
+    /// <summary>Developer reset: back to the default slot count.</summary>
+    public void ResetToDefault()
+    {
+        if (slotCount == DefaultSlots) return;
+        slotCount = DefaultSlots;
+        Changed?.Invoke();
+    }
+
     public int PurchaseSlot()
     {
         slotCount++;

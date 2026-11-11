@@ -35,6 +35,18 @@ public sealed class JsonEconomyStore : IEconomyStore
         return new EconomyLoadResult(EconomyLoadStatus.Invalid);
     }
 
+    /// <summary>Deletes the save file and its backup/recovery/temp copies (developer reset). True when none remain.</summary>
+    public bool DeleteSaveFiles()
+    {
+        bool clean = true;
+        foreach (string path in new[] { FilePath, FilePath + ".bak", FilePath + ".tmp", FilePath + ".recover" })
+        {
+            try { if (File.Exists(path)) File.Delete(path); }
+            catch (Exception ex) when (IsStorageException(ex)) { clean = false; }
+        }
+        return clean;
+    }
+
     public bool TrySave(EconomyProfileData data)
     {
         if (!allowWrite || !EconomyLedger.Validate(data)) return false;

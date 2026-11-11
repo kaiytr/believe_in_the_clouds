@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // - 1920x1080 기준으로 그려진 Assets/Design/Settings 아트를 런타임 UI로 재구성한다.
 // - 화면 모드: 전체 모드(FullScreenWindow) / 창 모드(Windowed) 2종을 실제로 전환한다.
 // - 사운드 볼륨: 슬라이더 값이 AudioListener.volume에 즉시 반영된다.
-// - 값은 PlayerPrefs에 저장되어 다음 실행에도 유지된다.
+// - 볼륨은 다음 실행에도 유지되며, PC 빌드는 항상 전체 모드로 시작한다.
 // - ESC로 열고, 열린 상태에서는 ESC(또는 E)로 닫는다.
 public class SettingsScreen : MonoBehaviour
 {
@@ -213,6 +213,11 @@ public class SettingsScreen : MonoBehaviour
         volumeSlider.SetValueWithoutNotify(volume);
         ApplyVolume(volume, false);
 
+#if UNITY_STANDALONE && !UNITY_EDITOR
+        // 이전 실행에서 창 모드를 선택했어도 시작 화면은 전체 모드로 표시한다.
+        ApplyScreenMode(true);
+        PlayerPrefs.SetInt(FullscreenKey, 1);
+#else
         int savedFullscreen = PlayerPrefs.GetInt(FullscreenKey, -1);
         if (savedFullscreen >= 0)
         {
@@ -222,6 +227,8 @@ public class SettingsScreen : MonoBehaviour
         {
             isFullscreen = Screen.fullScreenMode != FullScreenMode.Windowed;
         }
+
+#endif
 
         RefreshModeLabel();
     }

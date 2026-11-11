@@ -21,7 +21,7 @@ public sealed partial class EconomyService
             var state = new ChestStageState { stageInstanceId = normalized.stageInstanceId,
                 layoutVersion = normalized.layoutVersion, rewardTableVersion = normalized.rewardTableVersion, manifestHash = hash };
             foreach (string spawnId in normalized.spawnIds)
-                state.records.Add(ChestRules.Plan(normalized.stageInstanceId, spawnId));
+                state.records.Add(ChestRules.Plan(normalized.stageInstanceId, spawnId, normalized.rewardTableVersion));
             data.run.stage.hasChestState = true;
             data.run.stage.chestState = state;
             return Success(0, 0, data.balance, id);
@@ -51,6 +51,7 @@ public sealed partial class EconomyService
             if (applied > 0) data.pendingGrants.Add(CreateGrant(id, applied));
             record.opened = true; record.openTransactionId = id; record.appliedCoins = applied;
             reward = new ChestRewardReceipt { stageInstanceId = stageId, spawnId = spawnId,
+                rewardTableVersion = data.run.stage.chestState.rewardTableVersion,
                 pieceId = record.pieceId, rarity = record.rarity, pieceAmount = 1,
                 rolledCoins = record.rolledCoins, appliedCoins = applied, grantId = id };
             return Success(record.rolledCoins, applied, data.balance, id);

@@ -55,7 +55,13 @@ public class BelieverEnemy : EnemyUnit
 
         if (!stoneAttack.CanPursueTargetOnCurrentPlatform(target))
         {
+            // The player is on another level (below the platform, or jumping next to it). The believer does not
+            // go after them, but it still keeps its distance: it backs away while they are close, as far as the
+            // platform allows. Cornered at the edge it holds its ground and throws.
             retreatAfterAttack = false;
+            if (GetHorizontalDistanceToTarget() < preferredMinDistance && TryRetreatSafely())
+                return;
+
             StopMovement();
             FaceTarget();
             ChangeMovementState(EnemyState.Idle);
@@ -278,15 +284,20 @@ public class BelieverEnemy : EnemyUnit
 
     private void RetreatSafely()
     {
+        if (!TryRetreatSafely())
+            StopAtPlatformEdge();
+    }
+
+    // Backs away from the player while there is platform behind it. False (and no movement) at the edge.
+    private bool TryRetreatSafely()
+    {
         float direction = target.position.x < transform.position.x ? 1f : -1f;
         if (!CanMoveSafelyOnPlatform(direction))
-        {
-            StopAtPlatformEdge();
-            return;
-        }
+            return false;
 
         ChangeMovementState(EnemyState.Retreat);
         MoveAwayFromTarget(true);
+        return true;
     }
 
     private void StopAtPlatformEdge()
