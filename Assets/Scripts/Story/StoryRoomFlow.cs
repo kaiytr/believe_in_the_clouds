@@ -40,6 +40,17 @@ public sealed class StoryRoomFlow : MonoBehaviour
     { definition = data; player = hero; speaker = actor; believer = view; blood = bloodView; runner = cutscene; }
 
     private void Awake() { Instance = this; }
+    private void OnEnable()
+    {
+        Instance = this;
+        // The developer preview keeps the original scene loaded but inactive.
+        if (document == null) return;
+        ready = false; revision = -1; cinematic = false; introPlaying = false; introPending = false; releasingInput = false;
+        document.enabled = true;
+        runner.ExternalStageRequested += HandleExternalStage;
+        runner.Completed += HandleCompleted; runner.Cancelled += HandleCancelled;
+        if (rain != null) rain.Play();
+    }
     private void Start()
     {
         if (definition == null || !definition.IsUsable || player == null || speaker == null || believer == null ||

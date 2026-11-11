@@ -255,8 +255,10 @@ FirstAltarProgress {
 
 ### 9.1 현재 개발자 도구와의 연결
 
+첫 재단 전용 테스트 버튼은 `FirstAltarStoryPreview`의 격리된 Additive 씬·메모리 프로필을 사용한다. 원래 서비스·씬 루트·라우터를 보관하고 도입부부터 재생하며, 재시작·중간 종료·정상 출구 복귀를 지원한다. 기존 프로필의 phase를 되돌려 테스트하지 않는다. 자세한 사용법과 실제 저장 보존 검증은 [구현 결과](FirstAltarStory_ImplementationStatus.md#개발자-도구의-첫-재단-테스트)에 기록했다.
+
 - [EconomyService.DeveloperTools](../Assets/Scripts/Economy/EconomyService.DeveloperTools.cs)의 `HasLivingDeveloperRun`은 현재 Lobby/TemporaryStage만 허용한다. StoryRoom에는 이 범위를 확장하지 않고 보스 해금·분기 리롤을 거부한다. 런타임의 `CanUseDeveloperRunTools`와 버튼 상태도 같은 조건을 적용해 사용 가능한 것처럼 표시하지 않는다.
-- F2 패널은 다른 모달 위에서도 열릴 수 있고, 현재 강제 사망·초기화 버튼은 모달 여부를 검사하지 않는다. 사망 컷씬·스토리 UI가 열린 동안에는 해당 동작이 연출·저장 거래를 끊지 않도록 비활성화한다. 자유 이동 상태의 강제 사망을 복구 테스트에 허용한다면 3절의 미완료 재진입 규칙을 적용한다.
+- F2 패널은 도입부·암전·문서 UI 위에서도 열 수 있다. 이때 기존 수정 버튼은 비활성화하고 첫 재단 테스트의 재시작·종료를 지원한다. 테스트가 아닌 자유 이동 상태에서 강제 사망을 실행하면 3절의 미완료 재진입 규칙을 적용한다.
 - 보스 해금 버튼으로 클리어 수를 3으로 올려도 이벤트 완료로 간주하지 않는다. 일반 전투 출구만 정상 진입 지점이며, 리롤과 로비 리로드는 이벤트를 소비하지 않는다.
 - `ResetSavedProfile`은 새 v5 프로필을 생성하므로 tutorial=NotCompleted, phase=NotStarted가 된다. 기존 `TutorialStartedKey`·교리 슬롯·런타임 정리와 함께 동작하고, 스토리 모달·기도 타이머·오디오가 남지 않아야 한다. 이는 기존 프로필 마이그레이션과 다른, 명시적인 전체 초기화 기능이다.
 - `StartMemoryFixture`, `StartPlayLoopTest`, `ReloadForTest`는 현재 테스트 계약을 유지한다. 기본 루프 테스트에 이벤트를 무조건 끼워 넣지 않고, 튜토리얼 완료·레거시 자격·방 단계별 픽스처를 명시적으로 구분한다.

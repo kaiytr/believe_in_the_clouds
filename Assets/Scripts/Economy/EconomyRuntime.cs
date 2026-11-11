@@ -12,6 +12,7 @@ public sealed class EconomyRuntime : MonoBehaviour
     private CoinFlightView flightView;
     private float retryAt;
     private bool flushRequested;
+    public bool HasPendingDefeatRewards => defeatRetries.Count > 0;
     private IEconomyStore persistentStore;
     private sealed class DefeatRetry
     {

@@ -47,7 +47,9 @@ public sealed class DevToolsPanel : MonoBehaviour
         refs.Heal.onClick.AddListener(Heal);
         refs.UnlockBoss.onClick.AddListener(UnlockBoss);
         refs.RerollBranches.onClick.AddListener(RerollBranches);
-        ShowFeedback("분기 리롤은 로비에서만 사용할 수 있습니다.");
+        refs.StoryPreview.onClick.AddListener(StartStoryPreview);
+        refs.EndStoryPreview.onClick.AddListener(EndStoryPreview);
+        ShowFeedback("첫 재단 테스트는 기존 진행을 보관합니다. 분기 리롤은 로비에서만 가능합니다.");
         panel.SetActive(false);
     }
 
@@ -56,7 +58,7 @@ public sealed class DevToolsPanel : MonoBehaviour
     private void Update()
     {
         if (panel == null) return;
-        if (Input.GetKeyDown(ToggleKey) && (!StoryRoomFlow.BlocksDeveloperActions || panel.activeSelf)) SetOpen(!panel.activeSelf);
+        if (Input.GetKeyDown(ToggleKey)) SetOpen(!panel.activeSelf);
         if (!panel.activeSelf) return;
 
         PlayerHealth player = FindPlayer();
@@ -66,18 +68,25 @@ public sealed class DevToolsPanel : MonoBehaviour
         refs.Death.interactable = canModify;
         refs.Heal.interactable = canModify && player.CurrentHp < player.MaxHp;
         bool safe = !PlayerDeathCoordinator.IsResultOpen && !(Currency.Service?.HasPendingDeath ?? false) &&
-            !(flow?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions;
+            !(flow?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions && !FirstAltarStoryPreview.IsActive &&
+            !FirstAltarStoryPreview.IsTransitioning;
         refs.GrantCoins.interactable = Currency.IsReady && safe;
         refs.ResetAndGoToTitle.interactable = safe;
-        refs.UnlockBoss.interactable = flow != null && flow.CanUseDeveloperRunTools && !flow.HasPendingDeveloperReroll;
-        refs.RerollBranches.interactable = !openedOverModal && flow != null && flow.CanRerollLobbyForDevelopment;
+        refs.UnlockBoss.interactable = safe && flow != null && flow.CanUseDeveloperRunTools && !flow.HasPendingDeveloperReroll;
+        refs.RerollBranches.interactable = safe && !openedOverModal && flow != null && flow.CanRerollLobbyForDevelopment;
+        refs.StoryPreview.interactable = FirstAltarStoryPreview.CanStart &&
+            (!openedOverModal || StoryRoomFlow.Instance != null || FirstAltarStoryPreview.IsActive);
+        refs.EndStoryPreview.interactable = FirstAltarStoryPreview.IsActive && !FirstAltarStoryPreview.IsTransitioning;
+        refs.StoryPreview.GetComponentInChildren<UnityEngine.UI.Text>().text = FirstAltarStoryPreview.IsActive
+            ? "첫 재단 스토리 · 처음부터" : "첫 재단 스토리 테스트";
 
         LobbyRunData run = flow != null ? flow.State : null;
         string hp = player != null ? $"체력 {player.CurrentHp:0.#} / {player.MaxHp:0.#}" : "플레이어 없음";
         string progress = run != null
             ? $"전투 클리어 {run.combatClears} · 보스 {(run.combatClears >= LobbyRules.BossUnlockClears ? "해금" : "잠김")}"
             : "진행 중인 런 없음";
-        refs.Status.text = $"{hp} · {SceneManager.GetActiveScene().name}\n{progress}";
+        refs.Status.text = FirstAltarStoryPreview.IsActive ? $"첫 재단 테스트 중 · 기존 진행 보관\n{hp}" :
+            $"{hp} · {SceneManager.GetActiveScene().name}\n{progress}";
         TextRerollLabel(flow != null && flow.HasPendingDeveloperReroll);
     }
 
@@ -87,7 +96,9 @@ public sealed class DevToolsPanel : MonoBehaviour
         if (open)
         {
             openedOverModal = UiModal.IsOpen;
-            if (openedOverModal) ShowFeedback("리롤하려면 다른 창을 닫은 뒤 F2를 다시 열어 주세요.");
+            panel.GetComponent<Canvas>().sortingOrder = StoryRoomFlow.Instance != null || FirstAltarStoryPreview.IsActive ? 32766 : 500;
+            if (FirstAltarStoryPreview.IsActive) ShowFeedback("임시 테스트입니다. 처음부터 재생하거나 기존 진행으로 복귀할 수 있습니다.");
+            else if (openedOverModal) ShowFeedback("다른 창을 닫은 뒤 F2를 다시 열어 주세요. 스토리 테스트는 컷씬 중에도 가능합니다.");
         }
         panel.SetActive(open);
         if (open) { UiEventSystemBoot.Ensure(); UiModal.Push(modalToken); }
@@ -100,7 +111,8 @@ public sealed class DevToolsPanel : MonoBehaviour
 
     private static bool CanModifyPlayer(PlayerHealth player) => player != null && !player.IsDead && Currency.IsReady &&
         !PlayerDeathCoordinator.IsResultOpen && !(Currency.Service?.HasPendingDeath ?? false) &&
-        !(LobbyFlowRuntime.Instance?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions;
+        !(LobbyFlowRuntime.Instance?.IsTransitioning ?? false) && !StoryRoomFlow.BlocksDeveloperActions &&
+        !FirstAltarStoryPreview.IsActive && !FirstAltarStoryPreview.IsTransitioning;
 
     private void GrantCoins() => ShowResult(Currency.TryGrant(100, "dev.tools.grant"), "100코인을 지급했습니다.");
 
@@ -128,6 +140,18 @@ public sealed class DevToolsPanel : MonoBehaviour
         CurrencyResult result = flow.RerollLobbyForDevelopment();
         ShowResult(result, "새 분기를 저장했습니다. 로비를 다시 불러옵니다.");
         if (result.Success) SetOpen(false);
+    }
+
+    private void StartStoryPreview()
+    {
+        if (openedOverModal && StoryRoomFlow.Instance == null && !FirstAltarStoryPreview.IsActive) return;
+        if (FirstAltarStoryPreview.TryStart()) SetOpen(false);
+        else ShowFeedback(FirstAltarStoryPreview.Message, true);
+    }
+
+    private void EndStoryPreview()
+    {
+        if (FirstAltarStoryPreview.TryReturn()) SetOpen(false);
     }
 
     private void ShowResult(CurrencyResult result, string success)
@@ -169,7 +193,7 @@ public sealed class DevToolsPanel : MonoBehaviour
     // Afterwards "시작하기" behaves like a brand-new game.
     private void ResetAndGoToTitle()
     {
-        if (StoryRoomFlow.BlocksDeveloperActions) return;
+        if (StoryRoomFlow.BlocksDeveloperActions || FirstAltarStoryPreview.IsActive || FirstAltarStoryPreview.IsTransitioning) return;
         if (EconomyRuntime.Instance != null && !EconomyRuntime.Instance.ResetSavedProfile())
         {
             ShowFeedback("저장 파일을 지우지 못했습니다. 파일이 열려 있지 않은지 확인하세요.", true);

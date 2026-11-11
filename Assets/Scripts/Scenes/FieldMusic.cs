@@ -38,16 +38,19 @@ public sealed class FieldMusic : MonoBehaviour
         source.spatialBlend = 0f; source.volume = 0f;
 
         SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
         Apply(SceneManager.GetActiveScene());
     }
 
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         if (instance == this) instance = null;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply(scene);
+    private void OnActiveSceneChanged(Scene previous, Scene next) => Apply(next);
 
     private void Apply(Scene scene)
     {

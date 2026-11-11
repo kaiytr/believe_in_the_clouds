@@ -44,6 +44,7 @@ public sealed class CutsceneRunner : MonoBehaviour
     }
     private bool ReadDialogueClick()
     {
+        if (!UiModal.IsTop(modalToken)) { dialogueClickRequested = false; return false; }
         if (!UseManualDialogueInput) return Input.GetMouseButtonDown(0);
         bool pressed = dialogueClickRequested;
         dialogueClickRequested = false;

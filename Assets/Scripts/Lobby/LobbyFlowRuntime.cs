@@ -26,6 +26,25 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     private bool playLoopTestMode;
     private int inputAfterFrame;
     private float nextRouteRetry;
+    private bool developerPreviewSuspended, enabledBeforePreview;
+
+    public void SuspendForDeveloperPreview()
+    {
+        enabledBeforePreview = enabled; developerPreviewSuspended = true; enabled = false;
+        if (Instance == this) Instance = null;
+    }
+    public void ResumeFromDeveloperPreview()
+    {
+        Instance = this; developerPreviewSuspended = false;
+        inputAfterFrame = Time.frameCount + 2; nextCheckpoint = Time.unscaledTime + .75f;
+        enabled = enabledBeforePreview;
+    }
+    public void DiscardDeveloperPreviewRouter()
+    {
+        enabled = false; UnbindPlayer(); Scene = null;
+        if (Instance == this) Instance = null;
+        Destroy(gameObject);
+    }
     private string developerRerollId, developerRerollRun, developerRerollBatch;
     private int developerRerollClears;
 
@@ -223,6 +242,7 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
     }
     private void SavePlayerCheckpoint()
     {
+        if (developerPreviewSuspended) return;
         if (IsTransitioning || !MatchesScene() || player == null || player.IsDead || State == null || NeedsMaxHpSync || State.area == RunArea.Complete) return;
         CurrencyResult result = Service.TryCheckpointRun(player.CurrentHp, player.transform.position);
         healthPending = !result.Success;
@@ -266,6 +286,11 @@ public sealed class LobbyFlowRuntime : MonoBehaviour
         if (!InputReady || State.area != RunArea.StoryRoom || UiModal.IsOpen)
             return Report(CurrencyResult.Failed(EconomyError.StateConflict));
         CurrencyResult result = Report(Service.TryLeaveFirstAltar(instanceId, player.CurrentHp));
+        if (result.Success && FirstAltarStoryPreview.IsActive)
+        {
+            FirstAltarStoryPreview.TryReturn();
+            return result;
+        }
         if (result.Success && playLoopTestMode && State.area == RunArea.Lobby)
             Report(Service.TryConfigurePlayLoopTestCandidates());
         if (result.Success && !MatchesScene() && !IsTransitioning) StartCoroutine(Route(DestinationScene()));
