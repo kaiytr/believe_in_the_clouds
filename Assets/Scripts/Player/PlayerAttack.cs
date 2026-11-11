@@ -72,8 +72,8 @@ public class PlayerAttack : MonoBehaviour
         {
             name = "1타: 짧은 사선 베기",
             damage = 10f,
-            hitboxSize = new Vector2(1.5f, 1.0f),
-            hitboxOffset = new Vector2(0.8f, 0.2f),
+            hitboxSize = new Vector2(1.6f, 1.0f),
+            hitboxOffset = new Vector2(0.75f, 0.2f),
             hitboxAngle = -30f,
             windupTime = 0.07f,
             recoveryTime = 0.16f,
@@ -86,8 +86,8 @@ public class PlayerAttack : MonoBehaviour
         {
             name = "2타: 반대로 길게 베기",
             damage = 12f,
-            hitboxSize = new Vector2(2.1f, 1.1f),
-            hitboxOffset = new Vector2(1.0f, 0.2f),
+            hitboxSize = new Vector2(2.2f, 1.1f),
+            hitboxOffset = new Vector2(0.95f, 0.2f),
             hitboxAngle = 30f,
             windupTime = 0.09f,
             recoveryTime = 0.2f,
@@ -100,8 +100,8 @@ public class PlayerAttack : MonoBehaviour
         {
             name = "3타: 전진 찌르기",
             damage = 14f,
-            hitboxSize = new Vector2(2.4f, 0.6f),
-            hitboxOffset = new Vector2(1.4f, 0f),
+            hitboxSize = new Vector2(2.6f, 0.6f),
+            hitboxOffset = new Vector2(1.3f, 0f),
             hitboxAngle = 0f,
             windupTime = 0.1f,
             recoveryTime = 0.24f,
