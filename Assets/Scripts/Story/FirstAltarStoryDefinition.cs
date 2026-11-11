@@ -5,7 +5,8 @@ using UnityEngine;
 public sealed class PrayerCue
 {
     [TextArea] public string text;
-    [Min(.1f)] public float holdSeconds = 2.8f;
+    // Retained for existing serialized data; the introduction now advances by click.
+    [HideInInspector] public float holdSeconds = 2.8f;
     public PrayerCue(string text, float seconds = 2.8f) { this.text = text; holdSeconds = seconds; }
 }
 
@@ -28,6 +29,18 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
     [TextArea(5, 20)] public string documentBody = "스토리 본문을 준비 중입니다.";
     public CutsceneDefinition deathSequence;
 
+    public CutsceneDefinition CreateIntroSequence()
+    {
+        var sequence = CreateInstance<CutsceneDefinition>();
+        sequence.name = "First altar prayer introduction";
+        var steps = new CutsceneStep[introCues.Length];
+        for (int i = 0; i < steps.Length; i++)
+            steps[i] = CutsceneStep.Say("firstAltarBeliever",
+                string.IsNullOrEmpty(introCues[i].text) ? "..." : introCues[i].text, charactersPerSecond);
+        sequence.Configure("story.first-altar.prayer.v1", steps);
+        return sequence;
+    }
+
     public static PrayerCue[] DefaultPrayer() => new[]
     {
         new PrayerCue("하나. 구름은 모든 것을 내려다본다"),
@@ -46,7 +59,7 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
     };
 
     public bool IsUsable => introCues != null && introCues.Length > 0 &&
-        Array.TrueForAll(introCues, cue => cue != null && cue.holdSeconds > 0) &&
+        Array.TrueForAll(introCues, cue => cue != null) &&
         !string.IsNullOrWhiteSpace(apologyLoopText) && apologySeconds > 0 && charactersPerSecond > 0 &&
         approachDistance > 0 && rainRiseSeconds > 0 && rainLoop != null && impactClip != null &&
         deathSequence != null && deathSequence.Steps.Length == 1 &&

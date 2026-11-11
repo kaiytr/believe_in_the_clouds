@@ -31,10 +31,11 @@ public sealed class FirstAltarStoryPlayModeTests
         StoryRoomFlow flow = Object.FindFirstObjectByType<StoryRoomFlow>();
         FieldInfo field = typeof(StoryRoomFlow).GetField("definition", BindingFlags.Instance | BindingFlags.NonPublic);
         fastDefinition = Object.Instantiate((FirstAltarStoryDefinition)field.GetValue(flow));
-        // Shorten only ambient waiting. The required post-impact blackout stays at the real 3 seconds.
-        fastDefinition.introCues = fastDefinition.introCues.Select(cue => new PrayerCue(cue.text, .01f)).ToArray();
-        fastDefinition.charactersPerSecond = 10000; fastDefinition.apologySeconds = .03f; fastDefinition.rainRiseSeconds = .1f;
+        // Slow typing to verify the fill click, then click through the actual manuscript.
+        // Only ambient apology/rain waiting is shortened; the required blackout stays at 3 seconds.
+        fastDefinition.charactersPerSecond = 1; fastDefinition.apologySeconds = .03f; fastDefinition.rainRiseSeconds = .1f;
         field.SetValue(flow, fastDefinition);
+        flow.GetComponent<CutsceneRunner>().UseManualDialogueInput = true;
     }
 
     [UnitySetUp] public IEnumerator SetUp()
@@ -55,9 +56,10 @@ public sealed class FirstAltarStoryPlayModeTests
         SceneManager.sceneLoaded += PrepareScene;
         yield return Load(LobbyFlowRuntime.FirstAltarScene);
         float until = Time.realtimeSinceStartup + 8;
-        while ((Story == null || !Story.CanInteract) && Time.realtimeSinceStartup < until) yield return null;
+        while ((Story == null || !Story.GetComponent<CutsceneRunner>().IsRunning) && Time.realtimeSinceStartup < until) yield return null;
         Assert.That(Story, Is.Not.Null);
-        Assert.That(Story.CanInteract, Is.True);
+        Assert.That(Story.GetComponent<CutsceneRunner>().IsRunning, Is.True);
+        Assert.That(Story.CanInteract, Is.False);
     }
 
     [UnityTearDown] public IEnumerator TearDown()
@@ -79,8 +81,50 @@ public sealed class FirstAltarStoryPlayModeTests
         PlayerHealth player = LobbyFlowRuntime.Instance.Scene.Player;
         var altar = Object.FindFirstObjectByType<StoryAltarInteractable>();
         var exit = Object.FindFirstObjectByType<StoryRoomExit>();
+        var npc = Object.FindFirstObjectByType<StoryBelieverView>();
+        SpriteRenderer bodyView = npc.GetComponentInChildren<SpriteRenderer>();
+        Assert.That(bodyView.transform.lossyScale.x, Is.EqualTo(13f / 6f).Within(.0001f));
+        Assert.That(bodyView.transform.lossyScale.y, Is.EqualTo(13f / 6f).Within(.0001f));
+        Assert.That(bodyView.flipX, Is.True, "원본 스프라이트를 반전해 오른쪽 제단을 바라본다.");
+        Assert.That(altar.transform.position.x, Is.GreaterThan(npc.transform.position.x));
         Assert.That(altar.CanInteract(player.gameObject), Is.False);
         Assert.That(exit.CanInteract(player.gameObject), Is.False);
+        CutsceneRunner intro = Story.GetComponent<CutsceneRunner>();
+        var gate = (CutsceneDialogueInputGate)typeof(CutsceneRunner).GetField("dialogueGate", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(intro);
+        var text = (UnityEngine.UI.Text)typeof(CutsceneBubbleView).GetField("bodyText", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(intro.GetComponent<CutsceneBubbleView>());
+        Assert.That(UiModal.IsOpen, Is.True);
+        Assert.That(player.GetComponent<PlayerDash>().TryDash(), Is.False);
+        Assert.That(StoryRoomFlow.BlocksDeveloperActions, Is.True);
+        yield return new WaitForSecondsRealtime(.1f);
+        Assert.That(gate.IsTyping, Is.True);
+        intro.RequestDialogueClick();
+        yield return null; yield return null;
+        Assert.That(text.text, Is.EqualTo(fastDefinition.introCues[0].text));
+        Assert.That(gate.WaitingForAdvance, Is.True, "타이핑 완료 클릭이 다음 대사를 넘기지 않는다.");
+        yield return new WaitForSecondsRealtime(.1f);
+        Assert.That(text.text, Is.EqualTo(fastDefinition.introCues[0].text), "클릭 없이 자동으로 넘어가지 않는다.");
+        for (int i = 0; i < fastDefinition.introCues.Length; i++)
+        {
+            if (i > 0)
+            {
+                float typingUntil = Time.realtimeSinceStartup + 2;
+                while (!gate.IsTyping && Time.realtimeSinceStartup < typingUntil) yield return null;
+                Assert.That(gate.IsTyping, Is.True);
+                intro.RequestDialogueClick();
+                yield return null; yield return null;
+            }
+            string expected = string.IsNullOrEmpty(fastDefinition.introCues[i].text) ? "..." : fastDefinition.introCues[i].text;
+            Assert.That(text.text, Is.EqualTo(expected));
+            Assert.That(UiModal.IsOpen, Is.True);
+            Assert.That(Story.CanInteract, Is.False);
+            intro.RequestDialogueClick();
+            yield return null; yield return null;
+        }
+        fastDefinition.charactersPerSecond = 10000;
+        float releasedUntil = Time.realtimeSinceStartup + 3;
+        while (!Story.CanInteract && Time.realtimeSinceStartup < releasedUntil) yield return null;
+        Assert.That(Story.CanInteract, Is.True, "도입부 종료 후에는 자유 이동과 상호작용을 복원한다.");
         AmbientPrayerController prayer = Object.FindFirstObjectByType<AmbientPrayerController>();
         float until = Time.realtimeSinceStartup + 8;
         while (!prayer.IsApologyLoopReady && Time.realtimeSinceStartup < until) yield return null;

@@ -1,25 +1,25 @@
 using UnityEngine;
 
-// Ambient speech never owns a modal token or waits for a click.
+// Only the repeated apology is ambient. The initial manuscript belongs to CutsceneRunner.
 public sealed class AmbientPrayerController : MonoBehaviour
 {
     private FirstAltarStoryDefinition definition;
     private CutsceneCharacter speaker;
     private CutsceneBubbleView bubble;
-    private int cue, shown = -1;
+    private int shown = -1;
     private float elapsed;
-    private bool playing, looping;
+    private bool playing;
     private string line;
     public bool IsApologyLoopReady { get; private set; }
-    public bool IsLooping => looping && playing;
+    public bool IsLooping => playing;
 
-    public void Begin(FirstAltarStoryDefinition data, CutsceneCharacter actor)
+    public void BeginLoop(FirstAltarStoryDefinition data, CutsceneCharacter actor)
     {
         StopPrayer();
         definition = data; speaker = actor;
         if (bubble == null) bubble = gameObject.AddComponent<CutsceneBubbleView>();
-        cue = 0; looping = false; playing = true;
-        SetLine(data.introCues[0].text);
+        playing = true;
+        SetLine(data.apologyLoopText);
     }
 
     private void SetLine(string text)
@@ -34,25 +34,22 @@ public sealed class AmbientPrayerController : MonoBehaviour
         if (!playing || UiModal.IsOpen || Time.timeScale <= 0f) return;
         elapsed += Time.deltaTime;
         int visible = Mathf.Min(line.Length, Mathf.FloorToInt(elapsed * definition.charactersPerSecond));
-        if (shown != visible || definition.bubbleGlitch && looping)
+        if (shown != visible || definition.bubbleGlitch)
         {
             string text = line.Substring(0, visible);
             // The unchanged full line determines layout, so the bubble never jitters in size.
-            if (definition.bubbleGlitch && looping && visible > 2 && Time.frameCount % 41 < 2)
+            if (definition.bubbleGlitch && visible > 2 && Time.frameCount % 41 < 2)
                 text = text.Substring(0, visible - 1) + "…";
             bubble.SetVisibleText(text); shown = visible;
         }
-        if (looping && visible == line.Length) IsApologyLoopReady = true;
-        float hold = looping ? definition.apologySeconds : definition.introCues[cue].holdSeconds;
-        if (elapsed < line.Length / definition.charactersPerSecond + hold) return;
-        if (looping) SetLine(definition.apologyLoopText);
-        else if (++cue < definition.introCues.Length) SetLine(definition.introCues[cue].text);
-        else { looping = true; SetLine(definition.apologyLoopText); }
+        if (visible == line.Length) IsApologyLoopReady = true;
+        if (elapsed >= line.Length / definition.charactersPerSecond + definition.apologySeconds)
+            SetLine(definition.apologyLoopText);
     }
 
     public void StopPrayer()
     {
-        playing = false; looping = false; IsApologyLoopReady = false;
+        playing = false; IsApologyLoopReady = false;
         bubble?.Hide();
     }
     private void OnDisable() => StopPrayer();

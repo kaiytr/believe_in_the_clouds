@@ -7,7 +7,8 @@ public sealed class StoryRoomFlow : MonoBehaviour
 {
     public static StoryRoomFlow Instance { get; private set; }
     public static bool BlocksDeveloperActions => Instance != null &&
-        (Instance.cinematic || Instance.document != null && Instance.document.IsOpen || Instance.releasingInput);
+        (Instance.introPending || Instance.introPlaying || Instance.cinematic ||
+            Instance.document != null && Instance.document.IsOpen || Instance.releasingInput);
     [SerializeField] private FirstAltarStoryDefinition definition;
     [SerializeField] private PlayerHealth player;
     [SerializeField] private CutsceneCharacter speaker;
@@ -26,9 +27,11 @@ public sealed class StoryRoomFlow : MonoBehaviour
     private bool ready, cinematic, revealed, releasingInput, invalid;
     private readonly object releaseToken = new object();
     private Coroutine deathRoutine;
+    private CutsceneDefinition introSequence;
+    private bool introPending, introPlaying;
 
     public FirstAltarPhase Phase => story != null ? story.phase : FirstAltarPhase.NotStarted;
-    public bool CanInteract => ready && !invalid && !cinematic && !releasingInput && !UiModal.IsOpen &&
+    public bool CanInteract => ready && !invalid && !introPending && !introPlaying && !cinematic && !releasingInput && !UiModal.IsOpen &&
         player != null && !player.IsDead && LobbyFlowRuntime.Instance != null &&
         LobbyFlowRuntime.Instance.InputReady && LobbyFlowRuntime.Instance.State.area == RunArea.StoryRoom;
 
@@ -74,6 +77,12 @@ public sealed class StoryRoomFlow : MonoBehaviour
             story = current.FirstAltarSnapshot();
             if (!ready || rebound) RestorePresentation();
         }
+        if (introPending)
+        {
+            if (flow.InputReady) PlayIntroduction();
+            return;
+        }
+        if (introPlaying) return;
         if (!ready || cinematic) return;
         believer.SetTrembling(prayer.IsLooping);
         // Check the current location after the first apology is visible: early approaches are never queued.
@@ -89,9 +98,30 @@ public sealed class StoryRoomFlow : MonoBehaviour
     private void RestorePresentation()
     {
         ready = true; revealed = Phase >= FirstAltarPhase.BelieverDead;
+        introPending = !revealed;
         believer.SetDead(revealed); blood.SetActive(revealed);
-        if (revealed) prayer.StopPrayer();
-        else prayer.Begin(definition, speaker);
+        prayer.StopPrayer();
+        if (!revealed)
+        {
+            UiModal.Push(releaseToken); // Lock before the first playable frame and while waiting for run binding.
+        }
+    }
+
+    private void PlayIntroduction()
+    {
+        if (introSequence == null) introSequence = definition.CreateIntroSequence();
+        runner.SetActorBindings(new CutsceneActorBinding("firstAltarBeliever", speaker));
+        introPlaying = true;
+        if (runner.Play(introSequence, player))
+        {
+            introPending = false;
+            UiModal.Pop(releaseToken); // The runner already owns the modal lock.
+        }
+        else
+        {
+            introPlaying = false;
+            ShowStatus("기도 컷씬을 준비 중입니다.");
+        }
     }
 
     private void HandleExternalStage(CutsceneExternalStage stage)
@@ -138,6 +168,14 @@ public sealed class StoryRoomFlow : MonoBehaviour
 
     private void HandleCompleted(CutsceneRunner completed)
     {
+        if (introPlaying && completed.LastCompletedDefinition == introSequence)
+        {
+            introPlaying = false;
+            ShowStatus("");
+            prayer.BeginLoop(definition, speaker);
+            StartCoroutine(ReleaseInput());
+            return;
+        }
         if (!cinematic || completed.LastCompletedDefinition != definition.deathSequence) return;
         cinematic = false;
         story = service.FirstAltarSnapshot(); revision = service.Revision;
@@ -156,7 +194,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
     private void HandleCancelled(CutsceneRunner cancelled)
     {
         if (deathRoutine != null) StopCoroutine(deathRoutine);
-        deathRoutine = null; cinematic = false;
+        deathRoutine = null; cinematic = false; introPlaying = false;
         if (blackout != null) Destroy(blackout.gameObject);
         if (!isActiveAndEnabled || service == null) return;
         // A cancellation never grants progress; restore from the saved checkpoint.
@@ -213,6 +251,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
             runner.Cancel();
         }
         StopAllCoroutines(); prayer?.StopPrayer();
+        if (introSequence != null) Destroy(introSequence);
         if (blackout != null) Destroy(blackout.gameObject);
         if (rain != null) rain.Stop(); if (impact != null) impact.Stop();
         UiModal.Pop(releaseToken);

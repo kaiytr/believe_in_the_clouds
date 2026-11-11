@@ -85,10 +85,14 @@ public static class FirstAltarStorySetup
                 .OfType<Sprite>().OrderBy(sprite => sprite.name).ToArray();
             Sprite dead = AssetDatabase.LoadAllAssetsAtPath("Assets/Design/Enemy/Believer/BelieverDeath.png").OfType<Sprite>().First();
             var npc = new GameObject("StoryBeliever");
-            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], glitch, Vector3.zero, Vector3.one, Color.white, 4);
-            body.transform.localPosition = new Vector3(0, -idle[0].bounds.min.y, 0);
+            // Tutorial/Combat: parent scale (1,2) * visual scale (13/6,13/12) = uniform 13/6.
+            const float believerScale = 13f / 6f;
+            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], glitch, Vector3.zero,
+                new Vector3(believerScale, believerScale, 1), Color.white, 4);
+            body.flipX = true; // The source believer art faces left; the altar is on its right.
+            body.transform.localPosition = new Vector3(0, -idle[0].bounds.min.y * believerScale, 0);
             var head = new GameObject("Prayer head anchor"); head.transform.SetParent(npc.transform, false);
-            head.transform.localPosition = new Vector3(0, idle[0].bounds.size.y + .2f, 0);
+            head.transform.localPosition = new Vector3(0, idle[0].bounds.size.y * believerScale + .2f, 0);
             CutsceneCharacter speaker = npc.AddComponent<CutsceneCharacter>(); speaker.Configure("신도", head.transform);
             StoryBelieverView believer = npc.AddComponent<StoryBelieverView>(); believer.Configure(body, idle, dead);
             GameObject npcPrefab = PrefabUtility.SaveAsPrefabAsset(npc, "Assets/Prefabs/Story/StoryBeliever.prefab");
