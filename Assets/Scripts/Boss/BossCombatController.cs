@@ -45,6 +45,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private BossCloudField clouds;
     private BossPatternKind activeRegular, activeBeliefPattern;
     private bool regularRunning, regularAttackActive, beliefProcessing, shockwaveReserved, bodyActionActive, initialized;
+    private bool phaseCutscenePlaying;
+    private Coroutine phaseCutscene;
+    private CutsceneBubbleView phaseBubble;
+    private readonly object phaseCutsceneLock = new object();
+    private static readonly string[] PhaseTwoLines = { "여전하네. 하나도 변하지 않았어.", "...참 짓궂게." };
     private bool beliefAwaitingEnd;
     private BossRegularAttackContext runningRegularContext;
     private string phraseCache = "";
@@ -163,6 +168,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             return phaseMultiplier * doctrineMultiplier;
         }
     }
+    public bool IsPhaseCutscenePlaying => phaseCutscenePlaying;
     public string ActivePatternName => regularRunning && beliefProcessing ? PatternName(activeRegular) + " + " + PatternName(activeBeliefPattern) :
         regularRunning ? PatternName(activeRegular) : beliefProcessing ? PatternName(activeBeliefPattern) : "대기";
     public BossPatternKind ActivePattern => regularRunning || !beliefProcessing ? activeRegular : activeBeliefPattern;
@@ -230,7 +236,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         return projectileOrigin.parent != null ? (Vector2)projectileOrigin.parent.TransformPoint(local) : (Vector2)local;
     }
     public bool TargetValid => playerHealth != null && !playerHealth.IsDead && playerHealth.isActiveAndEnabled && PlayerCollider != null && PlayerCollider.enabled;
-    public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && TargetValid;
+    public bool CanContinue => isActiveAndEnabled && EncounterStarted && !IsDead && !phaseCutscenePlaying && TargetValid;
     public bool CanStartNextHit => CanContinue;
 
     private void Awake()
@@ -261,7 +267,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     private void Update()
     {
-        if (!EncounterStarted || IsDead) return;
+        if (!EncounterStarted || IsDead || phaseCutscenePlaying) return;
         if (!TargetValid)
         {
             EncounterStarted = false;
@@ -384,7 +390,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     public bool TakeDamage(DamageInfo info)
     {
-        if (!EncounterStarted || IsDead || info.Amount <= 0f || float.IsNaN(info.Amount) || float.IsInfinity(info.Amount)) return false;
+        if (!EncounterStarted || IsDead || phaseCutscenePlaying || info.Amount <= 0f || float.IsNaN(info.Amount) || float.IsInfinity(info.Amount)) return false;
         PlayerAttackContext attack = info.PlayerAttack;
         if (attack != null && (playerHealth == null || attack.Actor != playerHealth.gameObject || !attack.Begin(this))) return false;
         float damage = info.Amount * (info.Source == DamageSource.PlayerOwned ?
@@ -429,6 +435,66 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         presentation.FlashPhaseChange();
         SetStatus("2페이즈");
         ShowFeedback("2페이즈 · 새로운 믿음 패턴", new Color(.6f, .8f, 1f));
+        if (phaseCutscene != null) StopCoroutine(phaseCutscene);
+        phaseCutscene = StartCoroutine(PlayPhaseTwoCutscene());
+    }
+
+    // 체력이 절반이 되면 보스와 플레이어 공격을 멈추고, 보스 머리 위 말풍선으로 두 대사를 보여 준다.
+    // 클릭으로 현재 문장을 완성하고, 다음 클릭으로 넘긴다. 끝나면 2페이즈 전투가 다시 시작된다.
+    private IEnumerator PlayPhaseTwoCutscene()
+    {
+        phaseCutscenePlaying = true;
+        UiModal.Push(phaseCutsceneLock);
+        if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
+        Rigidbody2D playerBody = playerHealth != null ? playerHealth.GetComponent<Rigidbody2D>() : null;
+        if (playerBody != null) playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
+        SetStatus("2페이즈 전환");
+
+        CutsceneCharacter speaker = GetComponent<CutsceneCharacter>();
+        if (speaker == null) speaker = gameObject.AddComponent<CutsceneCharacter>();
+        speaker.Configure("보스", null);
+        if (phaseBubble == null) phaseBubble = gameObject.AddComponent<CutsceneBubbleView>();
+
+        const float charactersPerSecond = 22f;
+        for (int i = 0; i < PhaseTwoLines.Length; i++)
+        {
+            string line = PhaseTwoLines[i];
+            phaseBubble.ShowLine(speaker, "", line);
+            int shown = 0;
+            float elapsed = 0f;
+            bool completed = false;
+            while (!completed)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                int next = Mathf.Min(line.Length, Mathf.FloorToInt(elapsed * charactersPerSecond));
+                if (next != shown)
+                {
+                    shown = next;
+                    phaseBubble.SetVisibleText(line.Substring(0, shown));
+                }
+                if (Input.GetMouseButtonDown(0))
+                {
+                    if (shown < line.Length)
+                    {
+                        shown = line.Length;
+                        phaseBubble.SetVisibleText(line);
+                    }
+                    else completed = true;
+                }
+                if (shown >= line.Length && Input.GetKeyDown(KeyCode.E)) completed = true;
+                yield return null;
+            }
+            while (Input.GetMouseButton(0) || Input.GetKey(KeyCode.E)) yield return null;
+        }
+
+        phaseBubble.Hide();
+        phaseCutscenePlaying = false;
+        UiModal.Pop(phaseCutsceneLock);
+        nextRegularAt = Time.time + 0.4f;
+        nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0.4f);
+        phaseCutscene = null;
+        SetStatus("2페이즈");
+        Notify();
     }
     public void ForcePhaseTwoForTest()
     {
@@ -1034,6 +1100,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         EncounterStarted = false;
         SetContactDamageSuppressed(true);
+        if (phaseCutscene != null) StopCoroutine(phaseCutscene);
+        phaseCutscene = null;
+        phaseCutscenePlaying = false;
+        if (phaseBubble != null) phaseBubble.Hide();
+        UiModal.Pop(phaseCutsceneLock);
         CancelCombat(true);
         ReleaseArenaVisuals();
         if (playerEvents != null) playerEvents.SignalPublished -= HandlePlayerSignal;
