@@ -48,6 +48,11 @@ public sealed class BossEncounterTrigger : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other) => TryEnter(other);
     private void OnTriggerStay2D(Collider2D other) => TryEnter(other);
 
+    private void LateUpdate()
+    {
+        if (locked) AlignGatesToCombatEdges();
+    }
+
     private void TryEnter(Collider2D other)
     {
         if (HasEntered || boss == null || boss.IsDead) return;
@@ -95,12 +100,44 @@ public sealed class BossEncounterTrigger : MonoBehaviour
 
     private void SetGates(bool closed)
     {
+        if (closed) AlignGatesToCombatEdges();
         foreach (Collider2D gate in gates)
         {
             if (gate == null) continue;
             gate.isTrigger = !closed;
             SpriteRenderer visual = gate.GetComponent<SpriteRenderer>();
-            if (visual != null) visual.enabled = closed;
+            if (visual != null)
+            {
+                Color color = visual.color;
+                color.a = 0f;
+                visual.color = color;
+                visual.enabled = false;
+            }
+        }
+    }
+
+    private void AlignGatesToCombatEdges()
+    {
+        Bounds limits = entry.bounds;
+        bool fixedView = arenaCamera != null && arenaCamera.TryGetFixedCombatViewport(out limits);
+        if (!fixedView) limits = entry.bounds;
+        foreach (Collider2D gate in gates)
+        {
+            if (gate == null) continue;
+            Vector3 center = gate.transform.TransformPoint(gate.offset);
+            bool left = center.x < entry.bounds.center.x;
+            // Put the whole wall outside the viewport; its inner face is the screen boundary.
+            float halfWidth = gate.bounds.extents.x;
+            float centerX = left ? limits.min.x - halfWidth : limits.max.x + halfWidth;
+            Vector3 shift = new Vector3(centerX - center.x, 0f, 0f);
+            if (fixedView && gate is BoxCollider2D box)
+            {
+                Vector2 size = box.size;
+                float height = limits.size.y / Mathf.Max(.0001f, Mathf.Abs(gate.transform.lossyScale.y));
+                if (Mathf.Abs(size.y - height) > .0001f) box.size = new Vector2(size.x, height);
+                shift.y = limits.center.y - center.y;
+            }
+            if (shift.sqrMagnitude > .00000001f) gate.transform.position += shift;
         }
     }
 

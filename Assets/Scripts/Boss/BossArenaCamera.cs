@@ -77,6 +77,19 @@ public sealed class BossArenaCamera : MonoBehaviour
         return true;
     }
 
+    public bool TryGetFixedCombatViewport(out Bounds viewport)
+    {
+        viewport = default;
+        if (!fixedCombatView || !TryGetArenaBounds(out Bounds bounds)) return false;
+        Camera output = view != null ? view : Camera.main;
+        float aspect = Mathf.Max(.01f, output != null ? output.aspect : 16f / 9f);
+        float size = GetFixedCombatSize(bounds);
+        viewport = new Bounds(new Vector3(bounds.center.x,
+            bounds.center.y + combatVerticalOffset - combatCameraDrop, 0f),
+            new Vector3(size * aspect * 2f, size * 2f, 1f));
+        return true;
+    }
+
     public void HoldForEnding(Transform actor)
     {
         if (endingHold) return;
