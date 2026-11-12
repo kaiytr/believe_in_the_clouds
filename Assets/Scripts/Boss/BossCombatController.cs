@@ -475,9 +475,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         Rigidbody2D playerBody = playerHealth != null ? playerHealth.GetComponent<Rigidbody2D>() : null;
         if (playerBody != null) playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
         SetStatus("2페이즈 전환");
+        // The boss must not touch the player while the camera moves in and out.
+        SetContactDamageSuppressed(true);
 
+        yield return CutsceneZoomIn();
         yield return SpeakLines(PhaseTwoLines);
+        if (phaseBubble != null) phaseBubble.Hide();
+        yield return CutsceneZoomOut();
         EndSpokenLines();
+        if (EncounterStarted && !IsDead) SetContactDamageSuppressed(false);
         nextRegularAt = Time.time + 0.4f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0.4f);
         phaseCutscene = null;
@@ -1000,11 +1006,43 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         IsDeathDialoguePlaying = true;
         UiModal.Push(phaseCutsceneLock);
+        yield return CutsceneZoomIn();
         yield return SpeakLines(DeathLines);
+        if (phaseBubble != null) phaseBubble.Hide();
+        yield return CutsceneZoomOut();
         IsDeathDialoguePlaying = false;
         EndSpokenLines();
         phaseCutscene = null;
         Notify();
+    }
+
+    // Cutscene camera: zoom in on the boss before the first line, zoom back out after the last. The pause around
+    // each move keeps the fight frozen (the cutscene flags stay up the whole time) until the view is settled.
+    private const float CutsceneZoomPause = .3f;
+
+    private IEnumerator CutsceneZoomIn()
+    {
+        BossArenaCamera cameraRig = ArenaCamera;
+        float seconds = .6f;
+        if (cameraRig != null)
+        {
+            seconds = cameraRig.FocusSeconds;
+            float height = BodyCollider != null ? BodyCollider.bounds.center.y - transform.position.y + .3f : 1f;
+            cameraRig.FocusOn(transform, height);
+        }
+        yield return new WaitForSecondsRealtime(seconds + CutsceneZoomPause);
+    }
+
+    private IEnumerator CutsceneZoomOut()
+    {
+        BossArenaCamera cameraRig = ArenaCamera;
+        float seconds = .6f;
+        if (cameraRig != null)
+        {
+            seconds = cameraRig.FocusSeconds;
+            cameraRig.ReleaseFocus();
+        }
+        yield return new WaitForSecondsRealtime(seconds + CutsceneZoomPause);
     }
 
     private IEnumerator SpeakLines(string[] lines)
@@ -1156,6 +1194,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         phaseCutscenePlaying = false;
         IsDeathDialoguePlaying = false;
         if (phaseBubble != null) phaseBubble.Hide();
+        ArenaCamera?.ClearFocus();
         UiModal.Pop(phaseCutsceneLock);
         CancelCombat(true);
         ReleaseArenaVisuals();

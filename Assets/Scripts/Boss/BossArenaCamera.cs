@@ -22,6 +22,11 @@ public sealed class BossArenaCamera : MonoBehaviour
     [SerializeField] private bool explorationFixedY;
     [SerializeField] private bool clampExplorationX;
     [SerializeField] private Vector2 explorationXLimits = new Vector2(-18f, 18f);
+    [Header("Cutscene focus")]
+    [Tooltip("Orthographic size while zoomed in on a speaker, as a fraction of the normal size (smaller = closer).")]
+    [SerializeField, Range(.2f, 1f)] private float focusZoom = .55f;
+    [Tooltip("Seconds the zoom in, and again the zoom back out, takes.")]
+    [SerializeField, Min(.05f)] private float focusSeconds = .6f;
 
     private readonly List<Behaviour> suspended = new List<Behaviour>();
     private Transform player;
@@ -36,6 +41,46 @@ public sealed class BossArenaCamera : MonoBehaviour
     private float endingSize;
     private Bounds configuredBounds;
     private bool hasConfiguredBounds;
+
+    // Cutscene focus: a zoom on top of whatever pose the camera would have anyway, so zooming back out lands on
+    // the camera as it is at that moment (combat view, or the ending hold).
+    private Transform focusTarget;
+    private float focusHeight, focusProgress, focusDirection;
+    private bool focusApplied;
+    private Vector3 basePosition;
+    private float baseSize;
+
+    public float FocusSeconds => focusSeconds;
+    public bool CanFocus => controlling && view != null;
+
+    /// <summary>Starts zooming in on the target (heightOffset above its position). Returns false without a camera.</summary>
+    public bool FocusOn(Transform target, float heightOffset)
+    {
+        if (target == null || !CanFocus) return false;
+        focusTarget = target;
+        focusHeight = heightOffset;
+        focusDirection = 1f;
+        return true;
+    }
+
+    /// <summary>Starts zooming back out to the normal camera.</summary>
+    public void ReleaseFocus()
+    {
+        if (focusTarget != null) focusDirection = -1f;
+    }
+
+    /// <summary>Drops the focus at once (boss disabled, scene torn down).</summary>
+    public void ClearFocus()
+    {
+        if (focusApplied && view != null)
+        {
+            view.transform.position = basePosition;
+            view.orthographicSize = baseSize;
+        }
+        focusApplied = false;
+        focusTarget = null;
+        focusProgress = focusDirection = 0f;
+    }
 
     public void ConfigureWorldBounds(Camera output, Bounds bounds)
     {
@@ -148,6 +193,44 @@ public sealed class BossArenaCamera : MonoBehaviour
     private void LateUpdate()
     {
         if (!controlling || view == null) return;
+        // The focus is drawn on top of the camera's own pose each frame; undo it first so the pose logic below
+        // keeps working from its own state rather than from the zoomed one.
+        if (focusApplied)
+        {
+            view.transform.position = basePosition;
+            view.orthographicSize = baseSize;
+            focusApplied = false;
+        }
+        UpdateBasePose();
+        ApplyFocus();
+    }
+
+    private void ApplyFocus()
+    {
+        if (focusTarget == null) return;
+        focusProgress = Mathf.Clamp01(focusProgress + focusDirection * Time.unscaledDeltaTime / focusSeconds);
+        if (focusDirection < 0f && focusProgress <= 0f)
+        {
+            focusTarget = null;
+            focusDirection = 0f;
+            return;
+        }
+
+        basePosition = view.transform.position;
+        baseSize = view.orthographicSize;
+        float weight = Mathf.SmoothStep(0f, 1f, focusProgress);
+        float size = baseSize * focusZoom;
+        Vector3 target = focusTarget.position + Vector3.up * focusHeight;
+        if (TryGetArenaBounds(out Bounds bounds))
+            target.x = ConfineX(target.x, bounds.min.x, bounds.max.x, size * view.aspect);
+        view.transform.position = new Vector3(Mathf.Lerp(basePosition.x, target.x, weight),
+            Mathf.Lerp(basePosition.y, target.y, weight), basePosition.z);
+        view.orthographicSize = Mathf.Lerp(baseSize, size, weight);
+        focusApplied = true;
+    }
+
+    private void UpdateBasePose()
+    {
         if (endingHold)
         {
             view.transform.SetPositionAndRotation(endingPosition, endingRotation);
@@ -207,6 +290,7 @@ public sealed class BossArenaCamera : MonoBehaviour
 
     private void OnDisable()
     {
+        ClearFocus();
         if (controlling && view != null) view.orthographicSize = explorationSize;
         RestoreExploration();
     }
