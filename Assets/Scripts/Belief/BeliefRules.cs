@@ -9,7 +9,7 @@ public enum BeliefRule
     ConsecutiveHits,
     RetreatPunish,
     EscapeCircle,
-    RearDwell,
+    RearEntry,
     PrayerHit
 }
 
@@ -26,7 +26,7 @@ public static class BeliefRules
         BeliefType.BelieverConsecutiveHits => BeliefRule.ConsecutiveHits,
         BeliefType.BelieverSafeDistance => BeliefRule.RetreatPunish,
         BeliefType.ExecutiveEscapeCircle => BeliefRule.EscapeCircle,
-        BeliefType.ExecutiveRearPosition => BeliefRule.RearDwell,
+        BeliefType.ExecutiveRearPosition => BeliefRule.RearEntry,
         BeliefType.ExecutivePrayer => BeliefRule.PrayerHit,
         _ => BeliefRule.Unassigned
     };

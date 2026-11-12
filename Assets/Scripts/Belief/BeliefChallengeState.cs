@@ -4,25 +4,22 @@ using System;
 public sealed class BeliefChallengeState
 {
     private readonly BeliefRule rule;
-    private readonly float reduction, window, rearInterval;
-    private float counterStartedAt, lastHitAt, retreatStartedAt;
-    private double rearElapsed;
-    private bool counterOpen, hasLastHit, retreatOpen, wasRetreating, wasInside, retreatConsumed;
+    private readonly float reduction, window;
+    private float counterStartedAt, lastHitAt;
+    private bool counterOpen, hasLastHit, retreatOpen, wasRetreating, wasInside, retreatConsumed, wasBehind;
 
-    public BeliefChallengeState(BeliefRule rule, float reduction, float window = 2f, float rearInterval = 2f)
+    public BeliefChallengeState(BeliefRule rule, float reduction, float window = 2f)
     {
-        if (reduction <= 0f || window <= 0f || rearInterval <= 0f)
+        if (reduction <= 0f || window <= 0f)
             throw new ArgumentOutOfRangeException(nameof(reduction));
         this.rule = rule;
         this.reduction = reduction;
         this.window = window;
-        this.rearInterval = rearInterval;
     }
 
     public void Reset()
     {
-        counterOpen = hasLastHit = retreatOpen = wasRetreating = wasInside = retreatConsumed = false;
-        rearElapsed = 0d;
+        counterOpen = hasLastHit = retreatOpen = wasRetreating = wasInside = retreatConsumed = wasBehind = false;
     }
 
     public float ResolveAttack(EnemyAttackResult result)
@@ -55,7 +52,7 @@ public sealed class BeliefChallengeState
                 hasLastHit = true;
                 return consecutive ? reduction : 0f;
             case BeliefRule.RetreatPunish:
-                if (!retreatOpen || retreatConsumed || !Within(now, retreatStartedAt)) return 0f;
+                if (!retreatOpen || retreatConsumed) return 0f;
                 retreatConsumed = true;
                 retreatOpen = false;
                 return reduction;
@@ -66,37 +63,31 @@ public sealed class BeliefChallengeState
         }
     }
 
-    public void ObserveRetreat(bool retreating, bool inside, float now)
+    public void ObserveRetreat(bool retreating, bool inside)
     {
         if (rule != BeliefRule.RetreatPunish) return;
         if (!retreating)
         {
-            wasRetreating = wasInside = retreatOpen = retreatConsumed = false;
+            wasRetreating = wasInside = false;
             return;
         }
-        if (!wasRetreating) wasInside = false;
-        if (!retreatConsumed && inside && !wasInside)
+        if (!wasRetreating)
         {
-            retreatOpen = true;
-            retreatStartedAt = now;
+            wasInside = false;
+            retreatConsumed = false;
         }
+        if (!retreatConsumed && inside && !wasInside)
+            retreatOpen = true;
         wasRetreating = true;
         wasInside = inside;
     }
 
-    public float TickRear(bool behind, float deltaTime)
+    public float ObserveRear(bool behind)
     {
-        if (rule != BeliefRule.RearDwell) return 0f;
-        if (!behind)
-        {
-            rearElapsed = 0d;
-            return 0f;
-        }
-        if (deltaTime <= 0f) return 0f;
-        rearElapsed += deltaTime;
-        int intervals = (int)Math.Floor(rearElapsed / rearInterval);
-        rearElapsed -= intervals * (double)rearInterval;
-        return intervals * reduction;
+        if (rule != BeliefRule.RearEntry) return 0f;
+        bool enteredRear = behind && !wasBehind;
+        wasBehind = behind;
+        return enteredRear ? reduction : 0f;
     }
 
     private bool Within(float now, float start) => now >= start && now - start <= window;
