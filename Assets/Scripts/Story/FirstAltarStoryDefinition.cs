@@ -26,8 +26,9 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
     // 빗소리(0.12)보다 낮게 깔아 둘이 같이 들리게 한다.
     [Range(0f, 1f)] public float rainBaseVolume = .12f, rainPeakVolume = .8f, musicVolume = .06f, impactVolume = .9f;
     [Min(.1f)] public float rainRiseSeconds = 2.5f;
-    [TextArea] public string documentTitle = "기록";
-    [TextArea(5, 20)] public string documentBody = "스토리 본문을 준비 중입니다.";
+    [TextArea] public string documentTitle = "이름 없는 동요";
+    [TextArea(5, 20)] public string documentBody =
+        "구름 아래 작은 집 하나.\n문을 열면 넓은 세상 하나.\n둘이 함께 손을 잡고,\n하나가 먼저 길을 떠나면,\n남은 하나는 집을 지킨다.";
     public CutsceneDefinition deathSequence;
 
     public CutsceneDefinition CreateIntroSequence()

@@ -50,6 +50,6 @@ MonoBehaviour:
   musicVolume: 0.06
   impactVolume: 0.9
   rainRiseSeconds: 2.5
-  documentTitle: "\uAE30\uB85D"
-  documentBody: "\uC2A4\uD1A0\uB9AC \uBCF8\uBB38\uC744 \uC900\uBE44 \uC911\uC785\uB2C8\uB2E4."
+  documentTitle: "\uC774\uB984 \uC5C6\uB294 \uB3D9\uC694"
+  documentBody: "\uAD6C\uB984 \uC544\uB798 \uC791\uC740 \uC9D1 \uD558\uB098.\n\uBB38\uC744 \uC5F4\uBA74 \uB113\uC740 \uC138\uC0C1 \uD558\uB098.\n\uB458\uC774 \uD568\uAED8 \uC190\uC744 \uC7A1\uACE0,\n\uD558\uB098\uAC00 \uBA3C\uC800 \uAE38\uC744 \uB5A0\uB098\uBA74,\n\uB0A8\uC740 \uD558\uB098\uB294 \uC9D1\uC744 \uC9C0\uD0A8\uB2E4."
   deathSequence: {fileID: 11400000, guid: 9f4c291815a125d4184043c48d88011c, type: 2}

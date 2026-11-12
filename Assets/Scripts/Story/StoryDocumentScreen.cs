@@ -20,6 +20,12 @@ public sealed class StoryDocumentScreen : MonoBehaviour
         if (canvas == null) Build();
         title.text = definition.documentTitle;
         body.text = definition.documentBody;
+        Font griun = CombatUiResources.BeliefFont();
+        if (griun != null)
+        {
+            title.font = griun;
+            body.font = griun;
+        }
         markRead = commit; closed = onClosed; error.text = "";
         openedFrame = Time.frameCount; closing = false;
         canvas.gameObject.SetActive(true);
@@ -85,8 +91,8 @@ public sealed class StoryDocumentScreen : MonoBehaviour
         }
         frame.raycastTarget = true;
 
-        title = DeathResultView.Label(paper, "", 32, DeathResultView.Ink, .10f, .70f, .90f, .82f);
-        RectTransform viewport = DeathResultView.Box("Scroll viewport", paper, new Color(0, 0, 0, 0), .10f, .16f, .90f, .68f);
+        title = DeathResultView.Label(paper, "", 42, DeathResultView.Ink, .10f, .69f, .90f, .81f);
+        RectTransform viewport = DeathResultView.Box("Scroll viewport", paper, new Color(0, 0, 0, 0), .10f, .14f, .90f, .59f);
         viewport.GetComponent<Image>().raycastTarget = true;
         viewport.gameObject.AddComponent<RectMask2D>();
         scroll = viewport.gameObject.AddComponent<ScrollRect>();
@@ -99,12 +105,12 @@ public sealed class StoryDocumentScreen : MonoBehaviour
         layout.childControlWidth = true; layout.childControlHeight = true;
         layout.childForceExpandHeight = false;
         content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        body = UiTheme.CreateText("Story text", rect, "", 24, DeathResultView.Ink, TextAnchor.UpperLeft);
+        body = UiTheme.CreateText("Story text", rect, "", 32, DeathResultView.Ink, TextAnchor.UpperCenter);
+        body.alignment = TextAnchor.UpperCenter;
         body.supportRichText = false; body.horizontalOverflow = HorizontalWrapMode.Wrap;
         body.verticalOverflow = VerticalWrapMode.Overflow; body.raycastTarget = false;
         scroll.content = rect;
-        error = DeathResultView.Label(paper, "", 16, new Color(.65f, .13f, .1f), .12f, .09f, .88f, .15f);
-        DeathResultView.Label(paper, "닫기  E / ESC", 18, DeathResultView.Ink, .28f, .035f, .72f, .085f);
+        error = DeathResultView.Label(paper, "", 16, new Color(.65f, .13f, .1f), .12f, .04f, .88f, .10f);
         canvas.gameObject.SetActive(false);
     }
 
