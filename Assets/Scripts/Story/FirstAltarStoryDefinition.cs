@@ -15,12 +15,11 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
 {
     public const string DeathStageId = "story.first-altar.death.v1";
     public const float PostImpactBlackSeconds = 3f;
+    public const int ApologyRepetitions = 20;
     public PrayerCue[] introCues = DefaultPrayer();
     public string apologyLoopText = "죄송합니다.";
-    [Min(.1f)] public float apologySeconds = 1.5f;
     [Min(1f)] public float charactersPerSecond = 22f;
     [Min(.1f)] public float approachDistance = 2.5f;
-    public bool bubbleGlitch = true;
     public AudioClip rainLoop;
     public AudioClip impactClip;
     [Range(0f, 1f)] public float rainBaseVolume = .12f, rainPeakVolume = .8f, impactVolume = .9f;
@@ -60,7 +59,7 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
 
     public bool IsUsable => introCues != null && introCues.Length > 0 &&
         Array.TrueForAll(introCues, cue => cue != null) &&
-        !string.IsNullOrWhiteSpace(apologyLoopText) && apologySeconds > 0 && charactersPerSecond > 0 &&
+        !string.IsNullOrWhiteSpace(apologyLoopText) && charactersPerSecond > 0 &&
         approachDistance > 0 && rainRiseSeconds > 0 && rainLoop != null && impactClip != null &&
         deathSequence != null && deathSequence.Steps.Length == 1 &&
         deathSequence.Steps[0].Type == CutsceneStepType.ExternalStage &&

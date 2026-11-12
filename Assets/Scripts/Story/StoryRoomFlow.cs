@@ -95,7 +95,6 @@ public sealed class StoryRoomFlow : MonoBehaviour
         }
         if (introPlaying) return;
         if (!ready || cinematic) return;
-        believer.SetTrembling(prayer.IsLooping);
         // Check the current location after the first apology is visible: early approaches are never queued.
         if (Phase == FirstAltarPhase.AwaitingApproach && prayer.IsApologyLoopReady && CanInteract &&
             Mathf.Abs(player.transform.position.x - speaker.transform.position.x) <= definition.approachDistance &&

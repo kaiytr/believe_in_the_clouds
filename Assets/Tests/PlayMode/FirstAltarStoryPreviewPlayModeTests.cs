@@ -31,7 +31,7 @@ public sealed class FirstAltarStoryPreviewPlayModeTests
         StoryRoomFlow flow = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<StoryRoomFlow>()).Single();
         FieldInfo field = typeof(StoryRoomFlow).GetField("definition", BindingFlags.Instance | BindingFlags.NonPublic);
         var copy = Object.Instantiate((FirstAltarStoryDefinition)field.GetValue(flow));
-        copy.charactersPerSecond = 10000; copy.apologySeconds = .03f; copy.rainRiseSeconds = .1f;
+        copy.charactersPerSecond = 10000; copy.rainRiseSeconds = .1f;
         field.SetValue(flow, copy); definitions.Add(copy);
         flow.GetComponent<CutsceneRunner>().UseManualDialogueInput = true;
     }

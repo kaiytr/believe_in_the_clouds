@@ -40,10 +40,8 @@ MonoBehaviour:
   - text: "\uC8C4\uC1A1\uD569\uB2C8\uB2E4."
     holdSeconds: 2.8
   apologyLoopText: "\uC8C4\uC1A1\uD569\uB2C8\uB2E4."
-  apologySeconds: 1.5
   charactersPerSecond: 22
   approachDistance: 2.5
-  bubbleGlitch: 1
   rainLoop: {fileID: 8300000, guid: 1af67a4ac28c44f19bb6429099d37550, type: 3}
   impactClip: {fileID: 8300000, guid: 9187f58349198094399e523c65f743bb, type: 3}
   rainBaseVolume: 0.12

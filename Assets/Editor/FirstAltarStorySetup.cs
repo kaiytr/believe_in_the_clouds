@@ -34,11 +34,6 @@ public static class FirstAltarStorySetup
             definition.impactClip = MakeImpact();
             EditorUtility.SetDirty(death); EditorUtility.SetDirty(definition);
             Material unlit = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
-            Shader shader = Shader.Find("Story/Believer Glitch");
-            if (shader == null) throw new InvalidOperationException("Story glitch shader is missing.");
-            const string materialPath = "Assets/Art/Story/BelieverGlitch.mat";
-            Material glitch = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
-            if (glitch == null) { glitch = new Material(shader); AssetDatabase.CreateAsset(glitch, materialPath); }
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             GameObject hero = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ProjectSceneSynchronization.PlayerPath));
@@ -87,7 +82,7 @@ public static class FirstAltarStorySetup
             var npc = new GameObject("StoryBeliever");
             // Tutorial/Combat: parent scale (1,2) * visual scale (13/6,13/12) = uniform 13/6.
             const float believerScale = 13f / 6f;
-            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], glitch, Vector3.zero,
+            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], unlit, Vector3.zero,
                 new Vector3(believerScale, believerScale, 1), Color.white, 4);
             body.flipX = true; // The source believer art faces left; the altar is on its right.
             body.transform.localPosition = new Vector3(0, -idle[0].bounds.min.y * believerScale, 0);

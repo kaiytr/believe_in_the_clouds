@@ -32,8 +32,8 @@ public sealed class FirstAltarStoryPlayModeTests
         FieldInfo field = typeof(StoryRoomFlow).GetField("definition", BindingFlags.Instance | BindingFlags.NonPublic);
         fastDefinition = Object.Instantiate((FirstAltarStoryDefinition)field.GetValue(flow));
         // Slow typing to verify the fill click, then click through the actual manuscript.
-        // Only ambient apology/rain waiting is shortened; the required blackout stays at 3 seconds.
-        fastDefinition.charactersPerSecond = 1; fastDefinition.apologySeconds = .03f; fastDefinition.rainRiseSeconds = .1f;
+        // Only rain waiting is shortened; the required blackout stays at 3 seconds.
+        fastDefinition.charactersPerSecond = 1; fastDefinition.rainRiseSeconds = .1f;
         field.SetValue(flow, fastDefinition);
         flow.GetComponent<CutsceneRunner>().UseManualDialogueInput = true;
     }
@@ -86,6 +86,7 @@ public sealed class FirstAltarStoryPlayModeTests
         Assert.That(bodyView.transform.lossyScale.x, Is.EqualTo(13f / 6f).Within(.0001f));
         Assert.That(bodyView.transform.lossyScale.y, Is.EqualTo(13f / 6f).Within(.0001f));
         Assert.That(bodyView.flipX, Is.True, "원본 스프라이트를 반전해 오른쪽 제단을 바라본다.");
+        Assert.That(bodyView.sharedMaterial.shader.name, Is.Not.EqualTo("Story/Believer Glitch"));
         Assert.That(altar.transform.position.x, Is.GreaterThan(npc.transform.position.x));
         Assert.That(altar.CanInteract(player.gameObject), Is.False);
         Assert.That(exit.CanInteract(player.gameObject), Is.False);
@@ -130,7 +131,8 @@ public sealed class FirstAltarStoryPlayModeTests
         while (!prayer.IsApologyLoopReady && Time.realtimeSinceStartup < until) yield return null;
         Assert.That(prayer.IsApologyLoopReady, Is.True);
         yield return new WaitForSeconds(.2f);
-        Assert.That(prayer.IsApologyLoopReady, Is.True); // apology repeats, no automatic death
+        Assert.That(prayer.IsApologyLoopReady, Is.True);
+        Assert.That(prayer.IsLooping, Is.False, "20번을 마쳐도 접근 사망 조건은 유지한다.");
         store.FailWrites = true;
         player.transform.position = new Vector3(1, -1.2f, 0);
         var rigidbody = player.GetComponent<Rigidbody2D>(); rigidbody.position = player.transform.position; rigidbody.linearVelocity = Vector2.zero;
