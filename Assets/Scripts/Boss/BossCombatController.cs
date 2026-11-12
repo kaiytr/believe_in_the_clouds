@@ -50,6 +50,17 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private CutsceneBubbleView phaseBubble;
     private readonly object phaseCutsceneLock = new object();
     private static readonly string[] PhaseTwoLines = { "여전하네. 하나도 변하지 않았어.", "...참 짓궂게." };
+    private static readonly string[] DeathLines =
+    {
+        "...이상하네.",
+        "분명 다시 만나면 할 말이 많았는데...",
+        "막상 네 얼굴을 보니",
+        "아무것도 생각나지가 않아.",
+        "......",
+        "네게는 이곳이 그저 늘러붙은 낙인에 불과했던 걸까.",
+        "그게 조금은 억울해.",
+        "정말 조금은...."
+    };
     private bool beliefAwaitingEnd;
     private BossRegularAttackContext runningRegularContext;
     private string phraseCache = "";
@@ -169,6 +180,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         }
     }
     public bool IsPhaseCutscenePlaying => phaseCutscenePlaying;
+    public bool IsDeathDialoguePlaying { get; private set; }
     public string ActivePatternName => regularRunning && beliefProcessing ? PatternName(activeRegular) + " + " + PatternName(activeBeliefPattern) :
         regularRunning ? PatternName(activeRegular) : beliefProcessing ? PatternName(activeBeliefPattern) : "대기";
     public BossPatternKind ActivePattern => regularRunning || !beliefProcessing ? activeRegular : activeBeliefPattern;
@@ -450,46 +462,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         if (playerBody != null) playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
         SetStatus("2페이즈 전환");
 
-        CutsceneCharacter speaker = GetComponent<CutsceneCharacter>();
-        if (speaker == null) speaker = gameObject.AddComponent<CutsceneCharacter>();
-        speaker.Configure("보스", null);
-        if (phaseBubble == null) phaseBubble = gameObject.AddComponent<CutsceneBubbleView>();
-
-        const float charactersPerSecond = 22f;
-        for (int i = 0; i < PhaseTwoLines.Length; i++)
-        {
-            string line = PhaseTwoLines[i];
-            phaseBubble.ShowLine(speaker, "", line);
-            int shown = 0;
-            float elapsed = 0f;
-            bool completed = false;
-            while (!completed)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                int next = Mathf.Min(line.Length, Mathf.FloorToInt(elapsed * charactersPerSecond));
-                if (next != shown)
-                {
-                    shown = next;
-                    phaseBubble.SetVisibleText(line.Substring(0, shown));
-                }
-                if (Input.GetMouseButtonDown(0))
-                {
-                    if (shown < line.Length)
-                    {
-                        shown = line.Length;
-                        phaseBubble.SetVisibleText(line);
-                    }
-                    else completed = true;
-                }
-                if (shown >= line.Length && Input.GetKeyDown(KeyCode.E)) completed = true;
-                yield return null;
-            }
-            while (Input.GetMouseButton(0) || Input.GetKey(KeyCode.E)) yield return null;
-        }
-
-        phaseBubble.Hide();
-        phaseCutscenePlaying = false;
-        UiModal.Pop(phaseCutsceneLock);
+        yield return SpeakLines(PhaseTwoLines);
+        EndSpokenLines();
         nextRegularAt = Time.time + 0.4f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0.4f);
         phaseCutscene = null;
@@ -1000,6 +974,67 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         SetStatus("보스 격파");
         if (DoctrineEventBus.HasListeners)
             DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, null);
+        if (phaseCutscene != null) StopCoroutine(phaseCutscene);
+        phaseCutscene = StartCoroutine(PlayDeathDialogue());
+    }
+
+    // 보스 사망 뒤, 시체 머리 위 말풍선으로 한 줄씩 말한다. 끝나면 엔딩 이동이 시작된다.
+    private IEnumerator PlayDeathDialogue()
+    {
+        IsDeathDialoguePlaying = true;
+        UiModal.Push(phaseCutsceneLock);
+        yield return SpeakLines(DeathLines);
+        IsDeathDialoguePlaying = false;
+        EndSpokenLines();
+        phaseCutscene = null;
+        Notify();
+    }
+
+    private IEnumerator SpeakLines(string[] lines)
+    {
+        CutsceneCharacter speaker = GetComponent<CutsceneCharacter>();
+        if (speaker == null) speaker = gameObject.AddComponent<CutsceneCharacter>();
+        speaker.Configure("보스", null);
+        if (phaseBubble == null) phaseBubble = gameObject.AddComponent<CutsceneBubbleView>();
+
+        const float charactersPerSecond = 22f;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            phaseBubble.ShowLine(speaker, "", line);
+            int shown = 0;
+            float elapsed = 0f;
+            bool completed = false;
+            while (!completed)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                int next = Mathf.Min(line.Length, Mathf.FloorToInt(elapsed * charactersPerSecond));
+                if (next != shown)
+                {
+                    shown = next;
+                    phaseBubble.SetVisibleText(line.Substring(0, shown));
+                }
+                if (Input.GetMouseButtonDown(0))
+                {
+                    if (shown < line.Length)
+                    {
+                        shown = line.Length;
+                        phaseBubble.SetVisibleText(line);
+                    }
+                    else completed = true;
+                }
+                if (shown >= line.Length && Input.GetKeyDown(KeyCode.E)) completed = true;
+                yield return null;
+            }
+            while (Input.GetMouseButton(0) || Input.GetKey(KeyCode.E)) yield return null;
+        }
+    }
+
+    private void EndSpokenLines()
+    {
+        if (phaseBubble != null) phaseBubble.Hide();
+        phaseCutscenePlaying = false;
+        UiModal.Pop(phaseCutsceneLock);
     }
     // Explicit, immediate facing (not the delayed player-tracking turn). Attacks no longer use it: they wait for
     // the turn through BossAttackExecutor.TurnToPlayer, so the delay cannot be bypassed just before an attack.
@@ -1103,6 +1138,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         if (phaseCutscene != null) StopCoroutine(phaseCutscene);
         phaseCutscene = null;
         phaseCutscenePlaying = false;
+        IsDeathDialoguePlaying = false;
         if (phaseBubble != null) phaseBubble.Hide();
         UiModal.Pop(phaseCutsceneLock);
         CancelCombat(true);

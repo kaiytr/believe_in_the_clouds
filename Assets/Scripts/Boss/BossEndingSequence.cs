@@ -77,6 +77,7 @@ public sealed class BossEndingSequence : MonoBehaviour
         switch (phase)
         {
             case SequencePhase.WaitingForWalk:
+                if (boss != null && boss.IsDeathDialoguePlaying) break;
                 if (Time.unscaledTime >= phaseEndsAt &&
                     (playerMove.IsGrounded || Time.unscaledTime - sequenceStartedAt >= deathPause + 2f))
                 {

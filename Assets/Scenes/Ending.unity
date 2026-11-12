@@ -148,15 +148,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e103f69544094c189ad6bec5847456e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::EndingSceneController
-  backdropArt:
-    sky: {fileID: 21300000, guid: 008ee9dd7bc24f0a95657d09d6ddc76c, type: 3}
-    mountainBack: {fileID: 21300000, guid: 6e0a3d37949c4a76a9affb9527ec8807, type: 3}
-    mountainFront: {fileID: 21300000, guid: e719ae3995404f47917a0d9739e86832, type: 3}
-    clouds:
-    - {fileID: 21300000, guid: 11b54bac880f4a8fbe2a5f970a968620, type: 3}
-    - {fileID: 21300000, guid: ed842d0784104f4ba190e998a95b8ef0, type: 3}
-    - {fileID: 21300000, guid: 3cb4762d323f4e349953ff0af063d42f, type: 3}
-  backdropBottomY: -4
   groundSprites:
   - {fileID: 188700100, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
   - {fileID: 188700101, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
@@ -174,6 +165,15 @@ MonoBehaviour:
   - {fileID: 188700113, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
   - {fileID: 188700114, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
   - {fileID: 188700115, guid: e54146265ed9b7b4b9e28267312f2508, type: 3}
+  backdropArt:
+    sky: {fileID: 21300000, guid: 008ee9dd7bc24f0a95657d09d6ddc76c, type: 3}
+    mountainBack: {fileID: 21300000, guid: 6e0a3d37949c4a76a9affb9527ec8807, type: 3}
+    mountainFront: {fileID: 21300000, guid: e719ae3995404f47917a0d9739e86832, type: 3}
+    clouds:
+    - {fileID: 21300000, guid: 11b54bac880f4a8fbe2a5f970a968620, type: 3}
+    - {fileID: 21300000, guid: ed842d0784104f4ba190e998a95b8ef0, type: 3}
+    - {fileID: 21300000, guid: 3cb4762d323f4e349953ff0af063d42f, type: 3}
+  backdropBottomY: -4
   playerWalkFrames:
   - {fileID: 8598911646308356358, guid: 00b81cb0034264049962decae96c480f, type: 3}
   - {fileID: -8971905496091981746, guid: 00b81cb0034264049962decae96c480f, type: 3}
@@ -192,11 +192,11 @@ MonoBehaviour:
     GRAPHIC BY\r\n\uC774\uC2B9\uC8FC\r\n\uC815\uB3C4\uC6D0\r\n\n## USED ASSET\r\nSA
     Szadi Art - Platformer Set\n\n## MUSIC PROVED BY\r\n\uBE0C\uAE08\uB300\uD1B5\uB839
     - Attack of The Trolls\n\uBE0C\uAE08\uB300\uD1B5\uB839 - In Jerusalem\n\uBE0C\uAE08\uB300\uD1B5\uB839
-    - Theory of Relativity\n\nSPECIAL THANKS\nAnA's main chunshik\nDogHam\nThe C,real's
-    Emperor\nThe Undo Button\nfox of mincreaft\n\n\n\xA9 2026. \uAC81 \uC5C6\uB294
-    10\uB300 \uCC3D\uC5C5\uAC00\uC758 \uB4A4\uB97C \uC787\uAE30 \uC704\uD574 \uC790\uC804\uAC70\uB97C
-    \uD0C0\uACE0 26km\uB97C \uB2EC\uB824\uC628 \uC804\uC124\uC758 \uC5C4\uBCF5\uB3D9
-    All rights reserved"
+    - Theory of Relativity\r\nBoat Floating - Puddle of Infinity\n\nSPECIAL THANKS\nAnA's
+    main chunshik\nDogHam\nThe C,real's Emperor\nThe Undo Button\nfox of mincreaft\n\n\n\xA9
+    2026. \uAC81 \uC5C6\uB294 10\uB300 \uCC3D\uC5C5\uAC00\uC758 \uB4A4\uB97C \uC787\uAE30
+    \uC704\uD574 \uC790\uC804\uAC70\uB97C \uD0C0\uACE0 26km\uB97C \uB2EC\uB824\uC628
+    \uC804\uC124\uC758 \uC5C4\uBCF5\uB3D9 All rights reserved"
 --- !u!4 &1737599110
 Transform:
   m_ObjectHideFlags: 0
