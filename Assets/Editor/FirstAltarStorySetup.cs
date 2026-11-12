@@ -35,6 +35,7 @@ public static class FirstAltarStorySetup
                 new[] { CutsceneStep.External(FirstAltarStoryDefinition.DeathStageId) });
             definition.deathSequence = death;
             definition.rainLoop = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Boss/보스전-비.mp3");
+            definition.musicLoop = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Story/BGM.mp3");
             definition.impactClip = MakeImpact();
             EditorUtility.SetDirty(death); EditorUtility.SetDirty(definition);
             Material lit = AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);

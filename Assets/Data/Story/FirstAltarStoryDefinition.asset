@@ -21,11 +21,11 @@ MonoBehaviour:
     holdSeconds: 2.8
   - text: "\uB137. \uAD6C\uB984\uC744 \uBBFF\uC5B4\uB77C."
     holdSeconds: 2.8
-  - text:
+  - text: 
     holdSeconds: 1.8
   - text: "\uBE44\uB294, \uAD6C\uB984\uC740, \uBE44\uB294, \uAD6C\uB984\uC740..."
     holdSeconds: 2.8
-  - text:
+  - text: 
     holdSeconds: 1.8
   - text: "\uBE44\uAC00 \uB108\uBB34 \uB9CE\uC774 \uC640\uC694."
     holdSeconds: 2.8
@@ -43,9 +43,11 @@ MonoBehaviour:
   charactersPerSecond: 22
   approachDistance: 2.5
   rainLoop: {fileID: 8300000, guid: 1af67a4ac28c44f19bb6429099d37550, type: 3}
+  musicLoop: {fileID: 8300000, guid: 230cabf090ad7ae47a486d5ed9ad51ff, type: 3}
   impactClip: {fileID: 8300000, guid: 9187f58349198094399e523c65f743bb, type: 3}
   rainBaseVolume: 0.12
   rainPeakVolume: 0.8
+  musicVolume: 0.06
   impactVolume: 0.9
   rainRiseSeconds: 2.5
   documentTitle: "\uAE30\uB85D"

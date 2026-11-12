@@ -17,7 +17,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
     [SerializeField] private CutsceneRunner runner;
     private AmbientPrayerController prayer;
     private StoryDocumentScreen document;
-    private AudioSource rain, impact;
+    private AudioSource rain, music, impact;
     private Canvas blackout;
     private Text status;
     private Canvas statusCanvas;
@@ -50,6 +50,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
         runner.ExternalStageRequested += HandleExternalStage;
         runner.Completed += HandleCompleted; runner.Cancelled += HandleCancelled;
         if (rain != null) rain.Play();
+        if (music != null && !music.isPlaying) music.Play();
     }
     private void Start()
     {
@@ -65,8 +66,10 @@ public sealed class StoryRoomFlow : MonoBehaviour
         prayer.transform.SetParent(transform, false);
         document = gameObject.AddComponent<StoryDocumentScreen>();
         rain = CreateAudio("Story rain", definition.rainLoop, true, definition.rainBaseVolume);
+        music = CreateAudio("Story music", definition.musicLoop, true, definition.musicVolume);
         impact = CreateAudio("Story impact", definition.impactClip, false, definition.impactVolume);
         rain.Play();
+        music.Play();
         runner.ExternalStageRequested += HandleExternalStage;
         runner.Completed += HandleCompleted;
         runner.Cancelled += HandleCancelled;
@@ -264,7 +267,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
         StopAllCoroutines(); prayer?.StopPrayer();
         if (introSequence != null) Destroy(introSequence);
         if (blackout != null) Destroy(blackout.gameObject);
-        if (rain != null) rain.Stop(); if (impact != null) impact.Stop();
+        if (rain != null) rain.Stop(); if (music != null) music.Stop(); if (impact != null) impact.Stop();
         UiModal.Pop(releaseToken);
         if (document != null) document.enabled = false;
         if (Instance == this) Instance = null;

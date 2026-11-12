@@ -21,8 +21,10 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
     [Min(1f)] public float charactersPerSecond = 22f;
     [Min(.1f)] public float approachDistance = 2.5f;
     public AudioClip rainLoop;
+    public AudioClip musicLoop;
     public AudioClip impactClip;
-    [Range(0f, 1f)] public float rainBaseVolume = .12f, rainPeakVolume = .8f, impactVolume = .9f;
+    // 빗소리(0.12)보다 낮게 깔아 둘이 같이 들리게 한다.
+    [Range(0f, 1f)] public float rainBaseVolume = .12f, rainPeakVolume = .8f, musicVolume = .06f, impactVolume = .9f;
     [Min(.1f)] public float rainRiseSeconds = 2.5f;
     [TextArea] public string documentTitle = "기록";
     [TextArea(5, 20)] public string documentBody = "스토리 본문을 준비 중입니다.";
@@ -60,7 +62,7 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
     public bool IsUsable => introCues != null && introCues.Length > 0 &&
         Array.TrueForAll(introCues, cue => cue != null) &&
         !string.IsNullOrWhiteSpace(apologyLoopText) && charactersPerSecond > 0 &&
-        approachDistance > 0 && rainRiseSeconds > 0 && rainLoop != null && impactClip != null &&
+        approachDistance > 0 && rainRiseSeconds > 0 && rainLoop != null && musicLoop != null && impactClip != null &&
         deathSequence != null && deathSequence.Steps.Length == 1 &&
         deathSequence.Steps[0].Type == CutsceneStepType.ExternalStage &&
         deathSequence.Steps[0].ExternalStageId == DeathStageId;
