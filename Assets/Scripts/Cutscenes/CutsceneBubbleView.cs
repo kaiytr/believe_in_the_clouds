@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public sealed class CutsceneBubbleView : MonoBehaviour
 {
     private static Sprite bubbleSprite;
-    private static Font koreanFont;
+    private static Font beliefFont;
 
     [Header("Layout")]
     [SerializeField] private Vector2 panelSize = new Vector2(318f, 120f);
@@ -204,7 +204,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         GameObject child = new GameObject(childName, typeof(RectTransform), typeof(Text));
         child.transform.SetParent(parent, false);
         Text text = child.GetComponent<Text>();
-        text.font = GetKoreanFont();
+        text.font = GetBeliefFont();
         text.fontSize = fontSize;
         text.fontStyle = style;
         text.alignment = TextAnchor.MiddleLeft;
@@ -457,15 +457,15 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         return text.cachedTextGeneratorForLayout.GetPreferredHeight(content, settings) / text.pixelsPerUnit;
     }
 
-    private static Font GetKoreanFont()
+    private static Font GetBeliefFont()
     {
-        if (koreanFont != null)
-            return koreanFont;
+        if (beliefFont != null)
+            return beliefFont;
 
-        koreanFont = CombatUiResources.KoreanFont();
-        if (koreanFont == null)
-            koreanFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        return koreanFont;
+        beliefFont = CombatUiResources.BeliefFont();
+        if (beliefFont == null)
+            beliefFont = CombatUiResources.KoreanFont() ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return beliefFont;
     }
 
     private static Sprite GetBubbleSprite()
@@ -492,7 +492,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             else DestroyImmediate(bubbleSprite);
         }
         bubbleSprite = null;
-        koreanFont = null;
+        beliefFont = null;
     }
     private void OnDestroy()
     {
