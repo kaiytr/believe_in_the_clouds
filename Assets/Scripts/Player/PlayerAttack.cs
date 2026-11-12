@@ -53,7 +53,7 @@ public class PlayerAttack : MonoBehaviour
         [Tooltip("이번 타에 앞으로 미끄러지듯 나가는 거리.")]
         [Min(0f)] public float lungeDistance;
 
-        [Tooltip("적중 시 적을 미는 힘(충격량).")]
+        [Tooltip("지상 적중 시 수평 넉백 세기. 일반 적과 보스에 동일한 속도 규칙으로 적용한다.")]
         [Min(0f)] public float knockback;
 
         [Tooltip("적중 시 적을 띄우는 힘(충격량). 피니쉬용.")]
@@ -129,6 +129,12 @@ public class PlayerAttack : MonoBehaviour
         launchUp = 0f,
     };
 
+    [Header("적 피격 이동 경직")]
+    [Tooltip("지상 공격에 맞은 적의 자체 이동을 막는 시간. 넉백이 남아 있는 동안에도 자체 이동을 막는다.")]
+    [SerializeField, Min(0f)] private float groundHitStunSeconds = .18f;
+    [Tooltip("공중 내려찍기에 맞은 적의 자체 이동을 막는 시간. 넉백은 적용하지 않는다.")]
+    [SerializeField, Min(0f)] private float airHitStunSeconds = .2f;
+
     [Header("아래 부채꼴 판정")]
     [Tooltip("부채꼴 반경(월드 단위). 플레이어 아래 중심 원에서 이 거리 안이 후보가 된다.")]
     [SerializeField, Min(0.5f)] private float downFanRadius = 2.6f;
@@ -136,10 +142,6 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField, Range(10f, 180f)] private float downFanHalfAngle = 65f;
     [Tooltip("부채꼴 중심(플레이어 기준 오프셋). x는 바라보는 방향으로 뒤집힌다. 기본 0,-0.2.")]
     [SerializeField] private Vector2 downFanOriginOffset = new Vector2(0f, -0.2f);
-    [Tooltip("적중 시 적을 아래로 미는 힘(충격량).")]
-    [SerializeField, Min(0f)] private float downFanEnemyKnockDown = 4f;
-    [Tooltip("적중 시 적을 바깥(좌우)으로 미는 힘. 중심에서 멀어지는 방향.")]
-    [SerializeField, Min(0f)] private float downFanEnemyKnockOut = 2f;
     [Tooltip("적중 시 플레이어가 위로 튀어오르는 속도. 0이면 바운스 없음.")]
     [SerializeField, Min(0f)] private float downFanPlayerBounce = 8f;
 
@@ -563,7 +565,7 @@ public class PlayerAttack : MonoBehaviour
                 if (DoctrineEventBus.HasListeners)
                     DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
-                ApplyDownFanKnockback(origin, hit);
+                ApplyHitReaction(hit, airHitStunSeconds, 0f);
             }
         }
 
@@ -572,25 +574,10 @@ public class PlayerAttack : MonoBehaviour
         return hitCount;
     }
 
-    private void ApplyDownFanKnockback(Vector2 origin, Collider2D hit)
+    private void ApplyHitReaction(Collider2D hit, float stunSeconds, float knockbackSpeed)
     {
-        if (hit == null)
-            return;
-
-        Rigidbody2D enemyRb = hit.attachedRigidbody;
-        if (enemyRb == null)
-            enemyRb = hit.GetComponentInParent<Rigidbody2D>();
-        if (enemyRb == null || enemyRb == rb)
-            return;
-
-        Vector2 targetPos = hit.transform.position;
-        Vector2 outward = targetPos - origin;
-        if (outward.sqrMagnitude < 0.0001f)
-            outward = Vector2.down;
-        outward.Normalize();
-
-        Vector2 force = outward * downFanEnemyKnockOut + Vector2.down * downFanEnemyKnockDown;
-        enemyRb.AddForce(force, ForceMode2D.Impulse);
+        if (hit != null)
+            hit.GetComponentInParent<EnemyHitReaction>()?.Apply(stunSeconds, knockbackSpeed, transform.position.x);
     }
 
     private IEnumerator SwingOnce(ComboStep step, bool stopSlide, bool isFinish = false, int soundIndex = -1)
@@ -718,37 +705,13 @@ public class PlayerAttack : MonoBehaviour
                 if (DoctrineEventBus.HasListeners)
                     DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
-                ApplyKnockback(hit, step, facing);
+                ApplyHitReaction(hit, groundHitStunSeconds, step.knockback * 1.4f);
             }
         }
 
         overlapSeen.Clear();
         hitBuffer.Clear();
         return hitCount;
-    }
-
-    private void ApplyKnockback(Collider2D hit, ComboStep step, float facing)
-    {
-        if ((step.knockback <= 0f && step.launchUp <= 0f) || hit == null)
-            return;
-
-        EnemyUnit enemy = hit.GetComponentInParent<EnemyUnit>();
-        // 넉백은 EnemyUnit의 속도 방식으로 밀어낸다 (AI 속도에 더해져 감쇠).
-        if (enemy != null)
-        {
-            enemy.AddKnockback(step.knockback * 1.4f, transform.position.x);
-            return;
-        }
-
-        Rigidbody2D enemyRb = hit.attachedRigidbody;
-        if (enemyRb == null)
-            enemyRb = hit.GetComponentInParent<Rigidbody2D>();
-        if (enemyRb == null || enemyRb == rb)
-            return;
-
-        enemyRb.AddForce(
-            new Vector2(facing * step.knockback, step.launchUp),
-            ForceMode2D.Impulse);
     }
 
     private IEnumerator HitStop(float duration)

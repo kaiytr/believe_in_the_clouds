@@ -253,8 +253,8 @@ MonoBehaviour:
   downFanRadius: 2.6
   downFanHalfAngle: 65
   downFanOriginOffset: {x: 0, y: -0.2}
-  downFanEnemyKnockDown: 4
-  downFanEnemyKnockOut: 2
+  groundHitStunSeconds: 0.18
+  airHitStunSeconds: 0.2
   downFanPlayerBounce: 8
   airAttackResetOnLand: 1
   downFanImpact: {fileID: 0}

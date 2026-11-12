@@ -225,13 +225,18 @@ public class DogChargeAttack : EnemyAttack
         float maximumChargeTime = lockedChargeDistance / chargeSpeed + 0.25f;
         float elapsed = 0f;
         while (!blockedByObstacle && !hasResolvedPlayerContact &&
-               Mathf.Abs(body.position.x - chargeStartPosition.x) < lockedChargeDistance &&
+               ChargeTravelledDistance < lockedChargeDistance &&
                elapsed < maximumChargeTime)
         {
             if (owner == null || owner.IsDead)
                 break;
 
-            float travelled = Mathf.Abs(body.position.x - chargeStartPosition.x);
+            if (owner.HitReaction.IsMovementSuppressed)
+            {
+                yield return PhysicsTick;
+                continue;
+            }
+            float travelled = ChargeTravelledDistance;
             float stepDistance = Mathf.Min(lockedChargeDistance - travelled, chargeSpeed * Time.fixedDeltaTime);
             float stepSpeed = stepDistance / Time.fixedDeltaTime;
             body.linearVelocity = new Vector2(lockedDirectionX * stepSpeed, body.linearVelocity.y);
@@ -241,11 +246,11 @@ public class DogChargeAttack : EnemyAttack
         }
 
         if (!blockedByObstacle && lockedChargeBlockedByObstacle &&
-            Mathf.Abs(body.position.x - chargeStartPosition.x) >= lockedChargeDistance - 0.02f)
+            ChargeTravelledDistance >= lockedChargeDistance - 0.02f)
             blockedByObstacle = true;
 
         chargeCompleted = !blockedByObstacle && !hasResolvedPlayerContact &&
-                          Mathf.Abs(body.position.x - chargeStartPosition.x) >= lockedChargeDistance - 0.02f;
+                          ChargeTravelledDistance >= lockedChargeDistance - 0.02f;
         body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         owner.SetPhysicalCollisionWithPlayerEnabled(false);
         isCharging = false;
@@ -354,6 +359,9 @@ public class DogChargeAttack : EnemyAttack
     {
         return (obstacleLayer.value & (1 << layer)) != 0;
     }
+
+    // Backward knockback cannot count as progress toward the locked forward charge endpoint.
+    private float ChargeTravelledDistance => Mathf.Max(0f, (body.position.x - chargeStartPosition.x) * lockedDirectionX);
 
     private void SpawnAfterimage()
     {

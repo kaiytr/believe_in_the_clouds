@@ -196,7 +196,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
             while (Time.time < warningEndsAt && owner.IsAttackValid(record) && owner.CanStartNextHit)
             {
                 float elapsed = Time.time - warningStartedAt;
-                if (!lungeBlocked && lungeDistance > 0f && elapsed < lungeDuration)
+                if (!owner.IsHitMovementLocked && !lungeBlocked && lungeDistance > 0f && elapsed < lungeDuration)
                 {
                     float requested = Mathf.Min(lungeDistance, lungeSpeed * Time.fixedDeltaTime);
                     Vector2 center = owner.BodyCollider.bounds.center;
@@ -205,8 +205,7 @@ public sealed class BossAttackExecutor : MonoBehaviour
                         owner, false, out bool blocked);
                     if (clear > 0f)
                     {
-                        owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
-                        owner.Body.MovePosition(owner.Body.position + attackDirection * clear);
+                        owner.HitReaction.RequestHorizontalMovement(attackDirection.x * clear / Time.fixedDeltaTime);
                         lungeDistance -= clear;
                     }
                     lungeBlocked = blocked || clear + 0.001f < requested;
@@ -336,6 +335,12 @@ public sealed class BossAttackExecutor : MonoBehaviour
         bool settled = false;   // evade already settled; the dash itself still runs to its end
         while (remaining > 0.001f && (settled ? owner.CanContinue : owner.IsAttackValid(record)))
         {
+            if (owner.IsHitMovementLocked)
+            {
+                if (!settled) owner.Observe(record, record.Geometry);
+                yield return PhysicsTick;
+                continue;
+            }
             Vector2 center = owner.BodyCollider.bounds.center;
             float step = Mathf.Min(remaining, speed * Time.fixedDeltaTime);
             step = BossCombatPhysics.ClearDistance(center, size, direction, step, owner, false, out blocked);
@@ -354,13 +359,13 @@ public sealed class BossAttackExecutor : MonoBehaviour
             }
             Color? tint = record.BurnEnhanced ? (Color?)new Color(1f, 0.43f, 0.12f, 0.9f) : null;
             afterimages.Emit(Data.DashPrefab, owner.BodyRenderer, Data.AttackOrder, tint);
-            owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
-            owner.Body.MovePosition(owner.Body.position + direction * step);
+            owner.HitReaction.RequestHorizontalMovement(direction.x * step / Time.fixedDeltaTime);
             remaining -= step;
             yield return PhysicsTick;
             if (blocked) { Impact(owner.BodyCollider.bounds.center + (Vector3)(direction * size.x * 0.5f), true); break; }
         }
-        owner.Body.linearVelocity = new Vector2(0f, owner.Body.linearVelocity.y);
+        if (!owner.IsHitMovementLocked)
+            owner.HitReaction.RequestHorizontalMovement(0f);
         owner.CompleteAttack(record, blocked ? BossAttackEndReason.Wall : BossAttackEndReason.Completed);
         yield return Recovery();
     }

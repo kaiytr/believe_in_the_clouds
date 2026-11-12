@@ -9,10 +9,10 @@ public sealed class ScenePropagationEditModeTests
 {
     private const string PlayerPath = "Assets/Prefabs/Player/Player.prefab";
     private const string HudPath = "Assets/Prefabs/UI/PlayerHud.prefab";
-    public static IEnumerable<string> ScenePaths => ProjectScenes.AllPaths;
+    public static IEnumerable<string> ScenePaths => ProjectScenes.GameplayPaths.Where(path => path != ProjectScenes.Ending);
 
     [TestCaseSource(nameof(ScenePaths))]
-    public void EveryProjectSceneUsesTheSharedCombatSettingsAndHud(string path)
+    public void EveryPlayableSceneUsesTheSharedCombatSettingsAndHud(string path)
     {
         SceneSetup[] previous = EditorSceneManager.GetSceneManagerSetup();
         try
@@ -31,7 +31,7 @@ public sealed class ScenePropagationEditModeTests
             Assert.That(attack, Is.Not.Null);
             var actual = new SerializedObject(attack);
             var expected = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPath).GetComponent<PlayerAttack>());
-            foreach (string field in new[] { "downFanRadius", "downFanHalfAngle", "downFanEnemyKnockDown", "downFanEnemyKnockOut", "downFanPlayerBounce", "finishHitStop" })
+            foreach (string field in new[] { "downFanRadius", "downFanHalfAngle", "groundHitStunSeconds", "airHitStunSeconds", "downFanPlayerBounce", "finishHitStop" })
                 Assert.That(actual.FindProperty(field).floatValue, Is.EqualTo(expected.FindProperty(field).floatValue), field);
             Assert.That(actual.FindProperty("downFanOriginOffset").vector2Value, Is.EqualTo(expected.FindProperty("downFanOriginOffset").vector2Value));
             Assert.That(actual.FindProperty("airAttack.hitboxOffset").vector2Value, Is.EqualTo(Vector2.zero));
@@ -49,6 +49,8 @@ public sealed class ScenePropagationEditModeTests
             foreach (var component in roots.SelectMany(root => root.GetComponentsInChildren<MonoBehaviour>(true)))
             {
                 Assert.That(component, Is.Not.Null, "Missing scene script");
+                if (component is EnemyUnit || component is BossCombatController)
+                    Assert.That(component.GetComponent<EnemyHitReaction>(), Is.Not.Null, "Every enemy needs the shared hit reaction.");
                 if (component is LobbyCameraFollow follow) Assert.That(follow.Target, Is.SameAs(player.transform));
                 if (component.GetType().Name == "CinemachineCamera")
                 {
