@@ -492,8 +492,8 @@ public class FoundationPanelView : MonoBehaviour
         ApplySkin(image, "Alter_scroll_w");
 
         LayoutElement layout = card.AddComponent<LayoutElement>();
-        layout.preferredHeight = 129f;
-        layout.minHeight = 100f;
+        layout.preferredHeight = 142f;
+        layout.minHeight = 110f;
 
         // 조각은 개수만큼 한 줄씩 따로 표시하므로 "×N"을 붙이지 않는다.
         // 사진처럼 제목은 크게 굵게, 설명은 작게.
@@ -865,8 +865,8 @@ public class FoundationPanelView : MonoBehaviour
         groupLayout.minHeight = 190f;
 
         VerticalLayoutGroup groupVertical = group.AddComponent<VerticalLayoutGroup>();
-        groupVertical.padding = new RectOffset(24, 24, 23, 26);
-        groupVertical.spacing = 9;
+        groupVertical.padding = new RectOffset(16, 16, 16, 20);
+        groupVertical.spacing = 6;
         groupVertical.childControlWidth = true;
         groupVertical.childControlHeight = true;
         groupVertical.childForceExpandWidth = true;
@@ -878,11 +878,11 @@ public class FoundationPanelView : MonoBehaviour
         doctrineSlotRows.Add(slotRow);
         LayoutElement slotRowLayout = slotRow.AddComponent<LayoutElement>();
         slotRowLayout.flexibleHeight = 0f;
-        slotRowLayout.preferredHeight = 82f;
+        slotRowLayout.preferredHeight = 96f;
         slotRowLayout.minHeight = 60f;
 
         HorizontalLayoutGroup slotLayout = slotRow.AddComponent<HorizontalLayoutGroup>();
-        slotLayout.spacing = 10;
+        slotLayout.spacing = 5;
         slotLayout.childControlWidth = true;
         slotLayout.childControlHeight = true;
         slotLayout.childForceExpandWidth = true;
@@ -906,7 +906,7 @@ public class FoundationPanelView : MonoBehaviour
         doctrineDescriptionBoxes.Add(description);
         LayoutElement descriptionLayout = description.AddComponent<LayoutElement>();
         descriptionLayout.flexibleHeight = 0f;
-        descriptionLayout.preferredHeight = 82f;
+        descriptionLayout.preferredHeight = 81f;
         descriptionLayout.minHeight = 46f;
 
         Text text = UiTheme.CreateText("Text", description.transform,
