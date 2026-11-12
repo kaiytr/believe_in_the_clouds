@@ -15,7 +15,7 @@ public sealed class FirstAltarStoryDefinition : ScriptableObject
 {
     public const string DeathStageId = "story.first-altar.death.v1";
     public const float PostImpactBlackSeconds = 3f;
-    public const int ApologyRepetitions = 20;
+    public const int ApologyRepetitions = 10;
     public PrayerCue[] introCues = DefaultPrayer();
     public string apologyLoopText = "죄송합니다.";
     [Min(1f)] public float charactersPerSecond = 22f;

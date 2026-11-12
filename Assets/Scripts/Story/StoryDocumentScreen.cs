@@ -66,9 +66,27 @@ public sealed class StoryDocumentScreen : MonoBehaviour
         canvas.transform.SetParent(transform, false);
         RectTransform dim = DeathResultView.Box("Screen blocker", canvas.transform, new Color(0, 0, 0, .8f), 0, 0, 1, 1);
         dim.GetComponent<Image>().raycastTarget = true;
-        RectTransform paper = DeathResultView.Box("Story document", dim, DeathResultView.Paper, .18f, .12f, .82f, .88f);
-        title = DeathResultView.Label(paper, "", 34, DeathResultView.Ink, .06f, .84f, .94f, .96f);
-        RectTransform viewport = DeathResultView.Box("Scroll viewport", paper, new Color(0, 0, 0, .02f), .07f, .20f, .93f, .81f);
+
+        // 예전 단색 네모와 같은 화면 비율(가로 64%, 세로 76%) 안에 storyBG를 채운다.
+        RectTransform paper = DeathResultView.Box("Story document", dim, Color.white, .18f, .12f, .82f, .88f);
+
+        Image frame = paper.GetComponent<Image>();
+        Sprite art = LoadBackground();
+        if (art != null)
+        {
+            frame.sprite = art;
+            frame.color = Color.white;
+            frame.type = Image.Type.Simple;
+            frame.preserveAspect = true;
+        }
+        else
+        {
+            frame.color = DeathResultView.Paper;
+        }
+        frame.raycastTarget = true;
+
+        title = DeathResultView.Label(paper, "", 32, DeathResultView.Ink, .10f, .70f, .90f, .82f);
+        RectTransform viewport = DeathResultView.Box("Scroll viewport", paper, new Color(0, 0, 0, 0), .10f, .16f, .90f, .68f);
         viewport.GetComponent<Image>().raycastTarget = true;
         viewport.gameObject.AddComponent<RectMask2D>();
         scroll = viewport.gameObject.AddComponent<ScrollRect>();
@@ -81,12 +99,26 @@ public sealed class StoryDocumentScreen : MonoBehaviour
         layout.childControlWidth = true; layout.childControlHeight = true;
         layout.childForceExpandHeight = false;
         content.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        body = UiTheme.CreateText("Story text", rect, "", 27, DeathResultView.Ink, TextAnchor.UpperLeft);
+        body = UiTheme.CreateText("Story text", rect, "", 24, DeathResultView.Ink, TextAnchor.UpperLeft);
         body.supportRichText = false; body.horizontalOverflow = HorizontalWrapMode.Wrap;
         body.verticalOverflow = VerticalWrapMode.Overflow; body.raycastTarget = false;
         scroll.content = rect;
-        error = DeathResultView.Label(paper, "", 18, new Color(.65f, .13f, .1f), .05f, .12f, .95f, .19f);
-        DeathResultView.MenuButton(paper, "닫기  E / ESC", .30f, .035f, .70f, .12f, RequestClose);
+        error = DeathResultView.Label(paper, "", 16, new Color(.65f, .13f, .1f), .12f, .09f, .88f, .15f);
+        DeathResultView.Label(paper, "닫기  E / ESC", 18, DeathResultView.Ink, .28f, .035f, .72f, .085f);
         canvas.gameObject.SetActive(false);
+    }
+
+    // Design/World/Story/storyBG.png 를 Resources로 복사해 둔 스프라이트.
+    // Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
+    private static Sprite LoadBackground()
+    {
+        Sprite sprite = Resources.Load<Sprite>("UI/Story/storyBG");
+        if (sprite != null) return sprite;
+        Texture2D texture = Resources.Load<Texture2D>("UI/Story/storyBG");
+        if (texture == null) return null;
+        sprite = Sprite.Create(texture, new Rect(0f, 0f, texture.width, texture.height),
+            new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+        sprite.name = "storyBG";
+        return sprite;
     }
 }
