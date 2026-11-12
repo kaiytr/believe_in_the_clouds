@@ -853,7 +853,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     public bool TryHit(BossAttackRecord record)
     {
-        if (!IsAttackValid(record) || !record.TryContact()) return false;
+        if (!IsAttackValid(record)) return false;
+        // A dashing player is intangible: the attack passes through without registering contact, so it is not
+        // used up and still lands once the dash ends.
+        if (playerHealth != null && playerHealth.IsDashIntangible) { record.NoteAvoidedByDash(); return false; }
+        if (!record.TryContact()) return false;
         var damage = new DamageInfo(record.Damage, DamageSource.Enemy, gameObject, AttackName(record.Kind));
         bool isComboHit = record.Kind == BossAttackKind.Melee && record.HitIndex > 0;
         bool accepted = isComboHit && record.HitIndex > 1 && lastAcceptedComboPatternId == record.PatternId

@@ -33,6 +33,7 @@ public class DogChargeAttack : EnemyAttack
     private bool playerContactAppliedHarm;
     private bool blockedByObstacle;
     private bool chargeCompleted;
+    private bool passingThroughPlayer;
 
     public float ChargeTriggerRange => chargeTriggerRange;
     public bool IsCharging => isCharging;
@@ -236,6 +237,7 @@ public class DogChargeAttack : EnemyAttack
                 yield return PhysicsTick;
                 continue;
             }
+            UpdatePassThrough();
             float travelled = ChargeTravelledDistance;
             float stepDistance = Mathf.Min(lockedChargeDistance - travelled, chargeSpeed * Time.fixedDeltaTime);
             float stepSpeed = stepDistance / Time.fixedDeltaTime;
@@ -253,6 +255,7 @@ public class DogChargeAttack : EnemyAttack
                           ChargeTravelledDistance >= lockedChargeDistance - 0.02f;
         body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         owner.SetPhysicalCollisionWithPlayerEnabled(false);
+        passingThroughPlayer = false;
         isCharging = false;
 
         if (playerContactAppliedHarm)
@@ -282,6 +285,37 @@ public class DogChargeAttack : EnemyAttack
         }
     }
 
+    // A dashing player is intangible: switch the physical collision off so the dog runs straight through, and
+    // back on when the dash's intangibility ends (an overlap then counts as an ordinary contact).
+    private void UpdatePassThrough()
+    {
+        Transform player = owner != null ? owner.Target : null;
+        PlayerHealth health = player != null ? player.GetComponent<PlayerHealth>() : null;
+        bool intangible = health != null && health.IsDashIntangible;
+        if (intangible) NoteDashPassThrough();
+        if (intangible == passingThroughPlayer) return;
+        passingThroughPlayer = intangible;
+        owner.SetPhysicalCollisionWithPlayerEnabled(!intangible);
+    }
+
+    // Running through a dashing player counts as an evade once the charge ends without harm.
+    private void NoteDashPassThrough()
+    {
+        Collider2D dogBody = owner != null ? owner.BodyCollider : null;
+        Collider2D playerBody = PlayerBodyCollider;
+        if (dogBody != null && playerBody != null && dogBody.bounds.Intersects(playerBody.bounds))
+            NoteAvoidedByDash(CurrentAttackId);
+    }
+
+    private bool PlayerIsIntangible()
+    {
+        Transform player = owner != null ? owner.Target : null;
+        PlayerHealth health = player != null ? player.GetComponent<PlayerHealth>() : null;
+        bool intangible = health != null && health.IsDashIntangible;
+        if (intangible && isCharging) NoteAvoidedByDash(CurrentAttackId);
+        return intangible;
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         HandleChargeCollision(collision);
@@ -297,6 +331,11 @@ public class DogChargeAttack : EnemyAttack
         HandleChargeCollider(other);
     }
 
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        HandleChargeCollider(other);
+    }
+
     private void HandleChargeCollision(Collision2D collision)
     {
         Collider2D other = collision.collider;
@@ -305,7 +344,7 @@ public class DogChargeAttack : EnemyAttack
 
         if (IsPlayerCollider(other))
         {
-            ResolvePlayerContact();
+            if (!PlayerIsIntangible()) ResolvePlayerContact();
             return;
         }
 
@@ -327,7 +366,7 @@ public class DogChargeAttack : EnemyAttack
 
     private void HandleChargeCollider(Collider2D other)
     {
-        if (isCharging && IsPlayerCollider(other))
+        if (isCharging && IsPlayerCollider(other) && !PlayerIsIntangible())
             ResolvePlayerContact();
     }
 
@@ -374,6 +413,7 @@ public class DogChargeAttack : EnemyAttack
     protected override void OnAttackCancelled()
     {
         isCharging = false;
+        passingThroughPlayer = false;
         afterimages?.Clear();
         owner?.SetPhysicalCollisionWithPlayerEnabled(false);
         if (body != null)

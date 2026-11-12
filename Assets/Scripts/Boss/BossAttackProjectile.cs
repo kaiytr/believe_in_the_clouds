@@ -19,6 +19,11 @@ public sealed class BossAttackProjectile : MonoBehaviour
         visual = GetComponent<BossAttackVisual>();
         Present();
     }
+    private bool PlayerIntangible => owner.PlayerHealth != null && owner.PlayerHealth.IsDashIntangible;
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (other == owner?.PlayerCollider) OnTriggerEnter2D(other);
+    }
     private void Present()
     {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
@@ -36,9 +41,13 @@ public sealed class BossAttackProjectile : MonoBehaviour
             owner.Observe(record, AttackGeometry.Corridor(position - direction * diameter * 0.5f, direction, remaining + diameter, diameter));
             if (BossCombatPhysics.SweptTarget(position, Vector2.one * diameter, direction, step, owner, true))
             {
-                owner.TryHit(record);
-                Finish(BossAttackEndReason.Contact);
-                return;
+                if (PlayerIntangible) record.NoteAvoidedByDash();   // dashing: fly through
+                else
+                {
+                    owner.TryHit(record);
+                    Finish(BossAttackEndReason.Contact);
+                    return;
+                }
             }
             // Dodged: the projectile is already farther from where it was fired than the player is, and it did not hit.
             if (Vector2.Distance(launchOrigin, position) > Vector2.Distance(launchOrigin, owner.PlayerCollider.bounds.center) &&
@@ -57,7 +66,11 @@ public sealed class BossAttackProjectile : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (owner == null || settled || !owner.IsAttackValid(record)) return;
-        if (other == owner.PlayerCollider) { owner.TryHit(record); Finish(BossAttackEndReason.Contact); }
+        if (other == owner.PlayerCollider)
+        {
+            if (PlayerIntangible) { record.NoteAvoidedByDash(); return; }   // dashing: fly through
+            owner.TryHit(record); Finish(BossAttackEndReason.Contact);
+        }
         else if (BossCombatPhysics.IsObstacle(other, owner))
         { owner.GetComponent<BossAttackExecutor>().Impact(position, true); Finish(BossAttackEndReason.Wall); }
     }

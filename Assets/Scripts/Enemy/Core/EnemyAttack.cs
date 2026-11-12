@@ -36,6 +36,7 @@ public abstract class EnemyAttack : MonoBehaviour
     private int pendingHitResults;
     private bool outcomeReported;
     private bool attackLaunched;
+    private bool avoidedByDash;
     private bool playerHpDamaged;
     private Transform attackTarget;
     private int attackId;
@@ -129,6 +130,7 @@ public abstract class EnemyAttack : MonoBehaviour
         attackId++;
         outcomeReported = false;
         attackLaunched = false;
+        avoidedByDash = false;
         pendingHitResults = 0;
         phase = AttackPhase.Windup;
 
@@ -249,6 +251,15 @@ public abstract class EnemyAttack : MonoBehaviour
         return body != null && !IsPlayerInThreatRange(body);
     }
 
+    /// <summary>
+    /// The attack would have landed but the player was intangible (dashing). An attack that then ends without
+    /// harming the player counts as evaded, even though the player ended up still inside its path.
+    /// </summary>
+    public void NoteAvoidedByDash(int sourceAttackId)
+    {
+        if (sourceAttackId == attackId && !outcomeReported) avoidedByDash = true;
+    }
+
     protected void MarkAttackAsLaunched()
     {
         attackLaunched = true;
@@ -297,6 +308,8 @@ public abstract class EnemyAttack : MonoBehaviour
         if (outcomeReported || phase == AttackPhase.Idle)
             return;
 
+        if (outcome == AttackOutcome.Missed && avoidedByDash && attackLaunched && !playerHpDamaged)
+            outcome = AttackOutcome.EvadedByPlayer;
         if (outcome == AttackOutcome.EvadedByPlayer && !attackLaunched)
             outcome = AttackOutcome.Missed;
 

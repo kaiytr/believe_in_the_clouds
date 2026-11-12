@@ -24,6 +24,8 @@ public sealed class BossAttackRecord
     /// <summary>The attack travelled past the target without touching it (settled as an evade right away).</summary>
     public bool PassedTarget { get; private set; }
     public bool DamageAccepted { get; private set; }
+    /// <summary>The attack reached the player while they were intangible (dashing) and passed through.</summary>
+    public bool AvoidedByDash { get; private set; }
     public bool IsComplete { get; private set; }
     public AttackOutcome Outcome { get; private set; }
     public BossAttackEndReason EndReason { get; private set; }
@@ -88,6 +90,7 @@ public sealed class BossAttackRecord
     }
     public void ProtectFromLightning()
     { if (Kind == BossAttackKind.Lightning && Activated && !IsComplete && !Contacted) shelteredFromLightning = true; }
+    public void NoteAvoidedByDash() { if (Activated && !IsComplete && !Contacted) AvoidedByDash = true; }
     public void AcceptDamage() { if (Contacted && !IsComplete) DamageAccepted = true; }
 
     public bool Finish(BossAttackEndReason reason)
@@ -97,7 +100,7 @@ public sealed class BossAttackRecord
         EndReason = reason;
         Outcome = reason == BossAttackEndReason.Cancelled || reason == BossAttackEndReason.TargetLost ? AttackOutcome.Cancelled :
             DamageAccepted ? AttackOutcome.Hit :
-            Activated && !Contacted && (shelteredFromLightning || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
+            Activated && !Contacted && (shelteredFromLightning || AvoidedByDash || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
             reason == BossAttackEndReason.Wall ? AttackOutcome.Blocked : AttackOutcome.Missed;
         return true;
     }

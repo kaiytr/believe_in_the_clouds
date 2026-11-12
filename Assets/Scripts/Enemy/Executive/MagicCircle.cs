@@ -23,6 +23,8 @@ public class MagicCircle : MonoBehaviour
     public Vector2 ZoneCenter => center;
     public Vector2 ZoneSize => size;
     public bool IsActive => Time.time < endsAt;
+    /// <summary>The player was inside the zone but intangible (dashing) when it was laid.</summary>
+    public bool AvoidedByDash { get; private set; }
 
     /// <summary>
     /// Lays the zone with its floor point at the current position and applies the first tick immediately.
@@ -68,7 +70,9 @@ public class MagicCircle : MonoBehaviour
     private void FixedUpdate()
     {
         if (Time.time >= endsAt) { Destroy(gameObject); return; }
+        // A dashing player is intangible: no tick, no flash and no slow while passing through the sigil.
         if (target == null || !IsTargetInside()) return;
+        if (IsTargetIntangible()) { AvoidedByDash = true; return; }
         bool damageDue = Time.time >= nextDamage;
         ApplyTick(damageDue, out _);
         if (damageDue)
@@ -93,12 +97,20 @@ public class MagicCircle : MonoBehaviour
 
     private void ShowBurst() => burstStartedAt = Time.time;
 
+    private bool IsTargetIntangible()
+    {
+        if (target == null) return false;
+        PlayerHealth health = target.GetComponentInParent<PlayerHealth>();
+        return health != null && health.IsDashIntangible;
+    }
+
     private bool IsTargetInside() => CombatPhysics.OverlapsBox(target, center, size);
 
     private bool ApplyTick(bool allowDamage, out bool hpDamageApplied)
     {
         hpDamageApplied = false;
         if (target == null || !target.enabled || !IsTargetInside()) return false;
+        if (IsTargetIntangible()) { AvoidedByDash = true; return false; }
 
         Transform playerRoot = target.attachedRigidbody != null ? target.attachedRigidbody.transform : target.transform.root;
         if (playerRoot == null) return false;

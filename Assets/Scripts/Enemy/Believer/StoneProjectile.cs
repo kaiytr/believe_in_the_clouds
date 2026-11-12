@@ -106,6 +106,10 @@ public class StoneProjectile : MonoBehaviour
         }
     }
 
+    // Stay as well as enter: a stone that flew through a dashing player and is still inside when the dash's
+    // intangibility ends must still be able to hit.
+    private void OnTriggerStay2D(Collider2D other) => OnTriggerEnter2D(other);
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other == null)
@@ -124,6 +128,13 @@ public class StoneProjectile : MonoBehaviour
             return;
 
         Transform player = sourceAttack.Owner.Target;
+        // A dashing player is intangible: the stone flies on through instead of hitting and vanishing.
+        PlayerHealth playerHealth = player != null ? player.GetComponent<PlayerHealth>() : null;
+        if (playerHealth != null && playerHealth.IsDashIntangible)
+        {
+            sourceAttack.NoteAvoidedByDash(sourceAttackId);
+            return;
+        }
         IDamageable damageable = player != null ? player.GetComponent<IDamageable>() : null;
         if (damageable == null && player != null)
             damageable = player.GetComponentInChildren<IDamageable>();

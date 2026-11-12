@@ -98,6 +98,8 @@ public class MagicCircleAttack : EnemyAttack
             out bool hpDamageApplied, gameObject);
         if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);
 
+        if (circle.AvoidedByDash) NoteAvoidedByDash(CurrentAttackId);
+
         if (harmfulEffectApplied)
             ReportOutcome(AttackOutcome.Hit, completedNormally: true);
         else if (WasPlayerThreatenedDuringWarning && IsPlayerOutsideThreatRange())

@@ -33,6 +33,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
     public bool IsInvulnerable => isInvulnerable || isDashInvulnerable;
+    /// <summary>True while a dash (and its short grace) makes the player intangible: attacks pass through instead of landing.</summary>
+    public bool IsDashIntangible => isDashInvulnerable;
     public Collider2D BodyCollider => bodyCollider;
 
     public float CurrentHealth => currentHp;
