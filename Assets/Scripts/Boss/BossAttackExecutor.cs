@@ -23,11 +23,15 @@ public sealed class BossAttackExecutor : MonoBehaviour
     /// <summary>Number of shockwave branches still travelling after the body action ended.</summary>
     public int ShockwaveTracking { get; private set; }
 
-    public void ClearPresentationEffects()
+    public void ClearPresentationEffects(bool keepShockwaveTracking = false)
     {
         // Only executor-owned coroutines (the travelling shockwave tracker) live here; the lanes run on the controller.
-        StopAllCoroutines();
-        ShockwaveTracking = 0;
+        // A wave that is already travelling keeps its tracker so it can still finish and settle its record.
+        if (!keepShockwaveTracking)
+        {
+            StopAllCoroutines();
+            ShockwaveTracking = 0;
+        }
         afterimages?.Clear();
         bladeEffect?.Clear();
     }

@@ -562,7 +562,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         bool entered = belief.Reduce(amount, Time.time, settings.VulnerableDuration);
         if (entered)
         {
-            CancelCombat(false);
+            CancelCombat(false, keepLaunched: true);
             SetPresentation(BossPresentationState.Idle);
             SetStatus("방어력 저하 · " + reason);
         }
@@ -951,7 +951,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     // Global cancel (phase change, vulnerability, death, disable, target loss): both lanes, every prophecy,
     // the burn window, lightning and shockwave reservation go together. Persistent clouds stay.
-    private void CancelCombat(bool removeBurn)
+    // keepLaunched: attacks that already put an object into the world (a flying projectile, a travelling ground
+    // wave) are past the point of being cancelled, so they finish on their own. Only what has not been launched
+    // yet (warnings, windups, the pattern routines) is cancelled. Dodged projectiles, whose attack is already
+    // settled, also keep flying.
+    private void CancelCombat(bool removeBurn, bool keepLaunched = false)
     {
         hitReaction?.Clear();
         pendingTurn = 0;
@@ -969,15 +973,39 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         cueTitle = "전투 대기"; cueHint = "공격 예고를 보고 대응하세요.";
         CueState = BossPresentationState.Idle;
         SetPresentation(BossPresentationState.Idle);
-        foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
+        var launched = new List<BossAttackRecord>();
+        foreach (var record in new List<BossAttackRecord>(activeAttacks.Values))
+        {
+            bool carriesObject = record.Kind == BossAttackKind.Projectile || record.Kind == BossAttackKind.Shockwave;
+            if (keepLaunched && carriesObject && record.Activated && !record.IsComplete) launched.Add(record);
+            else CompleteAttack(record, BossAttackEndReason.Cancelled);
+        }
         activeAttacks.Clear();
         generation++;
+        foreach (var record in launched)
+        {
+            record.Carry(generation);
+            activeAttacks.Add(record.Id, record);
+        }
         nextRegularAt = 0f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0f);
-        if (attacks != null) attacks.ClearPresentationEffects();
+        if (attacks != null) attacks.ClearPresentationEffects(launched.Exists(record => record.Kind == BossAttackKind.Shockwave));
         if (clouds != null) clouds.CancelLightning();
-        if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
+        var survivors = new List<GameObject>();
+        if (keepLaunched)
+            foreach (GameObject effect in effects)
+            {
+                if (effect == null) continue;
+                bool liveShot = effect.TryGetComponent(out BossAttackProjectile shot) &&
+                                (shot.IsSettled || launched.Contains(shot.Record));
+                bool liveWave = effect.TryGetComponent(out BossGroundWave wave) && launched.Contains(wave.Record);
+                if (liveShot || liveWave) survivors.Add(effect);
+            }
+        foreach (GameObject effect in effects)
+            if (effect != null && !survivors.Contains(effect)) { effect.SetActive(false); Destroy(effect); }
         effects.Clear();
+        effects.AddRange(survivors);
+        if (survivors.Count == 0 && effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         if (removeBurn && playerHealth != null) playerHealth.GetComponent<BossBurnEffect>()?.Clear(this);
     }

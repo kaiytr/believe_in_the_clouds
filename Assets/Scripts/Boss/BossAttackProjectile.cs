@@ -11,6 +11,9 @@ public sealed class BossAttackProjectile : MonoBehaviour
     private bool blockedAtEnd;
     private Vector2 launchOrigin;
     private bool settled;   // evade already settled; the projectile just keeps flying
+    /// <summary>The attack is already settled as an evade; what is left is only the shot flying on.</summary>
+    public bool IsSettled => settled;
+    public BossAttackRecord Record => record;
     private ParticleSystem flames, embers;
     public void Initialize(BossCombatController boss, BossAttackRecord attack, Vector2 origin, Vector2 aim, float travelSpeed, float distance, float lifetime, bool endBlocked)
     {
@@ -74,8 +77,10 @@ public sealed class BossAttackProjectile : MonoBehaviour
             if (Vector2.Distance(launchOrigin, position) > Vector2.Distance(launchOrigin, owner.PlayerCollider.bounds.center) &&
                 record.TryMarkPassedTarget())
             {
-                owner.CompleteAttack(record, BossAttackEndReason.Completed);
+                // Mark it settled first: completing the attack can drop the boss's belief to zero, which cancels
+                // combat, and a settled projectile is what that cancel must leave flying.
                 settled = true;
+                owner.CompleteAttack(record, BossAttackEndReason.Completed);
             }
         }
         position += direction * step;

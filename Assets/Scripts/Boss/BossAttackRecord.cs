@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>One logical hit, including both branches of a ground wave. Never reused after cancellation.</summary>
 public sealed class BossAttackRecord
 {
-    public int Generation { get; }
+    public int Generation { get; private set; }
     public int PatternId { get; }
     public int Id { get; }
     public int HitIndex { get; }
@@ -71,6 +71,11 @@ public sealed class BossAttackRecord
             EscapedByMovement = true;
     }
 
+    /// <summary>
+    /// Lets an attack that is already out (a flying projectile or travelling wave) live on through a combat cancel:
+    /// it is moved to the new generation instead of being cancelled with the rest.
+    /// </summary>
+    public void Carry(int newGeneration) { if (!IsComplete) Generation = newGeneration; }
     public void Activate() { if (!IsComplete) Activated = true; }
     /// <summary>
     /// Called by a moving attack (projectile, dash) once it is farther from its origin than the target is.

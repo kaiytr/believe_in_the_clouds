@@ -167,6 +167,62 @@ public sealed class BossStagePlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator EndingWalksRightFromTheBossRightSideWithoutBacktracking()
+    {
+        yield return VerifyEndingWalksRight(1);
+    }
+
+    [UnityTest]
+    public IEnumerator EndingWalksRightFromTheBossLeftSideWithoutRepositioning()
+    {
+        yield return VerifyEndingWalksRight(-1);
+    }
+
+    private IEnumerator VerifyEndingWalksRight(int startingSide)
+    {
+        BossEndingSequence ending = Object.FindFirstObjectByType<BossEndingSequence>();
+        Assert.That(ending, Is.Not.Null);
+        boss.PauseAndCancelForTest();
+        boss.BodyCollider.enabled = false;
+        boss.Body.simulated = false;
+        // Simulate the death/dialogue state without feeding manual dialogue input or granting a defeat reward.
+        typeof(BossCombatController).GetProperty("IsDeathDialoguePlaying").SetValue(boss, true);
+        typeof(BossCombatController).GetProperty("IsDead").SetValue(boss, true);
+        typeof(BossEndingSequence).GetField("deathPause", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ending, 0f);
+        float startX = boss.BodyRenderer.bounds.center.x + startingSide * 3f;
+        MovePlayer(new Vector2(startX, -2.3f));
+        view.aspect = 16f / 9f;
+        view.orthographicSize = 2f;
+        view.transform.position = new Vector3(startX, 0f, -10f);
+        PlayerMove move = player.GetComponent<PlayerMove>();
+        move.enabled = true;
+        move.ScriptedMoveInput = -1f;
+        ending.Begin();
+        Assert.That(move.ScriptedMoveInput, Is.Zero);
+        yield return new WaitForSecondsRealtime(.15f);
+        Assert.That(player.transform.position.x, Is.EqualTo(startX).Within(.001f), "Wait in place until the death dialogue ends.");
+
+        typeof(BossCombatController).GetProperty("IsDeathDialoguePlaying").SetValue(boss, false);
+        bool walked = false;
+        float previousX = startX;
+        float deadline = Time.realtimeSinceStartup + 8f;
+        while (SceneManager.GetActiveScene().name != ProjectScenes.EndingSceneName && Time.realtimeSinceStartup < deadline)
+        {
+            if (player != null)
+            {
+                float x = player.transform.position.x;
+                Assert.That(x, Is.GreaterThanOrEqualTo(previousX - .001f), "The ending must never move the player left.");
+                Assert.That(player.GetComponent<Rigidbody2D>().linearVelocity.x, Is.GreaterThanOrEqualTo(-.001f));
+                walked |= x > startX + .1f;
+                previousX = x;
+            }
+            yield return null;
+        }
+        Assert.That(walked, Is.True);
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(ProjectScenes.EndingSceneName));
+    }
+
+    [UnityTest]
     public IEnumerator OriginalCombatCameraTracksAtWideAndNarrowAspectsAndRainCoversWholeScene()
     {
         yield return new WaitForSecondsRealtime(.4f);
