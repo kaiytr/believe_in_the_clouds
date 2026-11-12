@@ -54,14 +54,10 @@ public static class WindowRain
                 else if (renderer.sprite.name == WindowSpriteName) windows.Add(renderer);
             }
 
-        int count = 0;
-        foreach (SpriteRenderer glass in glasses)
-            if (AddGlassRain(glass)) count++;
+        foreach (SpriteRenderer glass in glasses) AddGlassRain(glass);
         // Scenes with real glass keep their plain window sprites as they are; elsewhere they get a pane.
         bool needsPane = glasses.Count == 0;
-        foreach (SpriteRenderer window in windows)
-            if (AddWindowRain(window, needsPane)) count++;
-        if (count > 0) Debug.Log($"[WindowRain] {scene.name}: rain added to {count} window(s).");
+        foreach (SpriteRenderer window in windows) AddWindowRain(window, needsPane);
     }
 
     // ---- hall bay windows ---------------------------------------------------------------------------
