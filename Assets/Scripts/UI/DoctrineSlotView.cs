@@ -25,6 +25,10 @@ public class DoctrineSlotView : MonoBehaviour
     private float cooldownEndTime;
     private float cooldownDuration;
 
+    // 체력바가 가리는 아래쪽 비율. 슬롯 130 중 33이 가려져 보이는 구간은 위 97.
+    // 마스크는 두루마리 실루엣 안에만 두고, 채워지는 양은 이 보이는 구간에 맞춘다.
+    private const float HiddenCooldownRatio = 33f / 130f;
+
     // 교리 목록 두루마리 아트 (Design/Doctrine/교리 1.png → Resources/UI/Doctrine/DoctrineSlot).
     // Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
     private static Sprite slotSprite;
@@ -234,9 +238,9 @@ public class DoctrineSlotView : MonoBehaviour
             cooldownMask = maskObject.GetComponent<Image>();
         }
 
+        // 네모로 덮으면 두루마리 밖으로 삐져나온다. 배경과 같은 실루엣만 어둡게 덮는다.
         UiTheme.Stretch(cooldownMask.rectTransform);
 
-        // 배경 두루마리와 같은 스프라이트를 쓰면 마스크도 같은 형태로 보인다.
         Sprite art = background != null ? background.sprite : null;
         cooldownMask.sprite = art != null ? art : UiTheme.WhiteSprite;
         cooldownMask.type = Image.Type.Filled;
@@ -278,7 +282,14 @@ public class DoctrineSlotView : MonoBehaviour
 
         cooldownDuration = duration;
         cooldownEndTime = Time.time + Mathf.Min(remaining, duration);
-        cooldownMask.fillAmount = Mathf.Clamp01(remaining / duration);
+        cooldownMask.fillAmount = VisibleFill(remaining / duration);
+    }
+
+    // 체력바에 가려진 아래쪽은 이미 채워진 것으로 치고, 남은 쿨타임은 보이는 위쪽에서만 걷힌다.
+    private static float VisibleFill(float remainingRatio)
+    {
+        float visible = 1f - HiddenCooldownRatio;
+        return HiddenCooldownRatio + Mathf.Clamp01(remainingRatio) * visible;
     }
 
     public void ClearCooldown()
@@ -301,7 +312,7 @@ public class DoctrineSlotView : MonoBehaviour
             return;
         }
 
-        cooldownMask.fillAmount = Mathf.Clamp01(remaining / cooldownDuration);
+        cooldownMask.fillAmount = VisibleFill(remaining / cooldownDuration);
     }
 
     private void OnDisable()
