@@ -74,6 +74,46 @@ public sealed class FirstAltarStoryPlayModeTests
         Time.timeScale = 1;
     }
 
+    [UnityTest] public IEnumerator RuntimeLightingUsesSharedPixelLightFactory()
+    {
+        Scene scene = Story.gameObject.scene;
+        GameObject[] roots = scene.GetRootGameObjects();
+        Component[] lights = roots.SelectMany(root => root.GetComponentsInChildren<Component>(true))
+            .Where(component => component != null && component.GetType().Name == "Light2D").ToArray();
+        Component ambient = lights.Single(light => light.gameObject.name == "Stage atmosphere");
+        Assert.That(ambient.GetType().GetProperty("lightType").GetValue(ambient).ToString(), Is.EqualTo("Global"));
+        Assert.That((float)ambient.GetType().GetProperty("intensity").GetValue(ambient), Is.EqualTo(.26f));
+        Assert.That((Color)ambient.GetType().GetProperty("color").GetValue(ambient), Is.EqualTo(new Color(.5f, .55f, .7f)));
+        Transform[] torches = roots.SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+            .Where(transform => transform.name == "Wall Torch").ToArray();
+        Assert.That(torches.Length, Is.EqualTo(2));
+        Sprite sharedCookie = PixelLight.Radial(7.5f, .6f / 7.5f, .7f);
+        foreach (Transform torch in torches)
+        {
+            Assert.That(torch.GetComponent<TorchLight>(), Is.Not.Null);
+            Component light = torch.GetComponentsInChildren<Component>(true)
+                .Single(component => component != null && component.GetType().Name == "Light2D");
+            Assert.That(light.GetType().GetProperty("lightType").GetValue(light).ToString(), Is.EqualTo("Sprite"));
+            Sprite cookie = (Sprite)light.GetType().GetProperty("lightCookieSprite").GetValue(light);
+            Assert.That(cookie, Is.SameAs(sharedCookie), "Story torches must use the same runtime cookie as combat torches.");
+            Assert.That(cookie.hideFlags, Is.EqualTo(HideFlags.DontSave));
+            Assert.That(cookie.texture.filterMode, Is.EqualTo(FilterMode.Point));
+            Assert.That((float)light.GetType().GetProperty("intensity").GetValue(light), Is.EqualTo(1.15f));
+            float diameter = light.transform.lossyScale.x;
+            Assert.That(Mathf.Min(Mathf.Abs(diameter - 15f), Mathf.Abs(diameter - 14.5f)), Is.LessThan(.0001f));
+            Assert.That(light.transform.lossyScale.y, Is.EqualTo(diameter).Within(.0001f));
+            Assert.That(Vector3.Distance(light.transform.position,
+                PixelLight.Snap(torch.TransformPoint(new Vector3(0f, .6f, 0f)))), Is.LessThan(.0001f));
+        }
+        typeof(StageAtmosphere).GetMethod("Apply", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { scene });
+        Assert.That(scene.GetRootGameObjects().Count(root => root.name == "Stage atmosphere"), Is.EqualTo(1));
+        Assert.That(scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Component>(true))
+            .Count(component => component != null && component.GetType().Name == "Light2D"), Is.EqualTo(lights.Length));
+        // End the active introduction before unloading its scene during this lighting-only test.
+        Story.enabled = false;
+        yield return null;
+    }
+
     [UnityTest] public IEnumerator PrayerBlackoutFailedSaveDocumentAndNewExitPressUseRealScene()
     {
         Assert.That(Object.FindObjectsByType<EnemyUnit>(FindObjectsSortMode.None), Is.Empty);

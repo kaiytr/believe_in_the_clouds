@@ -12,6 +12,10 @@ using Object = UnityEngine.Object;
 public static class FirstAltarStorySetup
 {
     public const string DefinitionPath = "Assets/Data/Story/FirstAltarStoryDefinition.asset";
+    private const string SceneryMaterialPath = "Assets/Art/LevelTiles/InteriorScenery.mat";
+    private const string TerrainMaterialPath = "Assets/Art/LevelTiles/InteriorTerrain.mat";
+    private const string SpriteMaterialPath = "Assets/Art/Boss/BossUnlit.mat";
+    private const string HallBayPath = "Assets/Prefabs/Environment/InteriorHallBay.prefab";
     private const string Terrain = "Assets/Art/LevelTiles/PlatformerTerrain.png";
     private const float FloorY = -2.4f;
 
@@ -33,7 +37,9 @@ public static class FirstAltarStorySetup
             definition.rainLoop = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sounds/Boss/보스전-비.mp3");
             definition.impactClip = MakeImpact();
             EditorUtility.SetDirty(death); EditorUtility.SetDirty(definition);
-            Material unlit = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Boss/BossUnlit.mat");
+            Material lit = AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);
+            Material scenery = AssetDatabase.LoadAssetAtPath<Material>(SceneryMaterialPath);
+            Material terrain = AssetDatabase.LoadAssetAtPath<Material>(TerrainMaterialPath);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             GameObject hero = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(ProjectSceneSynchronization.PlayerPath));
@@ -49,31 +55,31 @@ public static class FirstAltarStorySetup
             camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = new Color(.025f, .035f, .05f);
             LobbyCameraFollow follow = cameraObject.AddComponent<LobbyCameraFollow>();
             follow.Target = hero.transform; follow.MinX = -14; follow.MaxX = 14;
-            Light2D light = new GameObject("Room ambient light").AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global; light.intensity = .55f;
+            camera.GetUniversalAdditionalCameraData();
 
             var room = new GameObject("Altar room architecture");
-            SpriteRenderer wall = SpriteObject("Stone wall", room.transform, TerrainSprite("InteriorWall"), unlit,
-                new Vector3(0, 1.4f), new Vector3(1, 1, 1), new Color(.38f, .39f, .46f), -30);
+            SpriteRenderer wall = SpriteObject("Stone wall", room.transform, TerrainSprite("InteriorWall"), scenery,
+                new Vector3(0, 1.4f), new Vector3(1, 1, 1), Color.white, -30);
             wall.drawMode = SpriteDrawMode.Tiled; wall.size = new Vector2(28, 8);
-            SpriteRenderer floor = SpriteObject("Stone floor", room.transform, TerrainSprite("Stone0_0"), unlit,
-                new Vector3(0, FloorY - 1.5f), Vector3.one, new Color(.50f, .46f, .49f), 1);
+            SpriteRenderer floor = SpriteObject("Stone floor", room.transform, TerrainSprite("Stone0_0"), terrain,
+                new Vector3(0, FloorY - 1.5f), Vector3.one, Color.white, 1);
             floor.drawMode = SpriteDrawMode.Tiled; floor.size = new Vector2(28, 3);
             Collider("Ground", room.transform, new Vector2(0, FloorY - .5f), new Vector2(28, 1));
             Collider("Left wall", room.transform, new Vector2(-14, 3), new Vector2(1, 18));
             Collider("Right wall", room.transform, new Vector2(14, 3), new Vector2(1, 18));
             foreach (float x in new[] { -12f, -6f, 0f, 6f, 12f })
-                SpriteObject("Stone pillar", room.transform, TerrainSprite("Pillar"), unlit,
-                    new Vector3(x, .8f), new Vector3(1.4f, 2.3f, 1), new Color(.6f, .54f, .57f), -20);
+                SpriteObject("Stone pillar", room.transform, TerrainSprite("Pillar"), scenery,
+                    new Vector3(x, .8f), new Vector3(1.4f, 2.3f, 1), Color.white, -20);
             foreach (float x in new[] { -9f, -3f, 3f, 9f })
-                SpriteObject("Dark window", room.transform, TerrainSprite("Window"), unlit,
-                    new Vector3(x, 1.9f), Vector3.one, new Color(.48f, .50f, .64f), -21);
-            Sprite[] torchFrames = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/LevelTiles/InteriorTorch.png").OfType<Sprite>().OrderBy(sprite => sprite.name).ToArray();
+                SpriteObject("Dark window", room.transform, TerrainSprite("Window"), scenery,
+                    new Vector3(x, 1.9f), Vector3.one, Color.white, -21);
+            Transform stageTorch = LoadStageTorch();
             foreach (float x in new[] { -7f, 7f })
             {
-                SpriteRenderer torch = SpriteObject("Wall torch", room.transform, torchFrames[0], unlit,
-                    new Vector3(x, .6f), Vector3.one, Color.white, -15);
-                torch.gameObject.AddComponent<SpriteFrameAnimator>().Configure(torchFrames, 8);
+                GameObject torch = Object.Instantiate(stageTorch.gameObject, room.transform);
+                torch.name = "Wall Torch";
+                torch.transform.localPosition = new Vector3(x, .6f, 0);
+                torch.GetComponent<SpriteRenderer>().sortingOrder = -15;
             }
 
             Sprite[] idle = AssetDatabase.LoadAllAssetsAtPath("Assets/Design/Enemy/Believer/BelieverIdle.png")
@@ -82,7 +88,7 @@ public static class FirstAltarStorySetup
             var npc = new GameObject("StoryBeliever");
             // Tutorial/Combat: parent scale (1,2) * visual scale (13/6,13/12) = uniform 13/6.
             const float believerScale = 13f / 6f;
-            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], unlit, Vector3.zero,
+            SpriteRenderer body = SpriteObject("Believer body", npc.transform, idle[0], lit, Vector3.zero,
                 new Vector3(believerScale, believerScale, 1), Color.white, 4);
             body.flipX = true; // The source believer art faces left; the altar is on its right.
             body.transform.localPosition = new Vector3(0, -idle[0].bounds.min.y * believerScale, 0);
@@ -98,7 +104,7 @@ public static class FirstAltarStorySetup
 
             GameObject altar = new GameObject("StoryAltar");
             Sprite altarArt = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Design/World/FoundationAltar.png");
-            SpriteRenderer altarBody = SpriteObject("Altar artwork", altar.transform, altarArt, unlit, Vector3.zero,
+            SpriteRenderer altarBody = SpriteObject("Altar artwork", altar.transform, altarArt, lit, Vector3.zero,
                 Vector3.one, Color.white, 2);
             altarBody.transform.localPosition = new Vector3(0, -altarArt.bounds.min.y, 0);
             BoxCollider2D altarCollider = altar.AddComponent<BoxCollider2D>(); altarCollider.isTrigger = true;
@@ -111,7 +117,7 @@ public static class FirstAltarStorySetup
 
             GameObject exit = new GameObject("StoryRoomExit");
             Sprite door = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/LobbyBranch.prefab").GetComponentInChildren<SpriteRenderer>().sprite;
-            SpriteRenderer exitBody = SpriteObject("Return door", exit.transform, door, unlit, Vector3.zero, Vector3.one, Color.white, 0);
+            SpriteRenderer exitBody = SpriteObject("Return door", exit.transform, door, lit, Vector3.zero, Vector3.one, Color.white, 0);
             exitBody.transform.localPosition = new Vector3(0, -door.bounds.min.y, 0);
             BoxCollider2D exitCollider = exit.AddComponent<BoxCollider2D>(); exitCollider.isTrigger = true;
             exitCollider.size = new Vector2(1.8f, 3.5f); exitCollider.offset = new Vector2(0, 1.7f);
@@ -128,7 +134,7 @@ public static class FirstAltarStorySetup
             {
                 float x = 1.4f + (float)random.NextDouble() * 4.6f;
                 float width = .12f + (float)random.NextDouble() * 1.5f;
-                SpriteRenderer stain = SpriteObject("Blood stain", blood.transform, disc, unlit,
+                SpriteRenderer stain = SpriteObject("Blood stain", blood.transform, disc, lit,
                     new Vector3(x, FloorY + .06f + (float)random.NextDouble() * .16f),
                     new Vector3(width, .035f + (float)random.NextDouble() * .15f, 1),
                     new Color(.30f + (float)random.NextDouble() * .15f, .012f, .035f), 3);
@@ -157,6 +163,82 @@ public static class FirstAltarStorySetup
             if (!Application.isBatchMode && previous.Any(entry => entry.isLoaded)) EditorSceneManager.RestoreSceneManagerSetup(previous);
         }
     }
+
+    [MenuItem("Tools/Story/Use shared stage lighting structure")]
+    public static void ApplySharedStageStructureToExistingScene()
+    {
+        Scene scene = EditorSceneManager.GetSceneByPath(ProjectScenes.FirstAltarStory);
+        bool openedHere = !scene.IsValid() || !scene.isLoaded;
+        if (openedHere) scene = EditorSceneManager.OpenScene(ProjectScenes.FirstAltarStory, OpenSceneMode.Additive);
+        try
+        {
+            // Standard stages serialize world art only. StageAtmosphere creates all lighting at runtime.
+            Light2D[] lights = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Light2D>(true)).ToArray();
+            foreach (Light2D light in lights)
+            {
+                if (light.gameObject.name == "Stage atmosphere" || light.gameObject.name == "Room ambient light" ||
+                    light.gameObject.name == "Torch light") Object.DestroyImmediate(light.gameObject);
+                else Object.DestroyImmediate(light);
+            }
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (TorchLight torch in root.GetComponentsInChildren<TorchLight>(true)) Object.DestroyImmediate(torch);
+                if (root.name == "Stage atmosphere" || root.name == "Room ambient light") Object.DestroyImmediate(root);
+            }
+
+            Material scenery = AssetDatabase.LoadAssetAtPath<Material>(SceneryMaterialPath);
+            Material terrain = AssetDatabase.LoadAssetAtPath<Material>(TerrainMaterialPath);
+            Material lit = AssetDatabase.LoadAssetAtPath<Material>(SpriteMaterialPath);
+            Transform stageTorch = LoadStageTorch();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (SpriteRenderer view in root.GetComponentsInChildren<SpriteRenderer>(true))
+                {
+                    if (view.name == "Believer body" || view.name == "Altar artwork" ||
+                        view.name == "Return door" || view.name == "Blood stain")
+                    {
+                        view.sharedMaterial = lit;
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(view);
+                    }
+                    if (view.name == "Stone floor")
+                    {
+                        view.sharedMaterial = terrain;
+                        view.color = Color.white;
+                    }
+                    else if (view.name == "Stone wall" || view.name == "Stone pillar" || view.name == "Dark window")
+                    {
+                        view.sharedMaterial = scenery;
+                        view.color = Color.white;
+                    }
+                    else if (string.Equals(view.name, "Wall torch", StringComparison.OrdinalIgnoreCase))
+                    {
+                        view.name = "Wall Torch";
+                        SpriteRenderer source = stageTorch.GetComponent<SpriteRenderer>();
+                        view.sprite = source.sprite;
+                        view.sharedMaterial = source.sharedMaterial;
+                        view.color = source.color;
+                        view.transform.localScale = stageTorch.localScale;
+                        SpriteFrameAnimator animator = view.GetComponent<SpriteFrameAnimator>();
+                        if (animator == null) animator = view.gameObject.AddComponent<SpriteFrameAnimator>();
+                        EditorUtility.CopySerialized(stageTorch.GetComponent<SpriteFrameAnimator>(), animator);
+                    }
+                }
+                foreach (Camera camera in root.GetComponentsInChildren<Camera>(true)) camera.GetUniversalAdditionalCameraData();
+            }
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ProjectScenes.FirstAltarStory);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Shared stage lighting structure saved to " + ProjectScenes.FirstAltarStory);
+        }
+        finally
+        {
+            if (openedHere && scene.IsValid()) EditorSceneManager.CloseScene(scene, true);
+        }
+    }
+
+    private static Transform LoadStageTorch() => AssetDatabase.LoadAssetAtPath<GameObject>(HallBayPath)
+        .GetComponentsInChildren<Transform>(true).Single(child => child.name == "Wall Torch");
 
     private static T LoadOrCreate<T>(string path) where T : ScriptableObject
     {
