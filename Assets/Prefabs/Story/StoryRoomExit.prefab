@@ -181,8 +181,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 53ea23a24c8b24648818959763c48186, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::StoryRoomExit
   interactRadius: 2.5
   promptText: "E : \uC0C1\uD638\uC791\uC6A9"
-  displayName:
+  displayName: 

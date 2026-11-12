@@ -90,11 +90,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64216c48c6a374f4394abba9cfbfdcf2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::StoryAltarInteractable
   interactRadius: 2.5
   promptText: "E : \uC0C1\uD638\uC791\uC6A9"
-  displayName:
+  displayName: 
 --- !u!1 &6023449663967921002
 GameObject:
   m_ObjectHideFlags: 0

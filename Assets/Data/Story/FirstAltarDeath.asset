@@ -15,14 +15,14 @@ MonoBehaviour:
   sequenceId: story.first-altar.death.v1
   steps:
   - type: 4
-    actorId:
-    text:
+    actorId: 
+    text: 
     choices: []
-    anchorId:
+    anchorId: 
     movementSpeed: 4
     typingCharactersPerSecond: 30
     harmlessProjectilePrefab: {fileID: 0}
     projectileDuration: 0.55
     projectileArcHeight: 0.6
     externalStageId: story.first-altar.death.v1
-    facingActorId:
+    facingActorId: 

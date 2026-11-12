@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 1019142919437565377}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.0833334, z: 0}
+  m_LocalPosition: {x: 0, y: 0.083333395, z: 0}
   m_LocalScale: {x: 2.1666667, y: 2.1666667, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -136,7 +136,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41e2c8b36f1c9754aa11d876b8b969fc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneCharacter
   displayName: "\uC2E0\uB3C4"
   headAnchor: {fileID: 9030851799866231633}
@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a258deec4746a204abd1fb2b1e56247d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::StoryBelieverView
   body: {fileID: 3776961882581357995}
   idleFrames:
