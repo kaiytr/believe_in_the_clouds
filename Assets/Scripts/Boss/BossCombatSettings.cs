@@ -93,10 +93,6 @@ public sealed class BossCombatSettings : ScriptableObject
     public float LightningWidth = 0.16f;
 
     [Header("Legacy spike / ground waves")]
-    public float SpikeWarning = 3f;
-    public float SpikeDuration = 2f;
-    public Vector2 SpikeSize = new Vector2(1.25f, 0.8f);
-    public float SpikeDamage = 18f;
     public float WaveDistance = 7f;
     public float WaveSpeed = 9f;
     public Vector2 WaveSize = new Vector2(0.6f, 0.6f);
@@ -123,7 +119,6 @@ public sealed class BossCombatSettings : ScriptableObject
     public BossGroundWave WavePrefab;
     public BossCloudPlatform WhiteCloudPrefab;
     public BossCloudPlatform BlackCloudPrefab;
-    public BossTimedDamageHazard SpikePrefab;
     public Sprite BurnSprite;
     public Material EffectMaterial;
     public int WarningOrder = 20;
@@ -158,7 +153,7 @@ public sealed class BossCombatSettings : ScriptableObject
             for (int i = 0; i < MeleeComboDamage.Length; i++)
                 if (MeleeComboDamage[i] < 0f)
                     errors.Add("Melee combo: damage values must be non-negative.");
-        if (!Positive(StormCloudSize) || !Positive(CloudSize) || !Positive(SpikeSize) || !Positive(WaveSize) ||
+        if (!Positive(StormCloudSize) || !Positive(CloudSize) || !Positive(WaveSize) ||
             DashDistance <= 0f || DashSpeed <= 0f || ProjectileDiameter <= 0f || ProjectileSpeed <= 0f ||
             ProjectileDistance <= 0f || ProjectileLifetime <= 0f || WaveSpeed <= 0f || WaveDistance <= 0f)
             errors.Add("Attack geometry/travel: every size, speed, distance and projectile lifetime must be positive.");
@@ -174,9 +169,9 @@ public sealed class BossCombatSettings : ScriptableObject
             errors.Add("Clouds: counts must be at least 1 storm cloud and ordered ranges with positive speeds/intervals.");
         if (BeliefInitialDelay < 0f || BeliefCooldown < 0f || ProphecyReactionTime < 1f)
             errors.Add("Belief lane: delays must be non-negative and prophecy reaction time at least 1 second.");
-        if (CloudDuration <= 0f || CloudTopHeight <= 0f || SpikeWarning <= 0f || SpikeDuration <= 0f ||
+        if (CloudDuration <= 0f || CloudTopHeight <= 0f ||
             BurnWindow <= 0f || BurnDuration <= 0f || BurnTickInterval <= 0f || BurnTickDamage < 0f ||
-            MeleeDamage < 0f || DashDamage < 0f || ProjectileDamage < 0f || SpikeDamage < 0f || WaveDamage < 0f)
+            MeleeDamage < 0f || DashDamage < 0f || ProjectileDamage < 0f || WaveDamage < 0f)
             errors.Add("Belief hazards: invalid duration, placement or damage.");
         if (GroundMask.value == 0 || ObstacleMask.value == 0 || PlatformLayer < 0 || PlatformLayer > 31 ||
             (GroundMask.value & (1 << PlatformLayer)) == 0 || ArenaX.x >= ArenaX.y || MaximumGroundStep <= 0f)
@@ -189,11 +184,10 @@ public sealed class BossCombatSettings : ScriptableObject
         Require(WavePrefab, nameof(WavePrefab), errors);
         Require(WhiteCloudPrefab, nameof(WhiteCloudPrefab), errors);
         Require(BlackCloudPrefab, nameof(BlackCloudPrefab), errors);
-        Require(SpikePrefab, nameof(SpikePrefab), errors);
         Require(BurnSprite, nameof(BurnSprite), errors);
         Require(EffectMaterial, nameof(EffectMaterial), errors);
         foreach (Component effect in new Component[] { WarningPrefab, SlashPrefab, DashPrefab, ImpactPrefab, ProjectilePrefab,
-            WavePrefab, SpikePrefab, WhiteCloudPrefab, BlackCloudPrefab })
+            WavePrefab, WhiteCloudPrefab, BlackCloudPrefab })
         {
             if (effect == null) continue;
             SpriteRenderer renderer = effect.GetComponent<SpriteRenderer>();

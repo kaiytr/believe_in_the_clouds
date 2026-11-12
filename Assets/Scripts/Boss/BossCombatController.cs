@@ -10,7 +10,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     [SerializeField] private bool startOnAwake;
     [SerializeField] private BossCombatSettings settings;
     [SerializeField] private BossAttackExecutor attacks;
-    [SerializeField] private BossHazardDirector hazards;
     [SerializeField] private BossCombatView presentation;
     [SerializeField] private BossCombatHud hud;
     [SerializeField] private Transform attackOrigin;
@@ -123,6 +122,23 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             if (IsBurning || runningRegularContext != null && runningRegularContext.BurnEnhanced) return true;
             foreach (BossAttackRecord record in activeAttacks.Values)
                 if (record.BurnEnhanced) return true;
+            return false;
+        }
+    }
+    /// <summary>
+    /// True while an attack whose warning is laid out around the boss itself (melee, dash, projectile, ground wave)
+    /// is announced but not active yet. Lightning warnings sit under the clouds and do not count.
+    /// </summary>
+    public bool IsAttackWarningActive
+    {
+        get
+        {
+            foreach (BossAttackRecord record in activeAttacks.Values)
+            {
+                bool ownerBased = record.Kind == BossAttackKind.Melee || record.Kind == BossAttackKind.Dash ||
+                                  record.Kind == BossAttackKind.Projectile || record.Kind == BossAttackKind.Shockwave;
+                if (ownerBased && !record.Activated && !record.IsComplete) return true;
+            }
             return false;
         }
     }
@@ -321,7 +337,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         var errors = settings != null ? settings.ValidateSettings() : new List<string> { "Boss.settings is missing." };
         if (attacks == null) errors.Add("Boss.attacks is missing.");
-        if (hazards == null) errors.Add("Boss.hazards is missing.");
         if (presentation == null || !presentation.IsConfigured) errors.Add("Boss.presentation / VisualRoot / body renderer references are missing.");
         if (hud == null || !hud.IsConfigured) errors.Add("Boss.hud / gameplay health, belief and speech references are missing.");
         else if (!hud.HasKoreanFont) errors.Add("Boss.hud requires a Korean font (preferredFont / installed OS fonts).");
@@ -347,7 +362,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             return;
         }
         attacks.Initialize(this);
-        hazards.Initialize(this);
         presentation.Initialize(this);
         hud.Initialize(this);
         encounterStartedAt = Time.time;
@@ -954,7 +968,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         generation++;
         nextRegularAt = 0f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0f);
-        if (hazards != null) hazards.Cancel();
         if (attacks != null) attacks.ClearPresentationEffects();
         if (clouds != null) clouds.CancelLightning();
         if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
@@ -1103,7 +1116,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             case BossAttackKind.Dash: return "돌진";
             case BossAttackKind.Projectile: return "투사체";
             case BossAttackKind.Shockwave: return "지면 충격파";
-            case BossAttackKind.Spike: return "가시";
             case BossAttackKind.Lightning: return "먹구름 번개";
             default: return "공격";
         }

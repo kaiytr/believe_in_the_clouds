@@ -53,6 +53,11 @@ public sealed class BossCombatPlayModeTests
     }
     private static void Set(object target,string field,object value)
     { target.GetType().GetField(field,BindingFlags.Instance|BindingFlags.NonPublic).SetValue(target,value); }
+    // An attack record registered on its own (no pattern, no effect objects), so reset and cancel paths have one to clear.
+    private BossAttackRecord StartIndependentAttack(Vector2 position) =>
+        boss.CreateAttack(BossAttackKind.Projectile, 0, new AttackGeometry(position, new Vector2(1.25f, .8f)),
+            1f, BossBeliefKind.None, false);
+
     private void PutPlayer(Vector2 position, bool freeze = true)
     {
         playerBody.gravityScale = freeze ? 0f : 4f;
@@ -305,17 +310,15 @@ public sealed class BossCombatPlayModeTests
         player.TakeDamage(new DamageInfo(1f,DamageSource.Environment)); burn.Apply(boss,data);
         yield return new WaitForSeconds(.65f);
         Assert.That(burn.TickAttempts,Is.GreaterThanOrEqualTo(3)); Assert.That(burn.TicksAccepted,Is.Zero);
-        boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-4f,-2f));
+        StartIndependentAttack(new Vector2(-4f,-2f));
         Assert.That(boss.ActiveBossAttackId,Is.GreaterThan(0));
         PutPlayer(new Vector2(8f,4f)); boss.Body.position=new Vector2(6f,0f);
         boss.ResetEncounterForTest(); yield return null;
         Assert.That(burn.IsBurning,Is.False); Assert.That(player.CurrentHp,Is.EqualTo(100f));
         Assert.That(player.transform.position.x,Is.EqualTo(-4.21f).Within(.01f)); Assert.That(boss.transform.position.x,Is.EqualTo(2f).Within(.01f));
-        Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(),Is.Null);
-        boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-4f,-2f));
+        StartIndependentAttack(new Vector2(-4f,-2f));
         burn.Apply(boss,data); boss.gameObject.SetActive(false); yield return null;
         Assert.That(burn.IsBurning,Is.False); Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
-        Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(),Is.Null);
         boss.gameObject.SetActive(true); boss.BeginEncounter(); boss.ForcePhaseTwoForTest(); burn.Apply(boss,data);
         boss.TakeDamage(new DamageInfo(10000f,DamageSource.PlayerOwned)); yield return null;
         Assert.That(boss.IsDead,Is.True); Assert.That(burn.IsBurning,Is.False); Assert.That(boss.ActiveBossAttackId,Is.Zero);
@@ -339,17 +342,15 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator VulnerabilityCancelsScheduledSpikesAndRejectsPreviousGenerationPlayerHits()
+    public IEnumerator VulnerabilityCancelsActiveAttacksAndRejectsPreviousGenerationPlayerHits()
     {
         PutPlayer(new Vector2(-4f,-2.33f));
         var events=player.GetComponent<PlayerCombatEvents>();
         var oldAttempt=events.PublishAttackAttempt(boss.gameObject);
-        Assert.That(boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-4f,-1f)),Is.True);
-        var record=new List<BossAttackRecord>(boss.ActiveAttacks)[0];
+        var record=StartIndependentAttack(new Vector2(-4f,-1f));
         boss.ReduceBeliefForTest(100f);
-        yield return new WaitForSeconds(data.SpikeWarning+.2f);
+        yield return new WaitForSeconds(.2f);
         Assert.That(player.CurrentHp,Is.EqualTo(100f)); Assert.That(record.Outcome,Is.EqualTo(AttackOutcome.Cancelled));
-        Assert.That(Object.FindFirstObjectByType<BossTimedDamageHazard>(),Is.Null);
         Assert.That(events.TryApplyHitAndPublish(oldAttempt,boss.gameObject,100f),Is.False);
         yield return Until(()=>!boss.IsVulnerable,boss.VulnerableRemaining+.25f);
         Assert.That(boss.CurrentBelief,Is.EqualTo(100f)); Assert.That(boss.CurrentHp,Is.EqualTo(500f));
@@ -397,7 +398,6 @@ public sealed class BossCombatPlayModeTests
         Assert.That(hud.GameplayHud.BeliefCanvas.renderMode,Is.EqualTo(RenderMode.WorldSpace));
         PutPlayer(new Vector2(-4f,-2.33f)); boss.ForcePatternForTest(BossPatternKind.CloudBelief);
         yield return Until(()=>boss.Clouds!=null && boss.Clouds.LightningActive);
-        Assert.That(boss.GetComponent<BossHazardDirector>().ScheduleSpike(new Vector2(-8f,-1f)),Is.True);
         yield return null;
         Assert.That(Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None),Is.Empty,"Hidden debug annotations should not allocate UI.");
         var warning=Object.FindFirstObjectByType<DangerIndicator>().GetComponent<SpriteRenderer>();
@@ -410,7 +410,6 @@ public sealed class BossCombatPlayModeTests
         Assert.That(boss.transform.Find("Gameplay HUD/Player gameplay HUD"),Is.Null);
         Assert.That(Object.FindFirstObjectByType<DoctrineHud>(),Is.Not.Null);
         var visibleCues=Object.FindObjectsByType<BossWorldCue>(FindObjectsSortMode.None);
-        Assert.That(visibleCues.Length,Is.GreaterThanOrEqualTo(1),"Only the independently scheduled spike has debug world text.");
         foreach(var cue in visibleCues) Assert.That(cue.GetComponent<Canvas>().enabled,Is.True);
         tools.ShowDebugPanel=false; yield return null;
         Assert.That(hud.DebugVisible,Is.False); Assert.That(warning.enabled,Is.True);

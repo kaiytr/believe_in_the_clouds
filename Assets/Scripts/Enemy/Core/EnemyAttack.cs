@@ -57,6 +57,11 @@ public abstract class EnemyAttack : MonoBehaviour
     }
     public int CurrentAttackId => attackId;
     public bool IsWindingUp => phase == AttackPhase.Windup;
+    /// <summary>
+    /// Whether this attack's warning area is laid out around the attacker itself (so pushing the attacker would
+    /// shift the warned area). Attacks that mark a spot on the ground elsewhere override this to false.
+    /// </summary>
+    public virtual bool WarningFollowsOwner => true;
     public virtual float WindupDuration => windupTime;
     public bool IsResolvingAttack(int id) => id == attackId && phase == AttackPhase.Resolving && !outcomeReported;
     public bool IsAttacking => phase != AttackPhase.Idle;
