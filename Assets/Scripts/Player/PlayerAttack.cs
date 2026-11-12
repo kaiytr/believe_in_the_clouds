@@ -53,7 +53,7 @@ public class PlayerAttack : MonoBehaviour
         [Tooltip("이번 타에 앞으로 미끄러지듯 나가는 거리.")]
         [Min(0f)] public float lungeDistance;
 
-        [Tooltip("지상 적중 시 수평 넉백 세기. 일반 적과 보스에 동일한 속도 규칙으로 적용한다.")]
+        [Tooltip("보스 근접 콤보가 플레이어에게 가하는 수평 충격량. 플레이어 공격의 적 넉백 거리는 lungeDistance에서 계산한다.")]
         [Min(0f)] public float knockback;
 
         [Tooltip("적중 시 적을 띄우는 힘(충격량). 피니쉬용.")]
@@ -128,12 +128,6 @@ public class PlayerAttack : MonoBehaviour
         knockback = 0f,
         launchUp = 0f,
     };
-
-    [Header("적 피격 이동 경직")]
-    [Tooltip("지상 공격에 맞은 적의 자체 이동을 막는 시간. 넉백이 남아 있는 동안에도 자체 이동을 막는다.")]
-    [SerializeField, Min(0f)] private float groundHitStunSeconds = .18f;
-    [Tooltip("공중 내려찍기에 맞은 적의 자체 이동을 막는 시간. 넉백은 적용하지 않는다.")]
-    [SerializeField, Min(0f)] private float airHitStunSeconds = .2f;
 
     [Header("아래 부채꼴 판정")]
     [Tooltip("부채꼴 반경(월드 단위). 플레이어 아래 중심 원에서 이 거리 안이 후보가 된다.")]
@@ -565,7 +559,7 @@ public class PlayerAttack : MonoBehaviour
                 if (DoctrineEventBus.HasListeners)
                     DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
-                ApplyHitReaction(hit, airHitStunSeconds, 0f);
+                ApplyHitReaction(hit, airAttack.recoveryTime, 0f);
             }
         }
 
@@ -574,10 +568,18 @@ public class PlayerAttack : MonoBehaviour
         return hitCount;
     }
 
-    private void ApplyHitReaction(Collider2D hit, float stunSeconds, float knockbackSpeed)
+    private void ApplyHitReaction(Collider2D hit, float stunSeconds, float knockbackDistance)
     {
         if (hit != null)
-            hit.GetComponentInParent<EnemyHitReaction>()?.Apply(stunSeconds, knockbackSpeed, transform.position.x);
+            hit.GetComponentInParent<EnemyHitReaction>()?.Apply(stunSeconds, knockbackDistance, transform.position.x);
+    }
+
+    private float LungeDistanceAtHit(ComboStep step)
+    {
+        if (rb == null || step.lungeDistance <= 0f) return 0f;
+        // SwingOnce holds lungeDistance / (windup + 0.05) until the hit frame.
+        return step.lungeDistance * Mathf.Max(0f, step.windupTime) /
+            Mathf.Max(0.01f, step.windupTime + 0.05f);
     }
 
     private IEnumerator SwingOnce(ComboStep step, bool stopSlide, bool isFinish = false, int soundIndex = -1)
@@ -663,8 +665,7 @@ public class PlayerAttack : MonoBehaviour
         float angle = facing >= 0f ? step.hitboxAngle : -step.hitboxAngle;
         CombatPhysics.OverlapBox(center, step.hitboxSize, angle, TargetMask, hitBuffer);
         // Include the distance this windup can actually travel, in the locked attack direction.
-        float reach = rb != null ? step.lungeDistance * Mathf.Max(0f, step.windupTime) /
-            Mathf.Max(0.01f, step.windupTime + 0.05f) : 0f;
+        float reach = LungeDistanceAtHit(step);
         CombatPhysics.SweepBox(center, step.hitboxSize, angle, Vector2.right * facing,
             reach, TargetMask, attemptBuffer);
         for (int i = 0; i < hitBuffer.Count; i++)
@@ -705,7 +706,7 @@ public class PlayerAttack : MonoBehaviour
                 if (DoctrineEventBus.HasListeners)
                     DoctrineEventBus.Raise(ConditionType.OnAttack, gameObject, targetObject);
                 hitCount++;
-                ApplyHitReaction(hit, groundHitStunSeconds, step.knockback * 1.4f);
+                ApplyHitReaction(hit, step.recoveryTime, LungeDistanceAtHit(step));
             }
         }
 

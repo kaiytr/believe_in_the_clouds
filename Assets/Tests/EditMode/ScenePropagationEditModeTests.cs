@@ -31,11 +31,13 @@ public sealed class ScenePropagationEditModeTests
             Assert.That(attack, Is.Not.Null);
             var actual = new SerializedObject(attack);
             var expected = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPath).GetComponent<PlayerAttack>());
-            foreach (string field in new[] { "downFanRadius", "downFanHalfAngle", "groundHitStunSeconds", "airHitStunSeconds", "downFanPlayerBounce", "finishHitStop" })
+            foreach (string field in new[] { "downFanRadius", "downFanHalfAngle", "downFanPlayerBounce", "finishHitStop" })
                 Assert.That(actual.FindProperty(field).floatValue, Is.EqualTo(expected.FindProperty(field).floatValue), field);
             Assert.That(actual.FindProperty("downFanOriginOffset").vector2Value, Is.EqualTo(expected.FindProperty("downFanOriginOffset").vector2Value));
             Assert.That(actual.FindProperty("airAttack.hitboxOffset").vector2Value, Is.EqualTo(Vector2.zero));
             Assert.That(actual.FindProperty("airAttack.name").stringValue, Is.EqualTo("공중: 아래 부채꼴 내리찍기"));
+            Assert.That(actual.FindProperty("airAttack.recoveryTime").floatValue,
+                Is.EqualTo(expected.FindProperty("airAttack.recoveryTime").floatValue));
             Assert.That(actual.FindProperty("comboSteps").arraySize, Is.EqualTo(3));
             for (int i = 0; i < 3; i++)
                 foreach (string field in new[] { "damage", "windupTime", "recoveryTime", "lungeDistance" })

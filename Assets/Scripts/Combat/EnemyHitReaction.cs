@@ -9,12 +9,13 @@ public sealed class EnemyHitReaction : MonoBehaviour
     private Rigidbody2D body;
     private IHealth health;
     private float movementStunUntil;
-    private float knockbackSpeed, knockbackDirection;
+    private float knockbackDistance, knockbackDirection, knockbackDistancePerWeightedTick;
+    private int knockbackTicksRemaining;
     private bool controlledMovement;
     private float requestedMovement;
 
     public bool IsMovementSuppressed => isActiveAndEnabled &&
-        (Time.time < movementStunUntil || knockbackSpeed >= .01f);
+        (Time.time < movementStunUntil || knockbackTicksRemaining > 0);
 
     private void Awake()
     {
@@ -22,29 +23,31 @@ public sealed class EnemyHitReaction : MonoBehaviour
         health = GetComponent<IHealth>();
     }
 
-    public bool Apply(float movementStunSeconds, float horizontalKnockbackSpeed, float sourceX)
+    public bool Apply(float movementStunSeconds, float horizontalKnockbackDistance, float sourceX)
     {
         if (health == null) health = GetComponent<IHealth>();
         if (!isActiveAndEnabled || health != null && health.IsDead ||
-            !IsFinite(movementStunSeconds) || !IsFinite(horizontalKnockbackSpeed) || !IsFinite(sourceX))
+            !IsFinite(movementStunSeconds) || !IsFinite(horizontalKnockbackDistance) || !IsFinite(sourceX))
             return false;
 
         movementStunUntil = Mathf.Max(movementStunUntil, Time.time + Mathf.Max(0f, movementStunSeconds));
-        if (horizontalKnockbackSpeed > 0f)
+        if (horizontalKnockbackDistance > 0f)
         {
             float direction = body.position.x - sourceX;
             if (Mathf.Abs(direction) < .01f) direction = transform.localScale.x >= 0f ? -1f : 1f;
             knockbackDirection = Mathf.Sign(direction);
-            knockbackSpeed = Mathf.Min(knockbackSpeed + horizontalKnockbackSpeed, MaximumKnockbackSpeed);
+            knockbackDistance += horizontalKnockbackDistance;
+            PrepareKnockbackTrajectory(movementStunSeconds);
         }
         else
         {
             // A stun-only hit stops horizontal motion, including an earlier hit's remaining knockback.
-            knockbackSpeed = 0f;
+            knockbackDistance = knockbackDistancePerWeightedTick = 0f;
+            knockbackTicksRemaining = 0;
         }
         controlledMovement = true;
         requestedMovement = 0f;
-        body.linearVelocity = new Vector2(knockbackSpeed * knockbackDirection, body.linearVelocity.y);
+        body.linearVelocity = new Vector2(CurrentKnockbackSpeed(), body.linearVelocity.y);
         return true;
     }
 
@@ -53,10 +56,15 @@ public sealed class EnemyHitReaction : MonoBehaviour
     {
         if (IsMovementSuppressed)
         {
-            body.linearVelocity = new Vector2(knockbackSpeed * knockbackDirection, body.linearVelocity.y);
-            // Preserve the previous 50 Hz decay curve while also supporting other fixed timesteps.
-            float retention = Mathf.Pow(.75f, Time.fixedDeltaTime / .02f);
-            knockbackSpeed = Mathf.Max(0f, (knockbackSpeed + .04f) * retention - .04f);
+            body.linearVelocity = new Vector2(CurrentKnockbackSpeed(), body.linearVelocity.y);
+            if (knockbackTicksRemaining > 0)
+            {
+                float distanceThisTick = knockbackDistancePerWeightedTick * knockbackTicksRemaining;
+                knockbackDistance = Mathf.Max(0f, knockbackDistance - distanceThisTick);
+                knockbackTicksRemaining--;
+                if (knockbackTicksRemaining == 0)
+                    knockbackDistance = knockbackDistancePerWeightedTick = 0f;
+            }
             controlledMovement = true;
             return true;
         }
@@ -81,11 +89,32 @@ public sealed class EnemyHitReaction : MonoBehaviour
     public void Clear()
     {
         movementStunUntil = 0f;
-        knockbackSpeed = knockbackDirection = 0f;
+        knockbackDistance = knockbackDirection = knockbackDistancePerWeightedTick = 0f;
+        knockbackTicksRemaining = 0;
         requestedMovement = 0f;
         if (controlledMovement && body != null)
             body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         controlledMovement = false;
+    }
+
+    private void PrepareKnockbackTrajectory(float durationSeconds)
+    {
+        float fixedDelta = Mathf.Max(Time.fixedDeltaTime, .001f);
+        int durationTicks = Mathf.Max(1, Mathf.CeilToInt(durationSeconds / fixedDelta));
+        // A triangular speed curve gives an easing stop while covering the requested distance exactly.
+        // Extend the curve when needed to keep the first velocity within the shared speed limit.
+        int speedLimitedTicks = Mathf.Max(1, Mathf.CeilToInt(2f * knockbackDistance /
+            (MaximumKnockbackSpeed * fixedDelta) - 1f));
+        knockbackTicksRemaining = Mathf.Max(durationTicks, speedLimitedTicks);
+        float totalWeight = knockbackTicksRemaining * (knockbackTicksRemaining + 1f) * .5f;
+        knockbackDistancePerWeightedTick = knockbackDistance / totalWeight;
+    }
+
+    private float CurrentKnockbackSpeed()
+    {
+        if (knockbackTicksRemaining <= 0 || Time.fixedDeltaTime <= 0f) return 0f;
+        float distanceThisTick = knockbackDistancePerWeightedTick * knockbackTicksRemaining;
+        return knockbackDirection * distanceThisTick / Time.fixedDeltaTime;
     }
 
     private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
