@@ -105,7 +105,7 @@ public sealed class BossCombatEditModeTests
         var data = boss.Settings;
         Assert.That(data.ValidateSettings(), Is.Empty);
         foreach (BossAttackVisual visual in new BossAttackVisual[] { data.WarningPrefab,data.SlashPrefab,data.ImpactPrefab,
-            data.ProjectilePrefab.GetComponent<BossAttackVisual>(),data.WavePrefab.GetComponent<BossAttackVisual>(),data.SpikePrefab.GetComponent<BossAttackVisual>() })
+            data.ProjectilePrefab.GetComponent<BossAttackVisual>(),data.WavePrefab.GetComponent<BossAttackVisual>() })
         {
             Assert.That(visual.Renderer.sprite.bounds.size.x, Is.EqualTo(1f).Within(.001f), visual.name);
             Assert.That(visual.Renderer.sprite.bounds.size.y, Is.EqualTo(1f).Within(.001f), visual.name);

@@ -100,7 +100,7 @@ public sealed class BossStagePlayModeTests
         Assert.That(entry.HasEntered, Is.False, "The player's trailing edge has not crossed the threshold.");
         float explorationSize = view.orthographicSize;
         yield return Enter();
-        Assert.That(gates.All(gate => !gate.isTrigger && gate.GetComponent<SpriteRenderer>().enabled), Is.True);
+        Assert.That(gates.All(gate => !gate.isTrigger && !gate.GetComponent<SpriteRenderer>().enabled), Is.True);
         Assert.That(view.GetComponent<LobbyCameraFollow>().enabled, Is.False);
         Assert.That(view.orthographicSize, Is.GreaterThan(explorationSize));
         boss.ForcePhaseTwoForTest();
@@ -116,6 +116,110 @@ public sealed class BossStagePlayModeTests
             LayerMask.GetMask("Ground")).collider, Is.Not.Null);
         Assert.That(view.transform.position.x, Is.GreaterThan(33), "Exploration must reach the far-side area.");
         yield return Capture("04-far-side", 1600, 900);
+    }
+
+    [UnityTest]
+    public IEnumerator InvisibleSealsAlignWithCombatViewportAcrossAspectRatios()
+    {
+        entry.AutoBeginEncounter = false;
+        Bounds arenaBounds = entry.GetComponent<BoxCollider2D>().bounds;
+        MovePlayer(new Vector2(arenaBounds.min.x + 2f, -2.3f));
+        float entryDeadline = Time.realtimeSinceStartup + 2f;
+        while (!entry.HasEntered && Time.realtimeSinceStartup < entryDeadline)
+        {
+            yield return new WaitForFixedUpdate();
+            yield return null;
+        }
+        Assert.That(entry.HasEntered, Is.True, "The player's body must enter the actual arena trigger.");
+        Assert.That(entry.HoldingForIntro, Is.True,
+            $"started={boss.EncounterStarted}, dead={boss.IsDead}, playerDead={player.IsDead}, autoBegin={entry.AutoBeginEncounter}");
+        Collider2D[] gates = entry.transform.Cast<Transform>().Where(child => child.name.EndsWith("seal"))
+            .Select(child => child.GetComponent<Collider2D>()).OrderBy(gate => gate.bounds.center.x).ToArray();
+        Assert.That(gates.Length, Is.EqualTo(2));
+        foreach (float aspect in new[] { 16f / 9f, 4f / 3f, 32f / 9f })
+        {
+            view.aspect = aspect;
+            yield return new WaitForSecondsRealtime(1.2f);
+            Physics2D.SyncTransforms();
+            float left = view.transform.position.x - view.orthographicSize * aspect;
+            float right = view.transform.position.x + view.orthographicSize * aspect;
+            float bottom = view.transform.position.y - view.orthographicSize;
+            float top = view.transform.position.y + view.orthographicSize;
+            Assert.That(gates[0].bounds.max.x, Is.EqualTo(left).Within(.01f));
+            Assert.That(gates[1].bounds.min.x, Is.EqualTo(right).Within(.01f));
+            foreach (Collider2D gate in gates)
+            {
+                Assert.That(gate.isTrigger, Is.False);
+                Assert.That(gate.GetComponent<SpriteRenderer>().enabled, Is.False);
+                Assert.That(gate.GetComponent<SpriteRenderer>().color.a, Is.Zero);
+                Assert.That(gate.bounds.min.y, Is.LessThanOrEqualTo(bottom + .01f));
+                Assert.That(gate.bounds.max.y, Is.GreaterThanOrEqualTo(top - .01f));
+            }
+            Assert.That(Physics2D.Raycast(new Vector2(left + .1f, view.transform.position.y),
+                Vector2.left, 1f, LayerMask.GetMask("Ground")).collider, Is.SameAs(gates[0]));
+            Assert.That(Physics2D.Raycast(new Vector2(right - .1f, view.transform.position.y),
+                Vector2.right, 1f, LayerMask.GetMask("Ground")).collider, Is.SameAs(gates[1]));
+        }
+        MovePlayer(new Vector2(arenaBounds.min.x - 10f, -2.3f));
+        entry.CancelIntro();
+        Assert.That(entry.HasEntered, Is.False);
+        Assert.That(gates.All(gate => gate.isTrigger && !gate.GetComponent<SpriteRenderer>().enabled), Is.True);
+    }
+
+    [UnityTest]
+    public IEnumerator EndingWalksRightFromTheBossRightSideWithoutBacktracking()
+    {
+        yield return VerifyEndingWalksRight(1);
+    }
+
+    [UnityTest]
+    public IEnumerator EndingWalksRightFromTheBossLeftSideWithoutRepositioning()
+    {
+        yield return VerifyEndingWalksRight(-1);
+    }
+
+    private IEnumerator VerifyEndingWalksRight(int startingSide)
+    {
+        BossEndingSequence ending = Object.FindFirstObjectByType<BossEndingSequence>();
+        Assert.That(ending, Is.Not.Null);
+        boss.PauseAndCancelForTest();
+        boss.BodyCollider.enabled = false;
+        boss.Body.simulated = false;
+        // Simulate the death/dialogue state without feeding manual dialogue input or granting a defeat reward.
+        typeof(BossCombatController).GetProperty("IsDeathDialoguePlaying").SetValue(boss, true);
+        typeof(BossCombatController).GetProperty("IsDead").SetValue(boss, true);
+        typeof(BossEndingSequence).GetField("deathPause", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(ending, 0f);
+        float startX = boss.BodyRenderer.bounds.center.x + startingSide * 3f;
+        MovePlayer(new Vector2(startX, -2.3f));
+        view.aspect = 16f / 9f;
+        view.orthographicSize = 2f;
+        view.transform.position = new Vector3(startX, 0f, -10f);
+        PlayerMove move = player.GetComponent<PlayerMove>();
+        move.enabled = true;
+        move.ScriptedMoveInput = -1f;
+        ending.Begin();
+        Assert.That(move.ScriptedMoveInput, Is.Zero);
+        yield return new WaitForSecondsRealtime(.15f);
+        Assert.That(player.transform.position.x, Is.EqualTo(startX).Within(.001f), "Wait in place until the death dialogue ends.");
+
+        typeof(BossCombatController).GetProperty("IsDeathDialoguePlaying").SetValue(boss, false);
+        bool walked = false;
+        float previousX = startX;
+        float deadline = Time.realtimeSinceStartup + 8f;
+        while (SceneManager.GetActiveScene().name != ProjectScenes.EndingSceneName && Time.realtimeSinceStartup < deadline)
+        {
+            if (player != null)
+            {
+                float x = player.transform.position.x;
+                Assert.That(x, Is.GreaterThanOrEqualTo(previousX - .001f), "The ending must never move the player left.");
+                Assert.That(player.GetComponent<Rigidbody2D>().linearVelocity.x, Is.GreaterThanOrEqualTo(-.001f));
+                walked |= x > startX + .1f;
+                previousX = x;
+            }
+            yield return null;
+        }
+        Assert.That(walked, Is.True);
+        Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(ProjectScenes.EndingSceneName));
     }
 
     [UnityTest]

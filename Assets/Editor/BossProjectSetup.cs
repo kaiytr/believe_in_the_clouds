@@ -19,7 +19,7 @@ public static class BossProjectSetup
     private const string Art = "Assets/Art/Boss";
     private const string Fx = "Assets/Prefabs/Boss/Effects";
     private static Material material;
-    private static Sprite square, disc, cloud, slash, spikes, flame, wave;
+    private static Sprite square, disc, cloud, slash, flame, wave;
 
     [MenuItem("Tools/Boss/Rebuild Boss assets (Boss scene untouched)")]
     public static void Build()
@@ -29,7 +29,6 @@ public static class BossProjectSetup
         disc = SpriteAsset("UnitDisc", (x, y) => x * x + y * y <= 0.25f);
         cloud = PlatformSprite();
         slash = SpriteAsset("Slash", (x, y) => Mathf.Abs(y - 0.7f * x) < 0.10f || Mathf.Abs(Mathf.Sqrt(x*x+y*y) - 0.42f) < 0.035f);
-        spikes = SpriteAsset("Spikes", (x, y) => y < 0.5f - Mathf.Abs(Mathf.Repeat(x + 0.5f, 1f / 3f) - 1f / 6f) * 6f);
         flame = SpriteAsset("Flame", (x, y) => Mathf.Abs(x) < (0.5f - y) * 0.45f && y > -0.45f);
         wave = SpriteAsset("GroundWave", (x, y) => y < 0.22f + 0.22f * Mathf.Cos(x * 11f) && y > -0.5f);
         material = AssetDatabase.LoadAssetAtPath<Material>(Art + "/BossUnlit.mat");
@@ -68,11 +67,6 @@ public static class BossProjectSetup
         edit.GetComponent<SpriteRenderer>().sharedMaterial = shockwaveMaterial;
         edit.AddComponent<BossGroundWave>();
         data.WavePrefab = PrefabUtility.SaveAsPrefabAsset(edit, Fx + "/BossGroundWave.prefab").GetComponent<BossGroundWave>();
-        PrefabUtility.UnloadPrefabContents(edit);
-        var spikeVisual = Effect("BossSpike", spikes, new Color(1f, 0.72f, 0.25f, 1f));
-        edit = PrefabUtility.LoadPrefabContents(AssetDatabase.GetAssetPath(spikeVisual));
-        edit.AddComponent<BossTimedDamageHazard>();
-        data.SpikePrefab = PrefabUtility.SaveAsPrefabAsset(edit, Fx + "/BossSpike.prefab").GetComponent<BossTimedDamageHazard>();
         PrefabUtility.UnloadPrefabContents(edit);
         data.WhiteCloudPrefab = CloudPrefab(true);
         data.BlackCloudPrefab = CloudPrefab(false);
@@ -186,7 +180,6 @@ public static class BossProjectSetup
         root.AddComponent<CapsuleCollider2D>().size = new Vector2(.85f,1.9f);
         var controller = root.AddComponent<BossCombatController>();
         Set(controller, "settings", data); Set(controller, "attacks", root.AddComponent<BossAttackExecutor>());
-        Set(controller, "hazards", root.AddComponent<BossHazardDirector>());
         var attackOrigin = new GameObject("AttackOrigin").transform; attackOrigin.SetParent(root.transform, false); attackOrigin.localPosition = new Vector3(.43f, 0f);
         var projectileOrigin = new GameObject("ProjectileOrigin").transform; projectileOrigin.SetParent(root.transform, false); projectileOrigin.localPosition = new Vector3(.7f,.3f);
         var speechOrigin = new GameObject("SpeechAnchor").transform; speechOrigin.SetParent(root.transform, false); speechOrigin.localPosition = new Vector3(0f,1.65f);

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>One logical hit, including both branches of a ground wave. Never reused after cancellation.</summary>
 public sealed class BossAttackRecord
 {
-    public int Generation { get; }
+    public int Generation { get; private set; }
     public int PatternId { get; }
     public int Id { get; }
     public int HitIndex { get; }
@@ -24,6 +24,8 @@ public sealed class BossAttackRecord
     /// <summary>The attack travelled past the target without touching it (settled as an evade right away).</summary>
     public bool PassedTarget { get; private set; }
     public bool DamageAccepted { get; private set; }
+    /// <summary>The attack reached the player while they were intangible (dashing) and passed through.</summary>
+    public bool AvoidedByDash { get; private set; }
     public bool IsComplete { get; private set; }
     public AttackOutcome Outcome { get; private set; }
     public BossAttackEndReason EndReason { get; private set; }
@@ -69,6 +71,11 @@ public sealed class BossAttackRecord
             EscapedByMovement = true;
     }
 
+    /// <summary>
+    /// Lets an attack that is already out (a flying projectile or travelling wave) live on through a combat cancel:
+    /// it is moved to the new generation instead of being cancelled with the rest.
+    /// </summary>
+    public void Carry(int newGeneration) { if (!IsComplete) Generation = newGeneration; }
     public void Activate() { if (!IsComplete) Activated = true; }
     /// <summary>
     /// Called by a moving attack (projectile, dash) once it is farther from its origin than the target is.
@@ -88,6 +95,7 @@ public sealed class BossAttackRecord
     }
     public void ProtectFromLightning()
     { if (Kind == BossAttackKind.Lightning && Activated && !IsComplete && !Contacted) shelteredFromLightning = true; }
+    public void NoteAvoidedByDash() { if (Activated && !IsComplete && !Contacted) AvoidedByDash = true; }
     public void AcceptDamage() { if (Contacted && !IsComplete) DamageAccepted = true; }
 
     public bool Finish(BossAttackEndReason reason)
@@ -97,7 +105,7 @@ public sealed class BossAttackRecord
         EndReason = reason;
         Outcome = reason == BossAttackEndReason.Cancelled || reason == BossAttackEndReason.TargetLost ? AttackOutcome.Cancelled :
             DamageAccepted ? AttackOutcome.Hit :
-            Activated && !Contacted && (shelteredFromLightning || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
+            Activated && !Contacted && (shelteredFromLightning || AvoidedByDash || WasThreatened && (EscapedByMovement || PassedTarget)) ? AttackOutcome.EvadedByPlayer :
             reason == BossAttackEndReason.Wall ? AttackOutcome.Blocked : AttackOutcome.Missed;
         return true;
     }

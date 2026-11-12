@@ -51,6 +51,8 @@ public sealed class DeathResultData
     public string screenshotPngBase64;
     public string captureError;
     public PlayStatistics statistics;
+    // Doctrines the player held when they died (the death clears them right after). Older saves have none.
+    public List<Doctrine> doctrines = new List<Doctrine>();
     public DeathResultData Copy() => JsonUtility.FromJson<DeathResultData>(JsonUtility.ToJson(this));
     public bool IsValid() => !string.IsNullOrWhiteSpace(cause) &&
         DateTime.TryParse(occurredAtUtc, System.Globalization.CultureInfo.InvariantCulture,

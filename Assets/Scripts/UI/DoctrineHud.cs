@@ -67,7 +67,7 @@ public class DoctrineHud : MonoBehaviour
     // 툴팁 배경 아트(Assets/Resources/UI/Doctrine_BG). Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
     private static Sprite tooltipSprite;
 
-    private static Sprite LoadTooltipSprite()
+    internal static Sprite LoadTooltipSprite()
     {
         if (tooltipSprite != null)
         {

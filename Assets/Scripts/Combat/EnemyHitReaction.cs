@@ -8,6 +8,8 @@ public sealed class EnemyHitReaction : MonoBehaviour
     private const float MaximumKnockbackSpeed = 16f;
     private Rigidbody2D body;
     private IHealth health;
+    private EnemyAttack[] enemyAttacks;
+    private BossCombatController boss;
     private float movementStunUntil;
     private float knockbackDistance, knockbackDirection, knockbackDistancePerWeightedTick;
     private int knockbackTicksRemaining;
@@ -21,6 +23,18 @@ public sealed class EnemyHitReaction : MonoBehaviour
     {
         body = GetComponent<Rigidbody2D>();
         health = GetComponent<IHealth>();
+        enemyAttacks = GetComponents<EnemyAttack>();
+        boss = GetComponent<BossCombatController>();
+    }
+
+    /// <summary>True while an attack of this actor shows a warning that is positioned around the actor itself.</summary>
+    private bool IsAttackWarningActive()
+    {
+        if (boss != null && boss.IsAttackWarningActive) return true;
+        if (enemyAttacks == null) return false;
+        for (int i = 0; i < enemyAttacks.Length; i++)
+            if (enemyAttacks[i] != null && enemyAttacks[i].IsWindingUp && enemyAttacks[i].WarningFollowsOwner) return true;
+        return false;
     }
 
     public bool Apply(float movementStunSeconds, float horizontalKnockbackDistance, float sourceX)
@@ -29,6 +43,9 @@ public sealed class EnemyHitReaction : MonoBehaviour
         if (!isActiveAndEnabled || health != null && health.IsDead ||
             !IsFinite(movementStunSeconds) || !IsFinite(horizontalKnockbackDistance) || !IsFinite(sourceX))
             return false;
+
+        // Hitting an enemy whose attack warning is laid out around it does not push it: the warned area stays where it is.
+        if (IsAttackWarningActive()) horizontalKnockbackDistance = 0f;
 
         movementStunUntil = Mathf.Max(movementStunUntil, Time.time + Mathf.Max(0f, movementStunSeconds));
         if (horizontalKnockbackDistance > 0f)

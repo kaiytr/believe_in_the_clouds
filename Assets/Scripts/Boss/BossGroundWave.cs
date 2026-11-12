@@ -10,6 +10,7 @@ public sealed class BossGroundWave : MonoBehaviour
     private int direction;
     private float travelled;
     private BossWavePath path;
+    public BossAttackRecord Record => record;
     public bool Finished { get; private set; }
     public bool Blocked { get; private set; }
     public bool Threatens(Collider2D target) => !Finished && path != null && path.Threatens(target, travelled);

@@ -10,7 +10,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     [SerializeField] private bool startOnAwake;
     [SerializeField] private BossCombatSettings settings;
     [SerializeField] private BossAttackExecutor attacks;
-    [SerializeField] private BossHazardDirector hazards;
     [SerializeField] private BossCombatView presentation;
     [SerializeField] private BossCombatHud hud;
     [SerializeField] private Transform attackOrigin;
@@ -123,6 +122,23 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             if (IsBurning || runningRegularContext != null && runningRegularContext.BurnEnhanced) return true;
             foreach (BossAttackRecord record in activeAttacks.Values)
                 if (record.BurnEnhanced) return true;
+            return false;
+        }
+    }
+    /// <summary>
+    /// True while an attack whose warning is laid out around the boss itself (melee, dash, projectile, ground wave)
+    /// is announced but not active yet. Lightning warnings sit under the clouds and do not count.
+    /// </summary>
+    public bool IsAttackWarningActive
+    {
+        get
+        {
+            foreach (BossAttackRecord record in activeAttacks.Values)
+            {
+                bool ownerBased = record.Kind == BossAttackKind.Melee || record.Kind == BossAttackKind.Dash ||
+                                  record.Kind == BossAttackKind.Projectile || record.Kind == BossAttackKind.Shockwave;
+                if (ownerBased && !record.Activated && !record.IsComplete) return true;
+            }
             return false;
         }
     }
@@ -321,7 +337,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         var errors = settings != null ? settings.ValidateSettings() : new List<string> { "Boss.settings is missing." };
         if (attacks == null) errors.Add("Boss.attacks is missing.");
-        if (hazards == null) errors.Add("Boss.hazards is missing.");
         if (presentation == null || !presentation.IsConfigured) errors.Add("Boss.presentation / VisualRoot / body renderer references are missing.");
         if (hud == null || !hud.IsConfigured) errors.Add("Boss.hud / gameplay health, belief and speech references are missing.");
         else if (!hud.HasKoreanFont) errors.Add("Boss.hud requires a Korean font (preferredFont / installed OS fonts).");
@@ -347,7 +362,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             return;
         }
         attacks.Initialize(this);
-        hazards.Initialize(this);
         presentation.Initialize(this);
         hud.Initialize(this);
         encounterStartedAt = Time.time;
@@ -461,9 +475,15 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         Rigidbody2D playerBody = playerHealth != null ? playerHealth.GetComponent<Rigidbody2D>() : null;
         if (playerBody != null) playerBody.linearVelocity = new Vector2(0f, playerBody.linearVelocity.y);
         SetStatus("2페이즈 전환");
+        // The boss must not touch the player while the camera moves in and out.
+        SetContactDamageSuppressed(true);
 
+        yield return CutsceneZoomIn();
         yield return SpeakLines(PhaseTwoLines);
+        if (phaseBubble != null) phaseBubble.Hide();
+        yield return CutsceneZoomOut();
         EndSpokenLines();
+        if (EncounterStarted && !IsDead) SetContactDamageSuppressed(false);
         nextRegularAt = Time.time + 0.4f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0.4f);
         phaseCutscene = null;
@@ -542,7 +562,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         bool entered = belief.Reduce(amount, Time.time, settings.VulnerableDuration);
         if (entered)
         {
-            CancelCombat(false);
+            CancelCombat(false, keepLaunched: true);
             SetPresentation(BossPresentationState.Idle);
             SetStatus("방어력 저하 · " + reason);
         }
@@ -853,7 +873,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     public bool TryHit(BossAttackRecord record)
     {
-        if (!IsAttackValid(record) || !record.TryContact()) return false;
+        if (!IsAttackValid(record)) return false;
+        // A dashing player is intangible: the attack passes through without registering contact, so it is not
+        // used up and still lands once the dash ends.
+        if (playerHealth != null && playerHealth.IsDashIntangible) { record.NoteAvoidedByDash(); return false; }
+        if (!record.TryContact()) return false;
         var damage = new DamageInfo(record.Damage, DamageSource.Enemy, gameObject, AttackName(record.Kind));
         bool isComboHit = record.Kind == BossAttackKind.Melee && record.HitIndex > 0;
         bool accepted = isComboHit && record.HitIndex > 1 && lastAcceptedComboPatternId == record.PatternId
@@ -927,7 +951,11 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     // Global cancel (phase change, vulnerability, death, disable, target loss): both lanes, every prophecy,
     // the burn window, lightning and shockwave reservation go together. Persistent clouds stay.
-    private void CancelCombat(bool removeBurn)
+    // keepLaunched: attacks that already put an object into the world (a flying projectile, a travelling ground
+    // wave) are past the point of being cancelled, so they finish on their own. Only what has not been launched
+    // yet (warnings, windups, the pattern routines) is cancelled. Dodged projectiles, whose attack is already
+    // settled, also keep flying.
+    private void CancelCombat(bool removeBurn, bool keepLaunched = false)
     {
         hitReaction?.Clear();
         pendingTurn = 0;
@@ -945,16 +973,39 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         cueTitle = "전투 대기"; cueHint = "공격 예고를 보고 대응하세요.";
         CueState = BossPresentationState.Idle;
         SetPresentation(BossPresentationState.Idle);
-        foreach (var record in new List<BossAttackRecord>(activeAttacks.Values)) CompleteAttack(record, BossAttackEndReason.Cancelled);
+        var launched = new List<BossAttackRecord>();
+        foreach (var record in new List<BossAttackRecord>(activeAttacks.Values))
+        {
+            bool carriesObject = record.Kind == BossAttackKind.Projectile || record.Kind == BossAttackKind.Shockwave;
+            if (keepLaunched && carriesObject && record.Activated && !record.IsComplete) launched.Add(record);
+            else CompleteAttack(record, BossAttackEndReason.Cancelled);
+        }
         activeAttacks.Clear();
         generation++;
+        foreach (var record in launched)
+        {
+            record.Carry(generation);
+            activeAttacks.Add(record.Id, record);
+        }
         nextRegularAt = 0f;
         nextBeliefAt = Time.time + (settings != null ? settings.BeliefInitialDelay : 0f);
-        if (hazards != null) hazards.Cancel();
-        if (attacks != null) attacks.ClearPresentationEffects();
+        if (attacks != null) attacks.ClearPresentationEffects(launched.Exists(record => record.Kind == BossAttackKind.Shockwave));
         if (clouds != null) clouds.CancelLightning();
-        if (effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
+        var survivors = new List<GameObject>();
+        if (keepLaunched)
+            foreach (GameObject effect in effects)
+            {
+                if (effect == null) continue;
+                bool liveShot = effect.TryGetComponent(out BossAttackProjectile shot) &&
+                                (shot.IsSettled || launched.Contains(shot.Record));
+                bool liveWave = effect.TryGetComponent(out BossGroundWave wave) && launched.Contains(wave.Record);
+                if (liveShot || liveWave) survivors.Add(effect);
+            }
+        foreach (GameObject effect in effects)
+            if (effect != null && !survivors.Contains(effect)) { effect.SetActive(false); Destroy(effect); }
         effects.Clear();
+        effects.AddRange(survivors);
+        if (survivors.Count == 0 && effectRoot != null) { effectRoot.gameObject.SetActive(false); Destroy(effectRoot.gameObject); effectRoot = null; }
         if (body != null) body.linearVelocity = new Vector2(0f, body.linearVelocity.y);
         if (removeBurn && playerHealth != null) playerHealth.GetComponent<BossBurnEffect>()?.Clear(this);
     }
@@ -983,11 +1034,43 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         IsDeathDialoguePlaying = true;
         UiModal.Push(phaseCutsceneLock);
+        yield return CutsceneZoomIn();
         yield return SpeakLines(DeathLines);
+        if (phaseBubble != null) phaseBubble.Hide();
+        yield return CutsceneZoomOut();
         IsDeathDialoguePlaying = false;
         EndSpokenLines();
         phaseCutscene = null;
         Notify();
+    }
+
+    // Cutscene camera: zoom in on the boss before the first line, zoom back out after the last. The pause around
+    // each move keeps the fight frozen (the cutscene flags stay up the whole time) until the view is settled.
+    private const float CutsceneZoomPause = .3f;
+
+    private IEnumerator CutsceneZoomIn()
+    {
+        BossArenaCamera cameraRig = ArenaCamera;
+        float seconds = .6f;
+        if (cameraRig != null)
+        {
+            seconds = cameraRig.FocusSeconds;
+            float height = BodyCollider != null ? BodyCollider.bounds.center.y - transform.position.y + .3f : 1f;
+            cameraRig.FocusOn(transform, height);
+        }
+        yield return new WaitForSecondsRealtime(seconds + CutsceneZoomPause);
+    }
+
+    private IEnumerator CutsceneZoomOut()
+    {
+        BossArenaCamera cameraRig = ArenaCamera;
+        float seconds = .6f;
+        if (cameraRig != null)
+        {
+            seconds = cameraRig.FocusSeconds;
+            cameraRig.ReleaseFocus();
+        }
+        yield return new WaitForSecondsRealtime(seconds + CutsceneZoomPause);
     }
 
     private IEnumerator SpeakLines(string[] lines)
@@ -1099,7 +1182,6 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             case BossAttackKind.Dash: return "돌진";
             case BossAttackKind.Projectile: return "투사체";
             case BossAttackKind.Shockwave: return "지면 충격파";
-            case BossAttackKind.Spike: return "가시";
             case BossAttackKind.Lightning: return "먹구름 번개";
             default: return "공격";
         }
@@ -1140,6 +1222,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         phaseCutscenePlaying = false;
         IsDeathDialoguePlaying = false;
         if (phaseBubble != null) phaseBubble.Hide();
+        ArenaCamera?.ClearFocus();
         UiModal.Pop(phaseCutsceneLock);
         CancelCombat(true);
         ReleaseArenaVisuals();

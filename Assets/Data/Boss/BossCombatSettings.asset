@@ -106,10 +106,6 @@ MonoBehaviour:
   LightningDamage: 18
   LightningSpacing: 2
   LightningWidth: 0.16
-  SpikeWarning: 3
-  SpikeDuration: 2
-  SpikeSize: {x: 1.25, y: 0.8}
-  SpikeDamage: 18
   WaveDistance: 7
   WaveSpeed: 9
   WaveSize: {x: 0.6, y: 0.6}
@@ -135,7 +131,6 @@ MonoBehaviour:
   WavePrefab: {fileID: 4984771641606881301, guid: 17324334cb4107b4aaa78df51daea5cb, type: 3}
   WhiteCloudPrefab: {fileID: 3440444722778949156, guid: d68a53c9112b3f04fba21a7667844567, type: 3}
   BlackCloudPrefab: {fileID: 7742617690646464762, guid: 8b864fc88520e9e46ac54cfd2bacfc86, type: 3}
-  SpikePrefab: {fileID: 7277133656842401280, guid: a06d5809f97d3214fb2b71271bb03f3d, type: 3}
   BurnSprite: {fileID: 21300000, guid: 1448fd79057ae464c9b0227d9fd1ebc5, type: 3}
   EffectMaterial: {fileID: 2100000, guid: 1d315a27cd0606c4aa48028539218aa5, type: 2}
   WarningOrder: 20

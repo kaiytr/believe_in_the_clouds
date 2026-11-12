@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -63,8 +64,21 @@ public sealed class PlayerDeathCoordinator : MonoBehaviour
         {
             cause = cause, occurredAtUtc = DateTime.UtcNow.ToString("O"), sceneName = gameObject.scene.name,
             screenshotPngBase64 = png, captureError = captureError,
-            statistics = Currency.Service?.StatisticsSnapshot() ?? new PlayStatistics()
+            statistics = Currency.Service?.StatisticsSnapshot() ?? new PlayStatistics(),
+            doctrines = HeldDoctrines()
         };
+    }
+
+    // Same rule as the HUD row: the player's own doctrines (ownerless ones come from the foundation).
+    private List<Doctrine> HeldDoctrines()
+    {
+        var held = new List<Doctrine>();
+        DoctrineManager manager = DoctrineManager.Instance;
+        if (manager == null) return held;
+        foreach (DoctrineManager.ActiveDoctrine entry in manager.ActiveDoctrines)
+            if (entry != null && entry.Doctrine != null && (entry.Owner == null || entry.Owner == gameObject))
+                held.Add(entry.Doctrine.Clone());
+        return held;
     }
     public void CaptureDeath(Action processExistingDeathEffects, string cause = "알 수 없는 원인")
     {
