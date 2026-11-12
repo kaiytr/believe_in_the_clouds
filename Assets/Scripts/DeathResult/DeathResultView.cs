@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,6 +12,10 @@ public sealed class DeathResultView : MonoBehaviour
     internal static readonly Color Inset = new Color(.77f, .71f, .63f);
     private Button resume, exit;
     private Text error;
+    private Coroutine doctrineReveal;
+    private Action closeScroll;
+    // Seconds the description stays open before it closes by itself (the in-game tooltip uses 3).
+    private const float doctrineScrollSeconds = 3f;
 
     public static DeathResultView Create(DeathResultData data, Texture2D capture, Action onContinue, Action onExit)
     {
@@ -28,6 +33,8 @@ public sealed class DeathResultView : MonoBehaviour
         aspect.aspectRatio = 16f / 9f;
 
         Sprite panelSprite = Resources.Load<Sprite>("UI/DeathResult/result_BG");
+        // Bottom-left section of the artwork (277..994 x 715..910 of 1920x1080), or the placeholder frame's area.
+        float[] doctrineArea = panelSprite != null ? new[] { .1443f, .1574f, .5177f, .3380f } : new[] { .101f, .145f, .513f, .343f };
         if (panelSprite != null)
         {
             AddFullCanvasArtwork(composition, "Result panel artwork", panelSprite);
@@ -81,6 +88,8 @@ public sealed class DeathResultView : MonoBehaviour
         }
         else Label(imageArea, "화면을 캡처할 수 없습니다", 19, Paper, .03f, .03f, .97f, .97f);
 
+        view.BuildDoctrineSection(composition, data.doctrines, doctrineArea);
+
         view.resume = ArtworkButton(composition, "UI/DeathResult/DeathResultContinueButton", "이어하기",
             .588f, .277f, .80f, .351f, onContinue);
         view.exit = ArtworkButton(composition, "UI/DeathResult/DeathResultSaveExitButton", "저장 및 종료",
@@ -88,6 +97,113 @@ public sealed class DeathResultView : MonoBehaviour
         view.error = Label(composition, "", 16, new Color(.58f, .12f, .08f), .56f, .12f, .83f, .18f);
         UiEventSystemBoot.Ensure().SetSelectedGameObject(view.resume.gameObject);
         return view;
+    }
+
+    // Doctrines held at death, inside the bottom-left section: a row of scroll tiles. Clicking one hides the tiles and
+    // unrolls the description scroll from the section's left edge (like the in-game doctrine tooltip); clicking the
+    // scroll brings the tiles back.
+    private void BuildDoctrineSection(Transform composition, System.Collections.Generic.List<Doctrine> held, float[] area)
+    {
+        RectTransform section = Box("Doctrine section", composition, new Color(0, 0, 0, 0), area[0], area[1], area[2], area[3]);
+        section.GetComponent<Image>().raycastTarget = false;
+        int count = held != null ? held.Count : 0;
+
+        // Section is about 3.67 times wider than tall; a tile keeps the HUD scroll's 118:130 shape.
+        const float sectionAspect = 3.667f, tileAspect = 118f / 130f, tileHeight = .7f, gap = .02f;
+        float tileWidth = tileHeight * tileAspect / sectionAspect;
+        float step = count > 1 ? Mathf.Min(tileWidth + gap, (.96f - tileWidth) / (count - 1)) : 0f;
+        float rowWidth = tileWidth + step * Mathf.Max(0, count - 1);
+        float left = (1f - rowWidth) * .5f;
+
+        // Tiles, centered in the section.
+        RectTransform tiles = Box("Held doctrines", section, new Color(0, 0, 0, 0), 0, 0, 1, 1);
+        tiles.GetComponent<Image>().raycastTarget = false;
+        if (count == 0) Label(tiles, "보유했던 교리가 없습니다", 20, Ink, .04f, .3f, .96f, .7f);
+
+        // Description scroll: the art is revealed left to right by its fill; text fades in once it is mostly open.
+        Sprite art = DoctrineHud.LoadTooltipSprite();
+        float artAspect = art != null ? art.rect.width / art.rect.height : 913f / 186f;
+        float height = Mathf.Min(1f, sectionAspect / artAspect), bottom = (1f - height) * .5f;
+        RectTransform scroll = Box("Doctrine description", section, art != null ? Color.white : new Color(.95f, .86f, .73f),
+            0f, bottom, 1f, bottom + height);
+        Image scrollImage = scroll.GetComponent<Image>();
+        scrollImage.sprite = art != null ? art : UiTheme.WhiteSprite;   // a filled image needs a sprite
+        scrollImage.type = Image.Type.Filled;
+        scrollImage.fillMethod = Image.FillMethod.Horizontal;
+        scrollImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        scrollImage.fillAmount = 0f;
+        scrollImage.raycastTarget = true;
+        CanvasGroup scrollGroup = scroll.gameObject.AddComponent<CanvasGroup>();
+        Button close = scroll.gameObject.AddComponent<Button>();
+        close.targetGraphic = scrollImage;
+        close.transition = Selectable.Transition.None;
+        close.navigation = new Navigation { mode = Navigation.Mode.None };
+
+        // Same inner margins the HUD tooltip uses on this art (52/56 px sides, 40/34 px top and bottom of 913x186).
+        RectTransform texts = Box("Texts", scroll, new Color(0, 0, 0, 0), .057f, .215f, .939f, .817f);
+        texts.GetComponent<Image>().raycastTarget = false;
+        CanvasGroup textGroup = texts.gameObject.AddComponent<CanvasGroup>();
+        textGroup.alpha = 0f;
+        Text title = Label(texts, "", 24, Ink, 0f, .6f, 1f, 1f, TextAnchor.MiddleLeft);
+        Text body = Label(texts, "", 20, Ink, 0f, 0f, 1f, .6f, TextAnchor.UpperLeft);
+        scroll.gameObject.SetActive(false);
+
+        // Closing (by click or by the timer) brings the tiles back.
+        closeScroll = () =>
+        {
+            if (doctrineReveal != null) StopCoroutine(doctrineReveal);
+            doctrineReveal = null;
+            scroll.gameObject.SetActive(false);
+            tiles.gameObject.SetActive(true);
+        };
+        close.onClick.AddListener(() => closeScroll());
+
+        for (int i = 0; i < count; i++)
+        {
+            DoctrineSlotView slot = DoctrineSlotView.BuildRuntime(tiles);
+            slot.name = "Held doctrine " + (i + 1);
+            slot.Bind(held[i], DoctrineText.ShortName(held[i]), true);
+            Place(slot.GetComponent<RectTransform>(), left + step * i, .5f - tileHeight * .5f,
+                left + step * i + tileWidth, .5f + tileHeight * .5f);
+            int number = i + 1;
+            slot.Clicked += clicked =>
+            {
+                title.text = "교리" + number;
+                body.text = DoctrineText.Describe(clicked.Doctrine);
+                tiles.gameObject.SetActive(false);
+                scroll.gameObject.SetActive(true);
+                if (doctrineReveal != null) StopCoroutine(doctrineReveal);
+                doctrineReveal = StartCoroutine(ShowScroll(scrollGroup, scrollImage, textGroup));
+            };
+        }
+    }
+
+    // Unrolls the scroll, holds it for DoctrineScrollSeconds, fades it out and closes it (like the in-game tooltip).
+    private IEnumerator ShowScroll(CanvasGroup whole, Image scroll, CanvasGroup texts)
+    {
+        const float seconds = .4f, fadeSeconds = .5f;
+        whole.alpha = 1f;
+        scroll.fillAmount = 0f;
+        texts.alpha = 0f;
+        // The result screen runs with timeScale 0.
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            float k = Mathf.SmoothStep(0f, 1f, t / seconds);
+            scroll.fillAmount = k;
+            texts.alpha = Mathf.Clamp01((k - .5f) * 2f);
+            yield return null;
+        }
+        scroll.fillAmount = 1f;
+        texts.alpha = 1f;
+
+        yield return new WaitForSecondsRealtime(Mathf.Max(.5f, doctrineScrollSeconds));
+        for (float t = 0f; t < fadeSeconds; t += Time.unscaledDeltaTime)
+        {
+            whole.alpha = 1f - Mathf.Clamp01(t / fadeSeconds);
+            yield return null;
+        }
+        whole.alpha = 1f;
+        closeScroll();
     }
 
     private static void AddFullCanvasArtwork(Transform parent, string name, Sprite sprite)
