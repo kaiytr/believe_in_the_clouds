@@ -64,6 +64,49 @@ public sealed class ParallelWorkIntegrationPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator DogChargeYieldsToStunAndKnockbackThenResumes()
+    {
+        DogEnemy dog = null;
+        yield return Load(ProjectScenes.StageFolder + "CombatLevel1.unity", () =>
+        {
+            var enemies = Object.FindObjectsByType<EnemyUnit>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            dog = enemies.OfType<DogEnemy>().First();
+            foreach (EnemyUnit enemy in enemies) if (enemy != dog) enemy.gameObject.SetActive(false);
+            foreach (DesignedLevelEncounter encounter in Object.FindObjectsByType<DesignedLevelEncounter>(FindObjectsSortMode.None))
+                encounter.enabled = false;
+            dog.gameObject.SetActive(true);
+            Player.GetComponent<PlayerMove>().enabled = false;
+            MovePlayer(new Vector2(0f, 100f));
+            dog.transform.position = new Vector2(-3f, 100f);
+            var rigidbody = dog.GetComponent<Rigidbody2D>();
+            rigidbody.position = dog.transform.position;
+            rigidbody.gravityScale = 0f;
+            dog.SetFacingDirection(1f);
+            Physics2D.SyncTransforms();
+        });
+        DogChargeAttack charge = dog.GetComponent<DogChargeAttack>();
+        Rigidbody2D body = dog.GetComponent<Rigidbody2D>();
+        yield return Until(() => charge.IsCharging);
+        dog.HitReaction.Apply(.3f, 0f, 0f);
+        yield return new WaitForFixedUpdate();
+        float pausedX = body.position.x;
+        for (int i = 0; i < 5; i++)
+        {
+            yield return new WaitForFixedUpdate();
+            Assert.That(body.position.x, Is.EqualTo(pausedX).Within(.02f));
+            Assert.That(charge.IsCharging, Is.True);
+        }
+        dog.HitReaction.Apply(.18f, 2.8f, 0f);
+        for (int i = 0; i < 5; i++)
+        {
+            yield return new WaitForFixedUpdate();
+            Assert.That(body.linearVelocity.x, Is.LessThan(0f), "넉백 중에는 돌진 속도를 쓰지 않는다.");
+        }
+        yield return Until(() => body.linearVelocity.x > 1f);
+        Assert.That(charge.IsCharging, Is.True);
+    }
+
+    [UnityTest]
     public IEnumerator BossIntroKeepsArenaBoundsAndCloudsThenStartsOnceAndOpensOnDefeat()
     {
         yield return Load(ProjectScenes.Boss, () =>

@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-05",
+  "unity": "6000.3.5f2",
+  "verificationProject": ".utmp/BossStageVerification",
+  "originalCameraSourceRestored": true,
+  "layout": {
+    "sceneMinX": -42,
+    "sceneMaxX": 48,
+    "totalWidth": 90,
+    "approachWidth": 30,
+    "arenaWidth": 45,
+    "farSideWidth": 15,
+    "spawnX": -38
+  },
+  "checks": [
+    {
+      "suite": "WideEditMode",
+      "result": "Passed",
+      "total": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "WidePlayMode",
+      "result": "Passed",
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "captures": [
+    "01-approach.png",
+    "02-arena-16x9.png",
+    "03-arena-4x3.png",
+    "04-far-side.png"
+  ],
+  "fullBossPatternSuiteRun": false,
+  "longManualPlayRun": false
+}

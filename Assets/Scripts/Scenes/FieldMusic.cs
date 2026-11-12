@@ -10,7 +10,7 @@ public sealed class FieldMusic : MonoBehaviour
 {
     private const string ClipPath = "Sounds/FieldBgm";
     private const float Volume = .5f, FadeSeconds = .8f;
-    private static readonly string[] SilentScenes = { "Title", "Boss", "Ending" };
+    private static readonly string[] SilentScenes = { "Title", "Boss", "Ending", "FirstAltarStory" };
 
     private static FieldMusic instance;
     private AudioSource source;
@@ -38,16 +38,19 @@ public sealed class FieldMusic : MonoBehaviour
         source.spatialBlend = 0f; source.volume = 0f;
 
         SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
         Apply(SceneManager.GetActiveScene());
     }
 
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         if (instance == this) instance = null;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => Apply(scene);
+    private void OnActiveSceneChanged(Scene previous, Scene next) => Apply(next);
 
     private void Apply(Scene scene)
     {

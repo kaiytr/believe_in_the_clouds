@@ -6,7 +6,6 @@ using UnityEngine;
 public sealed partial class EconomyService
 {
     private LobbyRunData initialRunPlan;
-    private readonly Dictionary<string, LobbyRunData> returnPlans = new Dictionary<string, LobbyRunData>();
     public LobbyRunData RunSnapshot() => profile.hasRun ? profile.run.Copy() : null;
     public EconomyService Reopen() => new EconomyService(store);
 
@@ -43,7 +42,6 @@ public sealed partial class EconomyService
             work.run.maxHp = maxHp;
             work.revision++;
             if (!Save(work)) return Fail(EconomyError.SaveFailed);
-            returnPlans.Clear(); // 실패했던 귀환 계획에 예전 최대 체력을 남기지 않는다.
             Publish(work, "run.max-hp.sync", null);
             return Success(0, 0, Balance, null);
         }
@@ -131,30 +129,7 @@ public sealed partial class EconomyService
     }
 
     public CurrencyResult TryReturnFromStage(string stageId, float hp)
-    {
-        if (string.IsNullOrWhiteSpace(stageId)) return Fail(EconomyError.InvalidTransaction);
-        return Execute("return:" + stageId, RequestKey("run.return", stageId), "run.return", data =>
-        {
-            if (!IsCurrentStage(data, stageId) || !data.run.stage.completed || data.run.stage.role == BranchRole.Boss)
-                return Fail(EconomyError.StateConflict);
-            if (!LobbyRules.ValidHealth(hp, data.run.maxHp)) return Fail(EconomyError.InvalidAmount);
-            if (!returnPlans.TryGetValue(stageId, out LobbyRunData next))
-            {
-                next = data.run.Copy();
-                if (next.stage.role == BranchRole.Combat) next.combatClears++;
-                next.visit++;
-                next.area = RunArea.Lobby; next.hasStage = false; next.stage = null; next.hasPosition = false;
-                // The stage identity also fixes the next draw after a failed write
-                // followed by a process restart, before any plan could be saved.
-                int seed = BitConverter.ToInt32(new Guid(LobbyRules.StableId("return:" + stageId)).ToByteArray(), 0) & int.MaxValue;
-                LobbyRules.GenerateCandidates(next, seed);
-                returnPlans.Add(stageId, next);
-            }
-            data.run = next.Copy(); data.run.hp = hp;
-            FlushReservations(data);
-            return Success(0, 0, data.balance, activeTransactionId);
-        }, () => returnPlans.Remove(stageId));
-    }
+        => TryExitCompletedStage(stageId, hp);
 
     // Frequent checkpoints do not grow the idempotent gameplay receipt list.
     public CurrencyResult TryCheckpointRun(float hp, Vector2 position)

@@ -1,0 +1,885 @@
+{
+  "unity": "6000.3.5f2",
+  "verificationProject": "/private/tmp/death-result-verification",
+  "originalEditorLeftOpen": true,
+  "runs": [
+    {
+      "report": "EditMode.xml",
+      "result": "Passed",
+      "total": "186",
+      "passed": "186",
+      "failed": "0",
+      "skipped": "0",
+      "start-time": "2026-11-03 02:13:36Z",
+      "end-time": "2026-11-03 02:13:39Z",
+      "tests": [
+        {
+          "name": "BeliefExpansionEditModeTests.CatalogContainsNineExpandedContentsWithEightRulesAndPreservesV1Numbers",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.CatalogRejectsDuplicateContentAndProfilesRejectMissingReduction",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.ConsecutiveHitsUseAdjacentIntervalsAndResetOnTimeoutOrLifecycle",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.CounterattackIncludesTwoSecondsConsumesOnceAndUsesLatestEvade",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,True,50.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(EvadedByPlayer,False,True,True,50.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,True,True,True,0.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,False,True,True,50.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Blocked,False,False,True,0.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Cancelled,False,False,False,0.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,False,True,0.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,False,0.0f)",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.RearDwellIsDiscretePreservesWholeIntervalsAndDiscardsPartialTimeOnExit",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.RearHitsPrayerAndCircleEscapeUseTheirOwnConditions",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefExpansionEditModeTests.RetreatEntryAllowsOneSuccessPerRetreatAndRearmsForANewRetreat",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefSystemEditModeTests.DamageInfoCarriesAmountAndExplicitSource",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefSystemEditModeTests.ProfileCatalogResolvesBothTypesAndDefaultsToRearProfile",
+          "result": "Passed"
+        },
+        {
+          "name": "BeliefSystemEditModeTests.RearRangeUsesColliderBoundsAndIncludesBothLimits",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.GeometryUsesActualBodyAndExcludesRearAndAirAboveWave",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,True,False,False,EvadedByPlayer)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Wall,True,False,False,EvadedByPlayer)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Cancelled,True,False,False,Cancelled)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(TargetLost,True,False,False,Cancelled)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,False,False,False,Missed)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,False,Missed)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,True,Hit)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.RealPrefabAndEffectsHaveCompleteReferencesAndWorldUnitSprites",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.SharedGaugeKeepsVulnerableDeadlineAndRecoversOnlyOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.0f,1.0f,True)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.0f,1.0f,True)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.5f,True)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.5f,True)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.02f,1.0f,False)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.02f,1.0f,False)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.48f,False)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.52f,False)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,3.6f,False)",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.StandingStillAndNeverThreatenedTargetsCannotBeEvades",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.WallBlocksWithoutPriorThreatButDoesNotEraseAnActualEscape",
+          "result": "Passed"
+        },
+        {
+          "name": "BossCombatEditModeTests.WeightedChoiceAllowsRepeatsExcludesInvalidCandidatesAndHasNoFallbackAttack",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.AllHundredInputsProduceExactRequestedWeightsAndCatalogPools",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.CoinCapIncludesReservationsButStillGrantsThePiece(0)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.CoinCapIncludesReservationsButStillGrantsThePiece(3)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.EveryPoolIndexIsReachableInStableIdOrder",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.FailedOpenChangesNothingAndRetryDoesNotReroll",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.FailedRegistrationAndProcessRecreationKeepTheSamePlan",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.JsonDiskRoundTripPreservesChestReceiptAndSettlesReservationsOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.LegacyJsonMigratesWithoutResettingAssetsOrRun(1)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.LegacyJsonMigratesWithoutResettingAssetsOrRun(2)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.OpenCommitsAllRewardsAndOneReceiptInOneSaveAndRejectsReentry",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.PieceLimitAbortsWholeOpenWithoutCoinsOrAlternativePiece",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(0,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(64,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(65,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(89,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(90,Rare)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RarityBoundaries(99,Rare)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RegistrationIsIdempotentAndRejectsDuplicateOrChangedManifests",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.ReloadSettlesCoinsOnceAndKeepsOpenStateEvenAfterSpendingAndDeath",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.ReturnedSnapshotsCannotMutatePlansAndCorruptOpenReceiptIsRejected",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(0,7)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(65,17)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(99,7)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0,0,20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.125f,20,20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.25f,20,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.375f,20,-20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.5f,0,-20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.625f,-20,-20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.75f,-20,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.875f,-20,20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(1,0,20)",
+          "result": "Passed"
+        },
+        {
+          "name": "ChestEditModeTests.StablePlanHasFixedV1TestVector",
+          "result": "Passed"
+        },
+        {
+          "name": "CommonCombatEditModeTests.BossAndOrdinaryEnemiesUseTheSameHudAssetAndCachedKoreanFont",
+          "result": "Passed"
+        },
+        {
+          "name": "CommonCombatEditModeTests.SharedQueriesKeepTargetsBeyondTheInitialBufferCapacityAndRespectRotation",
+          "result": "Passed"
+        },
+        {
+          "name": "CommonCombatEditModeTests.WeightedChoiceInspectsEachCandidateOnlyOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.ActualKillsSurviveRewardSaveFailureAndAreFrozenAtDeath",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.DeferredDeathRetriesNeverApplyPenaltyBeforeChoiceAndEffectsOnlyRunOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.EarnedCoinsIgnoreSpendingFlightArrivalAndDuplicateReceipts",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.FailedChoiceCanRetryWithoutLosingScreenshotOrRerollingPenalty",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.KeywordsIncludeDuplicateOwnedPiecesAndPurchasesExactlyOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.RestartFromUnchosenDeathCompletesJournalWithoutRestoringPreDeathAssets",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultEditModeTests.VersionThreeDiskSaveMigratesWithoutResettingExistingAssets",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"subject.player\",30,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"subject.enemy\",30,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"subject.boss\",55,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"subject.all\",95,Rare)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"condition.hit\",55,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"condition.attack\",55,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"condition.death\",30,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"condition.low-health\",30,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"result.explode\",95,Rare)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"result.speed\",30,Common)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"result.attack\",55,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(\"result.heal\",55,Uncommon)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.CapIncludesPendingAndDoesNotOverflowOnIntMaxValue",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.CorruptAndFutureSavesArePreservedAndLocked",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathEffectsThenUnequipThenOnePopulationLossIncludingPending",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathLossUsesOneMixedPopulationAndJournalRetainsTheExactDraw",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(0,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(1,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(2,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(3,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(4,1)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(9,2)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(13,3)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Dog,5,7)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Believer,3,5)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Executive,7,8)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Boss,0,0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(1)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(2)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(3)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.InvalidCartPieceLimitAndInsufficientFundsNeverPartiallyPurchase",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.InvalidReasonInsufficientFundsAndAffordabilityAreExplicit",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.JsonStoreRecoversBackupWithoutOverwritingItWithCorruption",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.NewProfileIsEmptyAndReloadDoesNotApplyInitialValuesAgain",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(2)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(3)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.PresentationDelayIsForwardedToTheFlightRequestButNotToTheLedger",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.ProfileValidationRejectsUnknownIdsDuplicatesNegativeCountsAndOverflow",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.PurchasesAreAtomicUnlimitedAndIdempotent",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.ReceiptsSurviveReloadRejectOtherInputsAndDoNotExposeMutableState",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.SaveFailureDoesNotPublishAndEventReentryIsBusy",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.TokenSettlementRetriesSurvivesExitAndIgnoresStaleCallbacks",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(0)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(-1)",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(int.MinValue)",
+          "result": "Passed"
+        },
+        {
+          "name": "InteractionRangeTests.DistanceTo_InsideCollider_IsZero",
+          "result": "Passed"
+        },
+        {
+          "name": "InteractionRangeTests.DistanceTo_WithLargeCollider_UsesSurface",
+          "result": "Passed"
+        },
+        {
+          "name": "InteractionRangeTests.DistanceTo_WithoutCollider_UsesCenter",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.BossUsesTheSameRevealPriceAndCompletionStopsAtThePlaceholder",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.CheckpointFailurePublishesNothingAndCheckpointsDoNotGrowReceipts",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(1)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(2)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(3)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.FailedCompletionLeavesExitLockedUntilTheCompletionIsSaved",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.FailedDepartureDoesNotFlushPendingOrMoveAndSuccessfulRetrySettlesOnlyOnce",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.FailedReturnRetainsStageAndExactNextDrawEvenAcrossRestart",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.FailedRevealIsAtomicAndRetryUsesTheSameCandidates",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(0)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(2)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(3)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(50)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.InvalidRunCandidatesAndStageDiscriminatorsAreRejected",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.NewRunDoesNotGrantAssetsAndInitializeReloadNeverRerolls",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Combat)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Shop)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Event)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(0)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(4)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(5)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(100)",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.SchemaOneMigratesWithoutResettingAssetsAndSchemaTwoRestoresTheWholeRun",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.ThirdCombatUnlocksBossWithoutCountingEntryOrCompletionAlone",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyEditModeTests.UnrevealedDepartureIsFreeAndUnfinishedStageCannotReturn",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/Lobby.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/ShopTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/DogCombatTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/BelieverCombatTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/ExecutiveCombatTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/TemporaryStage.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Gameplay/BossTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Tests/StageTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Tests/EconomyTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Tests/ChestTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Tests/FoundationTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Sources/PlayerTEST.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Sources/EnemyTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(\"Assets/Scenes/Sources/BeliefTest.unity\")",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.Activate_SingleDoctrine_Succeeds",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.ConditionMismatch_DoesNotTrigger",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.DeactivatedDoctrine_NoLongerTriggers",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.DoctrineBoundToTargetWithoutHealth_RejectedWithReason",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.Explode_CooldownOverride_Wins",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.Explode_DamagesSelfAndOthers",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.Explode_HasTableCooldownOfFiveSeconds",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.Heal_SecondTriggerWithinCooldown_DoesNothing",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.InvalidDoctrine_RejectedWithReason",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.LowHealth_EventRaisedOnThresholdCross",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.MatchesRule_AllMatchesEverySubject",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.NewCombination_WorksWithoutCodeChange",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.PlayerHit_TriggersOnHitHeal_TableRatio",
+          "result": "Passed"
+        },
+        {
+          "name": "DoctrineEditModeTests.TwoMatchingDoctrines_BothTrigger",
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "report": "PlayMode.xml",
+      "result": "Passed",
+      "total": "25",
+      "passed": "25",
+      "failed": "0",
+      "skipped": "0",
+      "start-time": "2026-11-03 02:24:51Z",
+      "end-time": "2026-11-03 02:25:23Z",
+      "tests": [
+        {
+          "name": "BossCombatPlayModeTests.CloudPlayerDeathHasNoDelayedStrike",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultPlayModeTests.ActualEnemyIdentityReachesLethalDamageAndKillStatistics",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultPlayModeTests.CaptureFailureHasFallbackAndDoesNotChangeRenderTarget",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultPlayModeTests.LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultPlayModeTests.ResultLayoutFitsWideAndFourByThreeScreens",
+          "result": "Passed"
+        },
+        {
+          "name": "DeathResultPlayModeTests.SaveFailureKeepsResultThenExitPersistsPenaltyAndOpensWorkingTitle",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.ActualBossDefeatGivesZeroCoins",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.ActualEnemyDeathsRewardEnvironmentalDamageOnceAndDisableNeverRewards",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.CoinsArriveWithPausedTimeReuseThePoolAndStopAtTheHud",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.ConcurrentRewardsAreGroupedWithin64TokensAndArrivalRetriesAfterSaveFailure",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.FailedEnemyRewardRetriesWhileAliveAndIsNotAcceptedAfterDeath",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.MissingHudSettlesAndSceneTransitionFlushesWithoutLateDoublePayment",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.ShopShowsPricesAndKeepsTheCartWhenSavingFails",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.SlotPurchaseUsesCurrencyAndExpandsTheFoundationWithoutClearingThePieceCart",
+          "result": "Passed"
+        },
+        {
+          "name": "EconomyPlayModeTests.VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.GatesAreHiddenTriggersPlayerRendersInFrontAndCameraFollowsAcrossLobby",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.TestToolsUseMemoryAndCanRecoverAnInjectedDeathFailure",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth",
+          "result": "Passed"
+        },
+        {
+          "name": "LobbyPlayModeTests.VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios",
+          "result": "Passed"
+        }
+      ]
+    }
+  ],
+  "visuals": [
+    "result-1600x900.png",
+    "result-1200x900.png"
+  ],
+  "limitations": [
+    "Full PlayMode suite not run",
+    "Standalone build and persistent-profile manual testing not run",
+    "Memory profiling not run"
+  ],
+  "capturePresentation": "Player-centered close-up; body frame height 1.7x; centered widescreen crop; fill panel with aspect-preserving clipping; gameplay camera restored"
+}

@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="25" result="Passed" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 02:24:51Z" end-time="2026-11-03 02:25:23Z" duration="32.0697137">
+  <test-suite type="TestSuite" id="1122" name="My project" fullname="My project" runstate="Runnable" testcasecount="109" result="Passed" start-time="2026-11-03 02:24:51Z" end-time="2026-11-03 02:25:23Z" duration="32.069714" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1118" name="BelieveInTheClouds.PlayModeTests.dll" fullname="/private/tmp/death-result-verification/Library/ScriptAssemblies/BelieveInTheClouds.PlayModeTests.dll" runstate="Runnable" testcasecount="109" result="Passed" start-time="2026-11-03 02:24:51Z" end-time="2026-11-03 02:25:23Z" duration="32.063894" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18066" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestFixture" id="1028" name="BossCombatPlayModeTests" fullname="BossCombatPlayModeTests" classname="BossCombatPlayModeTests" runstate="Runnable" testcasecount="41" result="Passed" start-time="2026-11-03 02:24:51Z" end-time="2026-11-03 02:24:53Z" duration="1.974717" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1050" name="CloudPlayerDeathHasNoDelayedStrike" fullname="BossCombatPlayModeTests.CloudPlayerDeathHasNoDelayedStrike" methodname="CloudPlayerDeathHasNoDelayedStrike" classname="BossCombatPlayModeTests" runstate="Runnable" seed="1045647066" result="Passed" start-time="2026-11-03 02:24:51Z" end-time="2026-11-03 02:24:53Z" duration="1.962890" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(BossTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 1000 / HP: 0/100
+[Player] Dead
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1080" name="DeathResultPlayModeTests" fullname="DeathResultPlayModeTests" classname="DeathResultPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-03 02:24:53Z" end-time="2026-11-03 02:24:56Z" duration="3.338699" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1083" name="ActualEnemyIdentityReachesLethalDamageAndKillStatistics" fullname="DeathResultPlayModeTests.ActualEnemyIdentityReachesLethalDamageAndKillStatistics" methodname="ActualEnemyIdentityReachesLethalDamageAndKillStatistics" classname="DeathResultPlayModeTests" runstate="Runnable" seed="579687294" result="Passed" start-time="2026-11-03 02:24:53Z" end-time="2026-11-03 02:24:53Z" duration="0.441457" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[상호작용] 씬 로드(DogCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10000 / HP: 0/100
+[Player] Dead
+]]></output>
+        </test-case>
+        <test-case id="1084" name="CaptureFailureHasFallbackAndDoesNotChangeRenderTarget" fullname="DeathResultPlayModeTests.CaptureFailureHasFallbackAndDoesNotChangeRenderTarget" methodname="CaptureFailureHasFallbackAndDoesNotChangeRenderTarget" classname="DeathResultPlayModeTests" runstate="Runnable" seed="1039810803" result="Passed" start-time="2026-11-03 02:24:53Z" end-time="2026-11-03 02:24:54Z" duration="0.216366" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1081" name="LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists" fullname="DeathResultPlayModeTests.LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists" methodname="LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists" classname="DeathResultPlayModeTests" runstate="Runnable" seed="427127415" result="Passed" start-time="2026-11-03 02:24:54Z" end-time="2026-11-03 02:24:55Z" duration="1.123629" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10000 / HP: 0/100
+[Player] Dead
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1085" name="ResultLayoutFitsWideAndFourByThreeScreens" fullname="DeathResultPlayModeTests.ResultLayoutFitsWideAndFourByThreeScreens" methodname="ResultLayoutFitsWideAndFourByThreeScreens" classname="DeathResultPlayModeTests" runstate="Runnable" seed="1506022005" result="Passed" start-time="2026-11-03 02:24:55Z" end-time="2026-11-03 02:24:56Z" duration="0.933866" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10000 / HP: 0/100
+[Player] Dead
+]]></output>
+        </test-case>
+        <test-case id="1082" name="SaveFailureKeepsResultThenExitPersistsPenaltyAndOpensWorkingTitle" fullname="DeathResultPlayModeTests.SaveFailureKeepsResultThenExitPersistsPenaltyAndOpensWorkingTitle" methodname="SaveFailureKeepsResultThenExitPersistsPenaltyAndOpensWorkingTitle" classname="DeathResultPlayModeTests" runstate="Runnable" seed="1832844329" result="Passed" start-time="2026-11-03 02:24:56Z" end-time="2026-11-03 02:24:56Z" duration="0.621701" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10000 / HP: 0/100
+[Player] Dead
+[상호작용] 씬 로드(Title): 등록된 대상 0개, 플레이어 미발견
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1086" name="EconomyPlayModeTests" fullname="EconomyPlayModeTests" classname="EconomyPlayModeTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-11-03 02:24:56Z" end-time="2026-11-03 02:25:15Z" duration="19.020119" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1096" name="ActualBossDefeatGivesZeroCoins" fullname="EconomyPlayModeTests.ActualBossDefeatGivesZeroCoins" methodname="ActualBossDefeatGivesZeroCoins" classname="EconomyPlayModeTests" runstate="Runnable" seed="1264271163" result="Passed" start-time="2026-11-03 02:24:56Z" end-time="2026-11-03 02:24:56Z" duration="0.239166" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(BossTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1087" name="ActualEnemyDeathsRewardEnvironmentalDamageOnceAndDisableNeverRewards" fullname="EconomyPlayModeTests.ActualEnemyDeathsRewardEnvironmentalDamageOnceAndDisableNeverRewards" methodname="ActualEnemyDeathsRewardEnvironmentalDamageOnceAndDisableNeverRewards" classname="EconomyPlayModeTests" runstate="Runnable" seed="204332893" result="Passed" start-time="2026-11-03 02:24:56Z" end-time="2026-11-03 02:24:57Z" duration="0.206918" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(BeliefTest): 등록된 대상 0개, 플레이어 미발견
+ContactHitbox: Contact damage collider must be a trigger; enabling trigger mode.
+]]></output>
+        </test-case>
+        <test-case id="1089" name="CoinsArriveWithPausedTimeReuseThePoolAndStopAtTheHud" fullname="EconomyPlayModeTests.CoinsArriveWithPausedTimeReuseThePoolAndStopAtTheHud" methodname="CoinsArriveWithPausedTimeReuseThePoolAndStopAtTheHud" classname="EconomyPlayModeTests" runstate="Runnable" seed="482209428" result="Passed" start-time="2026-11-03 02:24:57Z" end-time="2026-11-03 02:25:01Z" duration="4.708256" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1090" name="CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud" fullname="EconomyPlayModeTests.CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud" methodname="CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud" classname="EconomyPlayModeTests" runstate="Runnable" seed="594010791" result="Passed" start-time="2026-11-03 02:25:01Z" end-time="2026-11-03 02:25:03Z" duration="1.576826" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1095" name="ConcurrentRewardsAreGroupedWithin64TokensAndArrivalRetriesAfterSaveFailure" fullname="EconomyPlayModeTests.ConcurrentRewardsAreGroupedWithin64TokensAndArrivalRetriesAfterSaveFailure" methodname="ConcurrentRewardsAreGroupedWithin64TokensAndArrivalRetriesAfterSaveFailure" classname="EconomyPlayModeTests" runstate="Runnable" seed="2131299409" result="Passed" start-time="2026-11-03 02:25:03Z" end-time="2026-11-03 02:25:08Z" duration="5.112720" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1097" name="FailedEnemyRewardRetriesWhileAliveAndIsNotAcceptedAfterDeath" fullname="EconomyPlayModeTests.FailedEnemyRewardRetriesWhileAliveAndIsNotAcceptedAfterDeath" methodname="FailedEnemyRewardRetriesWhileAliveAndIsNotAcceptedAfterDeath" classname="EconomyPlayModeTests" runstate="Runnable" seed="1524123273" result="Passed" start-time="2026-11-03 02:25:08Z" end-time="2026-11-03 02:25:10Z" duration="1.599868" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1092" name="MissingHudSettlesAndSceneTransitionFlushesWithoutLateDoublePayment" fullname="EconomyPlayModeTests.MissingHudSettlesAndSceneTransitionFlushesWithoutLateDoublePayment" methodname="MissingHudSettlesAndSceneTransitionFlushesWithoutLateDoublePayment" classname="EconomyPlayModeTests" runstate="Runnable" seed="1442223300" result="Passed" start-time="2026-11-03 02:25:10Z" end-time="2026-11-03 02:25:10Z" duration="0.492779" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(PlayerTEST): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1091" name="PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward" fullname="EconomyPlayModeTests.PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward" methodname="PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward" classname="EconomyPlayModeTests" runstate="Runnable" seed="204040658" result="Passed" start-time="2026-11-03 02:25:10Z" end-time="2026-11-03 02:25:12Z" duration="2.341043" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1088" name="RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen" fullname="EconomyPlayModeTests.RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen" methodname="RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen" classname="EconomyPlayModeTests" runstate="Runnable" seed="440364265" result="Passed" start-time="2026-11-03 02:25:12Z" end-time="2026-11-03 02:25:13Z" duration="0.222456" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 100000 / HP: 0/100
+[Player] Dead
+]]></output>
+        </test-case>
+        <test-case id="1093" name="ShopShowsPricesAndKeepsTheCartWhenSavingFails" fullname="EconomyPlayModeTests.ShopShowsPricesAndKeepsTheCartWhenSavingFails" methodname="ShopShowsPricesAndKeepsTheCartWhenSavingFails" classname="EconomyPlayModeTests" runstate="Runnable" seed="389258410" result="Passed" start-time="2026-11-03 02:25:13Z" end-time="2026-11-03 02:25:13Z" duration="0.226809" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+[상점] 조각 구매 1장 → 보유 70
+[상점] 조각 구매 1장 → 보유 40
+]]></output>
+        </test-case>
+        <test-case id="1094" name="SlotPurchaseUsesCurrencyAndExpandsTheFoundationWithoutClearingThePieceCart" fullname="EconomyPlayModeTests.SlotPurchaseUsesCurrencyAndExpandsTheFoundationWithoutClearingThePieceCart" methodname="SlotPurchaseUsesCurrencyAndExpandsTheFoundationWithoutClearingThePieceCart" classname="EconomyPlayModeTests" runstate="Runnable" seed="41803508" result="Passed" start-time="2026-11-03 02:25:13Z" end-time="2026-11-03 02:25:13Z" duration="0.293494" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+[교리칸] 구매 → 총 4칸
+[상점] 교리 칸 구매 → 총 4칸
+[상점] 조각 구매 1장 → 보유 0
+[재단] 재단 열림 (Player)
+[재단] 재단 닫힘
+]]></output>
+        </test-case>
+        <test-case id="1098" name="VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios" fullname="EconomyPlayModeTests.VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios" methodname="VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios" classname="EconomyPlayModeTests" runstate="Runnable" seed="534516789" result="Passed" start-time="2026-11-03 02:25:13Z" end-time="2026-11-03 02:25:15Z" duration="1.996761" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(EconomyTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 100000 / HP: 0/100
+[Player] Dead
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1099" name="LobbyPlayModeTests" fullname="LobbyPlayModeTests" classname="LobbyPlayModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-03 02:25:15Z" end-time="2026-11-03 02:25:23Z" duration="7.726600" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1104" name="DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss" fullname="LobbyPlayModeTests.DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss" methodname="DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss" classname="LobbyPlayModeTests" runstate="Runnable" seed="1764709985" result="Passed" start-time="2026-11-03 02:25:15Z" end-time="2026-11-03 02:25:17Z" duration="2.122935" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[상호작용] 씬 로드(DogCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 200 / HP: 0/100
+[Player] Dead
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1100" name="GatesAreHiddenTriggersPlayerRendersInFrontAndCameraFollowsAcrossLobby" fullname="LobbyPlayModeTests.GatesAreHiddenTriggersPlayerRendersInFrontAndCameraFollowsAcrossLobby" methodname="GatesAreHiddenTriggersPlayerRendersInFrontAndCameraFollowsAcrossLobby" classname="LobbyPlayModeTests" runstate="Runnable" seed="1493294753" result="Passed" start-time="2026-11-03 02:25:17Z" end-time="2026-11-03 02:25:18Z" duration="1.011092" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1103" name="LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear" fullname="LobbyPlayModeTests.LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear" methodname="LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear" classname="LobbyPlayModeTests" runstate="Runnable" seed="598526741" result="Passed" start-time="2026-11-03 02:25:18Z" end-time="2026-11-03 02:25:19Z" duration="0.991937" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[상호작용] 씬 로드(DogCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10 / HP: 90/100
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[상호작용] 씬 로드(DogCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1101" name="RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate" fullname="LobbyPlayModeTests.RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate" methodname="RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate" classname="LobbyPlayModeTests" runstate="Runnable" seed="873820407" result="Passed" start-time="2026-11-03 02:25:19Z" end-time="2026-11-03 02:25:20Z" duration="0.416773" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1105" name="TestToolsUseMemoryAndCanRecoverAnInjectedDeathFailure" fullname="LobbyPlayModeTests.TestToolsUseMemoryAndCanRecoverAnInjectedDeathFailure" methodname="TestToolsUseMemoryAndCanRecoverAnInjectedDeathFailure" classname="LobbyPlayModeTests" runstate="Runnable" seed="952090356" result="Passed" start-time="2026-11-03 02:25:20Z" end-time="2026-11-03 02:25:20Z" duration="0.623231" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 200 / HP: 0/100
+[Player] Dead
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1102" name="UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth" fullname="LobbyPlayModeTests.UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth" methodname="UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth" classname="LobbyPlayModeTests" runstate="Runnable" seed="1025067007" result="Passed" start-time="2026-11-03 02:25:20Z" end-time="2026-11-03 02:25:21Z" duration="0.800805" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+ContactHitbox: Contact damage collider must be a trigger; enabling trigger mode.
+[상호작용] 씬 로드(ExecutiveCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Player] Damage: 10 / HP: 90/100
+[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+]]></output>
+        </test-case>
+        <test-case id="1106" name="VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios" fullname="LobbyPlayModeTests.VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios" methodname="VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios" classname="LobbyPlayModeTests" runstate="Runnable" seed="399366876" result="Passed" start-time="2026-11-03 02:25:21Z" end-time="2026-11-03 02:25:23Z" duration="1.757301" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[상호작용] 씬 로드(Lobby): 등록된 대상 0개, 플레이어 미발견
+ContactHitbox: Contact damage collider must be a trigger; enabling trigger mode.
+[상호작용] 씬 로드(ExecutiveCombatTest): 등록된 대상 0개, 플레이어 미발견
+[Doctrine] Duplicate DoctrineManager destroyed.
+[상호작용] 씬 로드(StageTest): 등록된 대상 0개, 플레이어 미발견
+Saving results to: /Users/ohjunmin/Library/Application Support/DefaultCompany/My project/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

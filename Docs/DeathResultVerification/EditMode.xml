@@ -1,0 +1,1236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="186" result="Passed" total="186" passed="186" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:39Z" duration="3.0034239">
+  <test-suite type="TestSuite" id="1000" name="My project" fullname="My project" runstate="Runnable" testcasecount="186" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:39Z" duration="3.003424" total="186" passed="186" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1202" name="BelieveInTheClouds.EditModeTests.dll" fullname="/private/tmp/death-result-verification/Library/ScriptAssemblies/BelieveInTheClouds.EditModeTests.dll" runstate="Runnable" testcasecount="172" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:39Z" duration="2.938599" total="172" passed="172" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="17716" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1001" name="BeliefExpansionEditModeTests" fullname="BeliefExpansionEditModeTests" classname="BeliefExpansionEditModeTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:37Z" duration="0.032675" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1016" name="CatalogContainsNineExpandedContentsWithEightRulesAndPreservesV1Numbers" fullname="BeliefExpansionEditModeTests.CatalogContainsNineExpandedContentsWithEightRulesAndPreservesV1Numbers" methodname="CatalogContainsNineExpandedContentsWithEightRulesAndPreservesV1Numbers" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="2097116638" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:36Z" duration="0.013322" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1017" name="CatalogRejectsDuplicateContentAndProfilesRejectMissingReduction" fullname="BeliefExpansionEditModeTests.CatalogRejectsDuplicateContentAndProfilesRejectMissingReduction" methodname="CatalogRejectsDuplicateContentAndProfilesRejectMissingReduction" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="905593414" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:36Z" duration="0.001074" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1012" name="ConsecutiveHitsUseAdjacentIntervalsAndResetOnTimeoutOrLifecycle" fullname="BeliefExpansionEditModeTests.ConsecutiveHitsUseAdjacentIntervalsAndResetOnTimeoutOrLifecycle" methodname="ConsecutiveHitsUseAdjacentIntervalsAndResetOnTimeoutOrLifecycle" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="1732385644" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:36Z" duration="0.000707" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1002" name="CounterattackIncludesTwoSecondsConsumesOnceAndUsesLatestEvade" fullname="BeliefExpansionEditModeTests.CounterattackIncludesTwoSecondsConsumesOnceAndUsesLatestEvade" methodname="CounterattackIncludesTwoSecondsConsumesOnceAndUsesLatestEvade" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="2008925257" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:36Z" duration="0.000483" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1011" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-03 02:13:36Z" end-time="2026-11-03 02:13:37Z" duration="0.004803" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1003" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,True,50.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,True,50.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="268281596" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000283" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1004" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(EvadedByPlayer,False,True,True,50.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(EvadedByPlayer,False,True,True,50.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="94877056" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000167" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1005" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,True,True,True,0.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,True,True,True,0.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="894103285" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000233" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1006" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,False,True,True,50.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Hit,False,True,True,50.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="196779500" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000438" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1007" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Blocked,False,False,True,0.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Blocked,False,False,True,0.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="2072387447" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000197" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1008" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Cancelled,False,False,False,0.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Cancelled,False,False,False,0.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="338865425" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000051" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1009" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,False,True,0.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,False,True,0.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="137119477" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000054" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1010" name="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,False,0.0f)" fullname="BeliefExpansionEditModeTests.NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack(Missed,False,True,False,0.0f)" methodname="NoHpDamageRequiresAnActuallyLaunchedNormallyFinishedAttack" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="1436282266" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000048" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1014" name="RearDwellIsDiscretePreservesWholeIntervalsAndDiscardsPartialTimeOnExit" fullname="BeliefExpansionEditModeTests.RearDwellIsDiscretePreservesWholeIntervalsAndDiscardsPartialTimeOnExit" methodname="RearDwellIsDiscretePreservesWholeIntervalsAndDiscardsPartialTimeOnExit" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="2121434541" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000295" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1015" name="RearHitsPrayerAndCircleEscapeUseTheirOwnConditions" fullname="BeliefExpansionEditModeTests.RearHitsPrayerAndCircleEscapeUseTheirOwnConditions" methodname="RearHitsPrayerAndCircleEscapeUseTheirOwnConditions" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="1964107783" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000199" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1013" name="RetreatEntryAllowsOneSuccessPerRetreatAndRearmsForANewRetreat" fullname="BeliefExpansionEditModeTests.RetreatEntryAllowsOneSuccessPerRetreatAndRearmsForANewRetreat" methodname="RetreatEntryAllowsOneSuccessPerRetreatAndRearmsForANewRetreat" classname="BeliefExpansionEditModeTests" runstate="Runnable" seed="2103498556" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000278" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1018" name="BeliefSystemEditModeTests" fullname="BeliefSystemEditModeTests" classname="BeliefSystemEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.004720" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1021" name="DamageInfoCarriesAmountAndExplicitSource" fullname="BeliefSystemEditModeTests.DamageInfoCarriesAmountAndExplicitSource" methodname="DamageInfoCarriesAmountAndExplicitSource" classname="BeliefSystemEditModeTests" runstate="Runnable" seed="36803862" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000437" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1020" name="ProfileCatalogResolvesBothTypesAndDefaultsToRearProfile" fullname="BeliefSystemEditModeTests.ProfileCatalogResolvesBothTypesAndDefaultsToRearProfile" methodname="ProfileCatalogResolvesBothTypesAndDefaultsToRearProfile" classname="BeliefSystemEditModeTests" runstate="Runnable" seed="81731014" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001681" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1019" name="RearRangeUsesColliderBoundsAndIncludesBothLimits" fullname="BeliefSystemEditModeTests.RearRangeUsesColliderBoundsAndIncludesBothLimits" methodname="RearRangeUsesColliderBoundsAndIncludesBothLimits" classname="BeliefSystemEditModeTests" runstate="Runnable" seed="2002588628" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000651" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1022" name="BossCombatEditModeTests" fullname="BossCombatEditModeTests" classname="BossCombatEditModeTests" runstate="Runnable" testcasecount="24" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.270715" total="24" passed="24" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1048" name="BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls" fullname="BossCombatEditModeTests.BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls" methodname="BossTestContainsPrefabAndPreservesLatestPlayerPhysicsAndControls" classname="BossCombatEditModeTests" runstate="Runnable" seed="1743652406" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.052983" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1047" name="CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave" fullname="BossCombatEditModeTests.CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave" methodname="CloudSettingsRejectShelterAboveStormAndInvalidLightningAndStoreFasterWave" classname="BossCombatEditModeTests" runstate="Runnable" seed="2121416633" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003393" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1035" name="GeometryUsesActualBodyAndExcludesRearAndAirAboveWave" fullname="BossCombatEditModeTests.GeometryUsesActualBodyAndExcludesRearAndAirAboveWave" methodname="GeometryUsesActualBodyAndExcludesRearAndAirAboveWave" classname="BossCombatEditModeTests" runstate="Runnable" seed="1140918090" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001404" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1030" name="OutcomesRequireActivationSpatialEscapeAndNoContact" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.005456" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1023" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,True,False,False,EvadedByPlayer)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,True,False,False,EvadedByPlayer)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="142311456" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000878" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1024" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Wall,True,False,False,EvadedByPlayer)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Wall,True,False,False,EvadedByPlayer)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="1617622688" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000098" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1025" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Cancelled,True,False,False,Cancelled)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Cancelled,True,False,False,Cancelled)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="1681951743" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000379" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1026" name="OutcomesRequireActivationSpatialEscapeAndNoContact(TargetLost,True,False,False,Cancelled)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(TargetLost,True,False,False,Cancelled)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="1412497484" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000191" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1027" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,False,False,False,Missed)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Completed,False,False,False,Missed)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="421776267" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000358" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1028" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,False,Missed)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,False,Missed)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="1243682467" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000099" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1029" name="OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,True,Hit)" fullname="BossCombatEditModeTests.OutcomesRequireActivationSpatialEscapeAndNoContact(Contact,True,True,True,Hit)" methodname="OutcomesRequireActivationSpatialEscapeAndNoContact" classname="BossCombatEditModeTests" runstate="Runnable" seed="1447086262" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000341" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1036" name="RealPrefabAndEffectsHaveCompleteReferencesAndWorldUnitSprites" fullname="BossCombatEditModeTests.RealPrefabAndEffectsHaveCompleteReferencesAndWorldUnitSprites" methodname="RealPrefabAndEffectsHaveCompleteReferencesAndWorldUnitSprites" classname="BossCombatEditModeTests" runstate="Runnable" seed="342377380" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.199583" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1033" name="SharedGaugeKeepsVulnerableDeadlineAndRecoversOnlyOnce" fullname="BossCombatEditModeTests.SharedGaugeKeepsVulnerableDeadlineAndRecoversOnlyOnce" methodname="SharedGaugeKeepsVulnerableDeadlineAndRecoversOnlyOnce" classname="BossCombatEditModeTests" runstate="Runnable" seed="472237678" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000348" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1046" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002699" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1037" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.0f,1.0f,True)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.0f,1.0f,True)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="491841630" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000787" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1038" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.0f,1.0f,True)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.0f,1.0f,True)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="600531720" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000054" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1039" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.5f,True)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.5f,True)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1367329575" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000039" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1040" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.5f,True)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.5f,True)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="2039089496" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000038" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1041" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.02f,1.0f,False)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(-1.02f,1.0f,False)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1315619255" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000035" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1042" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.02f,1.0f,False)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(1.02f,1.0f,False)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1371575407" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000038" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1043" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.48f,False)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,0.48f,False)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1606823541" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000037" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1044" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.52f,False)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,2.52f,False)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1221506493" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000039" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1045" name="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,3.6f,False)" fullname="BossCombatEditModeTests.ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges(0.0f,3.6f,False)" methodname="ShelterRequiresWholeActualOffsetColliderIncludingInclusiveEdges" classname="BossCombatEditModeTests" runstate="Runnable" seed="1786134724" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000034" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1031" name="StandingStillAndNeverThreatenedTargetsCannotBeEvades" fullname="BossCombatEditModeTests.StandingStillAndNeverThreatenedTargetsCannotBeEvades" methodname="StandingStillAndNeverThreatenedTargetsCannotBeEvades" classname="BossCombatEditModeTests" runstate="Runnable" seed="2059263849" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000133" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1032" name="WallBlocksWithoutPriorThreatButDoesNotEraseAnActualEscape" fullname="BossCombatEditModeTests.WallBlocksWithoutPriorThreatButDoesNotEraseAnActualEscape" methodname="WallBlocksWithoutPriorThreatButDoesNotEraseAnActualEscape" classname="BossCombatEditModeTests" runstate="Runnable" seed="2052954371" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000098" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1034" name="WeightedChoiceAllowsRepeatsExcludesInvalidCandidatesAndHasNoFallbackAttack" fullname="BossCombatEditModeTests.WeightedChoiceAllowsRepeatsExcludesInvalidCandidatesAndHasNoFallbackAttack" methodname="WeightedChoiceAllowsRepeatsExcludesInvalidCandidatesAndHasNoFallbackAttack" classname="BossCombatEditModeTests" runstate="Runnable" seed="201592413" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001144" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1049" name="ChestEditModeTests" fullname="ChestEditModeTests" classname="ChestEditModeTests" runstate="Runnable" testcasecount="33" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.076022" total="33" passed="33" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1057" name="AllHundredInputsProduceExactRequestedWeightsAndCatalogPools" fullname="ChestEditModeTests.AllHundredInputsProduceExactRequestedWeightsAndCatalogPools" methodname="AllHundredInputsProduceExactRequestedWeightsAndCatalogPools" classname="ChestEditModeTests" runstate="Runnable" seed="1708281354" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.013198" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1071" name="CoinCapIncludesReservationsButStillGrantsThePiece" fullname="ChestEditModeTests.CoinCapIncludesReservationsButStillGrantsThePiece" classname="ChestEditModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.005381" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1069" name="CoinCapIncludesReservationsButStillGrantsThePiece(0)" fullname="ChestEditModeTests.CoinCapIncludesReservationsButStillGrantsThePiece(0)" methodname="CoinCapIncludesReservationsButStillGrantsThePiece" classname="ChestEditModeTests" runstate="Runnable" seed="2013246525" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003148" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1070" name="CoinCapIncludesReservationsButStillGrantsThePiece(3)" fullname="ChestEditModeTests.CoinCapIncludesReservationsButStillGrantsThePiece(3)" methodname="CoinCapIncludesReservationsButStillGrantsThePiece" classname="ChestEditModeTests" runstate="Runnable" seed="488416198" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001671" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1062" name="EveryPoolIndexIsReachableInStableIdOrder" fullname="ChestEditModeTests.EveryPoolIndexIsReachableInStableIdOrder" methodname="EveryPoolIndexIsReachableInStableIdOrder" classname="ChestEditModeTests" runstate="Runnable" seed="843295205" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000946" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1067" name="FailedOpenChangesNothingAndRetryDoesNotReroll" fullname="ChestEditModeTests.FailedOpenChangesNothingAndRetryDoesNotReroll" methodname="FailedOpenChangesNothingAndRetryDoesNotReroll" classname="ChestEditModeTests" runstate="Runnable" seed="232262195" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001870" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1064" name="FailedRegistrationAndProcessRecreationKeepTheSamePlan" fullname="ChestEditModeTests.FailedRegistrationAndProcessRecreationKeepTheSamePlan" methodname="FailedRegistrationAndProcessRecreationKeepTheSamePlan" classname="ChestEditModeTests" runstate="Runnable" seed="360064171" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002507" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1074" name="JsonDiskRoundTripPreservesChestReceiptAndSettlesReservationsOnce" fullname="ChestEditModeTests.JsonDiskRoundTripPreservesChestReceiptAndSettlesReservationsOnce" methodname="JsonDiskRoundTripPreservesChestReceiptAndSettlesReservationsOnce" classname="ChestEditModeTests" runstate="Runnable" seed="1049198066" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.007439" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1077" name="LegacyJsonMigratesWithoutResettingAssetsOrRun" fullname="ChestEditModeTests.LegacyJsonMigratesWithoutResettingAssetsOrRun" classname="ChestEditModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.008078" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1075" name="LegacyJsonMigratesWithoutResettingAssetsOrRun(1)" fullname="ChestEditModeTests.LegacyJsonMigratesWithoutResettingAssetsOrRun(1)" methodname="LegacyJsonMigratesWithoutResettingAssetsOrRun" classname="ChestEditModeTests" runstate="Runnable" seed="1561326150" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.004325" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1076" name="LegacyJsonMigratesWithoutResettingAssetsOrRun(2)" fullname="ChestEditModeTests.LegacyJsonMigratesWithoutResettingAssetsOrRun(2)" methodname="LegacyJsonMigratesWithoutResettingAssetsOrRun" classname="ChestEditModeTests" runstate="Runnable" seed="1772261732" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003206" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1066" name="OpenCommitsAllRewardsAndOneReceiptInOneSaveAndRejectsReentry" fullname="ChestEditModeTests.OpenCommitsAllRewardsAndOneReceiptInOneSaveAndRejectsReentry" methodname="OpenCommitsAllRewardsAndOneReceiptInOneSaveAndRejectsReentry" classname="ChestEditModeTests" runstate="Runnable" seed="87707072" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001624" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1068" name="PieceLimitAbortsWholeOpenWithoutCoinsOrAlternativePiece" fullname="ChestEditModeTests.PieceLimitAbortsWholeOpenWithoutCoinsOrAlternativePiece" methodname="PieceLimitAbortsWholeOpenWithoutCoinsOrAlternativePiece" classname="ChestEditModeTests" runstate="Runnable" seed="1308855930" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000997" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1056" name="RarityBoundaries" fullname="ChestEditModeTests.RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.005483" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1050" name="RarityBoundaries(0,Common)" fullname="ChestEditModeTests.RarityBoundaries(0,Common)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="788646379" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000769" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1051" name="RarityBoundaries(64,Common)" fullname="ChestEditModeTests.RarityBoundaries(64,Common)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="1217009505" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000815" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1052" name="RarityBoundaries(65,Uncommon)" fullname="ChestEditModeTests.RarityBoundaries(65,Uncommon)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="186286763" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000983" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1053" name="RarityBoundaries(89,Uncommon)" fullname="ChestEditModeTests.RarityBoundaries(89,Uncommon)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="1393547176" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000644" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1054" name="RarityBoundaries(90,Rare)" fullname="ChestEditModeTests.RarityBoundaries(90,Rare)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="570327772" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000697" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1055" name="RarityBoundaries(99,Rare)" fullname="ChestEditModeTests.RarityBoundaries(99,Rare)" methodname="RarityBoundaries" classname="ChestEditModeTests" runstate="Runnable" seed="1618069191" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000671" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1063" name="RegistrationIsIdempotentAndRejectsDuplicateOrChangedManifests" fullname="ChestEditModeTests.RegistrationIsIdempotentAndRejectsDuplicateOrChangedManifests" methodname="RegistrationIsIdempotentAndRejectsDuplicateOrChangedManifests" classname="ChestEditModeTests" runstate="Runnable" seed="1055372405" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000850" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1072" name="ReloadSettlesCoinsOnceAndKeepsOpenStateEvenAfterSpendingAndDeath" fullname="ChestEditModeTests.ReloadSettlesCoinsOnceAndKeepsOpenStateEvenAfterSpendingAndDeath" methodname="ReloadSettlesCoinsOnceAndKeepsOpenStateEvenAfterSpendingAndDeath" classname="ChestEditModeTests" runstate="Runnable" seed="113846932" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.008713" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1073" name="ReturnedSnapshotsCannotMutatePlansAndCorruptOpenReceiptIsRejected" fullname="ChestEditModeTests.ReturnedSnapshotsCannotMutatePlansAndCorruptOpenReceiptIsRejected" methodname="ReturnedSnapshotsCannotMutatePlansAndCorruptOpenReceiptIsRejected" classname="ChestEditModeTests" runstate="Runnable" seed="1578648673" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.005106" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1061" name="RewardHasOnePieceAndInclusiveIndependentCoins" fullname="ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins" classname="ChestEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003520" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1058" name="RewardHasOnePieceAndInclusiveIndependentCoins(0,7)" fullname="ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(0,7)" methodname="RewardHasOnePieceAndInclusiveIndependentCoins" classname="ChestEditModeTests" runstate="Runnable" seed="130287496" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001369" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1059" name="RewardHasOnePieceAndInclusiveIndependentCoins(65,17)" fullname="ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(65,17)" methodname="RewardHasOnePieceAndInclusiveIndependentCoins" classname="ChestEditModeTests" runstate="Runnable" seed="701791340" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000702" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1060" name="RewardHasOnePieceAndInclusiveIndependentCoins(99,7)" fullname="ChestEditModeTests.RewardHasOnePieceAndInclusiveIndependentCoins(99,7)" methodname="RewardHasOnePieceAndInclusiveIndependentCoins" classname="ChestEditModeTests" runstate="Runnable" seed="2031173137" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000620" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1087" name="SquareProgressFollowsClockwisePerimeter" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.007196" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1078" name="SquareProgressFollowsClockwisePerimeter(0,0,20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0,0,20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="138758019" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001028" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1079" name="SquareProgressFollowsClockwisePerimeter(0.125f,20,20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.125f,20,20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="1853186126" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000597" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1080" name="SquareProgressFollowsClockwisePerimeter(0.25f,20,0)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.25f,20,0)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="899499384" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000598" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1081" name="SquareProgressFollowsClockwisePerimeter(0.375f,20,-20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.375f,20,-20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="2068625717" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000609" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1082" name="SquareProgressFollowsClockwisePerimeter(0.5f,0,-20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.5f,0,-20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="1617090668" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000588" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1083" name="SquareProgressFollowsClockwisePerimeter(0.625f,-20,-20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.625f,-20,-20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="230741797" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000681" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1084" name="SquareProgressFollowsClockwisePerimeter(0.75f,-20,0)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.75f,-20,0)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="553478290" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000570" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1085" name="SquareProgressFollowsClockwisePerimeter(0.875f,-20,20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(0.875f,-20,20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="1232133258" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001053" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1086" name="SquareProgressFollowsClockwisePerimeter(1,0,20)" fullname="ChestEditModeTests.SquareProgressFollowsClockwisePerimeter(1,0,20)" methodname="SquareProgressFollowsClockwisePerimeter" classname="ChestEditModeTests" runstate="Runnable" seed="1415703814" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000604" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1065" name="StablePlanHasFixedV1TestVector" fullname="ChestEditModeTests.StablePlanHasFixedV1TestVector" methodname="StablePlanHasFixedV1TestVector" classname="ChestEditModeTests" runstate="Runnable" seed="506959102" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000765" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1088" name="CommonCombatEditModeTests" fullname="CommonCombatEditModeTests" classname="CommonCombatEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.014530" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1091" name="BossAndOrdinaryEnemiesUseTheSameHudAssetAndCachedKoreanFont" fullname="CommonCombatEditModeTests.BossAndOrdinaryEnemiesUseTheSameHudAssetAndCachedKoreanFont" methodname="BossAndOrdinaryEnemiesUseTheSameHudAssetAndCachedKoreanFont" classname="CommonCombatEditModeTests" runstate="Runnable" seed="1883452991" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.008631" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1090" name="SharedQueriesKeepTargetsBeyondTheInitialBufferCapacityAndRespectRotation" fullname="CommonCombatEditModeTests.SharedQueriesKeepTargetsBeyondTheInitialBufferCapacityAndRespectRotation" methodname="SharedQueriesKeepTargetsBeyondTheInitialBufferCapacityAndRespectRotation" classname="CommonCombatEditModeTests" runstate="Runnable" seed="1097123909" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003931" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1089" name="WeightedChoiceInspectsEachCandidateOnlyOnce" fullname="CommonCombatEditModeTests.WeightedChoiceInspectsEachCandidateOnlyOnce" methodname="WeightedChoiceInspectsEachCandidateOnlyOnce" classname="CommonCombatEditModeTests" runstate="Runnable" seed="1091894953" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000851" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1092" name="DeathResultEditModeTests" fullname="DeathResultEditModeTests" classname="DeathResultEditModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.036352" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1095" name="ActualKillsSurviveRewardSaveFailureAndAreFrozenAtDeath" fullname="DeathResultEditModeTests.ActualKillsSurviveRewardSaveFailureAndAreFrozenAtDeath" methodname="ActualKillsSurviveRewardSaveFailureAndAreFrozenAtDeath" classname="DeathResultEditModeTests" runstate="Runnable" seed="2127155891" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.008892" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1096" name="DeferredDeathRetriesNeverApplyPenaltyBeforeChoiceAndEffectsOnlyRunOnce" fullname="DeathResultEditModeTests.DeferredDeathRetriesNeverApplyPenaltyBeforeChoiceAndEffectsOnlyRunOnce" methodname="DeferredDeathRetriesNeverApplyPenaltyBeforeChoiceAndEffectsOnlyRunOnce" classname="DeathResultEditModeTests" runstate="Runnable" seed="1638433700" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.006693" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1093" name="EarnedCoinsIgnoreSpendingFlightArrivalAndDuplicateReceipts" fullname="DeathResultEditModeTests.EarnedCoinsIgnoreSpendingFlightArrivalAndDuplicateReceipts" methodname="EarnedCoinsIgnoreSpendingFlightArrivalAndDuplicateReceipts" classname="DeathResultEditModeTests" runstate="Runnable" seed="579815272" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.005354" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1097" name="FailedChoiceCanRetryWithoutLosingScreenshotOrRerollingPenalty" fullname="DeathResultEditModeTests.FailedChoiceCanRetryWithoutLosingScreenshotOrRerollingPenalty" methodname="FailedChoiceCanRetryWithoutLosingScreenshotOrRerollingPenalty" classname="DeathResultEditModeTests" runstate="Runnable" seed="430921076" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002613" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1094" name="KeywordsIncludeDuplicateOwnedPiecesAndPurchasesExactlyOnce" fullname="DeathResultEditModeTests.KeywordsIncludeDuplicateOwnedPiecesAndPurchasesExactlyOnce" methodname="KeywordsIncludeDuplicateOwnedPiecesAndPurchasesExactlyOnce" classname="DeathResultEditModeTests" runstate="Runnable" seed="1685148684" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001883" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1098" name="RestartFromUnchosenDeathCompletesJournalWithoutRestoringPreDeathAssets" fullname="DeathResultEditModeTests.RestartFromUnchosenDeathCompletesJournalWithoutRestoringPreDeathAssets" methodname="RestartFromUnchosenDeathCompletesJournalWithoutRestoringPreDeathAssets" classname="DeathResultEditModeTests" runstate="Runnable" seed="316398977" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001730" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1099" name="VersionThreeDiskSaveMigratesWithoutResettingExistingAssets" fullname="DeathResultEditModeTests.VersionThreeDiskSaveMigratesWithoutResettingExistingAssets" methodname="VersionThreeDiskSaveMigratesWithoutResettingExistingAssets" classname="DeathResultEditModeTests" runstate="Runnable" seed="853741058" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002879" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1100" name="EconomyEditModeTests" fullname="EconomyEditModeTests" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="45" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.060000" total="45" passed="45" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1122" name="AllCatalogPricesAndRaritiesMatchTheDesign" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.004386" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1110" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.player&quot;,30,Common)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.player&quot;,30,Common)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="95557911" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000547" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1111" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.enemy&quot;,30,Common)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.enemy&quot;,30,Common)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="1161551091" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000495" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1112" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.boss&quot;,55,Uncommon)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.boss&quot;,55,Uncommon)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="989760325" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000223" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1113" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.all&quot;,95,Rare)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;subject.all&quot;,95,Rare)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="782340139" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000183" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1114" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.hit&quot;,55,Uncommon)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.hit&quot;,55,Uncommon)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="1985464255" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000157" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1115" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.attack&quot;,55,Uncommon)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.attack&quot;,55,Uncommon)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="308125382" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000188" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1116" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.death&quot;,30,Common)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.death&quot;,30,Common)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="809676446" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000157" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1117" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.low-health&quot;,30,Common)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;condition.low-health&quot;,30,Common)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="601448708" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000149" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1118" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.explode&quot;,95,Rare)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.explode&quot;,95,Rare)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="118748272" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000228" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1119" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.speed&quot;,30,Common)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.speed&quot;,30,Common)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="1662120105" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000136" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1120" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.attack&quot;,55,Uncommon)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.attack&quot;,55,Uncommon)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="1076449678" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000136" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1121" name="AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.heal&quot;,55,Uncommon)" fullname="EconomyEditModeTests.AllCatalogPricesAndRaritiesMatchTheDesign(&quot;result.heal&quot;,55,Uncommon)" methodname="AllCatalogPricesAndRaritiesMatchTheDesign" classname="EconomyEditModeTests" runstate="Runnable" seed="25097625" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000133" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1107" name="CapIncludesPendingAndDoesNotOverflowOnIntMaxValue" fullname="EconomyEditModeTests.CapIncludesPendingAndDoesNotOverflowOnIntMaxValue" methodname="CapIncludesPendingAndDoesNotOverflowOnIntMaxValue" classname="EconomyEditModeTests" runstate="Runnable" seed="561481941" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000795" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1150" name="CorruptAndFutureSavesArePreservedAndLocked" fullname="EconomyEditModeTests.CorruptAndFutureSavesArePreservedAndLocked" methodname="CorruptAndFutureSavesArePreservedAndLocked" classname="EconomyEditModeTests" runstate="Runnable" seed="257095325" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001184" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1132" name="DeathEffectsThenUnequipThenOnePopulationLossIncludingPending" fullname="EconomyEditModeTests.DeathEffectsThenUnequipThenOnePopulationLossIncludingPending" methodname="DeathEffectsThenUnequipThenOnePopulationLossIncludingPending" classname="EconomyEditModeTests" runstate="Runnable" seed="845001066" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003634" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1148" name="DeathLossUsesOneMixedPopulationAndJournalRetainsTheExactDraw" fullname="EconomyEditModeTests.DeathLossUsesOneMixedPopulationAndJournalRetainsTheExactDraw" methodname="DeathLossUsesOneMixedPopulationAndJournalRetainsTheExactDraw" classname="EconomyEditModeTests" runstate="Runnable" seed="906893875" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002665" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1140" name="DeathUsesFloorOfTheTotalRatherThanEachKind" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.006990" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1133" name="DeathUsesFloorOfTheTotalRatherThanEachKind(0,0)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(0,0)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="1708491893" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001294" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1134" name="DeathUsesFloorOfTheTotalRatherThanEachKind(1,0)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(1,0)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="819699598" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000589" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1135" name="DeathUsesFloorOfTheTotalRatherThanEachKind(2,0)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(2,0)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="1675299709" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000593" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1136" name="DeathUsesFloorOfTheTotalRatherThanEachKind(3,0)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(3,0)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="1063335497" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000650" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1137" name="DeathUsesFloorOfTheTotalRatherThanEachKind(4,1)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(4,1)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="1335615034" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000785" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1138" name="DeathUsesFloorOfTheTotalRatherThanEachKind(9,2)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(9,2)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="458957382" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000657" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1139" name="DeathUsesFloorOfTheTotalRatherThanEachKind(13,3)" fullname="EconomyEditModeTests.DeathUsesFloorOfTheTotalRatherThanEachKind(13,3)" methodname="DeathUsesFloorOfTheTotalRatherThanEachKind" classname="EconomyEditModeTests" runstate="Runnable" seed="1963546983" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001506" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1129" name="DropEndpointsAreInclusiveAndRetriesNeverReroll" fullname="EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.007269" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1125" name="DropEndpointsAreInclusiveAndRetriesNeverReroll(Dog,5,7)" fullname="EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Dog,5,7)" methodname="DropEndpointsAreInclusiveAndRetriesNeverReroll" classname="EconomyEditModeTests" runstate="Runnable" seed="637308327" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001869" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1126" name="DropEndpointsAreInclusiveAndRetriesNeverReroll(Believer,3,5)" fullname="EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Believer,3,5)" methodname="DropEndpointsAreInclusiveAndRetriesNeverReroll" classname="EconomyEditModeTests" runstate="Runnable" seed="827931288" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001375" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1127" name="DropEndpointsAreInclusiveAndRetriesNeverReroll(Executive,7,8)" fullname="EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Executive,7,8)" methodname="DropEndpointsAreInclusiveAndRetriesNeverReroll" classname="EconomyEditModeTests" runstate="Runnable" seed="395593408" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001346" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1128" name="DropEndpointsAreInclusiveAndRetriesNeverReroll(Boss,0,0)" fullname="EconomyEditModeTests.DropEndpointsAreInclusiveAndRetriesNeverReroll(Boss,0,0)" methodname="DropEndpointsAreInclusiveAndRetriesNeverReroll" classname="EconomyEditModeTests" runstate="Runnable" seed="887230655" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001312" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1144" name="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan" fullname="EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.009147" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1141" name="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(1)" fullname="EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(1)" methodname="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan" classname="EconomyEditModeTests" runstate="Runnable" seed="429156765" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003026" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1142" name="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(2)" fullname="EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(2)" methodname="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan" classname="EconomyEditModeTests" runstate="Runnable" seed="1168106610" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002555" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1143" name="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(3)" fullname="EconomyEditModeTests.FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan(3)" methodname="FailedDeathKeepsAssetsLocksTradingAndRecoversTheSamePlan" classname="EconomyEditModeTests" runstate="Runnable" seed="429375864" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002497" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1124" name="InvalidCartPieceLimitAndInsufficientFundsNeverPartiallyPurchase" fullname="EconomyEditModeTests.InvalidCartPieceLimitAndInsufficientFundsNeverPartiallyPurchase" methodname="InvalidCartPieceLimitAndInsufficientFundsNeverPartiallyPurchase" classname="EconomyEditModeTests" runstate="Runnable" seed="1185327119" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.008170" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1106" name="InvalidReasonInsufficientFundsAndAffordabilityAreExplicit" fullname="EconomyEditModeTests.InvalidReasonInsufficientFundsAndAffordabilityAreExplicit" methodname="InvalidReasonInsufficientFundsAndAffordabilityAreExplicit" classname="EconomyEditModeTests" runstate="Runnable" seed="1715713081" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000292" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1149" name="JsonStoreRecoversBackupWithoutOverwritingItWithCorruption" fullname="EconomyEditModeTests.JsonStoreRecoversBackupWithoutOverwritingItWithCorruption" methodname="JsonStoreRecoversBackupWithoutOverwritingItWithCorruption" classname="EconomyEditModeTests" runstate="Runnable" seed="6278816" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.004232" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1101" name="NewProfileIsEmptyAndReloadDoesNotApplyInitialValuesAgain" fullname="EconomyEditModeTests.NewProfileIsEmptyAndReloadDoesNotApplyInitialValuesAgain" methodname="NewProfileIsEmptyAndReloadDoesNotApplyInitialValuesAgain" classname="EconomyEditModeTests" runstate="Runnable" seed="1978044113" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000756" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1147" name="PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects" fullname="EconomyEditModeTests.PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002424" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1145" name="PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(2)" fullname="EconomyEditModeTests.PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(2)" methodname="PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects" classname="EconomyEditModeTests" runstate="Runnable" seed="1595516474" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001055" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1146" name="PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(3)" fullname="EconomyEditModeTests.PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects(3)" methodname="PersistedDeathJournalRecoversAfterRestartWithoutReemittingEffects" classname="EconomyEditModeTests" runstate="Runnable" seed="1293629148" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000885" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1130" name="PresentationDelayIsForwardedToTheFlightRequestButNotToTheLedger" fullname="EconomyEditModeTests.PresentationDelayIsForwardedToTheFlightRequestButNotToTheLedger" methodname="PresentationDelayIsForwardedToTheFlightRequestButNotToTheLedger" classname="EconomyEditModeTests" runstate="Runnable" seed="1559297405" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000504" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1151" name="ProfileValidationRejectsUnknownIdsDuplicatesNegativeCountsAndOverflow" fullname="EconomyEditModeTests.ProfileValidationRejectsUnknownIdsDuplicatesNegativeCountsAndOverflow" methodname="ProfileValidationRejectsUnknownIdsDuplicatesNegativeCountsAndOverflow" classname="EconomyEditModeTests" runstate="Runnable" seed="1179779333" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000255" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1123" name="PurchasesAreAtomicUnlimitedAndIdempotent" fullname="EconomyEditModeTests.PurchasesAreAtomicUnlimitedAndIdempotent" methodname="PurchasesAreAtomicUnlimitedAndIdempotent" classname="EconomyEditModeTests" runstate="Runnable" seed="1408281776" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000716" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1108" name="ReceiptsSurviveReloadRejectOtherInputsAndDoNotExposeMutableState" fullname="EconomyEditModeTests.ReceiptsSurviveReloadRejectOtherInputsAndDoNotExposeMutableState" methodname="ReceiptsSurviveReloadRejectOtherInputsAndDoNotExposeMutableState" classname="EconomyEditModeTests" runstate="Runnable" seed="1016792840" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000407" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1109" name="SaveFailureDoesNotPublishAndEventReentryIsBusy" fullname="EconomyEditModeTests.SaveFailureDoesNotPublishAndEventReentryIsBusy" methodname="SaveFailureDoesNotPublishAndEventReentryIsBusy" classname="EconomyEditModeTests" runstate="Runnable" seed="919360721" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000357" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1131" name="TokenSettlementRetriesSurvivesExitAndIgnoresStaleCallbacks" fullname="EconomyEditModeTests.TokenSettlementRetriesSurvivesExitAndIgnoresStaleCallbacks" methodname="TokenSettlementRetriesSurvivesExitAndIgnoresStaleCallbacks" classname="EconomyEditModeTests" runstate="Runnable" seed="620473482" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000989" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1105" name="TransactionsRejectNonPositiveAmounts" fullname="EconomyEditModeTests.TransactionsRejectNonPositiveAmounts" classname="EconomyEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000863" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1102" name="TransactionsRejectNonPositiveAmounts(0)" fullname="EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(0)" methodname="TransactionsRejectNonPositiveAmounts" classname="EconomyEditModeTests" runstate="Runnable" seed="1488503037" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000179" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1103" name="TransactionsRejectNonPositiveAmounts(-1)" fullname="EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(-1)" methodname="TransactionsRejectNonPositiveAmounts" classname="EconomyEditModeTests" runstate="Runnable" seed="1951789809" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000090" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1104" name="TransactionsRejectNonPositiveAmounts(int.MinValue)" fullname="EconomyEditModeTests.TransactionsRejectNonPositiveAmounts(int.MinValue)" methodname="TransactionsRejectNonPositiveAmounts" classname="EconomyEditModeTests" runstate="Runnable" seed="685482753" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000086" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1152" name="InteractionRangeTests" fullname="InteractionRangeTests" classname="InteractionRangeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002736" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1155" name="DistanceTo_InsideCollider_IsZero" fullname="InteractionRangeTests.DistanceTo_InsideCollider_IsZero" methodname="DistanceTo_InsideCollider_IsZero" classname="InteractionRangeTests" runstate="Runnable" seed="1928569452" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001534" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1154" name="DistanceTo_WithLargeCollider_UsesSurface" fullname="InteractionRangeTests.DistanceTo_WithLargeCollider_UsesSurface" methodname="DistanceTo_WithLargeCollider_UsesSurface" classname="InteractionRangeTests" runstate="Runnable" seed="2087994767" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000328" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1153" name="DistanceTo_WithoutCollider_UsesCenter" fullname="InteractionRangeTests.DistanceTo_WithoutCollider_UsesCenter" methodname="DistanceTo_WithoutCollider_UsesCenter" classname="InteractionRangeTests" runstate="Runnable" seed="1104427673" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000324" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1156" name="LobbyEditModeTests" fullname="LobbyEditModeTests" classname="LobbyEditModeTests" runstate="Runnable" testcasecount="25" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.231840" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1183" name="BossUsesTheSameRevealPriceAndCompletionStopsAtThePlaceholder" fullname="LobbyEditModeTests.BossUsesTheSameRevealPriceAndCompletionStopsAtThePlaceholder" methodname="BossUsesTheSameRevealPriceAndCompletionStopsAtThePlaceholder" classname="LobbyEditModeTests" runstate="Runnable" seed="2063612609" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001636" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1178" name="CheckpointFailurePublishesNothingAndCheckpointsDoNotGrowReceipts" fullname="LobbyEditModeTests.CheckpointFailurePublishesNothingAndCheckpointsDoNotGrowReceipts" methodname="CheckpointFailurePublishesNothingAndCheckpointsDoNotGrowReceipts" classname="LobbyEditModeTests" runstate="Runnable" seed="148236673" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000995" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1182" name="DeathLossAndFreshRunAreOneRecoverableTransaction" fullname="LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction" classname="LobbyEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.006404" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1179" name="DeathLossAndFreshRunAreOneRecoverableTransaction(1)" fullname="LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(1)" methodname="DeathLossAndFreshRunAreOneRecoverableTransaction" classname="LobbyEditModeTests" runstate="Runnable" seed="1262384971" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002193" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1180" name="DeathLossAndFreshRunAreOneRecoverableTransaction(2)" fullname="LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(2)" methodname="DeathLossAndFreshRunAreOneRecoverableTransaction" classname="LobbyEditModeTests" runstate="Runnable" seed="1576718692" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001972" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1181" name="DeathLossAndFreshRunAreOneRecoverableTransaction(3)" fullname="LobbyEditModeTests.DeathLossAndFreshRunAreOneRecoverableTransaction(3)" methodname="DeathLossAndFreshRunAreOneRecoverableTransaction" classname="LobbyEditModeTests" runstate="Runnable" seed="1678711113" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001745" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1175" name="FailedCompletionLeavesExitLockedUntilTheCompletionIsSaved" fullname="LobbyEditModeTests.FailedCompletionLeavesExitLockedUntilTheCompletionIsSaved" methodname="FailedCompletionLeavesExitLockedUntilTheCompletionIsSaved" classname="LobbyEditModeTests" runstate="Runnable" seed="1524241443" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000905" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1174" name="FailedDepartureDoesNotFlushPendingOrMoveAndSuccessfulRetrySettlesOnlyOnce" fullname="LobbyEditModeTests.FailedDepartureDoesNotFlushPendingOrMoveAndSuccessfulRetrySettlesOnlyOnce" methodname="FailedDepartureDoesNotFlushPendingOrMoveAndSuccessfulRetrySettlesOnlyOnce" classname="LobbyEditModeTests" runstate="Runnable" seed="1764471274" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000750" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1176" name="FailedReturnRetainsStageAndExactNextDrawEvenAcrossRestart" fullname="LobbyEditModeTests.FailedReturnRetainsStageAndExactNextDrawEvenAcrossRestart" methodname="FailedReturnRetainsStageAndExactNextDrawEvenAcrossRestart" classname="LobbyEditModeTests" runstate="Runnable" seed="2064716375" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001338" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1168" name="FailedRevealIsAtomicAndRetryUsesTheSameCandidates" fullname="LobbyEditModeTests.FailedRevealIsAtomicAndRetryUsesTheSameCandidates" methodname="FailedRevealIsAtomicAndRetryUsesTheSameCandidates" classname="LobbyEditModeTests" runstate="Runnable" seed="830316283" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000664" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1161" name="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" fullname="LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" classname="LobbyEditModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.203833" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1157" name="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(0)" fullname="LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(0)" methodname="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" classname="LobbyEditModeTests" runstate="Runnable" seed="1950786341" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.052429" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1158" name="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(2)" fullname="LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(2)" methodname="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" classname="LobbyEditModeTests" runstate="Runnable" seed="1094912702" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.051369" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1159" name="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(3)" fullname="LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(3)" methodname="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" classname="LobbyEditModeTests" runstate="Runnable" seed="812063257" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.050041" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1160" name="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(50)" fullname="LobbyEditModeTests.GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles(50)" methodname="GenerationGuaranteesCombatLimitsSpecialsAndShufflesWithoutLeakingRoles" classname="LobbyEditModeTests" runstate="Runnable" seed="1251967733" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.049242" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1185" name="InvalidRunCandidatesAndStageDiscriminatorsAreRejected" fullname="LobbyEditModeTests.InvalidRunCandidatesAndStageDiscriminatorsAreRejected" methodname="InvalidRunCandidatesAndStageDiscriminatorsAreRejected" classname="LobbyEditModeTests" runstate="Runnable" seed="1500764305" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000565" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1162" name="NewRunDoesNotGrantAssetsAndInitializeReloadNeverRerolls" fullname="LobbyEditModeTests.NewRunDoesNotGrantAssetsAndInitializeReloadNeverRerolls" methodname="NewRunDoesNotGrantAssetsAndInitializeReloadNeverRerolls" classname="LobbyEditModeTests" runstate="Runnable" seed="722990942" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000642" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1173" name="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice" fullname="LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice" classname="LobbyEditModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003871" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1170" name="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Combat)" fullname="LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Combat)" methodname="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice" classname="LobbyEditModeTests" runstate="Runnable" seed="884543737" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001242" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1171" name="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Shop)" fullname="LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Shop)" methodname="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice" classname="LobbyEditModeTests" runstate="Runnable" seed="1759791679" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000975" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1172" name="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Event)" fullname="LobbyEditModeTests.OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice(Event)" methodname="OnlyCombatReturnCountsAndRepeatedCompletionOrReturnCannotApplyTwice" classname="LobbyEditModeTests" runstate="Runnable" seed="1310798974" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.001010" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1167" name="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" fullname="LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" classname="LobbyEditModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002703" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1163" name="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(0)" fullname="LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(0)" methodname="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" classname="LobbyEditModeTests" runstate="Runnable" seed="1552927689" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000520" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1164" name="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(4)" fullname="LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(4)" methodname="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" classname="LobbyEditModeTests" runstate="Runnable" seed="1927458113" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000366" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1165" name="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(5)" fullname="LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(5)" methodname="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" classname="LobbyEditModeTests" runstate="Runnable" seed="1567628676" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000595" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1166" name="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(100)" fullname="LobbyEditModeTests.RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain(100)" methodname="RevealCostsExactlyFiveOnlyForTheChosenCandidateAndNeverChargesAgain" classname="LobbyEditModeTests" runstate="Runnable" seed="1333641347" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000561" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1184" name="SchemaOneMigratesWithoutResettingAssetsAndSchemaTwoRestoresTheWholeRun" fullname="LobbyEditModeTests.SchemaOneMigratesWithoutResettingAssetsAndSchemaTwoRestoresTheWholeRun" methodname="SchemaOneMigratesWithoutResettingAssetsAndSchemaTwoRestoresTheWholeRun" classname="LobbyEditModeTests" runstate="Runnable" seed="951465271" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.003482" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1177" name="ThirdCombatUnlocksBossWithoutCountingEntryOrCompletionAlone" fullname="LobbyEditModeTests.ThirdCombatUnlocksBossWithoutCountingEntryOrCompletionAlone" methodname="ThirdCombatUnlocksBossWithoutCountingEntryOrCompletionAlone" classname="LobbyEditModeTests" runstate="Runnable" seed="1126914188" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.002073" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1169" name="UnrevealedDepartureIsFreeAndUnfinishedStageCannotReturn" fullname="LobbyEditModeTests.UnrevealedDepartureIsFreeAndUnfinishedStageCannotReturn" methodname="UnrevealedDepartureIsFreeAndUnfinishedStageCannotReturn" classname="LobbyEditModeTests" runstate="Runnable" seed="195879549" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.000683" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1186" name="ScenePropagationEditModeTests" fullname="ScenePropagationEditModeTests" classname="ScenePropagationEditModeTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:39Z" duration="2.206725" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1201" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:39Z" duration="2.206209" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1187" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/Lobby.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/Lobby.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="1209087368" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:37Z" duration="0.176220" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1188" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/ShopTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/ShopTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="459259271" result="Passed" start-time="2026-11-03 02:13:37Z" end-time="2026-11-03 02:13:38Z" duration="0.167996" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1189" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/DogCombatTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/DogCombatTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="1699666883" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.166586" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1190" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/BelieverCombatTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/BelieverCombatTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="2013184255" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.164186" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1191" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/ExecutiveCombatTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/ExecutiveCombatTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="9362039" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.155803" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1192" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/TemporaryStage.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/TemporaryStage.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="1208689148" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.148835" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1193" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/BossTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Gameplay/BossTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="918852306" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.155037" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1194" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/StageTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/StageTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="448254035" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:38Z" duration="0.159522" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1195" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/EconomyTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/EconomyTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="539722131" result="Passed" start-time="2026-11-03 02:13:38Z" end-time="2026-11-03 02:13:39Z" duration="0.150220" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1196" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/ChestTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/ChestTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="1580145995" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.152562" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1197" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/FoundationTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Tests/FoundationTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="251243103" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.149781" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1198" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/PlayerTEST.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/PlayerTEST.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="2010187645" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.151896" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1199" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/EnemyTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/EnemyTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="484755365" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.153429" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1200" name="EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/BeliefTest.unity&quot;)" fullname="ScenePropagationEditModeTests.EveryProjectSceneUsesTheSharedCombatSettingsAndHud(&quot;Assets/Scenes/Sources/BeliefTest.unity&quot;)" methodname="EveryProjectSceneUsesTheSharedCombatSettingsAndHud" classname="ScenePropagationEditModeTests" runstate="Runnable" seed="323456445" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.152553" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1218" name="Doctrine.Tests.dll" fullname="/private/tmp/death-result-verification/Library/ScriptAssemblies/Doctrine.Tests.dll" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.008292" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="17716" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1203" name="DoctrineEditModeTests" fullname="DoctrineEditModeTests" classname="DoctrineEditModeTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.007126" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1204" name="Activate_SingleDoctrine_Succeeds" fullname="DoctrineEditModeTests.Activate_SingleDoctrine_Succeeds" methodname="Activate_SingleDoctrine_Succeeds" classname="DoctrineEditModeTests" runstate="Runnable" seed="1034114604" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.001238" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1207" name="ConditionMismatch_DoesNotTrigger" fullname="DoctrineEditModeTests.ConditionMismatch_DoesNotTrigger" methodname="ConditionMismatch_DoesNotTrigger" classname="DoctrineEditModeTests" runstate="Runnable" seed="1971947521" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000926" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1211" name="DeactivatedDoctrine_NoLongerTriggers" fullname="DoctrineEditModeTests.DeactivatedDoctrine_NoLongerTriggers" methodname="DeactivatedDoctrine_NoLongerTriggers" classname="DoctrineEditModeTests" runstate="Runnable" seed="1028378709" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000370" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1210" name="DoctrineBoundToTargetWithoutHealth_RejectedWithReason" fullname="DoctrineEditModeTests.DoctrineBoundToTargetWithoutHealth_RejectedWithReason" methodname="DoctrineBoundToTargetWithoutHealth_RejectedWithReason" classname="DoctrineEditModeTests" runstate="Runnable" seed="1570172999" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000895" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Doctrine] Activation failed: Result (Heal) needs IHealth but target (Bare) has none.
+]]></output>
+        </test-case>
+        <test-case id="1216" name="Explode_CooldownOverride_Wins" fullname="DoctrineEditModeTests.Explode_CooldownOverride_Wins" methodname="Explode_CooldownOverride_Wins" classname="DoctrineEditModeTests" runstate="Runnable" seed="1499803080" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000092" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1214" name="Explode_DamagesSelfAndOthers" fullname="DoctrineEditModeTests.Explode_DamagesSelfAndOthers" methodname="Explode_DamagesSelfAndOthers" classname="DoctrineEditModeTests" runstate="Runnable" seed="1987410941" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000335" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1215" name="Explode_HasTableCooldownOfFiveSeconds" fullname="DoctrineEditModeTests.Explode_HasTableCooldownOfFiveSeconds" methodname="Explode_HasTableCooldownOfFiveSeconds" classname="DoctrineEditModeTests" runstate="Runnable" seed="259106757" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000096" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1206" name="Heal_SecondTriggerWithinCooldown_DoesNothing" fullname="DoctrineEditModeTests.Heal_SecondTriggerWithinCooldown_DoesNothing" methodname="Heal_SecondTriggerWithinCooldown_DoesNothing" classname="DoctrineEditModeTests" runstate="Runnable" seed="711264156" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000638" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1209" name="InvalidDoctrine_RejectedWithReason" fullname="DoctrineEditModeTests.InvalidDoctrine_RejectedWithReason" methodname="InvalidDoctrine_RejectedWithReason" classname="DoctrineEditModeTests" runstate="Runnable" seed="1710605311" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000359" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Doctrine] Activation failed: Subject is unspecified or unsupported: None.
+]]></output>
+        </test-case>
+        <test-case id="1217" name="LowHealth_EventRaisedOnThresholdCross" fullname="DoctrineEditModeTests.LowHealth_EventRaisedOnThresholdCross" methodname="LowHealth_EventRaisedOnThresholdCross" classname="DoctrineEditModeTests" runstate="Runnable" seed="950659644" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000212" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1213" name="MatchesRule_AllMatchesEverySubject" fullname="DoctrineEditModeTests.MatchesRule_AllMatchesEverySubject" methodname="MatchesRule_AllMatchesEverySubject" classname="DoctrineEditModeTests" runstate="Runnable" seed="330362632" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000090" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1212" name="NewCombination_WorksWithoutCodeChange" fullname="DoctrineEditModeTests.NewCombination_WorksWithoutCodeChange" methodname="NewCombination_WorksWithoutCodeChange" classname="DoctrineEditModeTests" runstate="Runnable" seed="1996516304" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000238" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1205" name="PlayerHit_TriggersOnHitHeal_TableRatio" fullname="DoctrineEditModeTests.PlayerHit_TriggersOnHitHeal_TableRatio" methodname="PlayerHit_TriggersOnHitHeal_TableRatio" classname="DoctrineEditModeTests" runstate="Runnable" seed="407942540" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000168" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1208" name="TwoMatchingDoctrines_BothTrigger" fullname="DoctrineEditModeTests.TwoMatchingDoctrines_BothTrigger" methodname="TwoMatchingDoctrines_BothTrigger" classname="DoctrineEditModeTests" runstate="Runnable" seed="1814399780" result="Passed" start-time="2026-11-03 02:13:39Z" end-time="2026-11-03 02:13:39Z" duration="0.000342" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/ohjunmin/Library/Application Support/DefaultCompany/My project/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -34,6 +34,22 @@ public sealed class CutsceneRunner : MonoBehaviour
     private int runGeneration;
     private bool running;
     private bool cleanupApplied;
+    private bool dialogueClickRequested;
+
+    // Optional deterministic input for scene integration; ordinary play reads the left mouse button.
+    public bool UseManualDialogueInput { get; set; }
+    public void RequestDialogueClick()
+    {
+        if (UseManualDialogueInput && running) dialogueClickRequested = true;
+    }
+    private bool ReadDialogueClick()
+    {
+        if (!UiModal.IsTop(modalToken)) { dialogueClickRequested = false; return false; }
+        if (!UseManualDialogueInput) return Input.GetMouseButtonDown(0);
+        bool pressed = dialogueClickRequested;
+        dialogueClickRequested = false;
+        return pressed;
+    }
 
     private struct BehaviourState
     {
@@ -85,6 +101,7 @@ public sealed class CutsceneRunner : MonoBehaviour
         cleanupApplied = false;
         runGeneration++;
         dialogueGate.Reset();
+        dialogueClickRequested = false;
 
         if (bubbleView == null)
             bubbleView = GetComponent<CutsceneBubbleView>();
@@ -262,7 +279,7 @@ public sealed class CutsceneRunner : MonoBehaviour
 
         while (shown < total && running && generation == runGeneration)
         {
-            if (Input.GetMouseButtonDown(0))
+            if (ReadDialogueClick())
             {
                 CutsceneDialogueClickResult result = dialogueGate.HandleClick();
                 if (result == CutsceneDialogueClickResult.TypingCompleted)
@@ -296,7 +313,7 @@ public sealed class CutsceneRunner : MonoBehaviour
 
         while (running && generation == runGeneration)
         {
-            if (Input.GetMouseButtonDown(0) &&
+            if (ReadDialogueClick() &&
                 dialogueGate.HandleClick() == CutsceneDialogueClickResult.Advanced)
             {
                 // Keep this advance click from skipping the next line's typewriter in the same frame.
@@ -551,6 +568,7 @@ public sealed class CutsceneRunner : MonoBehaviour
         if (cleanupApplied)
             return;
         cleanupApplied = true;
+        dialogueClickRequested = false;
 
         if (activeProjectileVisual != null)
             Destroy(activeProjectileVisual);

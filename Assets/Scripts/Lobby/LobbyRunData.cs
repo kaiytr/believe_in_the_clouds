@@ -6,7 +6,7 @@ using UnityEngine;
 
 // Value 2 belonged to the removed event role. Keep existing boss saves at 3.
 public enum BranchRole { Combat = 0, Shop = 1, Boss = 3 }
-public enum RunArea { Lobby, TemporaryStage, Dying, Complete }
+public enum RunArea { Lobby = 0, TemporaryStage = 1, Dying = 2, Complete = 3, StoryRoom = 4 }
 
 [Serializable]
 public sealed class BranchCandidate
@@ -157,13 +157,14 @@ public static class LobbyRules
             if (candidate.role == BranchRole.Boss && run.combatClears < BossUnlockClears) return false;
         }
         if (combat == 0 || (run.area == RunArea.Lobby && run.hasStage) ||
-            ((run.area == RunArea.TemporaryStage || run.area == RunArea.Complete) && !run.hasStage)) return false;
+            ((run.area == RunArea.TemporaryStage || run.area == RunArea.Complete || run.area == RunArea.StoryRoom) && !run.hasStage)) return false;
         if (run.hasStage)
         {
             BranchCandidate chosen = run.candidates.Find(candidate => candidate.id == run.stage.branchId);
             if (string.IsNullOrWhiteSpace(run.stage.id) || chosen == null || chosen.role != run.stage.role) return false;
             if (run.area == RunArea.Complete && (run.stage.role != BranchRole.Boss || !run.stage.completed)) return false;
             if (run.area == RunArea.TemporaryStage && run.stage.role == BranchRole.Boss && run.stage.completed) return false;
+            if (run.area == RunArea.StoryRoom && (run.stage.role != BranchRole.Combat || !run.stage.completed)) return false;
         }
         return true;
     }

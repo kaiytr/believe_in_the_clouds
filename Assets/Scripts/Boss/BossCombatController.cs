@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D))]
+[RequireComponent(typeof(EnemyHitReaction))]
 public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, ICombatGeneration
 {
     [SerializeField] private bool startOnAwake;
@@ -30,6 +31,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     private System.Predicate<BossPatternKind> eligibleAny;
     private float nextRegularAt, nextBeliefAt;
     private Rigidbody2D body;
+    private EnemyHitReaction hitReaction;
     private CapsuleCollider2D bodyCollider;
     private PlayerHealth playerHealth;
     private PlayerAttack playerAttack;
@@ -69,6 +71,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     public event Action<BossAttackRecord> AttackResolved;
     public BossCombatSettings Settings => settings;
     public Rigidbody2D Body => body;
+    public EnemyHitReaction HitReaction => hitReaction;
+    public bool IsHitMovementLocked => hitReaction != null && hitReaction.IsMovementSuppressed;
     public Collider2D BodyCollider => bodyCollider;
     public SpriteRenderer BodyRenderer => presentation != null ? presentation.BodyRenderer : null;
     internal BossCombatView Presentation => presentation;
@@ -233,6 +237,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     {
         eligibleAny = IsPatternEligible;
         body = GetComponent<Rigidbody2D>();
+        hitReaction = GetComponent<EnemyHitReaction>();
+        if (hitReaction == null) hitReaction = gameObject.AddComponent<EnemyHitReaction>();
         bodyCollider = GetComponent<CapsuleCollider2D>();
         contactDamageComponents = GetComponentsInChildren<EnemyContactDamage>(true);
         SetContactDamageSuppressed(true);
@@ -249,6 +255,10 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     }
     // A boss bound to an arena starts only through the arena (or an explicit BeginEncounter after an intro).
     private void Start() { if (startOnAwake && !EncounterStarted && arena == null) BeginEncounter(); }
+    private void FixedUpdate()
+    {
+        if (EncounterStarted && !IsDead) hitReaction.TickScriptedMovement();
+    }
     private void Update()
     {
         if (!EncounterStarted || IsDead) return;
@@ -879,6 +889,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     // the burn window, lightning and shockwave reservation go together. Persistent clouds stay.
     private void CancelCombat(bool removeBurn)
     {
+        hitReaction?.Clear();
         pendingTurn = 0;
         Coroutine cancelledRegular = regularRoutine, cancelledBelief = beliefRoutine;
         regularRoutine = beliefRoutine = null;

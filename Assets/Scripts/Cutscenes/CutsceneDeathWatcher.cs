@@ -7,8 +7,11 @@ public sealed class CutsceneDeathWatcher : MonoBehaviour
     private PlayerHealth player;
     private CutsceneRunner runner;
     private CutsceneDefinition afterDeathDefinition;
+    [SerializeField, Min(0f)] private float deathMotionDelaySeconds = 1f;
     private bool watching;
     private bool played;
+    private bool deathObserved;
+    private float deathObservedAt;
 
     public bool IsWatching => watching;
     public bool HasPlayed => played;
@@ -33,7 +36,16 @@ public sealed class CutsceneDeathWatcher : MonoBehaviour
             return;
 
         // A disabled or unloaded enemy is not a death. Only EnemyUnit's real death state qualifies.
-        if (!target.IsDead || runner.IsRunning)
+        if (!target.IsDead)
+            return;
+
+        // Let the death pose and knockback read before replacing the scene with the after-death dialogue.
+        if (!deathObserved)
+        {
+            deathObserved = true;
+            deathObservedAt = Time.time;
+        }
+        if (runner.IsRunning || Time.time - deathObservedAt < deathMotionDelaySeconds)
             return;
 
         if (runner.Play(afterDeathDefinition, player, false))
@@ -50,5 +62,7 @@ public sealed class CutsceneDeathWatcher : MonoBehaviour
         player = null;
         runner = null;
         afterDeathDefinition = null;
+        deathObserved = false;
+        deathObservedAt = 0f;
     }
 }

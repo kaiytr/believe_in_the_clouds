@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-01",
+  "timezone": "Asia/Seoul",
+  "unity": "6000.3.5f2",
+  "baselineHead": "d0001d4d2f57c8045d173858dbc94773f530b903",
+  "editMode": {
+    "total": 154,
+    "passed": 154,
+    "skipped": 0,
+    "failed": 0
+  },
+  "playMode": {
+    "total": 85,
+    "passed": 80,
+    "skipped": 0,
+    "failed": 5
+  },
+  "chestEditMode": {
+    "passed": 33,
+    "total": 33
+  },
+  "chestPlayMode": {
+    "passed": 9,
+    "total": 9
+  },
+  "baseline": {
+    "total": 5,
+    "failedNames": [
+      "EconomyPlayModeTests.ActualBossDefeatGivesZeroCoins",
+      "LobbyPlayModeTests.DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss",
+      "LobbyPlayModeTests.LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear",
+      "LobbyPlayModeTests.UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth",
+      "LobbyPlayModeTests.VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios"
+    ],
+    "failed": 5
+  },
+  "finalFailuresMatchUnmodifiedHead": true,
+  "artifacts": {
+    "playMode": "Logs/ChestPlayMode-final.xml",
+    "editMode": "Logs/ChestEditMode-final.xml",
+    "baseline": "Logs/ChestBaseline.xml",
+    "screenshots": "Logs/ChestVerification/"
+  },
+  "worldPromptUpdate": {
+    "cameraTrackingCapture": "Logs/ChestVerification/02b-follow-camera.png",
+    "failed": 0,
+    "total": 9,
+    "testResults": "Logs/ChestWorldPrompt.xml",
+    "passed": 9
+  },
+  "shopFoundationWorldPrompt": {
+    "failed": 0,
+    "captureScenes": [
+      "ShopTest",
+      "FoundationTest"
+    ],
+    "testResults": "Logs/ShopFoundationWorldPrompt.xml",
+    "captures": "Logs/InteractionPromptVerification/",
+    "passed": 2,
+    "total": 2,
+    "originalTestsChanged": false
+  },
+  "branchExitWorldPrompt": {
+    "unchangedRegressionTests": 2,
+    "passed": 3,
+    "originalTestsChanged": false,
+    "captures": "Logs/BranchExitPromptVerification/",
+    "total": 3,
+    "failed": 0,
+    "localEventCaptureWorkflow": 1,
+    "testResults": "Logs/BranchExitWorldPrompt-final.xml",
+    "appliesTo": "All scenes using LobbyBranchInteractable or TemporaryStageExit"
+  }
+}

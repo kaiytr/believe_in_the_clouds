@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public sealed class CutsceneBubbleView : MonoBehaviour
 {
     private static Sprite bubbleSprite;
-    private static Font koreanFont;
+    private static Font beliefFont;
 
     [Header("Layout")]
     [SerializeField] private Vector2 panelSize = new Vector2(318f, 120f);
@@ -28,6 +28,8 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private Canvas canvas;
     private RectTransform canvasRect;
     private RectTransform panelRect;
+    private RectTransform bodyViewport;
+    private RectMask2D bodyMask;
     private Text bodyText;
     private RectTransform choicesRoot;
     private CutsceneCharacter speaker;
@@ -38,6 +40,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private string lineFull = string.Empty;
     private string[] choiceLabels = new string[0];
     private bool choiceMode, layoutDirty = true;
+    private bool accumulating;
     private float laidOutScale = -1f;
     private int relayoutFrames;
 
@@ -50,6 +53,13 @@ public sealed class CutsceneBubbleView : MonoBehaviour
 
     /// <summary>The bubble is sized for <paramref name="fullText"/>, so a typewriter that starts empty keeps a stable size.</summary>
     public void ShowLine(CutsceneCharacter currentSpeaker, string text, string fullText)
+        => ShowDialogue(currentSpeaker, text, fullText, false);
+
+    /// <summary>Keep one bubble open and size it as accumulated characters arrive.</summary>
+    public void ShowAccumulatingLine(CutsceneCharacter currentSpeaker)
+        => ShowDialogue(currentSpeaker, string.Empty, string.Empty, true);
+
+    private void ShowDialogue(CutsceneCharacter currentSpeaker, string text, string fullText, bool accumulate)
     {
         EnsureUi();
         ClearChoices();
@@ -57,6 +67,10 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         choiceSelected = null;
         bodyText.text = text ?? string.Empty;
         lineFull = fullText ?? text ?? string.Empty;
+        accumulating = accumulate;
+        bodyMask.enabled = accumulate;
+        bodyText.resizeTextForBestFit = !accumulate;
+        bodyText.alignment = TextAnchor.MiddleCenter;
         choiceMode = false;
         layoutDirty = true;
         choicesRoot.gameObject.SetActive(false);
@@ -69,6 +83,16 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     {
         EnsureUi();
         bodyText.text = text ?? string.Empty;
+    }
+
+    public void SetAccumulatedText(string text)
+    {
+        SetVisibleText(text);
+        string content = bodyText.text;
+        if (lineFull == content) return;
+        lineFull = content;
+        layoutDirty = true;
+        ApplyDisplayScale();
     }
 
     public void ShowChoices(CutsceneCharacter currentSpeaker, string[] options, Action<int> onSelected)
@@ -151,7 +175,12 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         background.color = Color.white;
         background.raycastTarget = false;
 
-        bodyText = CreateText("Dialogue", panelRect, bodyFontSize, FontStyle.Normal);
+        GameObject viewport = new GameObject("Dialogue viewport", typeof(RectTransform), typeof(RectMask2D));
+        viewport.transform.SetParent(panelRect, false);
+        bodyViewport = viewport.GetComponent<RectTransform>();
+        bodyMask = viewport.GetComponent<RectMask2D>();
+        bodyMask.enabled = false;
+        bodyText = CreateText("Dialogue", bodyViewport, bodyFontSize, FontStyle.Normal);
         bodyText.alignment = TextAnchor.MiddleCenter;
         bodyText.color = new Color32(40, 40, 48, 255);
         bodyText.lineSpacing = 1f;
@@ -175,7 +204,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         GameObject child = new GameObject(childName, typeof(RectTransform), typeof(Text));
         child.transform.SetParent(parent, false);
         Text text = child.GetComponent<Text>();
-        text.font = GetKoreanFont();
+        text.font = GetBeliefFont();
         text.fontSize = fontSize;
         text.fontStyle = style;
         text.alignment = TextAnchor.MiddleLeft;
@@ -293,7 +322,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             ? screenHeight / (2f * trackingCamera.orthographicSize) * CombatantHudView.ReferenceCanvasScale
             : 1f;
         float unitScale = displayScale / canvasScale;
-        // Size depends on the full text / option list and the display scale only, never on typed-so-far characters.
+        // Regular dialogue reserves its full size; accumulated dialogue updates lineFull as it types.
         if (relayoutFrames > 0) { relayoutFrames--; layoutDirty = true; }
         if (!layoutDirty && Mathf.Approximately(unitScale, laidOutScale)) return;
         layoutDirty = false;
@@ -312,16 +341,44 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         bodyText.resizeTextMinSize = Mathf.Max(1, Mathf.RoundToInt((bodyFontSize - 6) * unitScale));
         float horizontal = (panelPadding.x + panelPadding.z) * unitScale;
         float vertical = (panelPadding.y + panelPadding.w) * unitScale;
-        float maxTextWidth = maxPanelWidth * unitScale - horizontal;
+        float widthLimit = maxPanelWidth * unitScale;
+        float heightLimit = maxPanelHeight * unitScale;
+        if (accumulating)
+        {
+            float canvasScale = Mathf.Max(.01f, canvas.scaleFactor);
+            widthLimit = Mathf.Min(widthLimit, Mathf.Max(1f, (Screen.safeArea.width - 24f) / canvasScale));
+            heightLimit = Mathf.Min(heightLimit, Mathf.Max(1f, (Screen.safeArea.height - 24f) / canvasScale));
+        }
+        float maxTextWidth = Mathf.Max(1f, widthLimit - horizontal);
         bodyText.verticalOverflow = VerticalWrapMode.Overflow;
         float wanted = MeasureWidth(bodyText, lineFull, fontSize) + 44f * unitScale;
-        float textWidth = Mathf.Clamp(wanted, Mathf.Max(0f, minPanelSize.x * unitScale - horizontal), maxTextWidth);
-        // Measure against a narrower column and add slack: a real wrap that differs slightly must never clip a line.
-        float textHeight = MeasureHeight(bodyText, lineFull, textWidth * .85f, fontSize) + 28f * unitScale;
+        float minTextWidth = Mathf.Min(Mathf.Max(0f, minPanelSize.x * unitScale - horizontal), maxTextWidth);
+        float textWidth = Mathf.Clamp(wanted, minTextWidth, maxTextWidth);
+        // Growing text uses its actual column so widening a partial row never shrinks the bubble again.
+        // Regular dialogue retains extra wrapping slack for its preallocated layout.
+        float measuredWidth = accumulating ? textWidth : textWidth * .85f;
+        float textHeight = MeasureHeight(bodyText, lineFull, measuredWidth, fontSize) + 28f * unitScale;
         float panelWidth = textWidth + horizontal;
-        float panelHeight = Mathf.Clamp(textHeight + vertical, minPanelSize.y * unitScale, maxPanelHeight * unitScale);
+        float panelHeight = Mathf.Clamp(textHeight + vertical, Mathf.Min(minPanelSize.y * unitScale, heightLimit), heightLimit);
         panelRect.sizeDelta = new Vector2(panelWidth, panelHeight);
-        Stretch(bodyText.rectTransform, panelPadding, unitScale);
+        Stretch(bodyViewport, panelPadding, unitScale);
+        if (accumulating && textHeight > panelHeight - vertical + .01f)
+        {
+            // Once the panel is full, keep the newest row at the bottom and clip older rows above it.
+            bodyText.alignment = TextAnchor.LowerCenter;
+            RectTransform content = bodyText.rectTransform;
+            content.anchorMin = Vector2.zero;
+            content.anchorMax = new Vector2(1f, 0f);
+            content.pivot = new Vector2(.5f, 0f);
+            content.anchoredPosition = Vector2.zero;
+            content.sizeDelta = new Vector2(0f, textHeight);
+        }
+        else
+        {
+            // Share normal dialogue alignment so sizing slack is split above and below the glyphs.
+            bodyText.alignment = TextAnchor.MiddleCenter;
+            Stretch(bodyText.rectTransform, Vector4.zero, 1f);
+        }
     }
 
     private void LayoutChoices(float unitScale)
@@ -400,15 +457,15 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         return text.cachedTextGeneratorForLayout.GetPreferredHeight(content, settings) / text.pixelsPerUnit;
     }
 
-    private static Font GetKoreanFont()
+    private static Font GetBeliefFont()
     {
-        if (koreanFont != null)
-            return koreanFont;
+        if (beliefFont != null)
+            return beliefFont;
 
-        koreanFont = CombatUiResources.KoreanFont();
-        if (koreanFont == null)
-            koreanFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        return koreanFont;
+        beliefFont = CombatUiResources.BeliefFont();
+        if (beliefFont == null)
+            beliefFont = CombatUiResources.KoreanFont() ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return beliefFont;
     }
 
     private static Sprite GetBubbleSprite()
@@ -435,7 +492,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             else DestroyImmediate(bubbleSprite);
         }
         bubbleSprite = null;
-        koreanFont = null;
+        beliefFont = null;
     }
     private void OnDestroy()
     {

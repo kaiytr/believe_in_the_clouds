@@ -9,6 +9,7 @@ public static class ProjectScenes
 {
     public const string Title = "Assets/Scenes/Title.unity";
     public const string Tutorial = "Assets/Scenes/Tutorial.unity";
+    public const string FirstAltarStory = "Assets/Scenes/Story/FirstAltarStory.unity";
     public const string Lobby = "Assets/Scenes/Lobby.unity";
     public const string Ending = "Assets/Scenes/Ending.unity";
     public const string EndingSceneName = "Ending";
@@ -24,6 +25,7 @@ public static class ProjectScenes
             yield return Lobby;
             yield return Shop;
             yield return Tutorial;
+            yield return FirstAltarStory;
             for (int number = 1; number <= CombatLevelCount; number++)
                 yield return CombatLevelPath(number);
             yield return Boss;

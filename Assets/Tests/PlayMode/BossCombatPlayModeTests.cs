@@ -34,7 +34,8 @@ public sealed class BossCombatPlayModeTests
         playerBody = player.GetComponent<Rigidbody2D>();
         player.GetComponent<PlayerMove>().enabled = false;
         // The Boss scene now waits for arena entry; put combat fixtures inside before preparing each case.
-        PutPlayer(new Vector2(-4.21f,-2.33f));
+        Bounds entryBounds = Object.FindFirstObjectByType<BossEncounterTrigger>().GetComponent<Collider2D>().bounds;
+        PutPlayer(new Vector2(entryBounds.min.x + player.BodyCollider.bounds.extents.x + .2f, -2.33f));
         yield return Until(() => boss.EncounterStarted);
         Assert.That(boss.EncounterStarted,Is.True,boss.StatusMessage);
         originalData = boss.Settings; data = Object.Instantiate(originalData); Set(boss,"settings",data);
@@ -70,9 +71,70 @@ public sealed class BossCombatPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator HitReactionPausesDashThenResumesAndResetClearsIt()
+    {
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 6f);
+        boss.ForcePatternForTest(BossPatternKind.Dash);
+        yield return Until(() => new List<BossAttackRecord>(boss.ActiveAttacks).Exists(r => r.Kind == BossAttackKind.Dash && r.Activated));
+        PutPlayer(new Vector2(boss.BodyCollider.bounds.center.x, boss.BodyCollider.bounds.max.y + 1.1f));
+        float verticalVelocity = boss.Body.linearVelocity.y;
+        using (var swing = new PlayerAttackContext(player.gameObject))
+        {
+            int hits = (int)typeof(PlayerAttack).GetMethod("DoDownFanHit", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(player.GetComponent<PlayerAttack>(), new object[] { swing, 1f });
+            Assert.That(hits, Is.EqualTo(1));
+        }
+        Assert.That(boss.Body.linearVelocity.x, Is.Zero);
+        Assert.That(boss.Body.linearVelocity.y, Is.EqualTo(verticalVelocity));
+        yield return new WaitForFixedUpdate();
+        float pausedX = boss.Body.position.x;
+        for (int i = 0; i < 5; i++)
+        {
+            yield return new WaitForFixedUpdate();
+            Assert.That(boss.Body.position.x, Is.EqualTo(pausedX).Within(.02f));
+            Assert.That(boss.IsHitMovementLocked, Is.True);
+        }
+        yield return new WaitForSeconds(.3f);
+        Assert.That(Mathf.Abs(boss.Body.position.x - pausedX), Is.GreaterThan(.1f));
+        boss.HitReaction.Apply(1f, 2.8f, player.transform.position.x);
+        boss.ResetEncounterForTest();
+        Assert.That(boss.IsHitMovementLocked, Is.False);
+    }
+
+    [UnityTest]
+    public IEnumerator GroundKnockbackWinsOverBossMeleeLungeWithoutCancellingAttack()
+    {
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 1.5f);
+        boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
+        PlayerAttack playerAttack = player.GetComponent<PlayerAttack>();
+        playerAttack.TryGetComboStep(0, out PlayerAttack.ComboStep first);
+        using (var swing = new PlayerAttackContext(player.gameObject))
+        {
+            int hits = (int)typeof(PlayerAttack).GetMethod("DoHit", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(playerAttack, new object[] { swing, first, 1f });
+            Assert.That(hits, Is.EqualTo(1));
+        }
+        Assert.That(boss.IsHitMovementLocked, Is.True);
+        float startX = boss.Body.position.x;
+        for (int i = 0; i < 5; i++)
+        {
+            yield return new WaitForFixedUpdate();
+            Assert.That(boss.Body.linearVelocity.x, Is.GreaterThan(0f));
+        }
+        Assert.That(boss.Body.position.x, Is.GreaterThan(startX));
+        Assert.That(boss.IsRegularRunning, Is.True);
+        yield return Until(() => Count(BossAttackKind.Melee) >= 1);
+        Assert.That(Last.EndReason, Is.EqualTo(BossAttackEndReason.Completed));
+    }
+
+    [UnityTest]
     public IEnumerator MeleeComboMirrorsPlayerHitboxesAndAutomaticallyLandsThreeHits()
     {
+        // Isolate the three melee hits from the boss body's separate contact damage.
+        foreach (EnemyContactDamage contact in boss.GetComponentsInChildren<EnemyContactDamage>())
+            contact.SetSuppressed(true);
         PutPlayer((Vector2)boss.transform.position+Vector2.left*1.5f);
+        float initialHp = player.CurrentHp;
         var playerAttack=player.GetComponent<PlayerAttack>();
         Assert.That(playerAttack,Is.Not.Null);
         Assert.That(playerAttack.ComboCount,Is.GreaterThanOrEqualTo(3));
@@ -80,27 +142,27 @@ public sealed class BossCombatPlayModeTests
         Assert.That(playerAttack.TryGetComboStep(0,out firstStep),Is.True);
         boss.ForcePatternForTest(BossPatternKind.MeleeCombo);
         yield return Until(()=>boss.ActiveBossAttackId>0);
-        var warning=Object.FindFirstObjectByType<DangerIndicator>(); Assert.That(warning,Is.Not.Null);
-        Assert.That(player.CurrentHp,Is.EqualTo(100f));
+        var warning=Object.FindFirstObjectByType<BossFanWarning>(); Assert.That(warning,Is.Not.Null);
+        Assert.That(player.CurrentHp,Is.EqualTo(initialHp));
         var record = new List<BossAttackRecord>(boss.ActiveAttacks)[0];
         Assert.That(record.Geometry.Size,Is.EqualTo(firstStep.hitboxSize));
         Assert.That(record.Geometry.Angle,Is.EqualTo(-firstStep.hitboxAngle).Within(.01f));
         Assert.That(record.Geometry.Center.x,Is.LessThan(boss.transform.position.x));
         yield return new WaitForSeconds(data.MeleeComboFirstWarning*.5f);
-        Assert.That(player.CurrentHp,Is.EqualTo(100f));
+        Assert.That(player.CurrentHp,Is.EqualTo(initialHp));
         yield return Until(()=>Count(BossAttackKind.Melee)>=1);
-        Assert.That(player.CurrentHp,Is.EqualTo(100f-data.MeleeComboDamage[0]));
+        Assert.That(player.CurrentHp,Is.EqualTo(initialHp-data.MeleeComboDamage[0]));
         Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Hit));
         yield return Until(()=>!boss.IsPatternRunning);
         Assert.That(Count(BossAttackKind.Melee),Is.EqualTo(3));
-        Assert.That(player.CurrentHp,Is.EqualTo(100f-(data.MeleeComboDamage[0]+data.MeleeComboDamage[1]+
+        Assert.That(player.CurrentHp,Is.EqualTo(initialHp-(data.MeleeComboDamage[0]+data.MeleeComboDamage[1]+
             data.MeleeComboDamage[2])));
         Assert.That(playerAttack.TryGetComboStep(2,out PlayerAttack.ComboStep finisher),Is.True);
         Assert.That(finisher.launchUp,Is.Zero);
         Assert.That(playerBody.linearVelocity.y,Is.EqualTo(0f).Within(.001f));
         Assert.That(playerBody.linearVelocity.x,Is.LessThan(0f),"The three-hit finisher knocks back without launching.");
         Assert.That(boss.transform.localScale,Is.EqualTo(Vector3.one));
-        Assert.That(Object.FindFirstObjectByType<DangerIndicator>(),Is.Null);
+        Assert.That(Object.FindFirstObjectByType<BossFanWarning>(),Is.Null);
     }
 
     [UnityTest]
@@ -131,17 +193,21 @@ public sealed class BossCombatPlayModeTests
     [UnityTest]
     public IEnumerator FastProjectileAndDashStopAtThinWallWithoutPlayerDamage()
     {
-        PutPlayer(new Vector2(-5f,boss.transform.position.y)); Wall(0f);
+        float initialHp = player.CurrentHp;
+        float wallX = boss.transform.position.x - 2f;
+        PutPlayer((Vector2)boss.transform.position + Vector2.left * 6f);
         data.ProjectileSpeed=200f;
         boss.ForcePatternForTest(BossPatternKind.Projectile);
+        yield return Until(() => boss.ActiveBossAttackId > 0);
+        Wall(wallX); // Introduce a thin obstacle after the projectile's path has been planned.
         yield return Until(()=>Count(BossAttackKind.Projectile)>0);
-        Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Blocked)); Assert.That(player.CurrentHp,Is.EqualTo(100f));
+        Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Blocked)); Assert.That(player.CurrentHp,Is.EqualTo(initialHp));
         data.DashSpeed=200f;
         boss.ForcePatternForTest(BossPatternKind.Dash);
         yield return Until(()=>Count(BossAttackKind.Dash)>0);
         Assert.That(Last.Outcome,Is.EqualTo(AttackOutcome.Blocked));
-        Assert.That(boss.BodyCollider.bounds.min.x,Is.GreaterThanOrEqualTo(.05f));
-        Assert.That(player.CurrentHp,Is.EqualTo(100f));
+        Assert.That(boss.BodyCollider.bounds.min.x,Is.GreaterThanOrEqualTo(wallX + .05f));
+        Assert.That(player.CurrentHp,Is.EqualTo(initialHp));
     }
 
     [UnityTest]

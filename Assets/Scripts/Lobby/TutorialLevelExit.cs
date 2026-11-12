@@ -9,11 +9,12 @@ public sealed class TutorialLevelExit : InteractableBehaviour, IWorldInteraction
     [SerializeField] private TextMesh[] instructions;
     private EconomyService previous, practice;
     private bool leaving;
+    private string saveMessage;
 
     public Transform PromptAnchor => transform;
     public Vector3 PromptOffset => GetPromptOffsetAtArtCenter();
     public bool PromptCentered => true;
-    public override string InteractionPrompt => "E : 진입";
+    public override string InteractionPrompt => string.IsNullOrEmpty(saveMessage) ? "E : 진입" : saveMessage;
 
     private void Start()
     {
@@ -40,8 +41,26 @@ public sealed class TutorialLevelExit : InteractableBehaviour, IWorldInteraction
 
     protected override void OnInteract(GameObject interactor)
     {
-        leaving = true;
-        SceneManager.LoadSceneAsync(LobbyFlowRuntime.LobbyScene);
+        CurrencyResult result = previous?.TryMarkTutorialCompleted();
+        if (result == null || !result.Success)
+        {
+            saveMessage = "저장 실패 · E : 다시 시도";
+            return;
+        }
+        RestoreService();
+        try
+        {
+            leaving = true;
+            if (SceneManager.LoadSceneAsync(LobbyFlowRuntime.LobbyScene) == null)
+                throw new System.InvalidOperationException("로비를 불러오지 못했습니다.");
+        }
+        catch (System.Exception ex)
+        {
+            leaving = false;
+            EconomyRuntime.Instance.SetService(practice);
+            saveMessage = "전환 실패 · E : 다시 시도";
+            Debug.LogWarning(ex.Message, this);
+        }
     }
 
     private void OnDestroy() => RestoreService();

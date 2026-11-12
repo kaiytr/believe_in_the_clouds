@@ -1,0 +1,37 @@
+{
+  "checkedOn": "2026-11-01",
+  "timezone": "Asia/Seoul",
+  "unityVersion": "6000.3.5f2",
+  "scope": "Independent currency test scene, economy persistence and existing doctrine/belief/boss/stage regressions",
+  "mainPlayLoopConnected": false,
+  "manualVerification": {
+    "confirmedOn": "2026-11-01",
+    "performedBy": "user",
+    "result": "passed",
+    "scope": "User reports that all provided manual checklist tests worked normally; standalone build verification is not inferred."
+  },
+  "editMode": { "total": 96, "passed": 96, "failed": 0, "skipped": 0, "economyTests": 44 },
+  "playMode": { "graphics": true, "total": 68, "passed": 68, "failed": 0, "skipped": 0, "economyTests": 9 },
+  "resultFiles": ["Logs/EconomyEditModeResults.xml", "Logs/EconomyPlayModeResults.xml"],
+  "visualChecks": [
+    "New profile: 0 coins, 0 pieces, no equipment or built-in doctrine previews",
+    "Scatter and automatic gold coin flight to the real bottom-right HUD badge",
+    "All 12 shop card prices and rarities, balance, cart total and shortfall",
+    "Death: 13 original pieces including 6 equipment references, 3 lost, 10 remaining, no equipment",
+    "1600x900 and 1200x900 HUD and test panel layout"
+  ],
+  "presentation": {
+    "scatterSeconds": 0.2,
+    "flightSeconds": [0.45, 0.7],
+    "tokenStaggerSeconds": 0.03,
+    "maxVisibleTokens": 64,
+    "tokenDiameter": 16,
+    "scatterRadius": 42
+  },
+  "limitations": [
+    "No lobby, branching, stage progression, ending or complete altar integration",
+    "Economy-only recovery; player position, HP, enemy life and stage state do not resume",
+    "Live enemies get new IDs on scene recreation; stable stage/spawn IDs are future integration",
+    "Test fixture resets use an explicitly isolated in-memory store"
+  ]
+}

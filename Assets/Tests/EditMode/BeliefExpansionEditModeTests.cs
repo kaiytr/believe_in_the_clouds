@@ -59,40 +59,35 @@ public sealed class BeliefExpansionEditModeTests
     }
 
     [Test]
-    public void RetreatEntryAllowsOneSuccessPerRetreatAndRearmsForANewRetreat()
+    public void RetreatEntryHasNoTimeLimitAndRearmsForANewRetreat()
     {
         var state = new BeliefChallengeState(BeliefRule.RetreatPunish, 50f);
-        state.ObserveRetreat(false, true, 0f);
+        state.ObserveRetreat(false, true);
         Assert.That(state.Hit(0f, false, false), Is.Zero);
-        state.ObserveRetreat(true, false, 1f);
-        state.ObserveRetreat(true, true, 2f);
-        Assert.That(state.Hit(4f, false, false), Is.EqualTo(50f));
-        state.ObserveRetreat(true, false, 4f);
-        state.ObserveRetreat(true, true, 5f);
-        Assert.That(state.Hit(5f, false, false), Is.Zero);
-        state.ObserveRetreat(false, true, 6f);
-        state.ObserveRetreat(true, true, 7f);
-        Assert.That(state.Hit(9.001f, false, false), Is.Zero);
-        state.ObserveRetreat(true, true, 10f);
-        Assert.That(state.Hit(10f, false, false), Is.Zero, "Standing inside must not renew the window.");
+        state.ObserveRetreat(true, false);
+        state.ObserveRetreat(true, true);
+        state.ObserveRetreat(false, true);
+        Assert.That(state.Hit(100f, false, false), Is.EqualTo(50f), "The opportunity persists after retreat ends and has no timer.");
+        state.ObserveRetreat(true, true);
+        Assert.That(state.Hit(101f, false, false), Is.EqualTo(50f), "A new retreat episode rearms the challenge.");
+        state.ObserveRetreat(true, true);
+        Assert.That(state.Hit(101.1f, false, false), Is.Zero, "Standing inside must not renew an already consumed retreat.");
         state.Reset();
-        state.ObserveRetreat(true, true, 11f);
-        Assert.That(state.Hit(11f, false, false), Is.EqualTo(50f));
+        state.ObserveRetreat(true, true);
+        Assert.That(state.Hit(102f, false, false), Is.EqualTo(50f));
     }
 
     [Test]
-    public void RearDwellIsDiscretePreservesWholeIntervalsAndDiscardsPartialTimeOnExit()
+    public void RearEntryReducesOnceUntilLeavingAndReentering()
     {
-        var state = new BeliefChallengeState(BeliefRule.RearDwell, 25f);
-        Assert.That(state.TickRear(true, 1.5f), Is.Zero);
-        Assert.That(state.TickRear(true, 0f), Is.Zero);
-        Assert.That(state.TickRear(true, .5f), Is.EqualTo(25f));
-        Assert.That(state.TickRear(true, 6f), Is.EqualTo(75f));
-        Assert.That(state.TickRear(true, 1.5f), Is.Zero);
-        Assert.That(state.TickRear(false, .1f), Is.Zero);
-        Assert.That(state.TickRear(true, .5f), Is.Zero);
+        var state = new BeliefChallengeState(BeliefRule.RearEntry, 50f);
+        Assert.That(state.ObserveRear(false), Is.Zero);
+        Assert.That(state.ObserveRear(true), Is.EqualTo(50f));
+        Assert.That(state.ObserveRear(true), Is.Zero);
+        Assert.That(state.ObserveRear(false), Is.Zero);
+        Assert.That(state.ObserveRear(true), Is.EqualTo(50f));
         state.Reset();
-        Assert.That(state.TickRear(true, 2f), Is.EqualTo(25f));
+        Assert.That(state.ObserveRear(true), Is.EqualTo(50f));
     }
 
     [Test]
@@ -101,9 +96,9 @@ public sealed class BeliefExpansionEditModeTests
         var rear = new BeliefChallengeState(BeliefRule.RearHit, 40f);
         Assert.That(rear.Hit(0f, false, true), Is.Zero);
         Assert.That(rear.Hit(0f, true, false), Is.EqualTo(40f));
-        var prayer = new BeliefChallengeState(BeliefRule.PrayerHit, 50f);
+        var prayer = new BeliefChallengeState(BeliefRule.PrayerHit, 100f);
         Assert.That(prayer.Hit(0f, true, false), Is.Zero);
-        Assert.That(prayer.Hit(0f, false, true), Is.EqualTo(50f));
+        Assert.That(prayer.Hit(0f, false, true), Is.EqualTo(100f));
         var circle = new BeliefChallengeState(BeliefRule.EscapeCircle, 100f);
         Assert.That(circle.ResolveAttack(Result(AttackOutcome.Missed)), Is.Zero);
         Assert.That(circle.ResolveAttack(Result(AttackOutcome.Hit, damaged: true)), Is.Zero);
@@ -132,7 +127,9 @@ public sealed class BeliefExpansionEditModeTests
         Assert.That(rules.Count, Is.EqualTo(8));
         Assert.That(catalog.Resolve(BeliefType.DogCounterattack).ReductionPerSuccess, Is.EqualTo(100f));
         Assert.That(catalog.Resolve(BeliefType.DogRearAttack).ReductionPerSuccess, Is.EqualTo(40f));
-        Assert.That(catalog.Resolve(BeliefType.ExecutiveRearPosition).ReductionPerSuccess, Is.EqualTo(25f));
+        Assert.That(catalog.Resolve(BeliefType.BelieverSafeDistance).ReductionPerSuccess, Is.EqualTo(100f));
+        Assert.That(catalog.Resolve(BeliefType.ExecutiveRearPosition).ReductionPerSuccess, Is.EqualTo(50f));
+        Assert.That(catalog.Resolve(BeliefType.ExecutivePrayer).ReductionPerSuccess, Is.EqualTo(100f));
         Assert.That(catalog.Resolve(BeliefType.DogUnerringAttack).Rule,
             Is.EqualTo(catalog.Resolve(BeliefType.BelieverUnerringStone).Rule));
     }

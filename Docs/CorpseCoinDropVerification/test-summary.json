@@ -1,0 +1,121 @@
+{
+  "unity": "6000.3.5f2",
+  "report": "PlayMode.xml",
+  "result": "Passed",
+  "total": "27",
+  "passed": "27",
+  "failed": "0",
+  "skipped": "0",
+  "start-time": "2026-11-03 02:57:43Z",
+  "end-time": "2026-11-03 02:58:18Z",
+  "tests": [
+    {
+      "name": "BossCombatPlayModeTests.CloudPlayerDeathHasNoDelayedStrike",
+      "result": "Passed"
+    },
+    {
+      "name": "DeathResultPlayModeTests.ActualEnemyIdentityReachesLethalDamageAndKillStatistics",
+      "result": "Passed"
+    },
+    {
+      "name": "DeathResultPlayModeTests.CaptureFailureHasFallbackAndDoesNotChangeRenderTarget",
+      "result": "Passed"
+    },
+    {
+      "name": "DeathResultPlayModeTests.LethalDamageShowsOneOverlayFreezesWorldAndCapturesBeforeCanvasExists",
+      "result": "Passed"
+    },
+    {
+      "name": "DeathResultPlayModeTests.ResultLayoutFitsWideAndFourByThreeScreens",
+      "result": "Passed"
+    },
+    {
+      "name": "DeathResultPlayModeTests.SaveFailureKeepsResultThenExitPersistsPenaltyAndOpensWorkingTitle",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.ActualBossDefeatGivesZeroCoins",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.ActualEnemyDeathsRewardEnvironmentalDamageOnceAndDisableNeverRewards",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.CoinsArriveWithPausedTimeReuseThePoolAndStopAtTheHud",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.CoinsLandOnTheGroundSurfaceBeforeRestingAndFlyingToTheHud",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.ConcurrentRewardsAreGroupedWithin64TokensAndArrivalRetriesAfterSaveFailure",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.FailedDefeatRewardKeepsFinalCorpsePositionAfterSourceIsDestroyed",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.FailedEnemyRewardRetriesWhileAliveAndIsNotAcceptedAfterDeath",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.MissingHudSettlesAndSceneTransitionFlushesWithoutLateDoublePayment",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.PresentationDelayHoldsTheFlightWithoutLosingOrDuplicatingTheReward",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.RealDeathExecutesEffectsOnceClearsOnlyPlayerEquipmentAndLosesThreeOfThirteen",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.ShopShowsPricesAndKeepsTheCartWhenSavingFails",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.SlotPurchaseUsesCurrencyAndExpandsTheFoundationWithoutClearingThePieceCart",
+      "result": "Passed"
+    },
+    {
+      "name": "EconomyPlayModeTests.VisualCaptureCurrencyHudFlightShopAndDeathAtTwoAspectRatios",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.DeathCannotChangeSceneBeforeSaveThenReturnsFullHealthWithOneLoss",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.GatesAreHiddenTriggersPlayerRendersInFrontAndCameraFollowsAcrossLobby",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.LoadingLobbyWithAnUnfinishedSavedStageRoutesBackWithoutGrantingAClear",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.RevealFailureHasNoPartialColorOrChargeAndReloadPreservesTheChosenGate",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.TestToolsUseMemoryAndCanRecoverAnInjectedDeathFailure",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.UnrevealedDepartureLockedExitDamageReloadCompletionAndReturnPreserveHealth",
+      "result": "Passed"
+    },
+    {
+      "name": "LobbyPlayModeTests.VisualCaptureHiddenRevealedAndCompletedStageAtTwoAspectRatios",
+      "result": "Passed"
+    },
+    {
+      "name": "StageIntegrationPlayModeTests.StageEnemyCoinsWaitForDeathThenRestAtTheWorldPositionAsCameraMoves",
+      "result": "Passed"
+    }
+  ]
+}
