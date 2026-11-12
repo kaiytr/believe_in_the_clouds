@@ -101,6 +101,30 @@ public class DoctrineEditModeTests
         Assert.AreEqual(afterFirst - 5f, health.CurrentHealth, 0.001f);
     }
 
+    // Identical doctrines each keep their own cooldown, so every equipped copy triggers.
+    [Test]
+    public void IdenticalDoctrines_AllTrigger_EachWithItsOwnCooldown()
+    {
+        GameObject player = CreateCombatant("Player", SubjectType.Player, 100f);
+        TestHealth health = player.GetComponent<TestHealth>();
+        health.ForceHealth(50f);
+        GameObject enemy = CreateCombatant("Enemy", SubjectType.Enemy, 100f);
+
+        for (int i = 0; i < 5; i++)
+            Assert.IsTrue(manager.TryActivate(
+                new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal),
+                player, out string reason), reason);
+
+        health.TakeDamage(10f, enemy);
+
+        // 50 - 10 damage + five heals of 10% max HP.
+        Assert.AreEqual(90f, health.CurrentHealth, 0.001f);
+
+        // Each copy is on its own cooldown now: a second hit heals none of them.
+        health.TakeDamage(10f, enemy);
+        Assert.AreEqual(80f, health.CurrentHealth, 0.001f);
+    }
+
     [Test]
     public void ConditionMismatch_DoesNotTrigger()
     {

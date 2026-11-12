@@ -19,6 +19,10 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
     [Header("Death")]
     [SerializeField] private float destroyDelay = 1.5f;
 
+    [Header("Facing")]
+    [Tooltip("How long (seconds) the player must stay on the opposite side before the enemy turns toward them. Attacks only start once the enemy faces the player.")]
+    [SerializeField, Min(0f)] private float turnDelaySeconds = 0.5f;
+
     protected Rigidbody2D rb;
     protected Animator animator;
     protected Transform target;
@@ -37,6 +41,11 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
     // 플레이어 타격 넉백 속도(유닛/초). AI 이동속도에 더해지고 매 틱 감쇠한다.
     private float knockbackVelocity;
     private float knockbackDirection;
+    // Pending player-tracking turn: which side the player is on, since when, and when it was last evaluated.
+    private float pendingTurnDirection, pendingTurnSince, pendingTurnLastSeen;
+    private const float FacingDeadZone = 0.01f;
+    // A pending turn is forgotten if nothing asked about it for this long (so a stale wait never completes late).
+    private const float PendingTurnStaleSeconds = 0.25f;
     private bool configurationValid;
     private float nextTargetSearchTime;
     private CoinDropOrigin coinDropOrigin;
@@ -131,6 +140,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
         {
             StopMovement();
             ChangeState(EnemyState.Idle);
+            CancelPendingTurn();
             TryAcquirePlayer();
             return;
         }
@@ -317,8 +327,9 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
         }
 
         float direction = Mathf.Sign(target.position.x - transform.position.x);
-        SetHorizontalMove(direction);
-        SetFacingDirection(direction);
+        TrackFacingToward(direction);
+        // Moves only once the turn is finished: no walking toward the player with the back turned.
+        SetHorizontalMove(CurrentFacingSign == direction ? direction : 0f);
     }
 
     protected void MoveAwayFromTarget(bool keepFacingTarget = true)
@@ -331,8 +342,10 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
 
         float targetDirection = Mathf.Sign(target.position.x - transform.position.x);
         float moveDirection = -targetDirection;
-        SetHorizontalMove(moveDirection);
-        SetFacingDirection(keepFacingTarget ? targetDirection : moveDirection);
+        float desiredFacing = keepFacingTarget ? targetDirection : moveDirection;
+        TrackFacingToward(desiredFacing);
+        // Same rule as chasing: it starts backing away only after it already faces the way it should face.
+        SetHorizontalMove(CurrentFacingSign == desiredFacing ? moveDirection : 0f);
     }
 
     protected void SetHorizontalMove(float direction)
@@ -361,17 +374,62 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
         movementLocked = false;
     }
 
+    // Player-tracking turn (chasing, idling, backing away). It is delayed: see TrackFacingToward.
     public void FaceTarget()
     {
         if (target != null)
-            SetFacingDirection(target.position.x - transform.position.x);
+            TrackFacingToward(target.position.x - transform.position.x);
     }
 
+    /// <summary>
+    /// Turns toward <paramref name="direction"/> only after the player has stayed on that side for
+    /// <c>turnDelaySeconds</c>. Calling it every frame is fine: the wait starts once and is not restarted while
+    /// the player stays on that side. Coming back to the current facing (or leaving the dead zone) cancels it.
+    /// </summary>
+    public void TrackFacingToward(float direction)
+    {
+        float now = Time.time;
+        if (Mathf.Abs(direction) < FacingDeadZone || Mathf.Sign(direction) == CurrentFacingSign)
+        {
+            CancelPendingTurn();
+            return;
+        }
+
+        float desired = Mathf.Sign(direction);
+        if (pendingTurnDirection != desired || now - pendingTurnLastSeen > PendingTurnStaleSeconds)
+        {
+            pendingTurnDirection = desired;
+            pendingTurnSince = now;
+        }
+        pendingTurnLastSeen = now;
+
+        if (now - pendingTurnSince >= turnDelaySeconds)
+            SetFacingDirection(desired);
+    }
+
+    public void CancelPendingTurn() => pendingTurnDirection = 0f;
+
+    /// <summary>The way the enemy currently faces: 1 right, -1 left.</summary>
+    public float CurrentFacingSign => transform.localScale.x >= 0f ? 1f : -1f;
+
+    /// <summary>
+    /// True when the target is on the side the enemy faces (or overlapping it). Attacks require this, so an
+    /// attack can never be the shortcut around the delayed turn.
+    /// </summary>
+    public bool IsFacingTarget(Transform other)
+    {
+        if (other == null) return false;
+        float dx = other.position.x - transform.position.x;
+        return Mathf.Abs(dx) < FacingDeadZone || Mathf.Sign(dx) == CurrentFacingSign;
+    }
+
+    /// <summary>Explicit, immediate facing (attack direction lock, resets). Not the delayed player-tracking turn.</summary>
     public void SetFacingDirection(float direction)
     {
-        if (Mathf.Abs(direction) < 0.01f)
+        if (Mathf.Abs(direction) < FacingDeadZone)
             return;
 
+        CancelPendingTurn();
         Vector3 scale = transform.localScale;
         scale.x = Mathf.Abs(scale.x) * Mathf.Sign(direction);
         transform.localScale = scale;
@@ -462,6 +520,7 @@ public abstract class EnemyUnit : MonoBehaviour, IDamageable, IHealth
     protected virtual void Die()
     {
         if (IsDead) return;
+        CancelPendingTurn();
         EnemyRewardKind kind = RewardKind;
         Currency.Service?.ObserveEnemyDefeat(kind, defeatId);
         Vector3 origin = bodyCollider != null ? bodyCollider.bounds.center : transform.position;

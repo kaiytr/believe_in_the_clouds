@@ -12,12 +12,17 @@ public sealed class ChestEditModeTests
     private ChestManifest Manifest(params string[] ids) => new ChestManifest { stageInstanceId = stageId, spawnIds = ids };
     [SetUp] public void SetUp()
     {
+        StartChestStage(ChestRules.TableVersion);
+    }
+    private void StartChestStage(int tableVersion)
+    {
         store = new MemoryEconomyStore(); service = new EconomyService(store, new EconomyRandom(43));
         Assert.That(service.Initialize(), Is.True);
         Assert.That(service.TryInitializeRun(100).Success, Is.True);
         Assert.That(service.TryDepartBranch(service.RunSnapshot().candidates.First(c => c.role == BranchRole.Combat).id, 100).Success, Is.True);
         stageId = service.RunSnapshot().stage.id;
-        Assert.That(service.TryRegisterStageChests(Manifest("A", "B")).Success, Is.True);
+        ChestManifest manifest = Manifest("A", "B"); manifest.rewardTableVersion = tableVersion;
+        Assert.That(service.TryRegisterStageChests(manifest).Success, Is.True);
     }
 
     [TestCase(0, ShopRarity.Common)] [TestCase(64, ShopRarity.Common)]
@@ -43,7 +48,7 @@ public sealed class ChestEditModeTests
     public void RewardHasOnePieceAndInclusiveIndependentCoins(int rarity, int coins)
     {
         ChestRecord plan = ChestRules.Roll("fixture", new FixedRandom(rarity, 0, coins));
-        Assert.That(plan.pieceAmount, Is.EqualTo(1)); Assert.That(plan.rolledCoins, Is.EqualTo(coins));
+        Assert.That(plan.pieceAmount, Is.EqualTo(1)); Assert.That(plan.rolledCoins, Is.EqualTo(2 * coins));
         Assert.That(plan.rarity, Is.EqualTo(ChestRules.RarityFor(rarity)));
     }
     [Test] public void EveryPoolIndexIsReachableInStableIdOrder()
@@ -77,12 +82,13 @@ public sealed class ChestEditModeTests
         Assert.That(service.TryRegisterStageChests(Manifest("A")).Success, Is.True);
         Assert.That(JsonUtility.ToJson(service.GetChestState(stageId, "A")), Is.EqualTo(expected));
     }
-    [Test] public void StablePlanHasFixedV1TestVector()
+    [TestCase(ChestRules.LegacyTableVersion, 13)] [TestCase(ChestRules.TableVersion, 26)]
+    public void StablePlanKeepsOriginalDrawAcrossRewardTableVersions(int tableVersion, int coins)
     {
-        ChestRecord first = ChestRules.Plan("test-stage", "test-spawn");
+        ChestRecord first = ChestRules.Plan("test-stage", "test-spawn", tableVersion);
         Assert.That(first.pieceId, Is.EqualTo("subject.enemy"));
-        Assert.That(first.rolledCoins, Is.EqualTo(13));
-        Assert.That(JsonUtility.ToJson(ChestRules.Plan("test-stage", "test-spawn")), Is.EqualTo(JsonUtility.ToJson(first)));
+        Assert.That(first.rolledCoins, Is.EqualTo(coins));
+        Assert.That(JsonUtility.ToJson(ChestRules.Plan("test-stage", "test-spawn", tableVersion)), Is.EqualTo(JsonUtility.ToJson(first)));
     }
     [Test] public void OpenCommitsAllRewardsAndOneReceiptInOneSaveAndRejectsReentry()
     {
@@ -98,8 +104,10 @@ public sealed class ChestEditModeTests
         ChestOpenResult replay = service.TryOpenChest(stageId, "A", Vector3.one);
         Assert.That(replay.Success && replay.IsReplay, Is.True); Assert.That(store.SaveCount, Is.EqualTo(saves + 1)); Assert.That(effects, Is.EqualTo(1));
     }
-    [Test] public void FailedOpenChangesNothingAndRetryDoesNotReroll()
+    [TestCase(ChestRules.LegacyTableVersion)] [TestCase(ChestRules.TableVersion)]
+    public void FailedOpenChangesNothingAndRetryDoesNotReroll(int tableVersion)
     {
+        StartChestStage(tableVersion);
         string before = JsonUtility.ToJson(service.Snapshot()); int effects = 0;
         service.FlightRequested += _ => effects++;
         store.FailWrites = true;
@@ -172,6 +180,66 @@ public sealed class ChestEditModeTests
         }
         finally { Directory.Delete(directory, true); }
     }
+
+    [Test] public void LegacyChestJsonKeepsPlansAndReceiptsWhenNewStagesUseDoubledRewards()
+    {
+        StartChestStage(ChestRules.LegacyTableVersion);
+        Assert.That(service.TryGrant(91, "legacy.fixture").Success, Is.True);
+        ChestRecord closedPlan = service.GetChestState(stageId, "B");
+        ChestOpenResult opened = service.TryOpenChest(stageId, "A", Vector3.zero);
+        Assert.That(opened.Success, Is.True);
+        EconomyProfileData legacy = service.Snapshot();
+        legacy.processedTransactions.Single(r => r.id == opened.TransactionId).chestReward.rewardTableVersion = 0;
+        // 배포 전 V1 JSON에는 영수증의 테이블 버전 필드 자체가 없었다.
+        string json = JsonUtility.ToJson(legacy).Replace("\"rewardTableVersion\":0,", "");
+        string directory = Path.Combine(Path.GetTempPath(), "ChestV1Compatibility-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory); string path = Path.Combine(directory, "economy.json");
+        try
+        {
+            File.WriteAllText(path, json);
+            var reader = new EconomyService(new JsonEconomyStore(path));
+            Assert.That(reader.Initialize(), Is.True); Assert.That(reader.LoadStatus, Is.EqualTo(EconomyLoadStatus.Loaded));
+            Assert.That(reader.Balance, Is.EqualTo(91 + opened.Reward.appliedCoins));
+            Assert.That(reader.PendingBalance, Is.Zero);
+            Assert.That(JsonUtility.ToJson(reader.GetChestState(stageId, "B")), Is.EqualTo(JsonUtility.ToJson(closedPlan)));
+            Assert.That(reader.TryOpenChest(stageId, "A", Vector3.one).IsReplay, Is.True);
+            Assert.That(reader.TryOpenChest(stageId, "A", Vector3.zero).Reward.rolledCoins, Is.EqualTo(opened.Reward.rolledCoins));
+            Assert.That(reader.CountPiece(opened.Reward.pieceId), Is.EqualTo(1));
+            ChestOpenResult second = reader.TryOpenChest(stageId, "B", Vector3.zero);
+            Assert.That(second.Reward.rolledCoins, Is.EqualTo(closedPlan.rolledCoins));
+            Assert.That(second.Reward.rewardTableVersion, Is.EqualTo(ChestRules.LegacyTableVersion));
+
+            Assert.That(reader.TryCompleteTemporaryStage(stageId).Success, Is.True);
+            Assert.That(reader.TryReturnFromStage(stageId, 100).Success, Is.True);
+            Assert.That(reader.TryDepartBranch(reader.RunSnapshot().candidates.First(c => c.role == BranchRole.Combat).id, 100).Success, Is.True);
+            string nextStageId = reader.RunSnapshot().stage.id;
+            Assert.That(reader.TryRegisterStageChests(new ChestManifest { stageInstanceId = nextStageId, spawnIds = new[] { "A" } }).Success, Is.True);
+            ChestOpenResult current = reader.TryOpenChest(nextStageId, "A", Vector3.zero);
+            Assert.That(current.Success, Is.True); Assert.That(current.Reward.rewardTableVersion, Is.EqualTo(ChestRules.TableVersion));
+            Assert.That(current.Reward.rolledCoins, Is.EqualTo(2 * ChestRules.Plan(nextStageId, "A", ChestRules.LegacyTableVersion).rolledCoins));
+            Assert.That(EconomyLedger.Validate(reader.Snapshot()), Is.True);
+
+            reader = new EconomyService(new JsonEconomyStore(path)); Assert.That(reader.Initialize(), Is.True);
+            int balance = reader.Balance;
+            Assert.That(reader.TryOpenChest(stageId, "A", Vector3.zero).IsReplay, Is.True);
+            Assert.That(reader.TryOpenChest(nextStageId, "A", Vector3.zero).IsReplay, Is.True);
+            reader.TrySettleToken(opened.TransactionId, "0"); reader.TrySettleToken(current.TransactionId, "0");
+            Assert.That(reader.Balance, Is.EqualTo(balance)); Assert.That(reader.PendingBalance, Is.Zero);
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Test] public void CurrentChestValidationRejectsOddCoinsAndMismatchedReceiptVersions()
+    {
+        Assert.That(service.TryOpenChest(stageId, "A", Vector3.zero).Success, Is.True);
+        EconomyProfileData corrupt = service.Snapshot();
+        corrupt.run.stage.chestState.records.Single(r => r.spawnId == "B").rolledCoins = 15;
+        Assert.That(EconomyLedger.Validate(corrupt), Is.False);
+        corrupt = service.Snapshot();
+        corrupt.processedTransactions.Single(r => r.id == ChestRules.OpenId(stageId, "A")).chestReward.rewardTableVersion = ChestRules.LegacyTableVersion;
+        Assert.That(EconomyLedger.Validate(corrupt), Is.False);
+    }
+
     [TestCase(1)] [TestCase(2)]
     public void LegacyJsonMigratesWithoutResettingAssetsOrRun(int version)
     {

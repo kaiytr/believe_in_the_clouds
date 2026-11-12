@@ -10,6 +10,9 @@ public class ExecutiveEnemy : EnemyUnit
     [SerializeField]
     private float retreatEndDistance = 5f;
 
+    [Header("Platform Awareness")]
+    [SerializeField] private LayerMask platformMask = 1 << 6;
+
     private MagicCircleAttack magicCircleAttack;
 
     private bool isRetreating;
@@ -64,20 +67,28 @@ public class ExecutiveEnemy : EnemyUnit
             if (horizontalDistance <
                 retreatEndDistance)
             {
-                ChangeState(
-                    EnemyState.Retreat
-                );
+                // Backs away only while there is platform behind it. Cornered at the platform edge it stops and
+                // holds its ground (and casts) instead of walking off.
+                float awayDirection = target.position.x < transform.position.x ? 1f : -1f;
+                if (EnemyPlatformProbe.CanMoveSafely(BodyCollider, awayDirection, platformMask))
+                {
+                    ChangeState(
+                        EnemyState.Retreat
+                    );
 
-                MoveAwayFromTarget(
-                    true
-                );
+                    MoveAwayFromTarget(
+                        true
+                    );
 
-                return;
+                    return;
+                }
             }
+            else
+            {
+                isRetreating = false;
 
-            isRetreating = false;
-
-            StopMovement();
+                StopMovement();
+            }
         }
 
         /*

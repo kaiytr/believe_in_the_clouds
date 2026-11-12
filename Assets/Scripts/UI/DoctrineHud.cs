@@ -40,6 +40,8 @@ public class DoctrineHud : MonoBehaviour
     public static RectTransform CurrencyTarget => instance != null ? instance.currencyTarget : null;
 
     private readonly List<DoctrineSlotView> slots = new List<DoctrineSlotView>();
+    // Equipped entry shown by each slot (same order as `slots`). Identical doctrines are told apart by entry, not by rule.
+    private readonly List<DoctrineManager.ActiveDoctrine> slotEntries = new List<DoctrineManager.ActiveDoctrine>();
     private DoctrineManager manager;
     private PlayerHealth resolvedPlayer;
     private Canvas canvas;
@@ -256,7 +258,7 @@ public class DoctrineHud : MonoBehaviour
     private void HandleActivated(DoctrineManager.ActiveDoctrine entry)
     {
         RebuildDoctrineSlots();
-        int index = FindSlotIndex(entry.Doctrine);
+        int index = SlotIndexOf(entry);
         if (index >= 0 && index < slots.Count)
             slots[index].PlayTriggerFlash(0.45f);
     }
@@ -276,7 +278,7 @@ public class DoctrineHud : MonoBehaviour
         if (entry == null || entry.Doctrine == null)
             return;
 
-        int index = FindSlotIndex(entry.Doctrine);
+        int index = SlotIndexOf(entry);
         if (index < 0 || index >= slots.Count)
             return;
 
@@ -291,29 +293,11 @@ public class DoctrineHud : MonoBehaviour
             slot.StartCooldown(remaining, duration);
     }
 
-    private DoctrineManager.ActiveDoctrine FindActiveEntry(Doctrine doctrine)
+    // The slot of this exact equipped entry; falls back to the first slot with the same rule (preview slots have no entry).
+    private int SlotIndexOf(DoctrineManager.ActiveDoctrine entry)
     {
-        if (manager == null || doctrine == null)
-            return null;
-
-        IReadOnlyList<DoctrineManager.ActiveDoctrine> active = manager.ActiveDoctrines;
-        for (int i = 0; i < active.Count; i++)
-        {
-            DoctrineManager.ActiveDoctrine entry = active[i];
-            if (entry == null || entry.Doctrine == null)
-                continue;
-
-            if (!entry.Doctrine.HasSameRule(doctrine))
-                continue;
-
-            // CollectDoctrines와 같은 기준: 다른 존재에 묶인 교리는 HUD에 없다.
-            if (entry.Owner != null && (player == null || entry.Owner != player.gameObject))
-                continue;
-
-            return entry;
-        }
-
-        return null;
+        int index = slotEntries.IndexOf(entry);
+        return index >= 0 ? index : FindSlotIndex(entry.Doctrine);
     }
 
     private int FindSlotIndex(Doctrine doctrine)
@@ -343,11 +327,12 @@ public class DoctrineHud : MonoBehaviour
             Destroy(slots[i].gameObject);
         }
         slots.Clear();
+        slotEntries.Clear();
 
         if (doctrineRow == null)
             return;
 
-        List<Doctrine> doctrines = CollectDoctrines();
+        List<Doctrine> doctrines = CollectDoctrines(out List<DoctrineManager.ActiveDoctrine> entries);
         for (int i = 0; i < doctrines.Count; i++)
         {
             Doctrine doctrine = doctrines[i];
@@ -363,7 +348,7 @@ public class DoctrineHud : MonoBehaviour
 
             // 다른 교리가 해제되는 등으로 슬롯을 다시 만들어도
             // 진행 중인 쿨타임 마스크가 사라지지 않게 실제 남은 시간을 복원한다.
-            DoctrineManager.ActiveDoctrine activeEntry = FindActiveEntry(doctrine);
+            DoctrineManager.ActiveDoctrine activeEntry = i < entries.Count ? entries[i] : null;
             float cooldownSeconds = DoctrineManager.GetCooldownSeconds(doctrine);
             float cooldownRemaining = activeEntry != null && manager != null
                 ? manager.GetCooldownRemaining(activeEntry)
@@ -372,6 +357,7 @@ public class DoctrineHud : MonoBehaviour
                 slot.StartCooldown(cooldownRemaining, cooldownSeconds);
 
             slots.Add(slot);
+            slotEntries.Add(activeEntry);
         }
 
         LayoutSlots();
@@ -387,7 +373,7 @@ public class DoctrineHud : MonoBehaviour
         }
 
         int index = slots.IndexOf(slot);
-        string title = index >= 0 ? $"교리{index + 1} · {DoctrineText.ShortName(slot.Doctrine)}" : DoctrineText.ShortName(slot.Doctrine);
+        string title = index >= 0 ? $"교리{index + 1}" : "교리";
         ShowTooltip(title, DoctrineText.Describe(slot.Doctrine), index);
     }
 
@@ -528,9 +514,11 @@ public class DoctrineHud : MonoBehaviour
         tooltipObject = root;
     }
 
-    private List<Doctrine> CollectDoctrines()
+    // `entries[i]` is the equipped entry behind `result[i]` (null for preview doctrines).
+    private List<Doctrine> CollectDoctrines(out List<DoctrineManager.ActiveDoctrine> entries)
     {
         List<Doctrine> result = new List<Doctrine>();
+        entries = new List<DoctrineManager.ActiveDoctrine>();
         IReadOnlyList<DoctrineManager.ActiveDoctrine> active =
             manager != null ? manager.ActiveDoctrines : null;
 
@@ -546,6 +534,7 @@ public class DoctrineHud : MonoBehaviour
                 if (entry.Owner != null && (player == null || entry.Owner != player.gameObject)) continue;
 
                 result.Add(entry.Doctrine);
+                entries.Add(entry);
             }
             return result;
         }
@@ -555,6 +544,7 @@ public class DoctrineHud : MonoBehaviour
             if (previewDoctrines[i] != null)
                 result.Add(previewDoctrines[i].ToRuntime());
         }
+        for (int i = 0; i < result.Count; i++) entries.Add(null);
 
         // 인스펙터에 아무것도 연결하지 않아도 빈 칸이 보이지 않도록
         // 내장된 예시 3개를 쓴다. (표 기준: 회복/피해증가/폭발)
@@ -563,6 +553,8 @@ public class DoctrineHud : MonoBehaviour
             result.Add(new Doctrine(SubjectType.Player, ConditionType.OnHit, ResultType.Heal));
             result.Add(new Doctrine(SubjectType.Player, ConditionType.OnAttack, ResultType.IncreaseAttack));
             result.Add(new Doctrine(SubjectType.Enemy, ConditionType.OnDeath, ResultType.Explode));
+            entries.Clear();
+            for (int i = 0; i < result.Count; i++) entries.Add(null);
         }
 
         return result;

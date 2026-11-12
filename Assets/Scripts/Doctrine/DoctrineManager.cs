@@ -27,13 +27,18 @@ public class DoctrineManager : MonoBehaviour
     [Serializable]
     public sealed class ActiveDoctrine
     {
+        private static int nextId;
+
         public Doctrine Doctrine;
         public GameObject Owner;
+        /// <summary>Unique per equipped doctrine. Cooldowns are keyed by this, so identical doctrines never share one.</summary>
+        public int Id { get; }
 
         public ActiveDoctrine(Doctrine doctrine, GameObject owner)
         {
             Doctrine = doctrine;
             Owner = owner;
+            Id = ++nextId;
         }
     }
 
@@ -526,11 +531,11 @@ public class DoctrineManager : MonoBehaviour
         return 0f;
     }
 
+    // Per equipped doctrine, not per rule: five identical "heal when hit" doctrines each keep their own cooldown,
+    // so all five trigger. (A rule-based key made the first one block the other four.)
     private static string CooldownPrefix(ActiveDoctrine entry)
     {
-        Doctrine d = entry.Doctrine;
-        int ownerId = entry.Owner != null ? entry.Owner.GetInstanceID() : 0;
-        return $"{ownerId}:{(int)d.Subject}:{(int)d.Condition}:{(int)d.Result}:{d.Magnitude}:{d.Duration}:{d.Radius}:{d.CooldownSec}|";
+        return entry.Id + "|";
     }
 
     private static string CooldownKey(ActiveDoctrine entry, GameObject target)
