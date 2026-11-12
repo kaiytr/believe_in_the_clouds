@@ -11,6 +11,7 @@ public sealed class BossAttackProjectile : MonoBehaviour
     private bool blockedAtEnd;
     private Vector2 launchOrigin;
     private bool settled;   // evade already settled; the projectile just keeps flying
+    private ParticleSystem flames, embers;
     public void Initialize(BossCombatController boss, BossAttackRecord attack, Vector2 origin, Vector2 aim, float travelSpeed, float distance, float lifetime, bool endBlocked)
     {
         owner = boss; record = attack; position = origin; launchOrigin = origin; direction = aim;
@@ -18,6 +19,26 @@ public sealed class BossAttackProjectile : MonoBehaviour
         blockedAtEnd = endBlocked;
         visual = GetComponent<BossAttackVisual>();
         Present();
+        if (record.BurnEnhanced) AttachFire();
+    }
+
+    // A burning shot trails the same fire the burning player gets. The particles live in world space, so they
+    // stream out behind the projectile as it flies.
+    private void AttachFire()
+    {
+        float diameter = owner.Settings.ProjectileDiameter;
+        SpriteRenderer body = visual.Renderer;
+        BossFireParticles.Build(transform, body.sortingLayerID, owner.Settings.EffectMaterial, .6f, out flames, out embers);
+        foreach (ParticleSystem system in new[] { flames, embers })
+        {
+            ParticleSystem.ShapeModule shape = system.shape;
+            shape.position = Vector3.zero;
+            shape.scale = new Vector3(diameter * .8f, diameter * .8f, .05f);
+        }
+        flames.GetComponent<ParticleSystemRenderer>().sortingOrder = body.sortingOrder + 1;
+        embers.GetComponent<ParticleSystemRenderer>().sortingOrder = body.sortingOrder + 2;
+        flames.Play(true);
+        embers.Play(true);
     }
     private bool PlayerIntangible => owner.PlayerHealth != null && owner.PlayerHealth.IsDashIntangible;
     private void OnTriggerStay2D(Collider2D other)
