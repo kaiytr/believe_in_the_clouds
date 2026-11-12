@@ -156,6 +156,7 @@ public sealed class StoryRoomFlow : MonoBehaviour
         }
         rain.volume = definition.rainPeakVolume;
         impact.Play();
+        player.PlayDeathSoundEffect();
         float hitAt = Time.unscaledTime;
         believer.SetDead(true); blood.SetActive(true); revealed = true;
         while (Time.unscaledTime - hitAt < FirstAltarStoryDefinition.PostImpactBlackSeconds) yield return null;
