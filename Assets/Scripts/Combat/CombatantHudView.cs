@@ -67,27 +67,7 @@ public sealed class CombatantHudView : MonoBehaviour
             beliefFillRect.offsetMin = new Vector2(3f, 3f);
             beliefFillRect.offsetMax = new Vector2(-3f, -3f);
         }
-        HudArtworkSprite speechArtwork = HudArtworkResources.Load("EnemyBeliefSpeechBubble");
-        if (speechArtwork.IsValid)
-        {
-            speechBubble.sprite = speechArtwork.Sprite;
-            speechBubble.color = Color.white;
-            speechBubble.preserveAspect = false;
-
-            RectTransform bubbleRect = speechBubble.rectTransform;
-            bubbleRect.anchorMin = bubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
-            bubbleRect.pivot = new Vector2(0.5f, 0.5f);
-            bubbleRect.anchoredPosition = new Vector2(0f, -14f);
-            bubbleRect.sizeDelta = new Vector2(
-                speechArtwork.PixelBounds.width,
-                speechArtwork.PixelBounds.height);
-
-            RectTransform phraseRect = phrase.rectTransform;
-            phraseRect.anchorMin = Vector2.zero;
-            phraseRect.anchorMax = Vector2.one;
-            phraseRect.offsetMin = new Vector2(32f, 34f);
-            phraseRect.offsetMax = new Vector2(-32f, -22f);
-        }
+        ApplySpeechBubble();
 
         Transform oldTail = speechBubble.transform.Find("BeliefSpeechBubbleTail");
         if (oldTail != null)
@@ -106,6 +86,37 @@ public sealed class CombatantHudView : MonoBehaviour
             beliefFill.fillOrigin = (int)Image.OriginHorizontal.Left;
         }
         healthChip = GaugeChip.Attach(healthFill);
+    }
+
+    // The cloud-shaped belief bubble (Resources/UI/Hud/BeliefSpeechBubble, already trimmed). The cutscene bubble
+    // keeps the older boxy art, so this is loaded here rather than through HudArtworkResources.
+    private const float SpeechBubbleWidth = 318f;
+
+    private void ApplySpeechBubble()
+    {
+        Sprite sprite = Resources.Load<Sprite>("UI/Hud/BeliefSpeechBubble");
+        if (sprite == null)
+        {
+            Debug.LogError("Missing HUD artwork at Resources/UI/Hud/BeliefSpeechBubble.png.");
+            return;
+        }
+
+        speechBubble.sprite = sprite;
+        speechBubble.color = Color.white;
+        speechBubble.preserveAspect = false;
+
+        RectTransform bubbleRect = speechBubble.rectTransform;
+        bubbleRect.anchorMin = bubbleRect.anchorMax = new Vector2(0.5f, 0.5f);
+        bubbleRect.pivot = new Vector2(0.5f, 0.5f);
+        bubbleRect.anchoredPosition = new Vector2(0f, -12f);
+        bubbleRect.sizeDelta = new Vector2(SpeechBubbleWidth, SpeechBubbleWidth * sprite.rect.height / sprite.rect.width);
+
+        // Keep the text inside the cloud body: the scalloped sides, the shadow and the tail take some room.
+        RectTransform phraseRect = phrase.rectTransform;
+        phraseRect.anchorMin = Vector2.zero;
+        phraseRect.anchorMax = Vector2.one;
+        phraseRect.offsetMin = new Vector2(30f, 26f);
+        phraseRect.offsetMax = new Vector2(-30f, -14f);
     }
 
     private static void ApplyArtwork(Image target, string assetName)
