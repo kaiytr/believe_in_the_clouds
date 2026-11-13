@@ -205,6 +205,8 @@ public sealed class EndingSceneController : MonoBehaviour
     private IEnumerator ReturnToTitle()
     {
         leaving = true;
+        // The whole game has been seen: the next launch starts from scratch (tutorial and story included).
+        FullProgressReset.Run();
         for (float t = 0f; t < fadeOutSeconds; t += Time.unscaledDeltaTime)
         {
             fade.alpha = Mathf.Clamp01(t / fadeOutSeconds);

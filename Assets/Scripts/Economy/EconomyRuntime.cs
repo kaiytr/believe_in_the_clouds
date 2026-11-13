@@ -65,6 +65,7 @@ public sealed class EconomyRuntime : MonoBehaviour
                 : Application.persistentDataPath;
             var json = new JsonEconomyStore(Path.Combine(directory, "economy-save-v1.json"));
             if (!Application.isEditor) ArchiveSaveFromEarlierBuilds(json);
+            FinishPendingFullReset(json);
             store = json;
         }
         persistentStore = store;
@@ -78,6 +79,20 @@ public sealed class EconomyRuntime : MonoBehaviour
     // should again reset every device; ordinary updates must keep saves.
     private const string FirstRunEpochKey = "believe_in_the_clouds.first_run_epoch";
     private const int FirstRunEpoch = 1;
+
+    // The ending wipes the profile, but a locked file can make that fail; it is retried here, before the save is loaded.
+    private static void FinishPendingFullReset(JsonEconomyStore store)
+    {
+        if (PlayerPrefs.GetInt(FullProgressReset.PendingKey, 0) == 0) return;
+        if (!store.DeleteSaveFiles())
+        {
+            Debug.LogWarning("클리어 후 저장 초기화를 마치지 못했습니다. 다음 실행에서 다시 시도합니다.");
+            return;
+        }
+        PlayerPrefs.DeleteKey(TitleScreen.TutorialStartedKey);
+        PlayerPrefs.DeleteKey(FullProgressReset.PendingKey);
+        PlayerPrefs.Save();
+    }
 
     private static void ArchiveSaveFromEarlierBuilds(JsonEconomyStore store)
     {
