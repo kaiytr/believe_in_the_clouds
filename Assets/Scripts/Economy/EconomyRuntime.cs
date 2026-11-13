@@ -63,11 +63,33 @@ public sealed class EconomyRuntime : MonoBehaviour
         {
             string directory = Application.isEditor ? Path.GetFullPath(Path.Combine(Application.dataPath, "../Library/Economy/Editor"))
                 : Application.persistentDataPath;
-            store = new JsonEconomyStore(Path.Combine(directory, "economy-save-v1.json"));
+            var json = new JsonEconomyStore(Path.Combine(directory, "economy-save-v1.json"));
+            if (!Application.isEditor) ArchiveSaveFromEarlierBuilds(json);
+            store = json;
         }
         persistentStore = store;
         SetService(new EconomyService(store));
         SceneManager.activeSceneChanged += HandleSceneChanged;
+    }
+
+    // A device that ran an earlier build keeps that build's save (and a "tutorial started" marker), so the first-launch
+    // flow - tutorial, then the first altar story - never started again. The first time THIS build runs, the old save is
+    // set aside (renamed, not deleted) and the game starts as a true first launch. Bump the epoch only when a later build
+    // should again reset every device; ordinary updates must keep saves.
+    private const string FirstRunEpochKey = "believe_in_the_clouds.first_run_epoch";
+    private const int FirstRunEpoch = 1;
+
+    private static void ArchiveSaveFromEarlierBuilds(JsonEconomyStore store)
+    {
+        if (PlayerPrefs.GetInt(FirstRunEpochKey, 0) >= FirstRunEpoch) return;
+        if (!store.ArchiveSaveFiles(DateTime.UtcNow.ToString("yyyyMMddHHmmss")))
+        {
+            Debug.LogWarning("이전 빌드의 저장 파일을 정리하지 못했습니다. 다음 실행에서 다시 시도합니다.");
+            return;
+        }
+        PlayerPrefs.DeleteKey(TitleScreen.TutorialStartedKey);
+        PlayerPrefs.SetInt(FirstRunEpochKey, FirstRunEpoch);
+        PlayerPrefs.Save();
     }
 
     /// <summary>

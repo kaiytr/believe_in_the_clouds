@@ -47,6 +47,21 @@ public sealed class JsonEconomyStore : IEconomyStore
         return clean;
     }
 
+    /// <summary>
+    /// Renames the save file and its backup/recovery/temp copies to "&lt;name&gt;.legacy-&lt;label&gt;" so the next load starts a
+    /// brand-new profile without destroying the old data. True when no live save file remains.
+    /// </summary>
+    public bool ArchiveSaveFiles(string label)
+    {
+        bool clean = true;
+        foreach (string path in new[] { FilePath, FilePath + ".bak", FilePath + ".tmp", FilePath + ".recover" })
+        {
+            try { if (File.Exists(path)) File.Move(path, path + ".legacy-" + label); }
+            catch (Exception ex) when (IsStorageException(ex)) { clean = false; }
+        }
+        return clean;
+    }
+
     public bool TrySave(EconomyProfileData data)
     {
         if (!allowWrite || !EconomyLedger.Validate(data)) return false;
