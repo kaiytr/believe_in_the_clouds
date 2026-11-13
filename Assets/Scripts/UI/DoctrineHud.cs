@@ -165,6 +165,16 @@ public class DoctrineHud : MonoBehaviour
 
         RefreshPlayerHud();
         RefreshCurrency();
+        ApplySceneVisibility();
+    }
+
+    // 타이틀과 엔딩에는 플레이어 HUD가 필요 없다. 화면 전체를 덮던 일러스트가 16:9 안으로 들어오면서 HUD가 검은 띠 위에 비쳐 보였다.
+    private void ApplySceneVisibility()
+    {
+        if (canvas == null) return;
+        string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        bool visible = scene != TitleScreen.SceneName && scene != ProjectScenes.EndingSceneName;
+        if (canvas.enabled != visible) canvas.enabled = visible;
     }
 
     private void HandleCurrencyChanged(CurrencyChange change)
