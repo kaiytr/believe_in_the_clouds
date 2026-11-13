@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,6 +20,8 @@ public sealed class BossCloudField : MonoBehaviour
     private Collider2D riderCollider;
     private Rigidbody2D riderBody;
     private float nextRiderSearch;
+    // Kept from Prepare so a storm cloud added later matches the others.
+    private float stormWidth, stormY;
 
     public bool IsPrepared => root != null && storms.Count > 0;
     public float FloorY { get; private set; }
@@ -26,6 +29,8 @@ public sealed class BossCloudField : MonoBehaviour
     public IReadOnlyList<BossCloudPlatform> StormClouds => storms;
     public IReadOnlyList<BossCloudPlatform> WhiteClouds => whites;
     public bool LightningActive => lightning != null;
+    /// <summary>A white cloud is rising and turning into a storm cloud (phase two).</summary>
+    public bool IsConverting { get; private set; }
     public BossCloudLightning Lightning => lightning;
 
     public bool Prepare(BossCombatController boss)
@@ -47,12 +52,12 @@ public sealed class BossCloudField : MonoBehaviour
         float arenaWidth = LimitsX.y - LimitsX.x;
 
         int stormCount = Random.Range(data.StormCloudCountRange.x, data.StormCloudCountRange.y + 1);
-        float stormWidth = Mathf.Min(arenaWidth, Mathf.Max(data.StormCloudSize.x, arenaWidth / stormCount * data.StormCloudCoverage));
+        stormWidth = Mathf.Min(arenaWidth, Mathf.Max(data.StormCloudSize.x, arenaWidth / stormCount * data.StormCloudCoverage));
         float stormTop = FloorY + data.CloudTopHeight;
         if (boss.ArenaCamera != null && boss.ArenaCamera.TryGetStormCloudTop(
                 boss.PlayerHealth != null ? boss.PlayerHealth.transform : null, out float cameraTop))
             stormTop = cameraTop;
-        float stormY = stormTop - data.StormCloudSize.y * .5f;
+        stormY = stormTop - data.StormCloudSize.y * .5f;
         for (int i = 0; i < stormCount; i++)
         {
             // One slot per storm cloud: with 3 clouds the arena starts almost fully covered, then they wander and overlap.
@@ -92,6 +97,8 @@ public sealed class BossCloudField : MonoBehaviour
 
     public void Release()
     {
+        StopAllCoroutines();
+        IsConverting = false;
         CancelLightning();
         storms.Clear();
         whites.Clear();
@@ -113,9 +120,78 @@ public sealed class BossCloudField : MonoBehaviour
         foreach (BossCloudPlatform cloud in whites) if (cloud != null) cloud.MotionEnabled = enabled;
     }
 
+    private BossCloudPlatform pendingWhite, pendingStorm;
+
+    /// <summary>
+    /// Phase two, step one: picks the white cloud that will turn into a storm cloud, freezes every cloud and returns a
+    /// transform that follows the change (for the cutscene camera). Null when nothing can be converted (fewer than two
+    /// white clouds are kept so there is always a shelter). Call <see cref="BeginConversion"/> once the camera is there.
+    /// </summary>
+    public Transform PrepareConversion()
+    {
+        if (!IsPrepared || IsConverting || whites.Count < 2 || owner == null || owner.Settings == null) return null;
+        BossCombatSettings data = owner.Settings;
+        IsConverting = true;
+        SetMotionEnabled(false);
+        pendingWhite = whites[Random.Range(0, whites.Count)];
+        Vector2 center = pendingWhite.transform.position;
+        center.y -= pendingWhite.VisualLift;
+        pendingStorm = Instantiate(data.BlackCloudPrefab, root);
+        pendingStorm.name = "Storm cloud " + (storms.Count + 1);
+        pendingStorm.Initialize(owner, false, new AttackGeometry(center, pendingWhite.Size));
+        pendingStorm.SetVisual(center, pendingWhite.Size, 0f);
+        return pendingStorm.transform;
+    }
+
+    /// <summary>Phase two, step two: the prepared white cloud rises to the storm layer and turns into a storm cloud.</summary>
+    public void BeginConversion()
+    {
+        if (pendingWhite == null || pendingStorm == null) { IsConverting = false; return; }
+        StartCoroutine(ConvertRoutine(pendingWhite, pendingStorm));
+        pendingWhite = pendingStorm = null;
+    }
+
+    private IEnumerator ConvertRoutine(BossCloudPlatform white, BossCloudPlatform storm)
+    {
+        BossCombatSettings data = owner.Settings;
+        // The white cloud stops being a shelter and a platform at once; the picture alone travels up.
+        whites.Remove(white);
+        white.DetachAsVisual();
+        CancelLightning();
+
+        Vector2 fromCenter = white.transform.position;
+        fromCenter.y -= white.VisualLift;
+        Vector2 fromSize = white.Size;
+        float half = stormWidth * .5f;
+        float overhang = stormWidth * data.StormCloudOverhang;
+        var drift = new Vector2(LimitsX.x - overhang, LimitsX.y + overhang);
+        float toX = Mathf.Clamp(fromCenter.x, drift.x + half, Mathf.Max(drift.x + half, drift.y - half));
+        var toCenter = new Vector2(toX, stormY);
+        var toSize = new Vector2(stormWidth, data.StormCloudSize.y);
+
+        float seconds = Mathf.Max(.2f, data.PhaseTwoStormConversionSeconds);
+        for (float t = 0f; t < seconds; t += Time.deltaTime)
+        {
+            float k = Mathf.SmoothStep(0f, 1f, t / seconds);
+            Vector2 center = new Vector2(Mathf.Lerp(fromCenter.x, toCenter.x, k), Mathf.Lerp(fromCenter.y, toCenter.y, k));
+            Vector2 size = Vector2.Lerp(fromSize, toSize, k);
+            // Cross-fade: the white picture dissolves while the storm one takes its place.
+            if (white != null) white.SetVisual(center, size, 1f - k);
+            storm.SetVisual(center, size, k);
+            yield return null;
+        }
+
+        if (white != null) Destroy(white.gameObject);
+        storm.Initialize(owner, false, new AttackGeometry(toCenter, toSize));
+        storm.Bind(this, drift, data.StormCloudSpeed, data.CloudTurnInterval);
+        storms.Add(storm);
+        SetMotionEnabled(true);
+        IsConverting = false;
+    }
+
     public bool BeginLightning()
     {
-        if (!IsPrepared || lightning != null || owner == null || !owner.CanContinue) return false;
+        if (!IsPrepared || IsConverting || lightning != null || owner == null || !owner.CanContinue) return false;
         var holder = new GameObject("Lightning");
         holder.transform.SetParent(root, false);
         lightning = holder.AddComponent<BossCloudLightning>();

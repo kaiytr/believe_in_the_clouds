@@ -70,6 +70,8 @@ public sealed class BossCombatSettings : ScriptableObject
     [Tooltip("The outermost storm clouds may drift past the arena edge by this fraction of their own width.")]
     [Range(0f, .6f)] public float StormCloudOverhang = .3f;
     public int WhiteCloudCount = 2;
+    [Tooltip("Phase two: seconds one white cloud takes to rise and turn into a storm cloud.")]
+    [Min(.2f)] public float PhaseTwoStormConversionSeconds = 2f;
     [Tooltip("Random horizontal speed range, world units / second.")]
     public Vector2 StormCloudSpeed = new Vector2(0.7f, 1.6f);
     public Vector2 WhiteCloudSpeed = new Vector2(0.8f, 1.5f);

@@ -482,6 +482,17 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         yield return SpeakLines(PhaseTwoLines);
         if (phaseBubble != null) phaseBubble.Hide();
         yield return CutsceneZoomOut();
+        // Phase two changes the lightning: the camera goes to one white cloud, which rises and turns into a storm cloud,
+        // then pulls back out. The fight resumes only after that.
+        Transform changingCloud = clouds != null ? clouds.PrepareConversion() : null;
+        if (changingCloud != null)
+        {
+            yield return CutsceneZoomIn(changingCloud, -1.2f);
+            clouds.BeginConversion();
+            while (clouds != null && clouds.IsConverting) yield return null;
+            yield return new WaitForSecondsRealtime(CutsceneZoomPause);
+            yield return CutsceneZoomOut();
+        }
         EndSpokenLines();
         if (EncounterStarted && !IsDead) SetContactDamageSuppressed(false);
         nextRegularAt = Time.time + 0.4f;
@@ -837,7 +848,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             case BossPatternKind.NoAttackBelief: return !HasProphecy(BossBeliefKind.NoAttack);
             case BossPatternKind.AttackAndDodgeBelief: return !HasProphecy(BossBeliefKind.AttackAndDodge);
             case BossPatternKind.BurnBelief: return !IsBurning;
-            case BossPatternKind.CloudBelief: return clouds != null && clouds.IsPrepared && !clouds.LightningActive;
+            case BossPatternKind.CloudBelief: return clouds != null && clouds.IsPrepared && !clouds.IsConverting && !clouds.LightningActive;
             case BossPatternKind.ShockwaveBelief:
                 return !shockwaveReserved && !bodyActionActive && (attacks == null || attacks.ShockwaveTracking == 0) &&
                     BossCombatPhysics.FindGround(bodyCollider.bounds.center, 0.1f, 8f, this, out _);
@@ -1048,15 +1059,16 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
     // each move keeps the fight frozen (the cutscene flags stay up the whole time) until the view is settled.
     private const float CutsceneZoomPause = .3f;
 
-    private IEnumerator CutsceneZoomIn()
+    // Zooms in on the boss, or on another target (heightOffset above its position) when one is given.
+    private IEnumerator CutsceneZoomIn(Transform target = null, float? heightOffset = null)
     {
         BossArenaCamera cameraRig = ArenaCamera;
         float seconds = .6f;
         if (cameraRig != null)
         {
             seconds = cameraRig.FocusSeconds;
-            float height = BodyCollider != null ? BodyCollider.bounds.center.y - transform.position.y + .3f : 1f;
-            cameraRig.FocusOn(transform, height);
+            float height = heightOffset ?? (BodyCollider != null ? BodyCollider.bounds.center.y - transform.position.y + .3f : 1f);
+            cameraRig.FocusOn(target != null ? target : transform, height);
         }
         yield return new WaitForSecondsRealtime(seconds + CutsceneZoomPause);
     }
