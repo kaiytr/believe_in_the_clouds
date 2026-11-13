@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Phase two arena floor: pale light beams rise out of the ground across the whole arena, like the light of a huge
+/// Phase two arena floor: golden light beams rise out of the ground across the whole arena, like the light of a huge
 /// magic circle under it (figuratively; there is no actual circle), with a faint glow haze lying on the floor.
 /// Presentation only. Fades in when started and is removed with the arena visuals.
 /// </summary>
@@ -9,7 +9,7 @@ public sealed class BossFloorBeams : MonoBehaviour
 {
     private const float FadeInSeconds = 2.5f;
     // Emitted beams per second per world unit of floor, and the same for the low haze.
-    private const float BeamDensity = .8f, HazeDensity = .3f;
+    private const float BeamDensity = .22f, HazeDensity = .08f;
 
     private static Texture2D beamTexture;
     private static Material beamMaterial;
@@ -32,11 +32,11 @@ public sealed class BossFloorBeams : MonoBehaviour
         main.startLifetime = new ParticleSystem.MinMaxCurve(1.8f, 3.2f);
         main.startSize3D = true;
         main.startSizeX = new ParticleSystem.MinMaxCurve(.25f, .7f);
-        main.startSizeY = new ParticleSystem.MinMaxCurve(2.5f, 6.5f);
+        main.startSizeY = new ParticleSystem.MinMaxCurve(1.2f, 3.2f);
         main.startSizeZ = 1f;
         main.maxParticles = 160;
-        // Pale lavender to white, never one flat colour.
-        main.startColor = new ParticleSystem.MinMaxGradient(new Color(.72f, .66f, 1f), new Color(.95f, .92f, 1f));
+        // Gold, from deep to pale, never one flat colour.
+        main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, .8f, .3f), new Color(1f, .93f, .62f));
         beamRate = width * BeamDensity;
         ParticleSystem.SizeOverLifetimeModule size = beams.sizeOverLifetime;
         size.enabled = true;
@@ -53,11 +53,11 @@ public sealed class BossFloorBeams : MonoBehaviour
         ParticleSystem.MainModule hazeMain = haze.main;
         hazeMain.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.8f);
         hazeMain.startSize3D = true;
-        hazeMain.startSizeX = new ParticleSystem.MinMaxCurve(2.4f, 5f);
-        hazeMain.startSizeY = new ParticleSystem.MinMaxCurve(.7f, 1.4f);
+        hazeMain.startSizeX = new ParticleSystem.MinMaxCurve(1.8f, 3.6f);
+        hazeMain.startSizeY = new ParticleSystem.MinMaxCurve(.4f, .8f);
         hazeMain.startSizeZ = 1f;
         hazeMain.maxParticles = 80;
-        hazeMain.startColor = new ParticleSystem.MinMaxGradient(new Color(.7f, .62f, 1f), new Color(.9f, .86f, 1f));
+        hazeMain.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, .76f, .26f), new Color(1f, .9f, .55f));
         hazeRate = width * HazeDensity;
         SetFade(haze, .3f);
 

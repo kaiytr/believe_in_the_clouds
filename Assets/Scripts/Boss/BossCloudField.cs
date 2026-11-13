@@ -103,10 +103,13 @@ public sealed class BossCloudField : MonoBehaviour
         var holder = new GameObject("Floor beams");
         holder.transform.SetParent(root, false);
         floorBeams = holder.AddComponent<BossFloorBeams>();
-        // Behind the fighters: one step under the boss picture, on its layer.
+        // Behind everything that matters: attack warnings sit 2 (fill) and 1 (outline) under the boss picture on its
+        // layer, and lightning warnings use WarningOrder, so the beams go under both.
         SpriteRenderer reference = owner.BodyRenderer;
-        floorBeams.Build(LimitsX.x, LimitsX.y, FloorY, reference != null ? reference.sortingLayerID : 0,
-            (reference != null ? reference.sortingOrder : owner.Settings.AttackOrder) - 1, owner.Settings.EffectMaterial);
+        int order = Mathf.Min((reference != null ? reference.sortingOrder : owner.Settings.WarningOrder) - 4,
+            owner.Settings.WarningOrder - 1);
+        floorBeams.Build(LimitsX.x, LimitsX.y, FloorY, reference != null ? reference.sortingLayerID : 0, order,
+            owner.Settings.EffectMaterial);
     }
 
     public void StopFloorBeams()
