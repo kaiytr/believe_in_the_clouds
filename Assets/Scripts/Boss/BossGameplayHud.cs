@@ -62,21 +62,21 @@ public sealed class BossGameplayHud : MonoBehaviour
             bossNameLabel = label.GetComponent<Text>();
         }
         bossNameLabel.text = bossName;
-        bossNameLabel.font = bossNameFont != null ? bossNameFont : CombatUiResources.KoreanFont();
-        bossNameLabel.fontSize = 28;
+        bossNameLabel.font = bossNameFont != null ? bossNameFont : CombatUiResources.SongMyungFont();
+        bossNameLabel.fontSize = 48;
         bossNameLabel.color = Color.white;
         bossNameLabel.alignment = TextAnchor.MiddleCenter;
         bossNameLabel.raycastTarget = false;
         bossNameLabel.supportRichText = false;
         bossNameLabel.resizeTextForBestFit = true;
-        bossNameLabel.resizeTextMinSize = 18;
-        bossNameLabel.resizeTextMaxSize = 28;
+        bossNameLabel.resizeTextMinSize = 32;
+        bossNameLabel.resizeTextMaxSize = 48;
         RectTransform rect = bossNameLabel.rectTransform;
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = Vector2.one;
         rect.pivot = new Vector2(.5f, 0f);
         rect.anchoredPosition = new Vector2(0f, 8f);
-        rect.sizeDelta = new Vector2(0f, 36f);
+        rect.sizeDelta = new Vector2(0f, 60f);
     }
 
     private void PositionScreenHealth()
