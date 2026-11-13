@@ -6,7 +6,7 @@ public sealed class BossGameplayHud : MonoBehaviour
 {
     [SerializeField] private CombatantHudView worldView;
     [SerializeField] private Vector2 healthBarSize = new Vector2(960f, 48f);
-    [SerializeField, Min(0f)] private float healthBarTopMargin = 76f;
+    [SerializeField, Min(0f)] private float healthBarTopMargin = 96f;
     [SerializeField] private string bossName = "보스 · 잠긴 낙원의 주인";
     [SerializeField] private Font bossNameFont;
     private BossCombatController owner;
