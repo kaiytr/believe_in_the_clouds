@@ -11,6 +11,9 @@ public sealed class EndingCredits : MonoBehaviour
 {
     private const float TitleSize = 44f, HeadingSize = 30f, LineSize = 24f;
     private const float TitleHeight = 76f, HeadingHeight = 54f, LineHeight = 40f, GapHeight = 34f;
+    // The narrowest 16:9 game area is 1100 canvas units wide; no line is allowed to run past this width.
+    private const float MaxLineWidth = 1000f;
+    private const int MinLineSize = 12;
 
     private RectTransform content;
     private RectTransform viewport;
@@ -58,12 +61,22 @@ public sealed class EndingCredits : MonoBehaviour
         float y = 0f;
         foreach (var row in rows)
         {
+            float rowHeightUsed = row.height;
             if (!row.gap)
             {
                 Text label = UiTheme.CreateText("Line", content, row.text, Mathf.RoundToInt(row.size), row.color);
                 label.font = font;
-                label.horizontalOverflow = HorizontalWrapMode.Overflow;
                 label.verticalOverflow = VerticalWrapMode.Overflow;
+                // A line wider than the area keeps its single row and shrinks just enough to fit; the other lines keep their size.
+                label.horizontalOverflow = HorizontalWrapMode.Overflow;
+                float available = MaxLineWidth - 40f, wanted = label.preferredWidth;
+                if (wanted > available)
+                {
+                    int fitted = Mathf.FloorToInt(label.fontSize * available / wanted);
+                    label.fontSize = Mathf.Max(MinLineSize, fitted);
+                }
+                float rowHeight = row.height;
+                rowHeightUsed = rowHeight;
                 // Dark edge keeps the text readable over the bright sunset.
                 var outline = label.gameObject.AddComponent<Outline>();
                 outline.effectColor = new Color(.1f, .04f, .12f, .85f);
@@ -71,13 +84,13 @@ public sealed class EndingCredits : MonoBehaviour
                 RectTransform lineRect = label.rectTransform;
                 lineRect.anchorMin = lineRect.anchorMax = new Vector2(.5f, 1f);
                 lineRect.pivot = new Vector2(.5f, 1f);
-                lineRect.sizeDelta = new Vector2(900f, row.height);
+                lineRect.sizeDelta = new Vector2(MaxLineWidth, rowHeight);
                 lineRect.anchoredPosition = new Vector2(0f, -y);
             }
-            y += row.height;
+            y += rowHeightUsed;
         }
         totalHeight = y;
-        content.sizeDelta = new Vector2(900f, totalHeight);
+        content.sizeDelta = new Vector2(MaxLineWidth, totalHeight);
         content.anchoredPosition = Vector2.zero;   // the top edge starts just below the screen
     }
 
