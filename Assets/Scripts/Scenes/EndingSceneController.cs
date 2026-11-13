@@ -170,7 +170,8 @@ public sealed class EndingSceneController : MonoBehaviour
         canvas = DeathResultView.CreateCanvas("Ending UI", 1000);
         canvas.transform.SetParent(transform, false);
 
-        credits = EndingCredits.Build(canvas.transform, creditsText);
+        // The credits roll only inside the 16:9 game area; text never runs into the black bars.
+        credits = EndingCredits.Build(AspectFrame.Create(canvas.transform, "Credits 16:9 frame"), creditsText);
         credits.ScrollSpeed = creditsScrollSpeed;
 
         // Black cover: fades away at the start and comes back before returning to the title.

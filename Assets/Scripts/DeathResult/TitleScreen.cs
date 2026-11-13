@@ -29,9 +29,11 @@ public sealed class TitleScreen : MonoBehaviour
 
         Canvas canvas = DeathResultView.CreateCanvas("Title menu", 1000);
         canvas.transform.SetParent(transform, false);
-        CreateBackground(canvas.transform);
+        // Everything sits inside the 16:9 game area: on other screen shapes the illustration is cropped to it and the rest is black.
+        RectTransform frame = AspectFrame.Create(canvas.transform, "Title 16:9 frame");
+        CreateBackground(frame);
 
-        RectTransform menu = CreateButtonLayout(canvas.transform);
+        RectTransform menu = CreateButtonLayout(frame);
         start = CreateArtworkButton(menu, "시작하기", "TitleStartButton", "TitleStartButtonPressed",
             new Rect(782f, 171f, 357f, 78f), StartGame);
         quit = CreateArtworkButton(menu, "종료하기", "TitleQuitButton", "TitleQuitButtonPressed",
