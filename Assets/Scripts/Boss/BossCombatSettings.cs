@@ -126,7 +126,7 @@ public sealed class BossCombatSettings : ScriptableObject
 
     public static BossPatternWeight[] DefaultPool(bool phaseTwo)
     {
-        return new[] {
+        var pool = new List<BossPatternWeight> {
             new BossPatternWeight(BossPatternKind.MeleeCombo, 1f, 0.5f),
             new BossPatternWeight(BossPatternKind.Dash, 1f, 0.5f),
             new BossPatternWeight(BossPatternKind.Projectile, 1f, 0.5f),
@@ -134,6 +134,9 @@ public sealed class BossCombatSettings : ScriptableObject
             new BossPatternWeight(phaseTwo ? BossPatternKind.NoAttackBelief : BossPatternKind.CloudBelief, 1f, 0.5f),
             new BossPatternWeight(phaseTwo ? BossPatternKind.ShockwaveBelief : BossPatternKind.BurnBelief, 1f, 0.5f)
         };
+        // The cloud lightning is part of both phases.
+        if (phaseTwo) pool.Add(new BossPatternWeight(BossPatternKind.CloudBelief, 1f, 0.5f));
+        return pool.ToArray();
     }
 
     public List<string> ValidateSettings()
@@ -238,8 +241,10 @@ public sealed class BossCombatSettings : ScriptableObject
 public static class BossPatternSelection
 {
     public static bool IsRegular(BossPatternKind pattern) => pattern >= BossPatternKind.MeleeCombo && pattern <= BossPatternKind.Projectile;
+    // The cloud lightning belongs to both phases.
     public static bool AllowedInPhase(BossPatternKind pattern, BossPhase phase) => IsRegular(pattern) ||
         (phase == BossPhase.One ? pattern >= BossPatternKind.AttackIntentBelief && pattern <= BossPatternKind.BurnBelief :
+        pattern == BossPatternKind.CloudBelief ||
         pattern >= BossPatternKind.AttackAndDodgeBelief && pattern <= BossPatternKind.ShockwaveBelief);
 
     /// <summary>Pool entries of one lane only; regular attacks and beliefs keep separate use histories.</summary>

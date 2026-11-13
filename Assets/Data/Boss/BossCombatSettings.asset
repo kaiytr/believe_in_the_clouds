@@ -59,6 +59,9 @@ MonoBehaviour:
   - pattern: 8
     baseWeight: 1
     repeatPenaltyPerUse: 0.5
+  - pattern: 4
+    baseWeight: 1
+    repeatPenaltyPerUse: 0.5
   PatternRecovery: 0.65
   Windup: 0.65
   Recovery: 0.45
