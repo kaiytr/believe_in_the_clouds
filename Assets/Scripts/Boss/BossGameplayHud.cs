@@ -6,10 +6,13 @@ public sealed class BossGameplayHud : MonoBehaviour
 {
     [SerializeField] private CombatantHudView worldView;
     [SerializeField] private Vector2 healthBarSize = new Vector2(960f, 48f);
-    [SerializeField, Min(0f)] private float healthBarTopMargin = 32f;
+    [SerializeField, Min(0f)] private float healthBarTopMargin = 76f;
+    [SerializeField] private string bossName = "보스 · 잠긴 낙원의 주인";
+    [SerializeField] private Font bossNameFont;
     private BossCombatController owner;
     private Canvas screenHealthCanvas;
     private RectTransform healthBar;
+    private Text bossNameLabel;
     public bool IsConfigured => worldView != null && worldView.IsConfigured;
     public CombatantHudView WorldView => worldView;
     public Canvas BeliefCanvas => worldView.BeliefCanvas;
@@ -46,7 +49,34 @@ public sealed class BossGameplayHud : MonoBehaviour
         healthBar = worldView.HealthFill.transform.parent.GetComponent<RectTransform>();
         healthBar.anchorMin = healthBar.anchorMax = new Vector2(.5f, 1f);
         healthBar.pivot = new Vector2(.5f, 1f);
+        ConfigureBossName();
         PositionScreenHealth();
+    }
+
+    private void ConfigureBossName()
+    {
+        if (bossNameLabel == null)
+        {
+            var label = new GameObject("Boss name", typeof(RectTransform), typeof(Text));
+            label.transform.SetParent(healthBar, false);
+            bossNameLabel = label.GetComponent<Text>();
+        }
+        bossNameLabel.text = bossName;
+        bossNameLabel.font = bossNameFont != null ? bossNameFont : CombatUiResources.KoreanFont();
+        bossNameLabel.fontSize = 28;
+        bossNameLabel.color = Color.white;
+        bossNameLabel.alignment = TextAnchor.MiddleCenter;
+        bossNameLabel.raycastTarget = false;
+        bossNameLabel.supportRichText = false;
+        bossNameLabel.resizeTextForBestFit = true;
+        bossNameLabel.resizeTextMinSize = 18;
+        bossNameLabel.resizeTextMaxSize = 28;
+        RectTransform rect = bossNameLabel.rectTransform;
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = Vector2.one;
+        rect.pivot = new Vector2(.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, 8f);
+        rect.sizeDelta = new Vector2(0f, 36f);
     }
 
     private void PositionScreenHealth()

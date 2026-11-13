@@ -188,6 +188,15 @@ public sealed class BossStagePlayModeTests
         Assert.That(health.enabled, Is.True);
         Assert.That(gameplay.BeliefCanvas.renderMode, Is.EqualTo(RenderMode.WorldSpace));
         AssertTopHealthBar(health, bar);
+        var name = bar.Find("Boss name").GetComponent<UnityEngine.UI.Text>();
+        Assert.That(name.text, Is.EqualTo("보스 · 잠긴 낙원의 주인"));
+        Assert.That(name.font, Is.Not.Null);
+        Assert.That(name.canvas, Is.SameAs(health));
+        Assert.That(name.alignment, Is.EqualTo(TextAnchor.MiddleCenter));
+        Vector4 nameRect = ScreenRect(name.rectTransform);
+        Vector4 barRect = ScreenRect(bar);
+        Assert.That((nameRect.x + nameRect.z) * .5f, Is.EqualTo((barRect.x + barRect.z) * .5f).Within(1f));
+        Assert.That(nameRect.y - barRect.w, Is.EqualTo(8f * health.scaleFactor).Within(1f));
         Vector4 originalRect = ScreenRect(bar);
         float originalZoom = view.orthographicSize;
 
@@ -216,6 +225,7 @@ public sealed class BossStagePlayModeTests
         yield return null;
         yield return null;
         Assert.That(health == null, Is.True, "Destroying the boss must also remove its detached screen HUD.");
+        Assert.That(name == null, Is.True);
     }
 
     [UnityTest]
@@ -248,7 +258,7 @@ public sealed class BossStagePlayModeTests
         Vector4 rect = ScreenRect(bar);
         float scale = canvas.scaleFactor;
         Assert.That((rect.x + rect.z) * .5f, Is.EqualTo(canvas.pixelRect.center.x).Within(1f));
-        Assert.That(rect.w, Is.EqualTo(canvas.pixelRect.yMax - 32f * scale).Within(1f));
+        Assert.That(rect.w, Is.EqualTo(canvas.pixelRect.yMax - 76f * scale).Within(1f));
         Assert.That(rect.w - rect.y, Is.EqualTo(48f * scale).Within(1f));
         Assert.That(rect.z - rect.x, Is.EqualTo(Mathf.Min(960f * scale, canvas.pixelRect.width - 48f * scale)).Within(1f));
         Assert.That(rect.x, Is.GreaterThanOrEqualTo(canvas.pixelRect.xMin));

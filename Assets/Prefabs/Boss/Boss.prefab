@@ -1576,7 +1576,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::BossGameplayHud
   worldView: {fileID: 7354048899499590375}
   healthBarSize: {x: 960, y: 48}
-  healthBarTopMargin: 32
+  healthBarTopMargin: 76
+  bossName: "보스 · 잠긴 낙원의 주인"
+  bossNameFont: {fileID: 0}
 --- !u!1 &8890292283004002498
 GameObject:
   m_ObjectHideFlags: 0
