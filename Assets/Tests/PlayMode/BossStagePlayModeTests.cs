@@ -167,6 +167,95 @@ public sealed class BossStagePlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator BossHealthBarStaysAtScreenTopDuringMovementZoomAndDebugToggle()
+    {
+        Bounds arenaBounds = entry.GetComponent<BoxCollider2D>().bounds;
+        MovePlayer(new Vector2(arenaBounds.min.x + 2f, -2.3f));
+        float deadline = Time.realtimeSinceStartup + 2f;
+        while (!boss.EncounterStarted && Time.realtimeSinceStartup < deadline)
+        {
+            yield return new WaitForFixedUpdate();
+            yield return null;
+        }
+        Assert.That(boss.EncounterStarted, Is.True);
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        BossGameplayHud gameplay = boss.GetComponent<BossGameplayHud>();
+        Canvas health = gameplay.HealthCanvas;
+        RectTransform bar = gameplay.WorldView.HealthFill.transform.parent.GetComponent<RectTransform>();
+        Assert.That(health.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+        Assert.That(health.transform.parent, Is.Null);
+        Assert.That(health.enabled, Is.True);
+        Assert.That(gameplay.BeliefCanvas.renderMode, Is.EqualTo(RenderMode.WorldSpace));
+        AssertTopHealthBar(health, bar);
+        Vector4 originalRect = ScreenRect(bar);
+        float originalZoom = view.orthographicSize;
+
+        boss.Body.position += Vector2.right * 3f;
+        Physics2D.SyncTransforms();
+        entry.ArenaCamera.FocusOn(boss.transform, 1f);
+        yield return new WaitForSecondsRealtime(.8f);
+        Canvas.ForceUpdateCanvases();
+        Assert.That(view.orthographicSize, Is.LessThan(originalZoom));
+        Assert.That(Vector4.Distance(ScreenRect(bar), originalRect), Is.LessThan(1f), "Boss movement and camera zoom must not move or resize the health bar.");
+        AssertTopHealthBar(health, bar);
+
+        boss.SetHpForTest(boss.MaxHp * .5f);
+        yield return null;
+        Assert.That(gameplay.WorldView.HealthFill.fillAmount, Is.EqualTo(.5f).Within(.001f));
+        BossCombatHud debug = boss.GetComponent<BossCombatHud>();
+        debug.SetDebugVisible(true);
+        yield return null;
+        Assert.That(health.enabled, Is.False);
+        debug.SetDebugVisible(false);
+        yield return null;
+        Assert.That(health.enabled, Is.True);
+        yield return Capture("05-boss-health-top", 1600, 900);
+
+        Object.Destroy(boss.gameObject);
+        yield return null;
+        yield return null;
+        Assert.That(health == null, Is.True, "Destroying the boss must also remove its detached screen HUD.");
+    }
+
+    [UnityTest]
+    public IEnumerator OrdinaryEnemyHealthKeepsItsWorldLayout()
+    {
+        var fixture = new GameObject("Ordinary enemy HUD fixture");
+        CombatantHudView hud = CombatantHudView.Create(fixture.transform);
+        hud.Initialize(CombatUiResources.KoreanFont());
+        Bounds body = new Bounds(new Vector3(3f, 1f, 0f), new Vector3(1f, 2f, 0f));
+        hud.Position(body);
+        Vector3 original = hud.HealthCanvas.transform.position;
+        body.center += Vector3.right * 4f;
+        hud.Position(body);
+        Assert.That(hud.HealthCanvas.renderMode, Is.EqualTo(RenderMode.WorldSpace));
+        Assert.That(hud.HealthCanvas.transform.parent, Is.Not.Null);
+        Assert.That(hud.HealthCanvas.transform.position.x - original.x, Is.EqualTo(4f).Within(.001f));
+        Object.Destroy(fixture);
+        yield return null;
+    }
+
+    private static Vector4 ScreenRect(RectTransform rect)
+    {
+        var corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+        return new Vector4(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+    }
+
+    private static void AssertTopHealthBar(Canvas canvas, RectTransform bar)
+    {
+        Vector4 rect = ScreenRect(bar);
+        float scale = canvas.scaleFactor;
+        Assert.That((rect.x + rect.z) * .5f, Is.EqualTo(canvas.pixelRect.center.x).Within(1f));
+        Assert.That(rect.w, Is.EqualTo(canvas.pixelRect.yMax - 32f * scale).Within(1f));
+        Assert.That(rect.w - rect.y, Is.EqualTo(48f * scale).Within(1f));
+        Assert.That(rect.z - rect.x, Is.EqualTo(Mathf.Min(960f * scale, canvas.pixelRect.width - 48f * scale)).Within(1f));
+        Assert.That(rect.x, Is.GreaterThanOrEqualTo(canvas.pixelRect.xMin));
+        Assert.That(rect.z, Is.LessThanOrEqualTo(canvas.pixelRect.xMax));
+    }
+
+    [UnityTest]
     public IEnumerator EndingWalksRightFromTheBossRightSideWithoutBacktracking()
     {
         yield return VerifyEndingWalksRight(1);

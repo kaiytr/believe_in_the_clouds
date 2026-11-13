@@ -1,10 +1,15 @@
 using UnityEngine;
+using UnityEngine.UI;
 
-/// <summary>Boss data binding; health, belief, speech and layout use the shared view.</summary>
+/// <summary>Boss data binding; screen health and world belief use the shared artwork and view.</summary>
 public sealed class BossGameplayHud : MonoBehaviour
 {
     [SerializeField] private CombatantHudView worldView;
+    [SerializeField] private Vector2 healthBarSize = new Vector2(960f, 48f);
+    [SerializeField, Min(0f)] private float healthBarTopMargin = 32f;
     private BossCombatController owner;
+    private Canvas screenHealthCanvas;
+    private RectTransform healthBar;
     public bool IsConfigured => worldView != null && worldView.IsConfigured;
     public CombatantHudView WorldView => worldView;
     public Canvas BeliefCanvas => worldView.BeliefCanvas;
@@ -15,7 +20,41 @@ public sealed class BossGameplayHud : MonoBehaviour
         owner = boss;
         worldView.FullSizeBar = true;
         worldView.Initialize(font);
+        ConfigureScreenHealth();
         Refresh();
+    }
+
+    private void ConfigureScreenHealth()
+    {
+        screenHealthCanvas = worldView.HealthCanvas;
+        screenHealthCanvas.transform.SetParent(null, false);
+        screenHealthCanvas.name = "Boss health HUD";
+        screenHealthCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        screenHealthCanvas.worldCamera = null;
+        screenHealthCanvas.sortingOrder = 100;
+        screenHealthCanvas.pixelPerfect = true;
+        screenHealthCanvas.transform.localScale = Vector3.one;
+        screenHealthCanvas.transform.rotation = Quaternion.identity;
+
+        CanvasScaler scaler = screenHealthCanvas.GetComponent<CanvasScaler>();
+        if (scaler == null) scaler = screenHealthCanvas.gameObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 1f;
+
+        healthBar = worldView.HealthFill.transform.parent.GetComponent<RectTransform>();
+        healthBar.anchorMin = healthBar.anchorMax = new Vector2(.5f, 1f);
+        healthBar.pivot = new Vector2(.5f, 1f);
+        PositionScreenHealth();
+    }
+
+    private void PositionScreenHealth()
+    {
+        float canvasWidth = screenHealthCanvas.pixelRect.width / Mathf.Max(.0001f, screenHealthCanvas.scaleFactor);
+        float width = Mathf.Min(healthBarSize.x, Mathf.Max(1f, canvasWidth - 48f));
+        healthBar.anchoredPosition = new Vector2(0f, -healthBarTopMargin);
+        healthBar.sizeDelta = new Vector2(Mathf.Max(1f, width), Mathf.Max(1f, healthBarSize.y));
     }
     private void LateUpdate() { if (owner != null && IsConfigured) Refresh(); }
     private void Refresh()
@@ -27,6 +66,7 @@ public sealed class BossGameplayHud : MonoBehaviour
         // 믿음 붕괴 중(빈 문구)과 2페이즈 대사가 머리 위에 있는 동안에는 믿음 말풍선을 숨긴다. 끝나면 다시 나온다.
         worldView.UpdateBelief(owner.NormalizedBelief, owner.IsVulnerable,
             owner.IsVulnerable ? string.Empty : owner.ActiveBeliefPhrase, owner.IsPhaseCutscenePlaying);
+        PositionScreenHealth();
         if (fighting && gameplay) worldView.Position(owner.BodyCollider.bounds);
     }
     private void SetVisible(bool visible)
@@ -34,4 +74,8 @@ public sealed class BossGameplayHud : MonoBehaviour
         if (worldView != null) worldView.SetVisible(visible);
     }
     private void OnDisable() => SetVisible(false);
+    private void OnDestroy()
+    {
+        if (screenHealthCanvas != null) Destroy(screenHealthCanvas.gameObject);
+    }
 }

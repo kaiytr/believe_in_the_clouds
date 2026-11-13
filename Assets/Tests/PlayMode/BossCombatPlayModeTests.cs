@@ -395,6 +395,7 @@ public sealed class BossCombatPlayModeTests
         Assert.That(tools.ShowDebugPanel,Is.False);
         Assert.That(hud.DebugVisible,Is.False); Assert.That(hud.DebugCanvas.gameObject.activeInHierarchy,Is.False);
         Assert.That(hud.GameplayHud.HealthCanvas.enabled,Is.True);
+        Assert.That(hud.GameplayHud.HealthCanvas.renderMode,Is.EqualTo(RenderMode.ScreenSpaceOverlay));
         Assert.That(hud.GameplayHud.BeliefCanvas.renderMode,Is.EqualTo(RenderMode.WorldSpace));
         PutPlayer(new Vector2(-4f,-2.33f)); boss.ForcePatternForTest(BossPatternKind.CloudBelief);
         yield return Until(()=>boss.Clouds!=null && boss.Clouds.LightningActive);
@@ -418,6 +419,7 @@ public sealed class BossCombatPlayModeTests
         Assert.That(boss.ActiveBossAttackId,Is.EqualTo(attack));
         Assert.That(player.CurrentHp,Is.EqualTo(health)); Assert.That(boss.CurrentBelief,Is.EqualTo(belief));
         boss.SetHpForTest(400f); boss.ReduceBeliefForTest(20f); yield return null;
+        Assert.That(hud.GameplayHud.WorldView.HealthFill.fillAmount,Is.EqualTo(.8f).Within(.001f));
         foreach(var image in boss.GetComponentsInChildren<UnityEngine.UI.Image>(true))
             if(image.name=="EnemyHealthGaugeFill" || image.name=="BeliefGaugeFill")
                 Assert.That(image.fillAmount,Is.EqualTo(.8f).Within(.001f));

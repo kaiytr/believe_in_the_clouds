@@ -150,7 +150,11 @@ public sealed class CombatantHudView : MonoBehaviour
         phrase.text = hideBelief ? string.Empty : text;
         speechBubble.gameObject.SetActive(!hideBelief && !string.IsNullOrEmpty(text));
     }
-    public void SetVisible(bool visible) => beliefCanvas.enabled = healthCanvas.enabled = visible;
+    public void SetVisible(bool visible)
+    {
+        if (beliefCanvas != null) beliefCanvas.enabled = visible;
+        if (healthCanvas != null) healthCanvas.enabled = visible;
+    }
     public void Position(Bounds body)
     {
         Camera camera = Camera.main;
@@ -159,6 +163,7 @@ public sealed class CombatantHudView : MonoBehaviour
             healthScale = Mathf.Max(.0001f, camera.orthographicSize * 2f / ReferenceScreenHeight);
 
         Place(beliefCanvas, body.center + Vector3.up * (body.extents.y + .95f), ReferenceCanvasScale, camera);
+        if (healthCanvas.renderMode != RenderMode.WorldSpace) return;
         Vector3 healthPosition = new Vector3(body.center.x, body.min.y - .52f * healthScale / ReferenceCanvasScale, body.center.z);
         float fullWidth = healthCanvas.GetComponent<RectTransform>().sizeDelta.x * healthScale;
         if (!FullSizeBar && fullWidth > .0001f)
