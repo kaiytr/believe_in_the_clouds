@@ -493,6 +493,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             yield return new WaitForSecondsRealtime(CutsceneZoomPause);
             yield return CutsceneZoomOut();
         }
+        // From here on the arena floor glows with rising light beams.
+        if (clouds != null) clouds.StartFloorBeams();
         EndSpokenLines();
         if (EncounterStarted && !IsDead) SetContactDamageSuppressed(false);
         nextRegularAt = Time.time + 0.4f;
@@ -527,6 +529,7 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         InitializeState();
         if (!initialized) { BeginEncounter(); return; }
         CancelCombat(true);
+        if (clouds != null) clouds.StopFloorBeams();
         IsDead = false;
         EncounterStarted = false;
         Phase = BossPhase.One;

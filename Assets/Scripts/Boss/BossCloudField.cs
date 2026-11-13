@@ -22,6 +22,7 @@ public sealed class BossCloudField : MonoBehaviour
     private float nextRiderSearch;
     // Kept from Prepare so a storm cloud added later matches the others.
     private float stormWidth, stormY;
+    private BossFloorBeams floorBeams;
 
     public bool IsPrepared => root != null && storms.Count > 0;
     public float FloorY { get; private set; }
@@ -95,8 +96,28 @@ public sealed class BossCloudField : MonoBehaviour
         return true;
     }
 
+    /// <summary>Phase two: light beams rise from the arena floor. Safe to call again; removed with the arena visuals.</summary>
+    public void StartFloorBeams()
+    {
+        if (!IsPrepared || floorBeams != null || owner == null || owner.Settings == null) return;
+        var holder = new GameObject("Floor beams");
+        holder.transform.SetParent(root, false);
+        floorBeams = holder.AddComponent<BossFloorBeams>();
+        // Behind the fighters: one step under the boss picture, on its layer.
+        SpriteRenderer reference = owner.BodyRenderer;
+        floorBeams.Build(LimitsX.x, LimitsX.y, FloorY, reference != null ? reference.sortingLayerID : 0,
+            (reference != null ? reference.sortingOrder : owner.Settings.AttackOrder) - 1, owner.Settings.EffectMaterial);
+    }
+
+    public void StopFloorBeams()
+    {
+        if (floorBeams != null) Destroy(floorBeams.gameObject);
+        floorBeams = null;
+    }
+
     public void Release()
     {
+        floorBeams = null;
         StopAllCoroutines();
         IsConverting = false;
         CancelLightning();
