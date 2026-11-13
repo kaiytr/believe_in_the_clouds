@@ -62,7 +62,7 @@ public sealed class BossGameplayHud : MonoBehaviour
             bossNameLabel = label.GetComponent<Text>();
         }
         bossNameLabel.text = bossName;
-        bossNameLabel.font = bossNameFont != null ? bossNameFont : CombatUiResources.KoreanFont();
+        bossNameLabel.font = bossNameFont != null ? bossNameFont : CombatUiResources.SongMyungFont();
         bossNameLabel.fontSize = 28;
         bossNameLabel.color = Color.white;
         bossNameLabel.alignment = TextAnchor.MiddleCenter;
