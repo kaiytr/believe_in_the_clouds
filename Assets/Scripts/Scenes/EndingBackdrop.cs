@@ -22,6 +22,10 @@ public sealed class EndingBackdrop : MonoBehaviour
         public float Period, Factor, Drift, Offset;
     }
 
+    // Copies per strip, centred on the camera: two to each side. Three were not enough: a layer shifts up to one
+    // full period to the left, which left the right edge of the last copy inside the screen and showed the strip's end.
+    private const int CopyCount = 5, CenterCopy = 2;
+
     private readonly List<Layer> layers = new List<Layer>();
 
     /// <param name="canvasBottomY">World height of the bottom edge of the layer art. The art is a full 1080px-tall canvas
@@ -55,7 +59,7 @@ public sealed class EndingBackdrop : MonoBehaviour
             for (int i = 0; i < layer.Copies.Length; i++)
             {
                 Vector3 p = layer.Copies[i].localPosition;
-                p.x = -layer.Offset + (i - 1) * layer.Period;
+                p.x = -layer.Offset + (i - CenterCopy) * layer.Period;
                 layer.Copies[i].localPosition = p;
             }
         }
@@ -65,8 +69,8 @@ public sealed class EndingBackdrop : MonoBehaviour
     {
         if (sprite == null) { Debug.LogError("Ending backdrop sprite is missing: " + layerName, this); return; }
         float period = sprite.bounds.size.x;
-        var layer = new Layer { Period = period, Factor = factor, Drift = drift, Copies = new Transform[3] };
-        for (int i = 0; i < 3; i++)
+        var layer = new Layer { Period = period, Factor = factor, Drift = drift, Copies = new Transform[CopyCount] };
+        for (int i = 0; i < CopyCount; i++)
         {
             var go = new GameObject(layerName + " " + i);
             go.transform.SetParent(transform, false);
@@ -75,7 +79,7 @@ public sealed class EndingBackdrop : MonoBehaviour
             renderer.sortingOrder = order;
             AtmosphereMaterials.ApplyUnlit(renderer);
             // The sprite pivot is its centre: put its bottom edge on canvasBottomY.
-            go.transform.localPosition = new Vector3((i - 1) * period, canvasBottomY + sprite.bounds.size.y * .5f, 0f);
+            go.transform.localPosition = new Vector3((i - CenterCopy) * period, canvasBottomY + sprite.bounds.size.y * .5f, 0f);
             layer.Copies[i] = go.transform;
         }
         layers.Add(layer);

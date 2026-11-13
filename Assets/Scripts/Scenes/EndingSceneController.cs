@@ -93,7 +93,9 @@ public sealed class EndingSceneController : MonoBehaviour
     {
         ground = new GameObject("Ground").transform;
         ground.SetParent(world, false);
-        int columns = Mathf.CeilToInt((halfWidth * 2f + 6f) / TileSize);
+        // The ground scrolls left by up to one pattern (4 tiles) before it wraps, so it needs a pattern of spare width on
+        // each side plus some slack; otherwise the right edge of the strip shows up inside the screen.
+        int columns = Mathf.CeilToInt((halfWidth * 2f + PatternWidth * 2f * TileSize + 6f) / TileSize);
         columns += (PatternWidth - columns % PatternWidth) % PatternWidth;
         const int rows = 6;
         float left = -columns * .5f * TileSize;
