@@ -50,7 +50,10 @@ Shader "Combat/SpriteFlash"
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+            // SpriteRenderer.flipX / flipY reach a sprite shader only through unity_SpriteProps; the standard sprite
+            // shaders apply it, so this one must too, or a flipped sprite (the dog) shows its unflipped side while flashing.
+            float3 position = float3(input.positionOS.xy * unity_SpriteProps.xy, input.positionOS.z);
+            output.positionCS = TransformObjectToHClip(position);
             output.uv = TRANSFORM_TEX(input.uv, _MainTex);
             output.color = input.color;
             return output;
