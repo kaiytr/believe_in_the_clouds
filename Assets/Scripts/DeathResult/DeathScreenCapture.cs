@@ -21,6 +21,8 @@ public static class DeathScreenCapture
         Vector3 previousPosition = camera.transform.position;
         float previousSize = camera.orthographicSize;
         float previousFieldOfView = camera.fieldOfView;
+        // The game picture is confined to a 16:9 screen area (AspectLock); a render texture needs the whole camera.
+        Rect previousRect = camera.rect;
         try
         {
             float aspect = Mathf.Max(.1f, camera.aspect);
@@ -54,6 +56,7 @@ public static class DeathScreenCapture
                 width = Mathf.Max(1, Mathf.RoundToInt(height * aspect));
             }
             target = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
+            camera.rect = new Rect(0f, 0f, 1f, 1f);
             camera.targetTexture = target;
             camera.Render();
             RenderTexture.active = target;
@@ -77,6 +80,7 @@ public static class DeathScreenCapture
         finally
         {
             camera.targetTexture = previousTarget;
+            camera.rect = previousRect;
             camera.transform.position = previousPosition;
             camera.orthographicSize = previousSize;
             camera.fieldOfView = previousFieldOfView;

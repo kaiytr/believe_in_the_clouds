@@ -272,9 +272,16 @@ public class SettingsScreen : MonoBehaviour
         }
         else
         {
-            // 창 모드에서는 화면보다 조금 작은 16:9 창으로 띄운다.
-            int width = Mathf.Min(1600, displayWidth);
-            int height = Mathf.Min(900, displayHeight);
+            // 창 모드에서는 화면(제목 표시줄 포함)에 들어오는 가장 큰 16:9 창으로 띄운다. 해상도 비율이 다른 화면(16:10 등)에서
+            // 창이 화면 밖으로 잘리지 않도록 가로 폭과 세로 높이 양쪽 한도에 맞춘다.
+            int width = Mathf.Min(1600, Mathf.FloorToInt(displayWidth * .92f));
+            int height = Mathf.RoundToInt(width * 9f / 16f);
+            int maxHeight = Mathf.FloorToInt(displayHeight * .88f);
+            if (height > maxHeight)
+            {
+                height = maxHeight;
+                width = Mathf.RoundToInt(height * 16f / 9f);
+            }
             Screen.SetResolution(width, height, FullScreenMode.Windowed);
         }
     }
