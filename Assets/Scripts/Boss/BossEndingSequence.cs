@@ -115,6 +115,8 @@ public sealed class BossEndingSequence : MonoBehaviour
         if (started || finished || boss == null || !boss.IsDead) return;
         started = true;
         running = true;
+        // Defeating the boss is the clear: quitting during the ending must not keep this save.
+        FullProgressReset.MarkCleared();
         sequenceStartedAt = Time.unscaledTime;
         Time.timeScale = 1f;
 

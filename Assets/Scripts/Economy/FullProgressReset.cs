@@ -7,8 +7,20 @@ using UnityEngine;
 /// </summary>
 public static class FullProgressReset
 {
-    // Set when the save file could not be removed (e.g. it is locked): the reset is finished at the next launch.
+    // Set when the game is cleared (final boss defeated) or the save file could not be removed: the reset is finished at the next launch.
     public const string PendingKey = "believe_in_the_clouds.full_reset_pending";
+
+    /// <summary>
+    /// The game counts as cleared the moment the final boss falls. From then on the next launch starts from scratch, even
+    /// if the game is closed during the ending (the reset is finished when the save is loaded; see EconomyRuntime). Not
+    /// recorded in the Editor, whose PlayerPrefs are shared with builds on the same machine.
+    /// </summary>
+    public static void MarkCleared()
+    {
+        if (Application.isEditor) return;
+        PlayerPrefs.SetInt(PendingKey, 1);
+        PlayerPrefs.Save();
+    }
 
     /// <summary>True when the save was wiped. When it could not be, the reset is queued for the next launch.</summary>
     public static bool Run()
