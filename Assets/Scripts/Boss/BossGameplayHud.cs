@@ -93,9 +93,11 @@ public sealed class BossGameplayHud : MonoBehaviour
         bool gameplay = !owner.DebugUiVisible;
         worldView.SetVisible(fighting && gameplay);
         worldView.UpdateHealth(owner.CurrentHp, owner.MaxHp);
-        // 믿음 붕괴 중(빈 문구)과 2페이즈 대사가 머리 위에 있는 동안에는 믿음 말풍선을 숨긴다. 끝나면 다시 나온다.
-        worldView.UpdateBelief(owner.NormalizedBelief, owner.IsVulnerable,
-            owner.IsVulnerable ? string.Empty : owner.ActiveBeliefPhrase, owner.IsPhaseCutscenePlaying);
+        // 말풍선이 없을 때(믿음 붕괴 중, 활성 믿음 없음)와 2페이즈 대사가 머리 위에 있는 동안에는
+        // 믿음 말풍선과 믿음 게이지를 함께 숨긴다. 문구가 다시 생기면 같이 나온다.
+        string phrase = owner.IsVulnerable ? string.Empty : owner.ActiveBeliefPhrase;
+        worldView.UpdateBelief(owner.NormalizedBelief, owner.IsVulnerable, phrase,
+            owner.IsPhaseCutscenePlaying || string.IsNullOrEmpty(phrase));
         PositionScreenHealth();
         if (fighting && gameplay) worldView.Position(owner.BodyCollider.bounds);
     }
