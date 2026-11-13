@@ -47,16 +47,30 @@ public sealed class BossArenaCamera : MonoBehaviour
     private Transform focusTarget;
     private float focusHeight, focusProgress, focusDirection;
     private bool focusApplied;
+    // Moving the focus from one target to another while zoomed in: the view pans instead of jumping.
+    private bool panning;
+    private float panProgress;
+    private Vector3 panFrom;
     private Vector3 basePosition;
     private float baseSize;
 
     public float FocusSeconds => focusSeconds;
     public bool CanFocus => controlling && view != null;
 
-    /// <summary>Starts zooming in on the target (heightOffset above its position). Returns false without a camera.</summary>
+    /// <summary>
+    /// Starts zooming in on the target (heightOffset above its position). Returns false without a camera.
+    /// Already zoomed in on something else: the view stays zoomed and pans to the new target.
+    /// </summary>
     public bool FocusOn(Transform target, float heightOffset)
     {
         if (target == null || !CanFocus) return false;
+        if (focusTarget != null && focusDirection >= 0f && focusProgress > 0f)
+        {
+            panFrom = FocusPoint();
+            panProgress = 0f;
+            panning = true;
+        }
+        else panning = false;
         focusTarget = target;
         focusHeight = heightOffset;
         focusDirection = 1f;
@@ -79,6 +93,7 @@ public sealed class BossArenaCamera : MonoBehaviour
         }
         focusApplied = false;
         focusTarget = null;
+        panning = false;
         focusProgress = focusDirection = 0f;
     }
 
@@ -220,13 +235,23 @@ public sealed class BossArenaCamera : MonoBehaviour
         baseSize = view.orthographicSize;
         float weight = Mathf.SmoothStep(0f, 1f, focusProgress);
         float size = baseSize * focusZoom;
-        Vector3 target = focusTarget.position + Vector3.up * focusHeight;
+        Vector3 target = FocusPoint();
         if (TryGetArenaBounds(out Bounds bounds))
             target.x = ConfineX(target.x, bounds.min.x, bounds.max.x, size * view.aspect);
         view.transform.position = new Vector3(Mathf.Lerp(basePosition.x, target.x, weight),
             Mathf.Lerp(basePosition.y, target.y, weight), basePosition.z);
         view.orthographicSize = Mathf.Lerp(baseSize, size, weight);
         focusApplied = true;
+    }
+
+    // Where the zoomed view is centred: the target (plus height), or on its way there from the previous target.
+    private Vector3 FocusPoint()
+    {
+        Vector3 point = focusTarget.position + Vector3.up * focusHeight;
+        if (!panning) return point;
+        panProgress = Mathf.Clamp01(panProgress + Time.unscaledDeltaTime / focusSeconds);
+        if (panProgress >= 1f) panning = false;
+        return Vector3.Lerp(panFrom, point, Mathf.SmoothStep(0f, 1f, panProgress));
     }
 
     private void UpdateBasePose()

@@ -481,9 +481,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
         yield return CutsceneZoomIn();
         yield return SpeakLines(PhaseTwoLines);
         if (phaseBubble != null) phaseBubble.Hide();
-        yield return CutsceneZoomOut();
-        // Phase two changes the lightning: the camera goes to one white cloud, which rises and turns into a storm cloud,
-        // then pulls back out. The fight resumes only after that.
+        // Phase two changes the lightning: the camera pans straight from the boss to one white cloud, which rises and
+        // turns into a storm cloud, then the camera pulls back out. The fight resumes only after that.
         Transform changingCloud = clouds != null ? clouds.PrepareConversion() : null;
         if (changingCloud != null)
         {
@@ -491,8 +490,8 @@ public sealed class BossCombatController : MonoBehaviour, IDamageable, IHealth, 
             clouds.BeginConversion();
             while (clouds != null && clouds.IsConverting) yield return null;
             yield return new WaitForSecondsRealtime(CutsceneZoomPause);
-            yield return CutsceneZoomOut();
         }
+        yield return CutsceneZoomOut();
         // From here on the arena floor glows with rising light beams.
         if (clouds != null) clouds.StartFloorBeams();
         EndSpokenLines();
