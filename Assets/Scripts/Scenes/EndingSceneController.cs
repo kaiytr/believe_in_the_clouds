@@ -35,6 +35,11 @@ public sealed class EndingSceneController : MonoBehaviour
     [SerializeField, Min(0f)] private float creditsDelay = 2.5f;
     [SerializeField, Min(1f)] private float creditsScrollSpeed = 55f;
     [SerializeField, Min(0f)] private float fadeOutSeconds = 1.5f;
+    [Header("BGM")]
+    [SerializeField] private AudioClip endingBgm;
+    [SerializeField, Range(0f, 1f)] private float endingBgmVolume = .45f;
+    private AudioSource bgmSource;
+
     [Header("Credits (temporary placeholder text, edit freely)")]
     [Tooltip("\"# \" = title, \"## \" = section heading, empty line = gap, anything else = normal line.")]
     [SerializeField, TextArea(10, 30)] private string creditsText = DefaultCredits;
@@ -75,6 +80,7 @@ public sealed class EndingSceneController : MonoBehaviour
         BuildGround();
         BuildPlayer();
         BuildUi();
+        PlayEndingBgm();
         StartCoroutine(FadeIn());
     }
 
@@ -134,6 +140,29 @@ public sealed class EndingSceneController : MonoBehaviour
         float feetOffset = renderer.bounds.min.y - player.position.y;
         playerX = -(halfWidth + 2f);
         player.position = new Vector3(playerX, GroundTopY - feetOffset, 0f);
+    }
+
+    // 필드 BGM은 엔딩에서 이미 꺼진다. 이 씬에 있는 동안만 Ending 폴더의 BGM을 반복한다.
+    private void PlayEndingBgm()
+    {
+        if (endingBgm == null)
+        {
+            AudioClip[] clips = Resources.LoadAll<AudioClip>("Sounds/Ending");
+            if (clips != null && clips.Length > 0) endingBgm = clips[0];
+        }
+        if (endingBgm == null)
+        {
+            Debug.LogWarning("엔딩 BGM을 찾지 못했습니다. Assets/Resources/Sounds/Ending 을 확인해 주세요.", this);
+            return;
+        }
+
+        bgmSource = gameObject.AddComponent<AudioSource>();
+        bgmSource.playOnAwake = false;
+        bgmSource.loop = true;
+        bgmSource.spatialBlend = 0f;
+        bgmSource.volume = endingBgmVolume;
+        bgmSource.clip = endingBgm;
+        bgmSource.Play();
     }
 
     private void BuildUi()
