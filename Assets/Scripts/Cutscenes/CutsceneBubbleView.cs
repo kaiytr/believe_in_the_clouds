@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public sealed class CutsceneBubbleView : MonoBehaviour
 {
     private static Sprite bubbleSprite;
-    private static Font beliefFont;
+    private static Font beliefFont, gothicFont;
 
     [Header("Layout")]
     [SerializeField] private Vector2 panelSize = new Vector2(318f, 120f);
@@ -41,6 +41,8 @@ public sealed class CutsceneBubbleView : MonoBehaviour
     private string[] choiceLabels = new string[0];
     private bool choiceMode, layoutDirty = true;
     private bool accumulating;
+    // Cutscene dialogue is set in the gothic UI font; only belief text (the ambient apology loop) keeps the belief font.
+    private bool beliefStyle;
     private float laidOutScale = -1f;
     private int relayoutFrames;
 
@@ -56,6 +58,14 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         => ShowDialogue(currentSpeaker, text, fullText, false);
 
     /// <summary>Keep one bubble open and size it as accumulated characters arrive.</summary>
+    /// <summary>Sets this bubble's text in the belief font (Griun Simsimche) instead of the gothic dialogue font.</summary>
+    public void UseBeliefFont()
+    {
+        beliefStyle = true;
+        EnsureUi();
+        foreach (Text text in GetComponentsInChildren<Text>(true)) text.font = GetFont(true);
+    }
+
     public void ShowAccumulatingLine(CutsceneCharacter currentSpeaker)
         => ShowDialogue(currentSpeaker, string.Empty, string.Empty, true);
 
@@ -204,7 +214,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         GameObject child = new GameObject(childName, typeof(RectTransform), typeof(Text));
         child.transform.SetParent(parent, false);
         Text text = child.GetComponent<Text>();
-        text.font = GetBeliefFont();
+        text.font = GetFont(beliefStyle);
         text.fontSize = fontSize;
         text.fontStyle = style;
         text.alignment = TextAnchor.MiddleLeft;
@@ -457,15 +467,19 @@ public sealed class CutsceneBubbleView : MonoBehaviour
         return text.cachedTextGeneratorForLayout.GetPreferredHeight(content, settings) / text.pixelsPerUnit;
     }
 
-    private static Font GetBeliefFont()
+    private static Font GetFont(bool belief)
     {
-        if (beliefFont != null)
+        if (belief)
+        {
+            if (beliefFont == null)
+                beliefFont = CombatUiResources.BeliefFont() ?? CombatUiResources.KoreanFont() ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
             return beliefFont;
+        }
 
-        beliefFont = CombatUiResources.BeliefFont();
-        if (beliefFont == null)
-            beliefFont = CombatUiResources.KoreanFont() ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
-        return beliefFont;
+        // Gothic: the project's UI font (ONE 모바일고딕).
+        if (gothicFont == null)
+            gothicFont = CombatUiResources.KoreanFont() ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        return gothicFont;
     }
 
     private static Sprite GetBubbleSprite()
@@ -492,7 +506,7 @@ public sealed class CutsceneBubbleView : MonoBehaviour
             else DestroyImmediate(bubbleSprite);
         }
         bubbleSprite = null;
-        beliefFont = null;
+        beliefFont = gothicFont = null;
     }
     private void OnDestroy()
     {

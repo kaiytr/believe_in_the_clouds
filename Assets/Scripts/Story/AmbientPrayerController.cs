@@ -19,7 +19,11 @@ public sealed class AmbientPrayerController : MonoBehaviour
     {
         StopPrayer();
         definition = data;
-        if (bubble == null) bubble = gameObject.AddComponent<CutsceneBubbleView>();
+        if (bubble == null)
+        {
+            bubble = gameObject.AddComponent<CutsceneBubbleView>();
+            bubble.UseBeliefFont();   // the repeated apology is belief text, not cutscene dialogue
+        }
         string line = data.apologyLoopText ?? "";
         if (line.Length == 0) return;
         phraseLength = line.Length;
