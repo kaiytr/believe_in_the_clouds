@@ -365,6 +365,9 @@ public sealed class TutorialTipPanel : MonoBehaviour
         Vector2 source = sprite.rect.size;
         float scale = Mathf.Max(IllustrationWidth / source.x, IllustrationHeight / source.y);
         pageIllustration.rectTransform.sizeDelta = source * scale;
+        // 상점 팁 2페이지는 오른쪽 빈칸이 보여서, 그림만 조금 왼쪽으로 민다.
+        float nudge = activeIllustrations == ShopIllustrations && pageIndex == 1 ? -4f : 0f;
+        pageIllustration.rectTransform.anchoredPosition = new Vector2(nudge, 0f);
     }
 
     // 둥근 모서리 마스크용 스프라이트. 9-slice로 늘려 써서 크기와 무관하게 모서리 반경이 유지된다.
