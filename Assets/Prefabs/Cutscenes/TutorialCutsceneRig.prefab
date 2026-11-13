@@ -85,6 +85,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583077d8bb8c04d4192b6739df78980a, type: 3}
   m_Name:
   m_EditorClassIdentifier: BelieveInTheClouds.Runtime::CutsceneDeathWatcher
+  deathMotionDelaySeconds: 1
 --- !u!114 &566262445660429538
 MonoBehaviour:
   m_ObjectHideFlags: 0

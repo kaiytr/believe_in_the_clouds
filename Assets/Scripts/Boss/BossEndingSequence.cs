@@ -6,13 +6,11 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(-300)]
 public sealed class BossEndingSequence : MonoBehaviour
 {
-    private enum SequencePhase { WaitingForWalk, MovingLeftOfCorpse, Turning, WalkingRight, OffscreenPause, Finishing }
+    private enum SequencePhase { WaitingForWalk, WalkingRight, OffscreenPause, Finishing }
 
     [SerializeField] private BossCombatController boss;
     [SerializeField, Min(0f)] private float deathPause = .8f;
     [SerializeField, Min(.1f)] private float walkSpeed = 2.8f;
-    [SerializeField, Min(0f)] private float corpseGap = .35f;
-    [SerializeField, Min(0f)] private float turnPause = .25f;
     [SerializeField, Min(0f)] private float offscreenPause = .35f;
 
     private PlayerHealth player;
@@ -22,7 +20,7 @@ public sealed class BossEndingSequence : MonoBehaviour
     private Rigidbody2D playerBody;
     private Collider2D playerCollider;
     private BossArenaCamera arenaCamera;
-    private Bounds corpseBounds;
+    private float walkStartX;
     private SequencePhase phase;
     private float phaseEndsAt;
     private float sequenceStartedAt;
@@ -77,47 +75,18 @@ public sealed class BossEndingSequence : MonoBehaviour
         switch (phase)
         {
             case SequencePhase.WaitingForWalk:
+                if (boss != null && boss.IsDeathDialoguePlaying) break;
                 if (Time.unscaledTime >= phaseEndsAt &&
                     (playerMove.IsGrounded || Time.unscaledTime - sequenceStartedAt >= deathPause + 2f))
                 {
-                    if (PlayerBounds().center.x > corpseBounds.center.x)
-                    {
-                        SetFacing(-1);
-                        phase = SequencePhase.MovingLeftOfCorpse;
-                        horizontalDirection = -1;
-                    }
-                    else
-                    {
-                        SetFacing(1);
-                        phase = SequencePhase.WalkingRight;
-                        horizontalDirection = 1;
-                    }
-                }
-                break;
-
-            case SequencePhase.MovingLeftOfCorpse:
-                if (PlayerBounds().max.x <= corpseBounds.min.x - corpseGap)
-                {
-                    horizontalDirection = 0;
                     SetFacing(1);
-                    phase = SequencePhase.Turning;
-                    phaseEndsAt = Time.unscaledTime + turnPause;
-                }
-                break;
-
-            case SequencePhase.Turning:
-                if (Time.unscaledTime >= phaseEndsAt)
-                {
                     phase = SequencePhase.WalkingRight;
                     horizontalDirection = 1;
                 }
                 break;
 
             case SequencePhase.WalkingRight:
-                if (PlayerBounds().min.x >= corpseBounds.max.x + corpseGap)
-                    horizontalDirection = 1;
-
-                if (PlayerBounds().min.x >= corpseBounds.max.x + corpseGap && IsBeyondCameraRightEdge())
+                if (IsBeyondCameraRightEdge())
                 {
                     horizontalDirection = 0;
                     phase = SequencePhase.OffscreenPause;
@@ -171,13 +140,9 @@ public sealed class BossEndingSequence : MonoBehaviour
         playerDash = player.GetComponent<PlayerDash>();
         if (playerAttack != null) playerAttack.enabled = false;
         if (playerDash != null) playerDash.enabled = false;
+        playerMove.ScriptedMoveInput = 0f;
         playerMove.ControlLocked = true;
-
-        SpriteRenderer corpseRenderer = boss.BodyRenderer;
-        corpseBounds = corpseRenderer != null
-            ? corpseRenderer.bounds
-            : new Bounds(boss.transform.position, new Vector3(1.2f, 2f, 0f));
-        if (corpseBounds.size.x < .1f) corpseBounds.Expand(new Vector3(1.2f, 0f, 0f));
+        walkStartX = PlayerBounds().min.x;
 
         arenaCamera?.HoldForEnding(player.transform);
         phase = SequencePhase.WaitingForWalk;
@@ -209,7 +174,7 @@ public sealed class BossEndingSequence : MonoBehaviour
     {
         Camera view = Camera.main;
         Bounds bounds = PlayerBounds();
-        if (view == null) return bounds.min.x > corpseBounds.max.x + 10f;
+        if (view == null) return bounds.min.x > walkStartX + 10f;
 
         Vector3 viewport = view.WorldToViewportPoint(new Vector3(bounds.min.x, bounds.center.y, 0f));
         return viewport.x > 1.03f;

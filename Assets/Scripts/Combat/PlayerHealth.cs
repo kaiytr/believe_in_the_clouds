@@ -33,6 +33,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
     public float CurrentHp => currentHp;
     public float MaxHp => maxHp;
     public bool IsInvulnerable => isInvulnerable || isDashInvulnerable;
+    /// <summary>True while a dash (and its short grace) makes the player intangible: attacks pass through instead of landing.</summary>
+    public bool IsDashIntangible => isDashInvulnerable;
     public Collider2D BodyCollider => bodyCollider;
 
     public float CurrentHealth => currentHp;
@@ -205,14 +207,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable, IHealth
 
         // 사망 확정 순간에 재생. PlayOneShot은 타임스케일 영향을 받지 않아
         // 사망 슬로우(0.25배)·결과창 정지(0배) 중에도 소리가 끊기지 않는다.
-        if (deathSound != null && deathAudioSource != null)
-            deathAudioSource.PlayOneShot(deathSound, deathSoundVolume);
+        PlayDeathSoundEffect();
 
         deathCoordinator.CaptureDeath(() =>
         {
             if (DoctrineEventBus.HasListeners)
                 DoctrineEventBus.Raise(ConditionType.OnDeath, gameObject, source);
         }, cause);
+    }
+
+    public void PlayDeathSoundEffect()
+    {
+        if (deathSound != null && deathAudioSource != null)
+            deathAudioSource.PlayOneShot(deathSound, deathSoundVolume);
     }
 
     private void OnDestroy() { DoctrineManager.Instance?.ClearForOwner(gameObject); }

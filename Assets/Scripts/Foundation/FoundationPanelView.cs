@@ -492,8 +492,8 @@ public class FoundationPanelView : MonoBehaviour
         ApplySkin(image, "Alter_scroll_w");
 
         LayoutElement layout = card.AddComponent<LayoutElement>();
-        layout.preferredHeight = 129f;
-        layout.minHeight = 100f;
+        layout.preferredHeight = 142f;
+        layout.minHeight = 110f;
 
         // 조각은 개수만큼 한 줄씩 따로 표시하므로 "×N"을 붙이지 않는다.
         // 사진처럼 제목은 크게 굵게, 설명은 작게.
@@ -504,12 +504,18 @@ public class FoundationPanelView : MonoBehaviour
         }
 
         Text label = UiTheme.CreateText("Label", card.transform, text, LargeTextSize,
-            TabTextActive, TextAnchor.MiddleLeft);
+            TabTextActive, TextAnchor.MiddleCenter);
         label.font = UiTheme.GetFont();
         label.fontStyle = FontStyle.Normal;
+        label.alignment = TextAnchor.MiddleCenter;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
-        UiTheme.Stretch(label.rectTransform, 12f);
+        // 두루마리 테두리(좌우 약 20, 위아래 약 12) 안쪽 양피지에 글자를 둔다.
+        RectTransform labelRect = label.rectTransform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(28f, 20f);
+        labelRect.offsetMax = new Vector2(-28f, -24f);
 
         card.AddComponent<ItemDragHandler>().Initialize(this, card);
 
@@ -865,8 +871,9 @@ public class FoundationPanelView : MonoBehaviour
         groupLayout.minHeight = 190f;
 
         VerticalLayoutGroup groupVertical = group.AddComponent<VerticalLayoutGroup>();
-        groupVertical.padding = new RectOffset(24, 24, 23, 26);
-        groupVertical.spacing = 9;
+        // 원본 조합 프레임 기준: 슬롯은 위 16, 설명은 그 아래 8 간격.
+        groupVertical.padding = new RectOffset(0, 0, 16, 21);
+        groupVertical.spacing = 8;
         groupVertical.childControlWidth = true;
         groupVertical.childControlHeight = true;
         groupVertical.childForceExpandWidth = true;
@@ -878,11 +885,13 @@ public class FoundationPanelView : MonoBehaviour
         doctrineSlotRows.Add(slotRow);
         LayoutElement slotRowLayout = slotRow.AddComponent<LayoutElement>();
         slotRowLayout.flexibleHeight = 0f;
-        slotRowLayout.preferredHeight = 82f;
+        slotRowLayout.preferredHeight = 96f;
         slotRowLayout.minHeight = 60f;
 
         HorizontalLayoutGroup slotLayout = slotRow.AddComponent<HorizontalLayoutGroup>();
-        slotLayout.spacing = 10;
+        // 조합 프레임 안에서 슬롯 줄은 좌우 20, 칸 사이는 거의 붙는다.
+        slotLayout.padding = new RectOffset(20, 20, 0, 0);
+        slotLayout.spacing = 1;
         slotLayout.childControlWidth = true;
         slotLayout.childControlHeight = true;
         slotLayout.childForceExpandWidth = true;
@@ -900,19 +909,33 @@ public class FoundationPanelView : MonoBehaviour
         BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Condition);
         BuildSlot(doctrineIndex, slotRow.transform, ShopColumn.Result);
 
-        // 설명 줄.
-        GameObject description = UiTheme.CreateImage("Description", group.transform, DescriptionBackground);
+        // 설명 줄은 슬롯보다 좌우로 8px만 들어간다. 원본과 같은 너비 차이.
+        GameObject descriptionRow = new GameObject("DescriptionRow", typeof(RectTransform));
+        descriptionRow.transform.SetParent(group.transform, false);
+        LayoutElement descriptionLayout = descriptionRow.AddComponent<LayoutElement>();
+        descriptionLayout.flexibleHeight = 0f;
+        descriptionLayout.preferredHeight = 81f;
+        descriptionLayout.minHeight = 46f;
+        HorizontalLayoutGroup descriptionPad = descriptionRow.AddComponent<HorizontalLayoutGroup>();
+        descriptionPad.padding = new RectOffset(8, 8, 0, 0);
+        descriptionPad.childControlWidth = true;
+        descriptionPad.childControlHeight = true;
+        descriptionPad.childForceExpandWidth = true;
+        descriptionPad.childForceExpandHeight = true;
+
+        GameObject description = UiTheme.CreateImage("Description", descriptionRow.transform, DescriptionBackground);
         ApplySkin(description.GetComponent<Image>(), "Alter_Combination_Combination");
         doctrineDescriptionBoxes.Add(description);
-        LayoutElement descriptionLayout = description.AddComponent<LayoutElement>();
-        descriptionLayout.flexibleHeight = 0f;
-        descriptionLayout.preferredHeight = 82f;
-        descriptionLayout.minHeight = 46f;
 
         Text text = UiTheme.CreateText("Text", description.transform,
             $"교리{number}  ·  발동되면 무슨 일이 벌어지는지", ComboDescriptionTextSize,
             SlotText, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(text.rectTransform, 10f);
+        text.alignment = TextAnchor.MiddleCenter;
+        RectTransform descriptionTextRect = text.rectTransform;
+        descriptionTextRect.anchorMin = Vector2.zero;
+        descriptionTextRect.anchorMax = Vector2.one;
+        descriptionTextRect.offsetMin = new Vector2(24f, 14f);
+        descriptionTextRect.offsetMax = new Vector2(-24f, -18f);
 
         GameObject lockOverlay = UiTheme.CreateImage("LockOverlay" + number, group.transform, Color.white);
         Image lockImage = lockOverlay.GetComponent<Image>();
@@ -947,7 +970,14 @@ public class FoundationPanelView : MonoBehaviour
 
         Text text = UiTheme.CreateText("Label", slot.transform, string.Empty, ComboSlotTextSize,
             SlotText, TextAnchor.MiddleCenter);
-        UiTheme.Stretch(text.rectTransform, 12f);
+        text.alignment = TextAnchor.MiddleCenter;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        RectTransform slotTextRect = text.rectTransform;
+        slotTextRect.anchorMin = Vector2.zero;
+        slotTextRect.anchorMax = Vector2.one;
+        slotTextRect.offsetMin = new Vector2(22f, 16f);
+        slotTextRect.offsetMax = new Vector2(-22f, -20f);
 
         image.raycastTarget = true;
         slotTexts[doctrineIndex][column] = text;

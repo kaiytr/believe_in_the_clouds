@@ -56,6 +56,38 @@ public sealed class BossCloudPlatform : MonoBehaviour, IMovingGround
         if (whiteCloud) BuildSurface();
     }
 
+    /// <summary>
+    /// Turns a white cloud into a picture only (no landing surface, no motion) so it can be animated into a storm cloud.
+    /// </summary>
+    public void DetachAsVisual()
+    {
+        enabled = false;
+        moving = false;
+        if (surface != null)
+        {
+            surface.enabled = false;
+            surface.gameObject.SetActive(false);
+            Destroy(surface.gameObject);
+            surface = null;
+        }
+        if (body != null)
+        {
+            Vector2 at = transform.position;
+            Destroy(body);
+            body = null;
+            transform.position = at;
+        }
+    }
+
+    /// <summary>Moves and fades the picture while it is not part of the field (centre = logical centre, as in Initialize).</summary>
+    public void SetVisual(Vector2 center, Vector2 shapeSize, float alpha)
+    {
+        transform.position = center + new Vector2(0f, visualLift);
+        SpriteRenderer visual = GetComponent<SpriteRenderer>();
+        visual.size = shapeSize + new Vector2(0f, visualLift * 2f);
+        visual.color = new Color(1f, 1f, 1f, alpha);
+    }
+
     public void Bind(BossCloudField owningField, Vector2 arenaX, Vector2 speeds, Vector2 turns)
     {
         field = owningField;

@@ -18,7 +18,7 @@ public class DoctrineHud : MonoBehaviour
     [SerializeField] private PlayerHealth player;
 
     [Header("교리 슬롯")]
-    [SerializeField] private Vector2 doctrinePosition = new Vector2(252f, 6f);
+    [SerializeField] private Vector2 doctrinePosition = new Vector2(252f, -12f);
     [SerializeField] private Vector2 slotSize = new Vector2(118f, 130f);
     [SerializeField] private float slotSpacing = 20f;
     [Tooltip("활성 교리가 없을 때 확인용 교리 에셋을 표시한다.")]
@@ -67,7 +67,7 @@ public class DoctrineHud : MonoBehaviour
     // 툴팁 배경 아트(Assets/Resources/UI/Doctrine_BG). Import 설정과 무관하게 Sprite/Texture2D 둘 다 시도한다.
     private static Sprite tooltipSprite;
 
-    private static Sprite LoadTooltipSprite()
+    internal static Sprite LoadTooltipSprite()
     {
         if (tooltipSprite != null)
         {
@@ -720,8 +720,7 @@ public class DoctrineHud : MonoBehaviour
     private void BuildDoctrineRow()
     {
         GameObject row = new GameObject("DoctrineRow", typeof(RectTransform));
-        // 체력바 배경(PlayerStrengthBackground)보다 먼저 그려지도록 캔버스 맨 뒤에 둔다.
-        // 밴드 안에 두면 밴드가 배경보다 위에 있어 두루마리가 체력바를 덮는다.
+        // 체력바 배경보다 먼저 그려 두루마리 아래쪽이 체력바 뒤로 넘어가게 한다.
         row.transform.SetParent(canvas.transform, false);
         doctrineRow = row.GetComponent<RectTransform>();
         doctrineRow.anchorMin = new Vector2(0f, 0f);
@@ -732,7 +731,6 @@ public class DoctrineHud : MonoBehaviour
         doctrineRow.anchoredPosition = new Vector2(doctrinePosition.x, bandHeight + doctrinePosition.y);
         doctrineRow.sizeDelta = new Vector2(slotSize.x, slotSize.y);
 
-        // 체력바 뒤로 보낸다. 이후에 그려지는 배경/게이지가 두루마리 아래쪽을 덮는다.
         row.transform.SetAsFirstSibling();
     }
 

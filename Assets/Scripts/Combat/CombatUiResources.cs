@@ -56,6 +56,13 @@ public static class CombatUiResources
         return KoreanFont(preferred);
     }
 
+    // 보스 이름 전용 폰트: Song Myung.
+    public static Font SongMyungFont()
+    {
+        Font bundled = Resources.Load<Font>("Font/SongMyung-Regular");
+        return bundled != null ? bundled : KoreanFont();
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Reset()
     {

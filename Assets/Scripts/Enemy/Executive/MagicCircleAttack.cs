@@ -27,9 +27,9 @@ public class MagicCircleAttack : EnemyAttack
     private Vector2 lockedTargetPosition; // floor point under the target, where the zone is laid
 
     public float AttackRange => attackRange;
-    // The rear challenge needs an actual two-second opportunity before the AI can turn.
+    // The rear-entry challenge needs an opportunity to reach the rear before the AI can turn.
     public override float WindupDuration => owner != null && owner.Belief != null &&
-        owner.Belief.Profile != null && owner.Belief.Profile.Rule == BeliefRule.RearDwell
+        owner.Belief.Profile != null && owner.Belief.Profile.Rule == BeliefRule.RearEntry
         ? Mathf.Max(windupTime, owner.Belief.Profile.RearInterval + 1f) : windupTime;
     public override bool IsConfigured => base.IsConfigured && magicCirclePrefab != null &&
                                          dangerIndicatorPrefab != null && circleRadius > 0f;
@@ -59,6 +59,9 @@ public class MagicCircleAttack : EnemyAttack
 
     private Vector2 ZoneCenter => lockedTargetPosition + new Vector2(0f, zoneHeight * 0.5f);
     private Vector2 ZoneSize => new Vector2(circleRadius * 2f, zoneHeight);
+
+    // The warning column is placed at the locked spot on the ground, not around the executive.
+    public override bool WarningFollowsOwner => false;
 
     protected override DangerIndicator ShowDangerIndicator()
     {
@@ -97,6 +100,8 @@ public class MagicCircleAttack : EnemyAttack
             PlayerBodyCollider,
             out bool hpDamageApplied, gameObject);
         if (hpDamageApplied) NotifyPlayerHpDamageApplied(CurrentAttackId);
+
+        if (circle.AvoidedByDash) NoteAvoidedByDash(CurrentAttackId);
 
         if (harmfulEffectApplied)
             ReportOutcome(AttackOutcome.Hit, completedNormally: true);

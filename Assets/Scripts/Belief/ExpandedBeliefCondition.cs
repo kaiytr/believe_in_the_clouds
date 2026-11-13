@@ -29,7 +29,7 @@ public sealed class ExpandedBeliefCondition : BeliefCondition
             !Supports(Controller.Type) || owner == null || attack == null) return;
         BeliefProfile profile = Controller.Profile;
         challenge = new BeliefChallengeState(profile.Rule, profile.ReductionPerSuccess,
-            profile.TimeWindow, profile.RearInterval);
+            profile.TimeWindow);
         owner.PlayerHitReceived += HandlePlayerHit;
         attack.AttackResolved += HandleAttack;
         Controller.StateChanged += HandleState;
@@ -48,9 +48,9 @@ public sealed class ExpandedBeliefCondition : BeliefCondition
             challenge?.Reset();
             return;
         }
-        ObserveRetreat(Time.time);
-        ReduceBelief(challenge.TickRear(IsBehind(owner.BodyCollider.bounds,
-            owner.TargetBodyCollider.bounds, owner.FacingDirection), Time.deltaTime));
+        ObserveRetreat();
+        ReduceBelief(challenge.ObserveRear(IsBehind(owner.BodyCollider.bounds,
+            owner.TargetBodyCollider.bounds, owner.FacingDirection)));
     }
 
     private bool IsBehind(Bounds enemy, Bounds player, float facing) =>
@@ -59,17 +59,17 @@ public sealed class ExpandedBeliefCondition : BeliefCondition
     private void HandlePlayerHit(PlayerHitResult hit)
     {
         if (!CanEvaluate || hit.AppliedDamage <= 0f) return;
-        ObserveRetreat(hit.OccurredAt);
+        ObserveRetreat();
         ReduceBelief(challenge.Hit(hit.OccurredAt,
             IsBehind(hit.EnemyBounds, hit.PlayerBounds, hit.EnemyFacing),
             attack is MagicCircleAttack && attack.IsWindingUp));
     }
 
-    private void ObserveRetreat(float now)
+    private void ObserveRetreat()
     {
         if (owner is BelieverEnemy believer)
             challenge.ObserveRetreat(believer.IsRetreating,
-                Mathf.Abs(owner.Target.position.x - owner.transform.position.x) <= believer.RetreatTriggerDistance, now);
+                Mathf.Abs(owner.Target.position.x - owner.transform.position.x) <= believer.RetreatTriggerDistance);
     }
 
     private void HandleAttack(EnemyAttack source, EnemyAttackResult result)

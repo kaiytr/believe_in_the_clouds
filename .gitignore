@@ -111,3 +111,26 @@ opencode.json
 # Local compile check leftovers (csc output)
 /*.dll
 /Temp/*.dll
+
+# main keeps the build project; development material remains on Puri and Leesc.
+/Docs/
+/Tools/
+/.vscode/
+/.vsconfig
+/UpgradeLog.htm
+/*.md
+/Assets/Editor/
+/Assets/Editor.meta
+/Assets/Tests/
+/Assets/Tests.meta
+/Assets/Scripts/Doctrine/Tests/
+/Assets/Scripts/Doctrine/Tests.meta
+/Assets/Scripts/Test.meta
+/Assets/Scripts/**/README.md
+/Assets/Scripts/**/README.md.meta
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+/Assets/Settings/Scenes/
+/Assets/Settings/Scenes.meta
+/Assets/Settings/Lit2DSceneTemplate.scenetemplate
+/Assets/Settings/Lit2DSceneTemplate.scenetemplate.meta
